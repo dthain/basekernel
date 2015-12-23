@@ -1,0 +1,401 @@
+/*
+Copyright (C) 2015 The University of Notre Dame
+This software is distributed under the GNU General Public License.
+See the file COPYING for details.
+*/
+
+#include "interrupt.h"
+#include "console.h"
+#include "ioports.h"
+#include "clock.h"
+#include "string.h"
+#include "ata.h"
+#include "process.h"
+#include "mutex.h"
+
+#define ATA_BLOCKSIZE 512
+
+#define ATA_IRQ0	32+14
+#define ATA_IRQ1	32+15
+#define ATA_IRQ2	32+11
+#define ATA_IRQ3	32+9
+
+#define ATA_BASE0	0x1F0
+#define ATA_BASE1	0x170
+#define ATA_BASE2	0x1E8
+#define ATA_BASE3	0x168
+
+#define ATA_TIMEOUT     5
+
+#define ATA_DATA	0   /* data register */
+#define ATA_ERROR	1   /* error register */
+#define ATA_COUNT	2   /* sectors to transfer */
+#define ATA_SECTOR	3   /* sector number */
+#define ATA_CYL_LO	4   /* low byte of cylinder number */
+#define ATA_CYL_HI	5   /* high byte of cylinder number */
+#define ATA_FDH		6   /* flags, drive and head */
+#define ATA_STATUS	7
+#define ATA_COMMAND	7
+#define ATA_CONTROL	0x206
+
+#define ATA_FLAGS_ECC	0x80	/* enable error correction */
+#define ATA_FLAGS_LBA	0x40	/* enable linear addressing */
+#define ATA_FLAGS_SEC	0x20	/* enable 512-byte sectors */
+#define ATA_FLAGS_SLV	0x10	/* address the slave drive */
+
+#define ATA_STATUS_BSY	0x80    /* controller busy */
+#define ATA_STATUS_RDY	0x40    /* drive ready */
+#define ATA_STATUS_WF	0x20    /* write fault */
+#define ATA_STATUS_SC	0x10    /* seek complete (obsolete) */
+#define ATA_STATUS_DRQ	0x08    /* data transfer request */
+#define ATA_STATUS_CRD	0x04    /* corrected data */
+#define ATA_STATUS_IDX	0x02    /* index pulse */
+#define ATA_STATUS_ERR	0x01    /* error */
+
+#define ATA_COMMAND_IDLE		0x00
+#define ATA_COMMAND_READ		0x20    /* read data */
+#define ATA_COMMAND_WRITE		0x30    /* write data */
+#define ATA_COMMAND_IDENTIFY		0xec
+
+#define ATAPI_COMMAND_IDENTIFY 0xa1
+#define ATAPI_COMMAND_PACKET   0xa0
+
+#define ATAPI_FEATURE	1
+#define ATAPI_IRR 2
+#define ATAPI_SAMTAG 3
+#define ATAPI_COUNT_LO 4
+#define ATAPI_COUNT_HI 5
+#define ATAPI_DRIVE 6
+#define ATAPI_BLOCKSIZE 2048
+
+#define SCSI_READ10            0x28
+#define SCSI_SENSE             0x03
+
+#define ATA_CONTROL_RESET	0x04
+#define ATA_CONTROL_DISABLEINT	0x02
+
+static const int ata_base[4] = {ATA_BASE0,ATA_BASE0,ATA_BASE1,ATA_BASE1};
+static int ata_interrupt_active = 0;
+static struct list queue = {0,0};
+static struct mutex ata_mutex = MUTEX_INIT;
+
+static void ata_interrupt( int intr, int code )
+{
+	ata_interrupt_active=1;
+	process_wakeup_all(&queue);
+}
+
+void ata_reset( int id )
+{
+	outb(ATA_CONTROL_RESET,ata_base[id]+ATA_CONTROL);
+	clock_wait(1);
+	outb(0,ata_base[id]+ATA_CONTROL);
+	clock_wait(1);
+}
+
+static int ata_wait( int id, int mask, int state )
+{
+	clock_t start, elapsed;
+	int t;
+
+	start = clock_read();
+
+	while(1) {
+		t = inb(ata_base[id]+ATA_STATUS);
+		if((t&mask)==state) {
+			return 1;
+		}
+		if(t&ATA_STATUS_ERR) {
+			console_printf("ata: error\n");
+			ata_reset(id);
+			return 0;
+		}
+		elapsed = clock_diff(start,clock_read());
+		if(elapsed.seconds>ATA_TIMEOUT) {
+			console_printf("ata: timeout\n");
+			ata_reset(id);
+			return 0;
+		}
+		clock_wait(0);
+	}
+}
+
+static void ata_pio_read( int id, void *buffer, int size )
+{
+	uint16_t *wbuffer = (uint16_t*)buffer;
+	while(size>0) {
+		*wbuffer = inw(ata_base[id]+ATA_DATA);
+		wbuffer++;
+		size-=2;
+	}
+}
+
+static void ata_pio_write( int id, const void *buffer, int size )
+{
+	uint16_t *wbuffer = (uint16_t*)buffer;
+	while(size>0) {
+		outw(*wbuffer,ata_base[id]+ATA_DATA);
+		wbuffer++;
+		size-=2;
+	}
+}
+
+static int ata_begin( int id, int command, int nblocks, int offset )
+{
+	int base = ata_base[id];
+	int sector, clow, chigh, flags;
+
+	// enable error correction and linear addressing
+	flags = ATA_FLAGS_ECC|ATA_FLAGS_LBA|ATA_FLAGS_SEC;
+
+	// turn on the slave bit for odd-numbered drives
+	if(id%2) flags |= ATA_FLAGS_SLV;
+
+	// slice up the linear address in order to fit in the arguments
+	sector  = (offset>> 0) & 0xff;
+	clow    = (offset>> 8) & 0xff;
+	chigh   = (offset>>16) & 0xff;
+	flags  |= (offset>>24) & 0x0f;
+
+	// wait for the disk to calm down
+	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
+
+	// get the attention of the proper disk
+	outb(flags,base+ATA_FDH);
+
+	// wait again for the disk to indicate ready
+	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_RDY,ATA_STATUS_RDY)) return 0;
+
+	// send the arguments
+	outb(0,base+ATA_CONTROL);
+	outb(nblocks,base+ATA_COUNT);
+	outb(sector,base+ATA_SECTOR);
+	outb(clow,base+ATA_CYL_LO);
+	outb(chigh,base+ATA_CYL_HI);
+	outb(flags,base+ATA_FDH);
+
+	// execute the command
+	outb(command,base+ATA_COMMAND);
+
+	return 1;
+}
+
+static int ata_read_unlocked( int id, void *buffer, int nblocks, int offset )
+{
+	int i;
+	if(!ata_begin(id,ATA_COMMAND_READ,nblocks,offset)) return 0;
+	if(ata_interrupt_active) process_wait(&queue);
+	for(i=0;i<nblocks;i++) {
+		if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
+		ata_pio_read(id,buffer,ATA_BLOCKSIZE);
+		buffer = ((char*)buffer)+ATA_BLOCKSIZE;
+		offset++;
+	}
+	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
+	return nblocks;
+}
+
+int ata_read( int id, void *buffer, int nblocks, int offset )
+{
+	int result;
+	mutex_lock(&ata_mutex);
+	result = ata_read_unlocked(id,buffer,nblocks,offset);
+	mutex_unlock(&ata_mutex);
+	return result;
+}
+
+static int atapi_begin( int id, void *data, int length )
+{
+	int base = ata_base[id];
+	int flags;
+
+	// enable error correction and linear addressing
+	flags = ATA_FLAGS_ECC|ATA_FLAGS_LBA|ATA_FLAGS_SEC;
+
+	// turn on the slave bit for odd-numbered drives
+	if(id%2) flags |= ATA_FLAGS_SLV;
+
+	// wait for the disk to calm down
+	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
+
+	// get the attention of the proper disk
+	outb(flags,base+ATA_FDH);
+
+	// wait again for the disk to indicate ready
+	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_RDY,ATA_STATUS_RDY)) return 0;
+
+	// send the arguments
+	outb(0,base+ATAPI_FEATURE);
+	outb(0,base+ATAPI_IRR);
+	outb(0,base+ATAPI_SAMTAG);
+	outb(length&0xff,base+ATAPI_COUNT_LO);
+	outb(length>>8,base+ATAPI_COUNT_HI);
+
+	// execute the command
+	outb(ATAPI_COMMAND_PACKET,base+ATA_COMMAND);
+
+	// wait for ready
+	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_DRQ,ATA_STATUS_DRQ));
+
+	// send the ATAPI packet
+	ata_pio_write(id,data,length);
+
+	return 1;
+}
+
+static int atapi_read_unlocked( int id, void *buffer, int nblocks, int offset )
+{
+	uint8_t packet[12];
+	int length=sizeof(packet);
+	int i;
+
+	packet[0] = SCSI_READ10;
+	packet[1] = 0;
+	packet[2] = offset>>24;
+	packet[3] = offset>>16;
+	packet[4] = offset>>8;
+	packet[5] = offset>>0;
+	packet[6] = 0;
+	packet[7] = nblocks>>8;
+	packet[8] = nblocks>>0;
+	packet[9] = 0;
+	packet[10] = 0;
+	packet[11] = 0;
+
+	if(!atapi_begin(id,packet,length)) return 0;
+
+	if(ata_interrupt_active) process_wait(&queue);
+
+	for(i=0;i<nblocks;i++) {
+		if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
+		ata_pio_read(id,buffer,ATAPI_BLOCKSIZE);
+		buffer = ((char*)buffer)+ATAPI_BLOCKSIZE;
+		offset++;
+	}
+
+	return 1;
+}
+
+int atapi_read( int id, void *buffer, int nblocks, int offset )
+{
+	int result;
+	mutex_lock(&ata_mutex);
+	result = atapi_read_unlocked(id,buffer,nblocks,offset);
+	mutex_unlock(&ata_mutex);
+	return result;
+}
+
+static int ata_write_unlocked( int id, const void *buffer, int nblocks, int offset )
+{
+	int i;
+	if(!ata_begin(id,ATA_COMMAND_WRITE,nblocks,offset)) return 0;
+	for(i=0;i<nblocks;i++) {
+		if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
+		ata_pio_write(id,buffer,ATA_BLOCKSIZE);
+		buffer = ((char*)buffer)+ATA_BLOCKSIZE;
+		offset++;
+	}
+	if(ata_interrupt_active) process_wait(&queue);
+	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
+	return nblocks;
+}
+
+int ata_write( int id, void *buffer, int nblocks, int offset )
+{
+	int result;
+	mutex_lock(&ata_mutex);
+	result = ata_write_unlocked(id,buffer,nblocks,offset);
+	mutex_unlock(&ata_mutex);
+	return result;
+}
+
+/*
+ata_probe sends an IDENTIFY DEVICE command to the device.
+If a device is connected, it will respond with 512 bytes
+of identifying data, described on page 48 of the ATA-3 standard.
+If no response comes within the timeout window, we assume
+the the device is simply not connected.
+*/
+
+static int ata_identify( int id, int command, void *buffer )
+{
+	if(!ata_begin(id,command,0,0)) return 0;
+	if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
+	ata_pio_read(id,buffer,512);
+	return 1;
+}
+
+int ata_probe( int id, int *nblocks, int *blocksize, char *name )
+{
+	uint8_t t;
+	uint32_t i;
+	uint16_t buffer[256];
+	char *cbuffer = (char*)buffer;
+
+	/*
+	First attempt to modify a controller register.
+	If the change does not stick, there is not controller!
+	*/
+
+	t = inb(ata_base[id]+ATA_CYL_LO);
+	outb(~t,ata_base[id]+ATA_CYL_LO);
+	if(inb(ata_base[id]+ATA_CYL_LO)==t) return 0;
+
+	memset(cbuffer,0,512);
+
+	ata_reset(id);
+
+	if(ata_identify(id,ATA_COMMAND_IDENTIFY,cbuffer)) {
+		*nblocks = buffer[1]*buffer[3]*buffer[6];
+		*blocksize = 512;
+	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
+		*nblocks = 337920;
+		*blocksize = 2048;
+	} else {
+		return 0;
+	}
+
+	/* Now byte-swap the data so as the generate byte-ordered strings */
+
+	for(i=0;i<512;i+=2) {
+		t = cbuffer[i];
+		cbuffer[i] = cbuffer[i+1];
+		cbuffer[i+1] = t;
+	}
+	cbuffer[256]=0;
+
+	/* Vendor supplied name is at byte 54 */
+
+	strcpy(name,&cbuffer[54]);
+	name[40] = 0;
+
+	return 1;
+}
+
+void ata_init()
+{
+	int i;
+	int nblocks;
+	int blocksize=0;
+	char longname[256];
+
+	console_printf("ata: setting up interrupts\n");
+
+	interrupt_register(ATA_IRQ0,ata_interrupt);
+	interrupt_enable(ATA_IRQ0);
+
+	interrupt_register(ATA_IRQ1,ata_interrupt);
+	interrupt_enable(ATA_IRQ1);
+
+	console_printf("ata: probing devices\n");
+
+	for(i=0;i<4;i++) {
+		if(ata_probe(i,&nblocks,&blocksize,longname)) {
+
+			console_printf("ata unit %d: %s %d MB %s\n",i,blocksize==512 ? "ata disk" : "atapi cdrom", nblocks*blocksize/1024/1024,longname);
+		} else {
+			console_printf("ata unit %d: not present\n",i);
+		}
+	}
+}
+
