@@ -21,6 +21,9 @@ To be clear, this is raw low-level code, and there is no guarantee that
 it will work on your particular machine, or work at all. If you fix bugs
 or solve build problems, we would be happy to accept your contributions.
 
+BASEKERNEL is free software licensed under the GNU General Public License.
+See the file LICENSE for details.
+
 ## How to Run BASEKERNEL
 
 From a standard Linux X86 machine with the GCC compiler:
