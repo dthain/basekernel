@@ -1,18 +1,18 @@
-# The BASEKERNEL Operating System Kernel
+# The Basekernel Operating System Kernel
 
-BASEKERNEL is a simple operating system kernel for research, study, and fun.
+Basekernel is a simple operating system kernel for research, teaching, and fun.
 
-BASEKERNEL is *not* a complete operating system, but it is a starting
+Basekernel is *not* a complete operating system, but it is a starting
 point for those who wish to study and develop new operating system code.
 If you want to build something *different* than Windows, Linux, or Multics,
-BASEKERNEL may be a good place to try out your new ideas.
+Basekernel may be a good place to try out your new ideas.
 
-BASEKERNEL can boot an Intel PC-compatible machine (or VM) in 32-bit protected
+Basekernel can boot an Intel PC-compatible machine (or VM) in 32-bit protected
 mode, with support for VESA framebuffer graphics, ATA hard disks, ATAPI optical
 devices, basic system calls, and paged virtual memory.  From there, it's
 your job to write filesystem code, a windowing system, or whatever you like.
 
-Our goal is to keep BASEKERNEL simple and easy to understand,
+Our goal is to keep Basekernel simple and easy to understand,
 so that others can build on it and take it in different directions.
 We encourage you to fork the code, give it a new name,
 and develop something completely new on top of it.
@@ -21,10 +21,7 @@ To be clear, this is raw low-level code, and there is no guarantee that
 it will work on your particular machine, or work at all. If you fix bugs
 or solve build problems, we would be happy to accept your contributions.
 
-BASEKERNEL is free software licensed under the GNU General Public License.
-See the file LICENSE for details.
-
-## How to Run BASEKERNEL
+## How to Run Basekernel
 
 From a standard Linux X86 machine with the GCC compiler:
 
@@ -172,33 +169,36 @@ For technical reasons, the X86 requires that segmentation be turned on whenever 
 
 ## References
 
-The [OS Development Wiki][http://wiki.osdev.org] an excellent source
-of sample code and general orientation toward the topics that you need
-to learn.
+The [OS Development Wiki][1] is an excellent source of sample code and general orientation toward the topics that you need to learn. However, to get the details of each element right, you will need to dig into the source documents for each component of the system:
 
-However, to get the details of each element right, you will need to dig into the source documents for each component of the system:
-
-The [Intel CPU Manuals][http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html] are the definitive reference.  Especially focus on the first five chapters of the * System Programming Guide * to fully understand the virtual memory model and exception handling.
+The [Intel CPU Manuals][2] are the definitive CPU reference.  Especially focus on the first five chapters of the * System Programming Guide * to fully understand the virtual memory model and exception handling.
 
 The `doc` directory contains a few hard to find PDF specifications.
 While they describe older hardware, standardized hardware has a high
 degree of backwards compatibility, so these techniques continue to work.
 
-[ATA Attachment-3 Interface][doc/ata-3-std.pdf] describes the interface
+[ATA Attachment-3 Interface][3] describes the interface
 to traditional ATA disks, including both I/O registers and commands
 interpreted by the disk.
 
-[PhoenixBIOS Programmer's Guide][doc/phoenix-bios.pdf] describes the BIOS
+[PhoenixBIOS Programmer's Guide][4] describes the BIOS
 functions available in the early boot environment, while the system is
 still in 16-bit mode.  These are used by bootblock.S and kernelcore.S
 to load data from disk and initialize the system.
 
-[VESA BIOS Extension (VBE)][doc/vesa-bios.pdf] describes extensions
+[VESA BIOS Extension (VBE)][5] describes extensions
 to the BIOS interrupts specifically for setting and querying graphics
 modes.  This is used by kernelcore.S just before jumping to protected mode.
 
-[Super I/O Controller][doc/super-io.pdf] describes a typical chipset
+[Super I/O Controller][6] describes a typical chipset
 that provides basic support devices such as keyboard, serial ports,
 timer, and real-time clock.  These can be accessed in any processor mode.
 While your machine may not have this *specific* chipset, the basic
 functions are widely compatible.
+
+[1] http://wiki.osdev.org
+[2] http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+[3] doc/ata-3-std.pdf
+[4] doc/phoenix-bios.pdf
+[5] doc/vesa-bios.pdf
+[6] doc/super-io.pdf
