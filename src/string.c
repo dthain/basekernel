@@ -5,7 +5,6 @@ See the file LICENSE for details.
 */
 
 #include "string.h"
-#include "errno.h"
 #include "process.h"
 #include "console.h"
 #include "kerneltypes.h"
