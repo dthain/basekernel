@@ -231,7 +231,7 @@ static int atapi_begin( int id, void *data, int length )
 	outb(flags,base+ATA_FDH);
 
 	// wait again for the disk to indicate ready
-	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_RDY,ATA_STATUS_RDY)) return 0;
+	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
 
 	// send the arguments
 	outb(0,base+ATAPI_FEATURE);
