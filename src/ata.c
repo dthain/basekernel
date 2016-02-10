@@ -336,43 +336,50 @@ static int ata_identify( int id, int command, void *buffer )
 
 int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 {
-	uint8_t t;
-	uint32_t i;
 	uint16_t buffer[256];
 	char *cbuffer = (char*)buffer;
 
 	/*
-	Check for 0xff in the controller status, which indicates
-	there is no device attached to the controller.
+	First check for 0xff in the controller status register,
+	which would indicate that there is nothing attached.
 	*/
 
-	t = inb(ata_base[id]+ATA_STATUS);
+	uint8_t t = inb(ata_base[id]+ATA_STATUS);
 	if(t==0xff) return 0;
 
-	/* Reset the unit to be sure. */
+	/* Now reset the unit to check for register signatures. */
 	ata_reset(id);
 
-	/*
-	It is now reasonably certain there is some kind of device attached.
-	Attempt to identify it, first as an ATA device, then ATAPI.
-	XXX Would be better to examine registers to determine which type
-	of identify to perform first.
-	*/
+	/* We expect to see certain values in the control registers */
+	uint8_t a = inb(ata_base[id]+ATA_COUNT);
+	uint8_t b = inb(ata_base[id]+ATA_SECTOR);
+	uint8_t c = inb(ata_base[id]+ATA_CYL_LO);
+	uint8_t d = inb(ata_base[id]+ATA_CYL_HI);
 
+	/* Clear the buffer to receive the identify data. */
 	memset(cbuffer,0,512);
 
-	if(ata_identify(id,ATA_COMMAND_IDENTIFY,cbuffer)) {
+	if(a==0x01 && b==0x01 && c==0x14 && d==0xeb) {
+		/* Signature indicates a plain ATA disk. */
+		if(!ata_identify(id,ATA_COMMAND_IDENTIFY,cbuffer)) return 0;
+
 		*nblocks = buffer[1]*buffer[3]*buffer[6];
 		*blocksize = 512;
-	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
+
+ 	} else if(a==0x01 && b==0x01 && c==0x00 && d==0x00) {
+		/* Signature indicates an ATAPI optical disk. */
+		if(!ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) return 0;
+
+		/* need to do a SCSI sense to get the medium size. */
 		*nblocks = 337920;
 		*blocksize = 2048;
 	} else {
+		console_printf("ata: unexpected signature: %d %d %d %d\n",a,b,c,d);
 		return 0;
 	}
 
 	/* Now byte-swap the data so as the generate byte-ordered strings */
-
+	uint32_t i;
 	for(i=0;i<512;i+=2) {
 		t = cbuffer[i];
 		cbuffer[i] = cbuffer[i+1];
