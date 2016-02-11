@@ -31,7 +31,13 @@ make
 ```
 
 That will create `basekernel.img`, which is an image of a floppy disk that can be mounted in a virtual machine.  Next, set up a virtual machine system
-like VMWare, VirtualBox, or Bochs, and direct it to use that image.
+like VMWare, VirtualBox, or QEUM, and direct it to use that image.
+
+If you are using QEMU, this command-line should do it:
+
+```
+qemu-system-i386 -fda basekernel.img 
+```
 
 You should see something like this:
 
