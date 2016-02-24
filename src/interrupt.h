@@ -29,13 +29,13 @@ IRQ	Interrupt
 6	38	Floppy
 7	39	Parallel Port 1
 8	40	Real Time Clock
-9	41	Network
+9	41	Network (or ATA 3)
 10	42	Network/Sound/SCSI
-11	43	SCSI Other
+11	43	SCSI Other (or ATA 2)
 12	44	PS/2 Mouse
 13	45	FPU
 14	46	ATA 0
-16	47	ATA 1
+15	47	ATA 1
 */
 
 
