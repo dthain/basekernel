@@ -62,11 +62,11 @@ be consumed by either the kernel or user processes.
 #define ALLOC_MEMORY_START  0x100000
 
 /*
-We choose the user-mode address space to begin at 0x8000000,
+We choose the user-mode address space to begin at 0x80000000,
 and the user-mode stack to start at the top of memory and
-grow down.  Addresses below 0x8000000 are all supervisor mode.
+grow down. Addresses below 0x80000000 are all supervisor mode.
 */
 
-#define PROCESS_ENTRY_POINT 0x8000000
-#define PROCESS_STACK_INIT  0xffffff0
+#define PROCESS_ENTRY_POINT 0x80000000
+#define PROCESS_STACK_INIT  0xfffffff0
 
