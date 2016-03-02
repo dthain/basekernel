@@ -83,7 +83,7 @@ in main.c to make an interesting status display for your operating system.
 reach the bottom, rather than clearing and starting over.
 
 * Try writing to an address somewhere into the (unmapped) user address space
-above 0x8000000.  Notice how you get a page fault, and the system halts?
+above 0x80000000.  Notice how you get a page fault, and the system halts?
 Modify the page fault handler to automatically allocate a fresh memory page
 and map it into the process each time this happens.
 
@@ -106,7 +106,7 @@ filesystem, which you can now save across boot sessions.
 * Implement loadable programs.  Using either a filesystem or just a raw disk
 image file, load a user-level program compiled outside the kernel,
 and execute it.  The simplest way is to compile straight to binary format
-with a load address of 0x8000000, and then fall through process_switch().
+with a load address of 0x80000000, and then fall through process_switch().
 A more sophisticated way is to create an A.OUT or ELF format executable,
 and then write the code to load that into the kernel.
 
