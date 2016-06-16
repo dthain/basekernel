@@ -11,16 +11,14 @@ See the file LICENSE for details.
 #include "process.h"
 #include "kernelcore.h"
 
+#define KEYBOARD_PORT 0x60
+
 #define KEY_INVALID 0127
 
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
 #define SPECIAL_CTRL  3
 #define SPECIAL_SHIFTLOCK 4
-
-#define KEYBOARD_PORT_A		0x60
-#define KEYBOARD_PORT_B		0x61
-#define KEYBOARD_ACK    0x80
 
 #define BUFFER_SIZE 256
 
@@ -40,24 +38,6 @@ static int buffer_read = 0;
 static int buffer_write = 0;
 
 static struct list queue = {0,0};
-
-static int keyboard_scan()
-{
-	int code;
-	int ack;
-
-	code = inb(KEYBOARD_PORT_A);	
-	iowait();
-	ack = inb(KEYBOARD_PORT_B);
-	iowait();
-	ack |= KEYBOARD_ACK;
-	outb(ack,KEYBOARD_PORT_B);
-	iowait();
-	outb(ack,KEYBOARD_PORT_B);
-	iowait();
-
-	return code;
-}
 
 static int shift_mode = 0;
 static int alt_mode = 0;
@@ -109,10 +89,9 @@ static char keyboard_map( int code )
 	}
 }
 
-void keyboard_interrupt( int i, int code )
+static void keyboard_interrupt( int i, int code)
 {
-	char c;
-	c = keyboard_map(keyboard_scan());
+	char c = keyboard_map(inb(KEYBOARD_PORT));
 	if(c==KEY_INVALID) return;
 	if((buffer_write+1) == (buffer_read%BUFFER_SIZE)) return;
 	buffer[buffer_write] = c;
@@ -134,7 +113,6 @@ char keyboard_read()
 void keyboard_init()
 {
 	interrupt_register(33,keyboard_interrupt);
-	keyboard_scan();
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");
 }
