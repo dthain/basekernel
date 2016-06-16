@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "interrupt.h"
 #include "keyboard.h"
+#include "mouse.h"
 #include "clock.h"
 #include "ata.h"
 #include "string.h"
@@ -36,6 +37,7 @@ int kernel_main()
 	interrupt_init();
 	rtc_init();
 	clock_init();
+	mouse_init();
 	keyboard_init();
 
 /*
