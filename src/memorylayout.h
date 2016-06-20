@@ -58,8 +58,8 @@ set aside for kmalloc() which implements a list of small
 memory allocations for internal kernel purposes.
 */
 
-#define KMALLOC_MEMORY_START 0x100000
-#define KMALLOC_MEMORY_LENGTH 0x100000
+#define KMALLOC_START  0x100000
+#define KMALLOC_LENGTH 0x100000
 
 /*
 Main memory starts at the 2MB boundary following the kmalloc area.

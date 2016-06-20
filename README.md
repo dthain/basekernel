@@ -139,7 +139,8 @@ some significant code surgery.
 0000 fff0 (INTERUPT_STACK_TOP) Initial location of kernel/interrupt stack
           until paging and user processes allocate their own stacks.
 0001 0000 (KERNEL_START) Start of kernel code and data in kernelcore.S
-0010 0000 (ALLOC_MEMORY_START)  Start of memory pages managed by memory.c
+0010 0000 (KMALLOC_START) Start of kernel memory managed by kmalloc().
+0020 0000 (MAIN_MEMORY_START)  Start of memory pages managed by memory.c
 ???? ???? Location of the video buffer, determined by video BIOS at runtime.
           Care must be taken in memory allocation and pagetable setup
           to avoid stomping on this area.

@@ -37,7 +37,7 @@ int kernel_main()
 	console_printf("kernel: %d bytes\n",kernel_size);
 
 	memory_init();
-	kmalloc_init((char*)KMALLOC_MEMORY_START,KMALLOC_MEMORY_LENGTH);
+	kmalloc_init((char*)KMALLOC_START,KMALLOC_LENGTH);
 	interrupt_init();
 	rtc_init();
 	clock_init();
