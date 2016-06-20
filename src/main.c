@@ -18,6 +18,9 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "rtc.h"
 #include "kernelcore.h"
+#include "kmalloc.h"
+#include "memorylayout.h"
+
 
 /*
 This is the C initialization point of the kernel.
@@ -34,17 +37,13 @@ int kernel_main()
 	console_printf("kernel: %d bytes\n",kernel_size);
 
 	memory_init();
+	kmalloc_init((char*)KMALLOC_MEMORY_START,KMALLOC_MEMORY_LENGTH);
 	interrupt_init();
 	rtc_init();
 	clock_init();
 	mouse_init();
 	keyboard_init();
-
-/*
-process_init() is a big step.  This initializes the process table, but also gives us our own process structure, private stack, and enables paging.  Now we can do complex things like wait upon events.
-*/
 	process_init();
-
 	ata_init();
 
 	console_printf("\nBASEKERNEL READY:\n");

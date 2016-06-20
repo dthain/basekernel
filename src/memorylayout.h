@@ -53,13 +53,22 @@ The bootblock uses this to decide how much to load from disk.
 #define KERNEL_SIZE_OFFSET 20
 
 /*
-Allocatable memory starts at the 1MB boundary, which is (presumably)
-larger than the total amount of kernel code.  This region of memory
-is tracked by memory.c and used for allocatable pages, which can
-be consumed by either the kernel or user processes.
+Following the kernel code is a direct mapper memory area
+set aside for kmalloc() which implements a list of small
+memory allocations for internal kernel purposes.
 */
 
-#define ALLOC_MEMORY_START  0x100000
+#define KMALLOC_MEMORY_START 0x100000
+#define KMALLOC_MEMORY_LENGTH 0x100000
+
+/*
+Main memory starts at the 2MB boundary following the kmalloc area.
+This area is tracked by memory.c and used for allocatable pages, which can
+be consumed by either the kernel or user processes.  The end of
+main memory is determined dynamically at bootup time.
+*/
+
+#define MAIN_MEMORY_START  0x200000
 
 /*
 We choose the user-mode address space to begin at 0x80000000,

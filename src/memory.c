@@ -20,7 +20,7 @@ static uint32_t freemap_bytes=0;
 static uint32_t freemap_cells=0;
 static uint32_t freemap_pages=0;
 
-static void * alloc_memory_start = (void*) ALLOC_MEMORY_START;
+static void * main_memory_start = (void*) MAIN_MEMORY_START;
 
 #define CELL_BITS (8*sizeof(*freemap))
 
@@ -32,7 +32,7 @@ void memory_init()
 	pages_free = pages_total;
 	console_printf("memory: %d MB (%d KB) total\n",(pages_free*PAGE_SIZE)/MEGA,(pages_free*PAGE_SIZE)/KILO);
 
-	freemap = alloc_memory_start;
+	freemap = main_memory_start;
 	freemap_bits = pages_total;
 	freemap_bytes = 1+freemap_bits/8;
 	freemap_cells = 1+freemap_bits/CELL_BITS;
@@ -82,7 +82,7 @@ void * memory_alloc_page( bool zeroit )
 				if(freemap[i]&cellmask) {
 					freemap[i] &= ~cellmask;
 					pagenumber = i*CELL_BITS+j;
-					pageaddr = (pagenumber<<PAGE_BITS)+alloc_memory_start;
+					pageaddr = (pagenumber<<PAGE_BITS)+main_memory_start;
 					if(zeroit) memset(pageaddr,0,PAGE_SIZE);
 					pages_free--;
 					return pageaddr;
@@ -99,7 +99,7 @@ void * memory_alloc_page( bool zeroit )
 
 void memory_free_page( void *pageaddr )
 {
-	uint32_t pagenumber = (pageaddr-alloc_memory_start)>>PAGE_BITS;
+	uint32_t pagenumber = (pageaddr-main_memory_start)>>PAGE_BITS;
 	uint32_t cellnumber = pagenumber/CELL_BITS;
 	uint32_t celloffset = pagenumber%CELL_BITS;
 	uint32_t cellmask = (1<<celloffset);
