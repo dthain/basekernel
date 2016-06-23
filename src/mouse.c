@@ -11,7 +11,6 @@ See the file LICENSE for details.
 #include "ascii.h"
 #include "process.h"
 #include "kernelcore.h"
-#include "graphics.h"
 
 /*
 The PS2 interface uses a data port and a command port.
@@ -176,8 +175,8 @@ static void mouse_interrupt( int i, int code )
 
 	if(state.x<0) state.x = 0;
 	if(state.y<0) state.y = 0;
-	if(state.x>=graphics_width()) state.x = graphics_width()-1;
-	if(state.y>=graphics_height()) state.y = graphics_height()-1;
+	if(state.x>=video_xres) state.x = video_xres-1;
+	if(state.y>=video_yres) state.y = video_yres-1;
 }
 
 /*
