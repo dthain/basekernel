@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "mouse.h"
 #include "clock.h"
 #include "ata.h"
+#include "cdromfs.h"
 #include "string.h"
 #include "graphics.h"
 #include "ascii.h"
@@ -47,6 +48,20 @@ int kernel_main()
 	keyboard_init();
 	process_init();
 	ata_init();
+
+	struct cdrom_volume *v = cdrom_volume_open(1);
+	if(v) {
+		struct cdrom_dirent *d = cdrom_volume_root(v);
+		if(d) {
+			cdrom_dirent_readdir(d,0,1);
+			cdrom_dirent_close(d);
+		} else {
+			printf("couldn't access root dir!\n");
+		}
+		cdrom_volume_close(v);
+	} else {
+		printf("couldn't mount filesystem!\n");
+	}
 
 	console_printf("\nBASEKERNEL READY:\n");
 

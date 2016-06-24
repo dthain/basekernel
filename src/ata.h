@@ -7,6 +7,9 @@ See the file LICENSE for details.
 #ifndef ATA_H
 #define ATA_H
 
+#define ATA_BLOCKSIZE 512
+#define ATAPI_BLOCKSIZE 2048
+
 void ata_init();
 
 void ata_reset( int unit );

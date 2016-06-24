@@ -76,7 +76,10 @@ void * kmalloc( int length )
 	struct kmalloc_chunk *c = head;
 
 	while(1) {
-		if(!c) return 0;
+		if(!c) {
+			printf("kmalloc: out of memory!\n");
+			return 0;
+		}
 		if(c->state==KMALLOC_STATE_FREE && c->length>=length) break;
 		c = c->next;
 	}

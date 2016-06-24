@@ -13,8 +13,6 @@ See the file LICENSE for details.
 #include "process.h"
 #include "mutex.h"
 
-#define ATA_BLOCKSIZE 512
-
 #define ATA_IRQ0	32+14
 #define ATA_IRQ1	32+15
 #define ATA_IRQ2	32+11
@@ -66,7 +64,6 @@ See the file LICENSE for details.
 #define ATAPI_COUNT_LO 4
 #define ATAPI_COUNT_HI 5
 #define ATAPI_DRIVE 6
-#define ATAPI_BLOCKSIZE 2048
 
 #define SCSI_READ10            0x28
 #define SCSI_SENSE             0x03
@@ -359,13 +356,13 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 	if(ata_identify(id,ATA_COMMAND_IDENTIFY,cbuffer)) {
 
 		*nblocks = buffer[1]*buffer[3]*buffer[6];
-		*blocksize = 512;
+		*blocksize = ATA_BLOCKSIZE;
 
  	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
 
 		// XXX use SCSI sense to get media size
 		*nblocks = 337920;
-		*blocksize = 2048;
+		*blocksize = ATAPI_BLOCKSIZE;
 
 	} else {
 		console_printf("ata unit %d: identify command failed\n",id);
