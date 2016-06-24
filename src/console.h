@@ -9,8 +9,9 @@ See the file LICENSE for details.
 
 #include "kerneltypes.h"
 #include "string.h"
+#include "graphics.h"
 
-void console_init();
+void console_init( struct graphics *g );
 void console_putchar( char c );
 int  console_write( int unit, const void *buffer, int nblocks, int offset );
 void console_heartbeat();

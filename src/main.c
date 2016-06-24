@@ -31,7 +31,9 @@ Now we initialize each subsystem in the proper order:
 
 int kernel_main()
 {
-	console_init();
+	struct graphics *g = graphics_create_root();
+
+	console_init(g);
 
 	console_printf("video: %d x %d\n",video_xres,video_yres,video_xbytes);
 	console_printf("kernel: %d bytes\n",kernel_size);

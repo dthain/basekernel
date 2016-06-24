@@ -16,24 +16,30 @@ static int ypos=0;
 struct graphics_color bgcolor = {0,0,0};
 struct graphics_color fgcolor = {255,0,0};
 
+static struct graphics *gx = 0;
+
 static void console_reset()
 {
 	xpos = ypos = 0;
-	graphics_clear(bgcolor);
+	xsize = graphics_width(gx)/8;
+	ysize = graphics_height(gx)/8;
+	graphics_fgcolor(gx,fgcolor);
+	graphics_bgcolor(gx,bgcolor);
+	graphics_clear(gx,0,0,graphics_width(gx),graphics_height(gx));
 }
 
 static void console_writechar( int x, int y, char ch )
 {
-	graphics_char(x*8,y*8,ch,fgcolor,bgcolor);
+	graphics_char(gx,x*8,y*8,ch);
 }
 
 void console_heartbeat()
 {
 	static int onoff=0;
 	if(onoff) {
-		graphics_char(xpos*8,ypos*8,'_',fgcolor,bgcolor);
+		graphics_char(gx,xpos*8,ypos*8,'_');
 	} else {
-		graphics_char(xpos*8,ypos*8,'_',bgcolor,bgcolor);
+		graphics_char(gx,xpos*8,ypos*8,'_');
 	}
 	onoff = !onoff;
 }
@@ -96,10 +102,9 @@ int console_write( int unit, const void *buffer, int length, int offset )
 	return 1;
 }
 
-void console_init()
+void console_init( struct graphics *g )
 {
-	xsize = graphics_width()/8;
-	ysize = graphics_height()/8;
-	console_reset();
+	gx = g;
+       	console_reset();
 	console_putstring("\nconsole: initialized\n");
 }
