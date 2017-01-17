@@ -2,27 +2,28 @@ OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interr
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386
 KERNEL_LDFLAGS=-m elf_i386
+LD?=ld
+ISOGEN?=genisoimage
 
 all: basekernel.iso
 
 basekernel.iso: basekernel.img
-	genisoimage -J -R -o basekernel.iso -b basekernel.img basekernel.img
+	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img
 
 basekernel.img: bootblock kernel
-	cat bootblock kernel > basekernel.img
-	truncate basekernel.img --size 1474560
+	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
 
 bootblock: bootblock.o
-	ld ${KERNEL_LDFLAGS} -Ttext 0 -s --oformat binary $< -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0 -s --oformat binary $< -o $@
 
 kernel: ${OBJECTS}
-	ld ${KERNEL_LDFLAGS} -Ttext 0x10000 -s --oformat binary ${OBJECTS} -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 -s --oformat binary ${OBJECTS} -o $@
 
 %.o: %.c
-	gcc ${KERNEL_CCFLAGS} $< -o $@
+	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 %.o: %.S
-	gcc ${KERNEL_CCFLAGS} $< -o $@
+	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o
