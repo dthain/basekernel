@@ -23,6 +23,8 @@ or solve build problems, we would be happy to accept your contributions.
 
 ## How to Run Basekernel
 
+### Compilation: Linux x86 machine
+
 From a standard Linux X86 machine with the GCC compiler:
 
 ```
@@ -30,7 +32,53 @@ cd src
 make
 ```
 
-That will create `basekernel.img`, which is an image of a floppy disk that can be mounted in a virtual machine.  Next, set up a virtual machine system
+### Compilation: OS X
+
+Getting basekernel to work with OS X will require installing a few dependencies.
+The easiest way to do this is with
+[MacPorts](https://guide.macports.org/#installing.macports).
+
+By default, running `make` attempts to use `genisoimage`, which no version of OS
+X has or supports. You will have to install cdrtools and use the near-identical
+`mkisofs`, then update your environment so `make` will handle it:
+
+```
+port install cdrtools
+export ISOGEN=mkisofs
+```
+
+You can then attempt to build the image:
+
+```
+cd src
+make
+```
+
+On recent versions of OS X, `gcc` links to LLVM GCC or clang. If you try running
+`make` with the defaults and compilation or linking doesn't work, it's easiest
+to just install the complete gcc and binutils for i386 ELF:
+
+```
+port install i386-elf-gcc
+port install i386-elf-binutils
+```
+
+Then update your environment like before:
+
+```
+export CC=i386-elf-gcc
+export LD=i386-elf-ld
+```
+
+Run `make` again and, if the tools were referenced correctly, it should finish
+successfully and create the image.
+
+### Running the image
+
+You should have a file called `basekernel.img`, which is an image of a floppy
+disk that can be mounted in a virtual machine.
+
+Next, set up a virtual machine system
 like VMWare, VirtualBox, or QEUM, and direct it to use that image.
 
 If you are using QEMU, this command-line should do it:
