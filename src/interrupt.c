@@ -41,7 +41,7 @@ static void unknown_exception( int i, int code )
 	if(i==14) {
 		asm("mov %%cr2, %0" : "=r" (vaddr) );
 		if(pagetable_getmap(current->pagetable,vaddr,&paddr)) {
-			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
+			console_printf("\finterrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
 		} else {
@@ -51,7 +51,7 @@ static void unknown_exception( int i, int code )
 			halt();
 		}
 	} else {
-		console_printf("interrupt: exception %d: %s (code %x)\n",i,exception_names[i],code);
+		console_printf("\finterrupt: exception %d: %s (code %x)\n",i,exception_names[i],code);
 		process_dump(current);
 	}
 
