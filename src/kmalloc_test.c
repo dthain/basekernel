@@ -24,7 +24,6 @@ int kmalloc_test_single_alloc(void)
 	next = head->next;
 	res &= next->state == KMALLOC_STATE_FREE;
 	res &= next->length == KMALLOC_LENGTH - head->length;
-	kmalloc_debug();
 	
 	return res;
 }
