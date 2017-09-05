@@ -21,6 +21,7 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "kmalloc.h"
 #include "memorylayout.h"
+#include "kmalloc_test.h"
 
 
 /*
@@ -48,6 +49,7 @@ int kernel_main()
 	keyboard_init();
 	process_init();
 	ata_init();
+	kmalloc_test();
 
 	struct cdrom_volume *v = cdrom_volume_open(1);
 	if(v) {
