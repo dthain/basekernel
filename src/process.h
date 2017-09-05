@@ -11,12 +11,15 @@ See the file LICENSE for details.
 #include "list.h"
 #include "pagetable.h"
 #include "x86.h"
+#include "file.h"
 
 #define PROCESS_STATE_CRADLE  0
 #define PROCESS_STATE_READY   1
 #define PROCESS_STATE_RUNNING 2
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
+
+#define PROCESS_FD_COUNT 10
 
 struct process {
 	struct list_node node;
@@ -26,6 +29,7 @@ struct process {
 	char *kstack;
 	char *kstack_top;
 	char *stack_ptr;
+	struct file_t *fd_table[PROCESS_FD_COUNT];
 	uint32_t entry;
 };
 
@@ -36,6 +40,9 @@ void process_yield();
 void process_preempt();
 void process_exit( int code );
 void process_dump( struct process *p );
+
+int process_open_file(const char *filename, int8_t mode);
+int process_close_file(int fd);
 
 void process_wait( struct list *q );
 void process_wakeup( struct list *q );

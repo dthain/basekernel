@@ -13,6 +13,8 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "memorylayout.h"
 #include "kernelcore.h"
+#include "kmalloc.h"
+#include "file.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
@@ -65,10 +67,51 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
+	memset(p->fd_table, 0, sizeof(p->fd_table));
 
 	process_stack_init(p);
 
 	return p;
+}
+
+static int get_available_fd()
+{
+	uint32_t i;
+	for (i = 0; i < PROCESS_FD_COUNT; i++)
+	{
+		if (current->fd_table[i] == 0)
+			return i;
+	}
+	return -1;
+}
+
+int process_open_file(const char *filename, int8_t mode)
+{
+	int fd = get_available_fd();
+	int inode_number = file_memory_inode_index(filename);
+	struct file_t *file = 0;
+	if (fd >= 0 && inode_number >= 0)
+	{
+		file = kmalloc(sizeof(struct file_t));
+		file->mode = mode;
+		file->offset = 0;
+		file->in_memory = 1;
+		file->inode = inode_number;
+		current->fd_table[fd] = file;
+		return fd;
+	}
+	return -1;
+}
+
+int process_close_file(int fd)
+{
+	struct file_t *file = current->fd_table[fd];
+	if (file) {
+		kfree(file);
+		current->fd_table[fd] = 0;
+		return 0;
+	}
+	return -1;
 }
 
 static void process_switch( int newstate )
