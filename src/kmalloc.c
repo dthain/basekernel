@@ -8,19 +8,17 @@ See the file LICENSE for details.
 #include "console.h"
 #include "kerneltypes.h"
 
-#define KMALLOC_STATE_FREE 0xa1a1a1a1
-#define KMALLOC_STATE_USED 0xbfbfbfbf
+#define TESTING
 
-struct kmalloc_chunk {
-	int state;
-	int length;
-	struct kmalloc_chunk *next;
-	struct kmalloc_chunk *prev;
-};
+#ifndef TESTING
+#define STATIC static
+#else
+#define STATIC
+#endif
 
 #define KUNIT sizeof(struct kmalloc_chunk)
 
-static struct kmalloc_chunk *head = 0;
+STATIC struct kmalloc_chunk *head = 0;
 
 /*
 Initialize the linked list by creating a single chunk at
@@ -42,7 +40,7 @@ Split a large chunk into two, such that the current chunk
 has the desired length, and the next chunk has the remainder.
 */
 
-static void ksplit( struct kmalloc_chunk *c, int length )
+STATIC void ksplit( struct kmalloc_chunk *c, int length )
 {
 	struct kmalloc_chunk *n = (struct kmalloc_chunk *)((char *)c + length);
 
@@ -100,7 +98,7 @@ Attempt to merge a chunk with its successor,
 if it exists and both are in the free state.
 */
 
-static void kmerge( struct kmalloc_chunk *c )
+STATIC void kmerge( struct kmalloc_chunk *c )
 {
 	if(!c) return;
 
