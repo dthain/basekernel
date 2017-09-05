@@ -7,7 +7,9 @@ See the file LICENSE for details.
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-char keyboard_read();
+#include "kerneltypes.h"
+
+int keyboard_read(char *out_buffer, uint32_t len);
 void keyboard_init();
 
 #endif
