@@ -43,7 +43,7 @@ int sys_wait()
 
 int sys_open( const char *path, int mode, int flags )
 {
-	return ENOSYS;
+	return process_open_file(path, mode);
 }
 
 int sys_read( int fd, void *data, int length )
@@ -63,7 +63,7 @@ int sys_lseek( int fd, int offset, int whence )
 
 int sys_close( int fd )
 {
-	return ENOSYS;
+	return process_close_file(fd);
 }
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
