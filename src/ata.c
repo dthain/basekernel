@@ -241,7 +241,7 @@ static int atapi_begin( int id, void *data, int length )
 	outb(ATAPI_COMMAND_PACKET,base+ATA_COMMAND);
 
 	// wait for ready
-	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_DRQ,ATA_STATUS_DRQ));
+	if(!ata_wait(id,ATA_STATUS_BSY|ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
 
 	// send the ATAPI packet
 	ata_pio_write(id,data,length);
