@@ -6,6 +6,9 @@
 #include "syscall.h"
 #include "kmalloc_test.h"
 
+#define NEWLINE_VALUE 13
+#define BACKSPACE_VALUE 8
+
 static int process_command(char *line)
 {
 	const char *pch = strtok(line, " ");
@@ -65,10 +68,10 @@ int shell_launch()
 	while(1)
 	{
 		char c = keyboard_read();
-		if (pos == line && c == 8)
+		if (pos == line && c == BACKSPACE_VALUE)
 			continue;
 		console_putchar(c);
-		if (c == 13)
+		if (c == NEWLINE_VALUE)
 		{
 			int res = process_command(line);
 			if (res < 0)
@@ -76,7 +79,7 @@ int shell_launch()
 			pos = line;
 			printf("$ ");
 		}
-		else if (c == 8)
+		else if (c == BACKSPACE_VALUE)
 		{
 			pos--;
 		}
