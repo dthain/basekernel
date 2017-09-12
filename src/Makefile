@@ -5,7 +5,7 @@ KERNEL_LDFLAGS=-m elf_i386
 LD?=ld
 ISOGEN?=genisoimage
 
-all: basekernel.iso
+all: basekernel.iso test.exe
 
 basekernel.iso: basekernel.img
 	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img
@@ -24,6 +24,9 @@ kernel: ${OBJECTS}
 
 %.o: %.S
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
+
+test.exe: test.o
+	ld ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary $< syscall.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o
