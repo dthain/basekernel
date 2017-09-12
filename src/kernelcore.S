@@ -123,6 +123,12 @@ video640:
 	int	$0x10
 	cmp	$0x004f, %ax
 	je	videodone
+video640_lowcolor:
+	mov	$0x4f02, %ax
+	mov	$0x4111, %bx
+	int	$0x10
+	cmp	$0x004f, %ax
+	je	videodone
 
 videofailed:
 	mov	$videomsg, %esi
