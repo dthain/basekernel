@@ -13,7 +13,7 @@ See the file LICENSE for details.
 
 #define KEYBOARD_PORT 0x60
 
-#define KEY_INVALID 0127
+#define KEY_INVALID 127
 
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
