@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "console.h"
+#include "terminal.h"
 #include "interrupt.h"
 #include "clock.h"
 #include "ioports.h"
@@ -27,6 +28,13 @@ static void clock_interrupt( int i, int code )
 {
 	clicks++;
 	process_wakeup_all(&queue);
+
+	if (terminal_has_input())
+	{
+		char input[1024];
+		int n = terminal_read(input, 1024);
+		console_write(0, input, n, 0);
+	}
 	if(clicks>=CLICKS_PER_SECOND) {
 		clicks=0;
 		seconds++;

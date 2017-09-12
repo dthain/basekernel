@@ -99,15 +99,21 @@ static void keyboard_interrupt( int i, int code)
 	process_wakeup(&queue);
 }
 
-char keyboard_read()
+int keyboard_read(char *out_buffer, uint32_t len)
 {
-	int result;
-	while(buffer_read==buffer_write) {
+	int n = 0;
+	while(buffer_read==buffer_write)
+	{
 		process_wait(&queue);
 	}
-	result = buffer[buffer_read];
-	buffer_read = (buffer_read+1)%BUFFER_SIZE;
-	return result;
+	while (buffer_read!=buffer_write && n < len)
+	{
+		out_buffer[n] = buffer[buffer_read];
+
+		buffer_read = (buffer_read+1)%BUFFER_SIZE;
+		n++;
+	}
+	return n;
 }
 
 void keyboard_init()

@@ -21,6 +21,8 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "kmalloc.h"
 #include "memorylayout.h"
+#include "file.h"
+#include "terminal.h"
 
 
 /*
@@ -48,6 +50,8 @@ int kernel_main()
 	keyboard_init();
 	process_init();
 	ata_init();
+	file_init();
+	terminal_init();
 
 	/*
 	Test out some basic operations by opening a filesystem
@@ -73,7 +77,11 @@ int kernel_main()
 
 	console_printf("\nBASEKERNEL READY:\n");
 
-	while(1) console_putchar(keyboard_read());
+	while(1) {
+		char buffer[1024];
+		int n = keyboard_read(buffer, 1024);
+		console_write(0, buffer, n, 0);
+	}
 
 	return 0;
 }
