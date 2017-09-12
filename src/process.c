@@ -89,10 +89,10 @@ int process_open_file(const char *filename, int8_t mode)
 {
 	int fd = get_available_fd();
 	int inode_number = file_memory_inode_index(filename);
-	struct file_t *file = 0;
+	file_t *file = 0;
 	if (fd >= 0 && inode_number >= 0)
 	{
-		file = kmalloc(sizeof(struct file_t));
+		file = kmalloc(sizeof(file_t));
 		file->mode = mode;
 		file->offset = 0;
 		file->type = MEMORY;
@@ -105,7 +105,7 @@ int process_open_file(const char *filename, int8_t mode)
 
 int process_close_file(int fd)
 {
-	struct file_t *file = current->fd_table[fd];
+	file_t *file = current->fd_table[fd];
 	if (file) {
 		kfree(file);
 		current->fd_table[fd] = 0;

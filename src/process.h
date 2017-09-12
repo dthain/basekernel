@@ -29,7 +29,7 @@ struct process {
 	char *kstack;
 	char *kstack_top;
 	char *stack_ptr;
-	struct file_t *fd_table[PROCESS_FD_COUNT];
+	file_t *fd_table[PROCESS_FD_COUNT];
 	uint32_t entry;
 };
 
