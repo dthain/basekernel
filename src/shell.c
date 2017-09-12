@@ -4,6 +4,7 @@
 #include "string.h"
 #include "rtc.h"
 #include "syscall.h"
+#include "kmalloc_test.h"
 
 static int process_command(char *line)
 {
@@ -37,6 +38,17 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "exit"))
 	{
 		return -1;
+	}
+	else if (pch && !strcmp(pch, "test"))
+	{
+		pch = strtok(0, " ");
+		if (pch && !strcmp(pch, "kmalloc"))
+			kmalloc_test();
+		else if (pch)
+			printf("test: test '%s' not found\n", pch);
+		else
+			printf("test: missing argument\n");
+
 	}
 	else if (pch)
 	{
