@@ -52,10 +52,36 @@ static void fix_filename( char *name, int length )
 
 }
 
+/*
+Read an entire cdrom file into the target address.
+*/
+
 int cdrom_dirent_read( struct cdrom_dirent *d, char *data, int length )
 {
-	return 0;
+	int nsectors = d->length/ATAPI_BLOCKSIZE;
+	int remainder = d->length%ATAPI_BLOCKSIZE;
+
+	if(length<d->length) length = d->length;
+
+	atapi_read( d->volume->unit, data, nsectors, d->sector);
+	// check success here
+
+	if(remainder>0) {
+		char *page = memory_alloc_page(0);
+		// XXX check success here
+		atapi_read(d->volume->unit,page,1,d->sector+nsectors);
+		memcpy(data + ATAPI_BLOCKSIZE*nsectors,page,remainder);
+		memory_free_page(page);
+	}
+
+	return length;
 }
+
+/*
+XXX for debugging, this prints out directory entries to the console.
+It should instead be copying out directory entries to memory, and
+then let the caller display to the console.
+*/
 
 struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
 {
