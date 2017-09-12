@@ -49,11 +49,19 @@ int kernel_main()
 	process_init();
 	ata_init();
 
+	/*
+	Test out some basic operations by opening a filesystem
+	and displaying the root directory.
+	*/
+
 	struct cdrom_volume *v = cdrom_volume_open(1);
 	if(v) {
 		struct cdrom_dirent *d = cdrom_volume_root(v);
 		if(d) {
-			cdrom_dirent_readdir(d,0,1);
+			int buffer_length = 1024;
+			char *buffer = kmalloc(buffer_length);
+			int length = cdrom_dirent_readdir(d,buffer,buffer_length);
+			print_directory(buffer,length);
 			cdrom_dirent_close(d);
 		} else {
 			printf("couldn't access root dir!\n");
@@ -68,4 +76,15 @@ int kernel_main()
 	while(1) console_putchar(keyboard_read());
 
 	return 0;
+}
+
+
+void print_directory( char *d, int length )
+{
+	while(length>0) {
+		console_printf("%s\n",d);
+		int len = strlen(d)+1;
+		d += len;
+		length -= len;
+	}
 }

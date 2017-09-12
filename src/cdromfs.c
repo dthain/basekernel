@@ -89,6 +89,7 @@ struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buff
 	if(!data) return 0;
 
 	int data_length = dir->length;
+	int total = 0;
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
 
@@ -96,34 +97,29 @@ struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buff
 		fix_filename(d->ident,d->ident_length);
 
 		if(d->ident[0]==0) {
-			printf("    .\n");
-			/*
 			strcpy(buffer,".");
 			buffer+=2;
 			buffer_length-=2;
-			*/
+			total+=2;
 		} else if(d->ident[0]==1) {
-			printf("    ..\n");
-			/*
 			strcpy(buffer,"..");
 			buffer+=3;
 			buffer_length-=3;
-			*/
+			total+=3;
 		} else {
-			printf("    %s\n",d->ident);
-			/*
 			strcpy(buffer,d->ident);
-			int len = strlen(d->ident);
+			int len = strlen(d->ident) + 1;
 			buffer += len;
 			buffer_length -= len;
-			*/
+			total += len;
 		}
 		d = ((char*)d)+d->descriptor_length;
 		data_length -= d->descriptor_length;
 	}
 
 	kfree(data);
-	return 0;
+
+	return total;
 }
 
 void cdrom_dirent_close( struct cdrom_dirent *d )
@@ -171,12 +167,12 @@ struct cdrom_volume * cdrom_volume_open( int unit )
 		if(strncmp(d->magic,"CD001",5)) continue;
 
 		if(d->type==ISO_9660_VOLUME_TYPE_PRIMARY) {
-			printf("cdromfs: mounted filesystem on unit %d\n",v->unit);
-
 			v->root_sector = d->root.first_sector_little;
 			v->root_length = d->root.length_little;
 			v->total_sectors = d->nsectors_little;
 			v->unit = unit;
+
+			printf("cdromfs: mounted filesystem on unit %d\n",v->unit);
 
 			memory_free_page(d);
 
