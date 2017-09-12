@@ -25,8 +25,11 @@ struct file_t
 	uint32_t inode;
 	enum inode_type type;
 
+	int (*open)(struct file_t *, char *, uint8_t);
+	int (*close)(struct file_t *, int);
 	int (*read)(struct file_t *, char *, uint32_t);
 	int (*write)(struct file_t *, char *, uint32_t);
+	int (*seek)(struct file_t *, char *, uint32_t);
 };
 
 int file_init();
