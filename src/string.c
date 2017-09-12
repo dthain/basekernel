@@ -157,11 +157,9 @@ static void printf_putint( int32_t i )
 	}
 
 	f = 1;
-	while((i/f)>0) {
+	while((i/f) >= 10) {
 		f*=10;
 	}
-	f=f/10;
-	if(f==0) f=1;
 	while(f>0) {
 		d = i/f;
 		printf_putchar('0'+d);
