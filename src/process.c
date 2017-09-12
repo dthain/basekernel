@@ -95,7 +95,7 @@ int process_open_file(const char *filename, int8_t mode)
 		file = kmalloc(sizeof(struct file_t));
 		file->mode = mode;
 		file->offset = 0;
-		file->in_memory = 1;
+		file->type = MEMORY;
 		file->inode = inode_number;
 		current->fd_table[fd] = file;
 		return fd;
