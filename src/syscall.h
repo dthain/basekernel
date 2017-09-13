@@ -12,8 +12,7 @@ See the file LICENSE for details.
 typedef enum {
 	SYSCALL_DEBUG,
 	SYSCALL_YIELD,
-	SYSCALL_FORK,
-	SYSCALL_EXEC,
+	SYSCALL_RUN,
 	SYSCALL_WAIT,
 	SYSCALL_EXIT,
 	SYSCALL_OPEN,
@@ -24,10 +23,10 @@ typedef enum {
 } syscall_t;
 
 typedef enum {
-	ENOENT,
-	EINVAL,
-	EACCES,
-	ENOSYS
+	ENOENT=-1,
+	EINVAL=-2,
+	EACCES=-3,
+	ENOSYS=-4
 } syscall_error_t;
 
 uint32_t syscall( syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e );
@@ -41,11 +40,8 @@ static inline void exit( int status )
 static inline int yield()
 	{ return syscall( SYSCALL_YIELD, 0, 0, 0, 0, 0 ); }
 
-static inline int fork()
-	{ return syscall( SYSCALL_FORK, 0, 0, 0, 0, 0 ); }
-
-static inline int exec( const char *cmd )
-	{ return syscall( SYSCALL_EXEC, (uint32_t) cmd, 0, 0, 0, 0 ); }
+static inline int run( const char *cmd )
+	{ return syscall( SYSCALL_RUN, (uint32_t) cmd, 0, 0, 0, 0 ); }
 
 static inline int wait()
 	{ return syscall( SYSCALL_WAIT, 0, 0, 0, 0, 0 ); }
@@ -63,6 +59,6 @@ static inline int lseek( int fd, int offset, int whence )
 	{ return syscall( SYSCALL_LSEEK, fd, offset, whence, 0, 0 ); }
 
 static inline int close( int fd )
-{ return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 ); }
+	{ return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 ); }
 
 #endif

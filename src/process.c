@@ -71,6 +71,11 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	return p;
 }
 
+void process_launch( struct process *p )
+{
+	list_push_tail(&ready_list,&p->node);
+}
+
 static void process_switch( int newstate )
 {
 	interrupt_block();

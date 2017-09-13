@@ -23,7 +23,7 @@ int main( const char *argv[], int argc )
 	int i, j;
 
 	for(j=0;j<10;j++) {
-		write(1,"hello world!\n",13);
+		debug("hello world!\n");
      		for(i=0;i<100000000;i++)  {}
 	}
 

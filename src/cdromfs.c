@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "iso9660.h"
 #include "ata.h"
 #include "memory.h"
+#include "cdromfs.h"
 
 struct cdrom_volume {
 	int unit;
@@ -25,6 +26,18 @@ struct cdrom_dirent {
 	int length;
 	int isdir;
 };
+
+static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
+{
+	struct cdrom_dirent *d = kmalloc(sizeof(*d));
+	if(!d) return 0;
+
+	d->volume = volume;
+	d->sector = sector;
+	d->length = length;
+	d->isdir = isdir;
+	return d;
+}
 
 static char * cdrom_dirent_load( struct cdrom_dirent *d )
 {
@@ -56,7 +69,17 @@ static void fix_filename( char *name, int length )
 Read an entire cdrom file into the target address.
 */
 
-int cdrom_dirent_read( struct cdrom_dirent *d, char *data, int length )
+int  cdrom_dirent_read_block( struct cdrom_dirent *d, char *buffer, int blocknum )
+{
+	return atapi_read( d->volume->unit, buffer, 1, d->sector + blocknum );
+}
+
+#if 0
+/*
+Read an entire cdrom file into the target address.
+*/
+
+int cdrom_dirent_readfile( struct cdrom_dirent *d, char *data, int length )
 {
 	int nsectors = d->length/ATAPI_BLOCKSIZE;
 	int remainder = d->length%ATAPI_BLOCKSIZE;
@@ -76,14 +99,57 @@ int cdrom_dirent_read( struct cdrom_dirent *d, char *data, int length )
 
 	return length;
 }
+#endif
 
-/*
-XXX for debugging, this prints out directory entries to the console.
-It should instead be copying out directory entries to memory, and
-then let the caller display to the console.
-*/
+struct cdrom_dirent * cdrom_dirent_namei( struct cdrom_dirent *d, const char *path )
+{
+	char *lpath = kmalloc(strlen(path)+1);
+	strcpy(lpath,path);
 
-struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
+	char *part = strtok(lpath,"/");
+	while(part) {
+		d = cdrom_dirent_lookup(d,part);
+		if(!d) break;
+
+		part = strtok(0,"/");
+	}
+	kfree(lpath);
+	return d;
+}
+
+struct cdrom_dirent * cdrom_dirent_lookup( struct cdrom_dirent *dir, const char *name )
+{
+	char *data = cdrom_dirent_load(dir);
+	if(!data) return 0;
+
+	int data_length = dir->length;
+
+	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
+
+	while(data_length>0 && d->descriptor_length>0 ) {
+		fix_filename(d->ident,d->ident_length);
+
+		if(!strcmp(name,d->ident)) {
+			struct cdrom_dirent *r = cdrom_dirent_create(
+				dir->volume,
+				d->first_sector_little,
+				d->length_little,
+				d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY );
+
+			kfree(data);
+			return r;
+		}
+
+		d = (struct iso_9660_directory_entry *)((char*)d+d->descriptor_length);
+		data_length -= d->descriptor_length;
+	}
+
+	kfree(data);
+
+	return 0;
+}
+
+int cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
 {
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;
@@ -113,7 +179,7 @@ struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buff
 			buffer_length -= len;
 			total += len;
 		}
-		d = ((char*)d)+d->descriptor_length;
+		d = (struct iso_9660_directory_entry *)((char*)d+d->descriptor_length);
 		data_length -= d->descriptor_length;
 	}
 
@@ -122,21 +188,14 @@ struct cdrom_dirent * cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buff
 	return total;
 }
 
+int  cdrom_dirent_length( struct cdrom_dirent *d )
+{
+	return d->length;
+}
+
 void cdrom_dirent_close( struct cdrom_dirent *d )
 {
 	kfree(d);
-}
-
-struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
-{
-	struct cdrom_dirent *d = kmalloc(sizeof(*d));
-	if(!d) return 0;
-
-	d->volume = volume;
-	d->sector = sector;
-	d->length = length;
-	d->isdir = isdir;
-	return d;
 }
 
 struct cdrom_dirent * cdrom_volume_root( struct cdrom_volume *v )
