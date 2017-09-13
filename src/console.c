@@ -37,7 +37,7 @@ void console_heartbeat()
 {
 	static int onoff=0;
 	if(onoff) {
-		graphics_char(gx,xpos*8,ypos*8,'_');
+		graphics_char(gx,xpos*8,ypos*8,' ');
 	} else {
 		graphics_char(gx,xpos*8,ypos*8,'_');
 	}
