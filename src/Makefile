@@ -1,4 +1,6 @@
-OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o
+KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o
+
+USER_OBJECTS=user-start.o test.o syscall.o syscalls.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386
 KERNEL_LDFLAGS=-m elf_i386
@@ -16,8 +18,8 @@ basekernel.img: bootblock kernel
 bootblock: bootblock.o
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0 -s --oformat binary $< -o $@
 
-kernel: ${OBJECTS}
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 -s --oformat binary ${OBJECTS} -o $@
+kernel: ${KERNEL_OBJECTS}
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 -s --oformat binary ${KERNEL_OBJECTS} -o $@
 
 %.o: %.c
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
@@ -25,8 +27,8 @@ kernel: ${OBJECTS}
 %.o: %.S
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
-test.exe: test.o
-	ld ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary $< syscall.o -o $@
+test.exe: test.o $(USER_OBJECTS)
+	ld ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o
