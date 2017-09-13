@@ -50,18 +50,48 @@ int kernel_main()
 	ata_init();
 
 	/*
-	Test out some basic operations by opening a filesystem
-	and displaying the root directory.
+	Test out some basic operations by listing the root filesystem,
+	then creating a child process.
 	*/
 
+	printf("\nLIST ROOT DIRECTORY:\n");
+	list_directory("/");
+
+	printf("\nRUN CHILD PROCESS:\n");
+	sys_run("/TEST.EXE");
+	process_yield();
+
+	console_printf("\nBASEKERNEL READY:\n");
+
+	while(1) console_putchar(keyboard_read());
+
+	return 0;
+}
+
+int print_directory( char *d, int length )
+{
+	while(length>0) {
+		console_printf("%s\n",d);
+		int len = strlen(d)+1;
+		d += len;
+		length -= len;
+	}
+	return 0;
+}
+
+int list_directory( const char *path )
+{
 	struct cdrom_volume *v = cdrom_volume_open(1);
 	if(v) {
 		struct cdrom_dirent *d = cdrom_volume_root(v);
 		if(d) {
 			int buffer_length = 1024;
 			char *buffer = kmalloc(buffer_length);
-			int length = cdrom_dirent_readdir(d,buffer,buffer_length);
-			print_directory(buffer,length);
+			if(buffer) {
+				int length = cdrom_dirent_readdir(d,buffer,buffer_length);
+				print_directory(buffer,length);
+				kfree(buffer);
+			}
 			cdrom_dirent_close(d);
 		} else {
 			printf("couldn't access root dir!\n");
@@ -71,20 +101,5 @@ int kernel_main()
 		printf("couldn't mount filesystem!\n");
 	}
 
-	console_printf("\nBASEKERNEL READY:\n");
-
-	while(1) console_putchar(keyboard_read());
-
 	return 0;
-}
-
-
-void print_directory( char *d, int length )
-{
-	while(length>0) {
-		console_printf("%s\n",d);
-		int len = strlen(d)+1;
-		d += len;
-		length -= len;
-	}
 }

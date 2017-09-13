@@ -8,7 +8,7 @@ ISOGEN?=genisoimage
 all: basekernel.iso test.exe
 
 basekernel.iso: basekernel.img
-	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img
+	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img test.exe
 
 basekernel.img: bootblock kernel
 	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
