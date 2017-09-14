@@ -88,7 +88,7 @@ int list_directory( const char *path )
 			int buffer_length = 1024;
 			char *buffer = kmalloc(buffer_length);
 			if(buffer) {
-				int length = cdrom_dirent_readdir(d,buffer,buffer_length);
+				int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
 				print_directory(buffer,length);
 				kfree(buffer);
 			}
