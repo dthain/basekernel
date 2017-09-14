@@ -149,7 +149,7 @@ struct cdrom_dirent * cdrom_dirent_lookup( struct cdrom_dirent *dir, const char 
 	return 0;
 }
 
-int cdrom_dirent_readdir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
+int cdrom_dirent_read_dir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
 {
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;
