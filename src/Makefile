@@ -7,9 +7,9 @@ KERNEL_LDFLAGS=-m elf_i386
 LD?=ld
 ISOGEN?=genisoimage
 
-all: basekernel.iso test.exe
+all: basekernel.iso
 
-basekernel.iso: basekernel.img
+basekernel.iso: basekernel.img test.exe
 	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img test.exe
 
 basekernel.img: bootblock kernel
