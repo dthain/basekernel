@@ -28,7 +28,7 @@ kernel: ${KERNEL_OBJECTS}
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 test.exe: test.o $(USER_OBJECTS)
-	ld ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o
