@@ -21,7 +21,7 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "kmalloc.h"
 #include "memorylayout.h"
-
+#include "kshell.h"
 
 /*
 This is the C initialization point of the kernel.
@@ -54,52 +54,11 @@ int kernel_main()
 	then creating a child process.
 	*/
 
-	printf("\nLIST ROOT DIRECTORY:\n");
-	list_directory("/");
-
-	printf("\nRUN CHILD PROCESS:\n");
-	sys_run("/TEST.EXE");
-	process_yield();
+	shell_launch();
 
 	console_printf("\nBASEKERNEL READY:\n");
 
 	while(1) console_putchar(keyboard_read());
-
-	return 0;
-}
-
-int print_directory( char *d, int length )
-{
-	while(length>0) {
-		console_printf("%s\n",d);
-		int len = strlen(d)+1;
-		d += len;
-		length -= len;
-	}
-	return 0;
-}
-
-int list_directory( const char *path )
-{
-	struct cdrom_volume *v = cdrom_volume_open(1);
-	if(v) {
-		struct cdrom_dirent *d = cdrom_volume_root(v);
-		if(d) {
-			int buffer_length = 1024;
-			char *buffer = kmalloc(buffer_length);
-			if(buffer) {
-				int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
-				print_directory(buffer,length);
-				kfree(buffer);
-			}
-			cdrom_dirent_close(d);
-		} else {
-			printf("couldn't access root dir!\n");
-		}
-		cdrom_volume_close(v);
-	} else {
-		printf("couldn't mount filesystem!\n");
-	}
 
 	return 0;
 }
