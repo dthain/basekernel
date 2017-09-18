@@ -4,6 +4,46 @@
 #include "string.h"
 #include "rtc.h"
 #include "syscall.h"
+#include "cdromfs.h"
+#include "kmalloc.h"
+#include "process.h"
+
+static int print_directory( char *d, int length )
+{
+	while(length>0) {
+		console_printf("%s\n",d);
+		int len = strlen(d)+1;
+		d += len;
+		length -= len;
+	}
+	return 0;
+}
+
+static int list_directory( const char *path )
+{
+	struct cdrom_volume *v = cdrom_volume_open(1);
+	if(v) {
+		struct cdrom_dirent *d = cdrom_volume_root(v);
+		if(d) {
+			int buffer_length = 1024;
+			char *buffer = kmalloc(buffer_length);
+			if(buffer) {
+				int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
+				print_directory(buffer,length);
+				kfree(buffer);
+			}
+			cdrom_dirent_close(d);
+		} else {
+			printf("couldn't access root dir!\n");
+		}
+		cdrom_volume_close(v);
+	} else {
+		printf("couldn't mount filesystem!\n");
+	}
+
+	return 0;
+}
+
 
 static int process_command(char *line)
 {
@@ -12,6 +52,25 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) printf("%s\n", pch);
+	}
+	else if (pch && !strcmp(pch, "run"))
+	{
+		pch = strtok(0, " ");
+		if (pch) {
+			sys_run(pch);
+			process_yield();
+		}
+		else
+			list_directory("run: missing argument");
+	}
+	else if (pch && !strcmp(pch, "list"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			printf("%s: unexpected argument\n", pch);
+		else
+			list_directory("/");
+
 	}
 	else if (pch && !strcmp(pch, "time"))
 	{
