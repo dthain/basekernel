@@ -21,7 +21,7 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "kmalloc.h"
 #include "memorylayout.h"
-#include "shell.h"
+#include "kshell.h"
 
 /*
 This is the C initialization point of the kernel.

@@ -1,4 +1,4 @@
-#include "shell.h"
+#include "kshell.h"
 #include "keyboard.h"
 #include "console.h"
 #include "string.h"
@@ -104,7 +104,7 @@ static int process_command(char *line)
 	return 0;
 }
 
-int shell_launch()
+int kshell_launch()
 {
 	char line[1024];
 	char *pos = line;
