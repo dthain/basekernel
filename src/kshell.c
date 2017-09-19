@@ -8,9 +8,7 @@
 #include "kmalloc.h"
 #include "process.h"
 #include "kmalloc.h"
-
-#define BACKSPACE_VALUE 8
-#define NEWLINE_VALUE 13
+#include "ascii.h"
 
 static int print_directory( char *d, int length )
 {
@@ -126,10 +124,10 @@ int kshell_launch()
 	while(1)
 	{
 		char c = keyboard_read();
-		if (pos == line && c == BACKSPACE_VALUE)
+		if (pos == line && c == ASCII_BS)
 			continue;
 		console_putchar(c);
-		if (c == NEWLINE_VALUE)
+		if (c == ASCII_CR)
 		{
 			int res = process_command(line);
 			if (res < 0)
@@ -137,7 +135,7 @@ int kshell_launch()
 			pos = line;
 			printf("$ ");
 		}
-		else if (c == BACKSPACE_VALUE)
+		else if (c == ASCII_BS)
 		{
 			pos--;
 		}
