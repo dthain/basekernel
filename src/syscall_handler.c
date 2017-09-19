@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "console.h"
 #include "process.h"
+#include "cdromfs.h"
+#include "memorylayout.h"
 
 int sys_debug( const char *str )
 {
@@ -26,14 +28,59 @@ int sys_yield()
 	return 0;
 }
 
-int sys_fork()
-{
-	return ENOSYS;
-}
+/*
+sys_run creates a new child process running the executable named by "path".
+In this temporary implementation, we use the cdrom filesystem directly.
+(Instead, we should go through the abstract filesystem interface.)
+*/
 
-int sys_exec( const char *cmd )
+int sys_run( const char *path )
 {
-	return ENOSYS;
+	/* Open and find the named path, if it exists. */
+
+	struct cdrom_volume *v= cdrom_volume_open(1);
+	if(!v) return ENOENT;
+
+	struct cdrom_dirent *d = cdrom_dirent_namei(cdrom_volume_root(v),path);
+	if(!d) {
+		cdrom_volume_close(v);
+		return ENOENT;
+	}
+
+	int length = cdrom_dirent_length(d);
+
+	/* Create a new process with enough pages for the executable and one page for the stack */
+
+	struct process *p = process_create(length,PAGE_SIZE);
+	if(!p) return ENOENT;
+
+	/* Round up length of the executable to an even pages */
+
+	int i;
+	int npages = length/PAGE_SIZE + length%PAGE_SIZE ? 1 : 0;
+
+	/* For each page, load one page from the file.  */
+	/* Notice that the cdrom block size (2048) is half the page size (4096) */
+
+	for(i=0;i<npages;i++) {
+		unsigned vaddr = PROCESS_ENTRY_POINT + i * PAGE_SIZE;
+		unsigned paddr;
+
+		pagetable_getmap(p->pagetable,vaddr,&paddr);
+		cdrom_dirent_read_block(d,(void*)paddr,i*2);
+		cdrom_dirent_read_block(d,(void*)paddr+CDROM_BLOCK_SIZE,i*2+1);
+	}
+
+	/* Close everything up */
+	
+	cdrom_dirent_close(d);
+	cdrom_volume_close(v);
+
+	/* Put the new process into the ready list */
+
+	process_launch(p);
+
+	return 0;
 }
 
 int sys_wait()
@@ -72,8 +119,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_EXIT:	return sys_exit(a);
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
-	case SYSCALL_FORK:	return sys_fork();
-	case SYSCALL_EXEC:	return sys_exec((const char *)a);
+	case SYSCALL_RUN:	return sys_run((const char *)a);
 	case SYSCALL_WAIT:	return sys_wait();
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);

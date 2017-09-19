@@ -101,6 +101,25 @@ dd if=basekernel.img of=/dev/floppy
 
 Of course, nobody uses floppies any more.  To cold boot a physical machine, then you want to write out an optical disk containing the boot image.  That leads to your first little starter project:
 
+### Compatibility
+
+Basekernel compilation on linux has been tested with the following compilers:  
+
+| Compiler | Status                   |
+|----------|--------------------------|
+| GCC 4.7  | :heavy_check_mark: Works |
+| GCC 5.4  | :heavy_check_mark: Works |
+| GCC 6.3  | :x: Fails                |
+| GCC 7.1  | :x: Fails                |
+
+Basekernel has been tested with the following VM hypervisors:
+
+| VM Package    | Status                      | Notes                                          |
+|---------------|-----------------------------|------------------------------------------------|
+| qemu          | :heavy_check_mark: Works    | No known issues                                |
+| VirtualBox    | :warning: Works with issues | Mouse does not work, struct copies fail        |
+| VMware Player | :x: Fails                   | No suitable video mode found at boot           |
+
 ### Starter Project
 
 Read up on the `mkisofs` tool, and figure out how to create a CD-ROM

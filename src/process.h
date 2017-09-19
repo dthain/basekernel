@@ -32,6 +32,8 @@ struct process {
 void process_init();
 
 struct process * process_create( unsigned code_size, unsigned stack_size );
+void process_launch( struct process *p );
+
 void process_yield();
 void process_preempt();
 void process_exit( int code );

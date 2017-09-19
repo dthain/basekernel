@@ -41,14 +41,12 @@ static void unknown_exception( int i, int code )
 	if(i==14) {
 		asm("mov %%cr2, %0" : "=r" (vaddr) );
 		if(pagetable_getmap(current->pagetable,vaddr,&paddr)) {
-			console_printf("\finterrupt: illegal page access at vaddr %x\n",vaddr);
+			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
 		} else {
-			printf("interrupt: page fault at %x\n",vaddr);
-			printf("please write a fault handler in interrupt.c!\n");
-			printf("kernel halted.\n");
-			halt();
+			pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+			return;
 		}
 	} else {
 		console_printf("\finterrupt: exception %d: %s (code %x)\n",i,exception_names[i],code);
