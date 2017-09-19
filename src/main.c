@@ -54,7 +54,7 @@ int kernel_main()
 	then creating a child process.
 	*/
 
-	shell_launch();
+	kshell_launch();
 
 	console_printf("\nBASEKERNEL READY:\n");
 
