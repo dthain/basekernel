@@ -7,7 +7,7 @@
 #include "cdromfs.h"
 #include "kmalloc.h"
 #include "process.h"
-#include "kmalloc_test.h"
+#include "kmalloc.h"
 
 #define BACKSPACE_VALUE 8
 #define NEWLINE_VALUE 13
