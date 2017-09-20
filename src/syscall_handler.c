@@ -28,6 +28,8 @@ int sys_yield()
 	return 0;
 }
 
+extern struct cdrom_dirent *root_directory;
+
 /*
 sys_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
@@ -38,12 +40,10 @@ int sys_run( const char *path )
 {
 	/* Open and find the named path, if it exists. */
 
-	struct cdrom_volume *v= cdrom_volume_open(1);
-	if(!v) return ENOENT;
+	if(!root_directory) return ENOENT;
 
-	struct cdrom_dirent *d = cdrom_dirent_namei(cdrom_volume_root(v),path);
+	struct cdrom_dirent *d = cdrom_dirent_namei(root_directory,path);
 	if(!d) {
-		cdrom_volume_close(v);
 		return ENOENT;
 	}
 
@@ -74,7 +74,6 @@ int sys_run( const char *path )
 	/* Close everything up */
 	
 	cdrom_dirent_close(d);
-	cdrom_volume_close(v);
 
 	/* Put the new process into the ready list */
 

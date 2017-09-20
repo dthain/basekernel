@@ -8,6 +8,8 @@
 #include "kmalloc.h"
 #include "process.h"
 
+struct cdrom_dirent *root_directory = 0;
+
 static int print_directory( char *d, int length )
 {
 	while(length>0) {
@@ -19,27 +21,41 @@ static int print_directory( char *d, int length )
 	return 0;
 }
 
-static int list_directory( const char *path )
+static int mount_cd( int unit )
 {
-	struct cdrom_volume *v = cdrom_volume_open(1);
+	struct cdrom_volume *v = cdrom_volume_open(unit);
 	if(v) {
 		struct cdrom_dirent *d = cdrom_volume_root(v);
 		if(d) {
-			int buffer_length = 1024;
-			char *buffer = kmalloc(buffer_length);
-			if(buffer) {
-				int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
-				print_directory(buffer,length);
-				kfree(buffer);
-			}
-			cdrom_dirent_close(d);
+            root_directory = d;
+            return 0;
 		} else {
 			printf("couldn't access root dir!\n");
+            return 1;
 		}
 		cdrom_volume_close(v);
 	} else {
 		printf("couldn't mount filesystem!\n");
+        return 2;
 	}
+
+	return 3;
+}
+
+static int list_directory( const char *path )
+{
+    struct cdrom_dirent *d = root_directory;
+    if(d) {
+        int buffer_length = 1024;
+        char *buffer = kmalloc(buffer_length);
+        if(buffer) {
+            int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
+            print_directory(buffer,length);
+            kfree(buffer);
+        }
+    } else {
+        printf("couldn't access root dir!\n");
+    }
 
 	return 0;
 }
@@ -62,6 +78,17 @@ static int process_command(char *line)
 		}
 		else
 			list_directory("run: missing argument");
+	}
+	else if (pch && !strcmp(pch, "mount"))
+	{
+		pch = strtok(0, " ");
+        int unit;
+		if (pch && str2int(pch, &unit)) {
+		    mount_cd(unit);	
+        }
+		else
+			printf("mount: expected unit number but got %s\n", pch);
+
 	}
 	else if (pch && !strcmp(pch, "list"))
 	{
