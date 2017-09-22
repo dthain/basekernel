@@ -7,8 +7,7 @@
 #include "cdromfs.h"
 #include "kmalloc.h"
 #include "process.h"
-
-struct cdrom_dirent *root_directory = 0;
+#include "main.h"
 
 static int print_directory( char *d, int length )
 {

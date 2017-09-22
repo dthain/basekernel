@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "cdromfs.h"
 #include "memorylayout.h"
+#include "main.h"
 
 int sys_debug( const char *str )
 {
@@ -28,7 +29,6 @@ int sys_yield()
 	return 0;
 }
 
-extern struct cdrom_dirent *root_directory;
 
 /*
 sys_run creates a new child process running the executable named by "path".
