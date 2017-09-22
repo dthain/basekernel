@@ -45,3 +45,7 @@ int lseek( int fd, int offset, int whence ) {
 int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
+
+int getpid() {
+	return syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 );
+}

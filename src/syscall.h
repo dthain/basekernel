@@ -19,7 +19,8 @@ typedef enum {
 	SYSCALL_READ,
 	SYSCALL_WRITE,
 	SYSCALL_LSEEK,
-	SYSCALL_CLOSE
+	SYSCALL_CLOSE,
+	SYSCALL_GETPID
 } syscall_t;
 
 typedef enum {

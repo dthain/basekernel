@@ -16,6 +16,7 @@ See the file LICENSE for details.
 
 struct process *current=0;
 struct list ready_list = {0,0};
+uint32_t current_pid = 1;
 
 void process_init()
 {
@@ -65,6 +66,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
+	p->pid = current_pid++;
 
 	process_stack_init(p);
 
@@ -184,5 +186,9 @@ void process_dump( struct process *p)
 	console_printf("ebp: %x\n",s->regs1.ebp);
 	console_printf("esp: %x\n",s->esp);
 	console_printf("eip: %x\n",s->eip);
+}
+
+uint32_t process_getpid() {
+    return current->pid;
 }
 
