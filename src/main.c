@@ -51,14 +51,8 @@ int kernel_main()
 	process_init();
 	ata_init();
 
-	/*
-	Test out some basic operations by listing the root filesystem,
-	then creating a child process.
-	*/
-
+	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
-
-	console_printf("\nBASEKERNEL READY:\n");
 
 	while(1) console_putchar(keyboard_read());
 

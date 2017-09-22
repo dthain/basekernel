@@ -8,6 +8,7 @@
 #include "kmalloc.h"
 #include "process.h"
 #include "main.h"
+#include "ascii.h"
 
 static int print_directory( char *d, int length )
 {
@@ -98,6 +99,16 @@ static int process_command(char *line)
 			list_directory("/");
 
 	}
+	else if (pch && !strcmp(pch, "test"))
+	{
+		pch = strtok(0, " ");
+		if (pch && !strcmp(pch, "kmalloc"))
+			kmalloc_test();
+		else if (pch)
+			printf("test: test '%s' not found\n", pch);
+		else
+			printf("test: missing argument\n");
+	}
 	else if (pch && !strcmp(pch, "time"))
 	{
 		pch = strtok(0, " ");
@@ -138,10 +149,10 @@ int kshell_launch()
 	while(1)
 	{
 		char c = keyboard_read();
-		if (pos == line && c == 8)
+		if (pos == line && c == ASCII_BS)
 			continue;
 		console_putchar(c);
-		if (c == 13)
+		if (c == ASCII_CR)
 		{
 			int res = process_command(line);
 			if (res < 0)
@@ -149,7 +160,7 @@ int kshell_launch()
 			pos = line;
 			printf("$ ");
 		}
-		else if (c == 8)
+		else if (c == ASCII_BS)
 		{
 			pos--;
 		}

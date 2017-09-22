@@ -109,8 +109,8 @@ Basekernel compilation on linux has been tested with the following compilers:
 |----------|--------------------------|
 | GCC 4.7  | :heavy_check_mark: Works |
 | GCC 5.4  | :heavy_check_mark: Works |
-| GCC 6.3  | :x: Fails                |
-| GCC 7.1  | :x: Fails                |
+| GCC 6.3  | :x: [Fails](https://github.com/dthain/basekernel/issues/9)                |
+| GCC 7.1  | :x: [Fails](https://github.com/dthain/basekernel/issues/9)                |
 
 Basekernel has been tested with the following VM hypervisors:
 
@@ -118,7 +118,7 @@ Basekernel has been tested with the following VM hypervisors:
 |---------------|-----------------------------|------------------------------------------------|
 | qemu          | :heavy_check_mark: Works    | No known issues                                |
 | VirtualBox    | :warning: Works with issues | Mouse does not work, struct copies fail        |
-| VMware Player | :x: Fails                   | No suitable video mode found at boot           |
+| VMware Player | :x: [Fails](https://github.com/dthain/basekernel/issues/38)                   | No suitable video mode found at boot           |
 
 ### Starter Project
 
