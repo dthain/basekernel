@@ -105,6 +105,19 @@ static int process_command(char *line)
 		}
 
 	}
+	else if (pch && !strcmp(pch, "help"))
+	{
+		printf(
+			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			"echo",
+			"run",
+			"list",
+			"test",
+			"time",
+			"help",
+			"exit"
+		);
+	}
 	else if (pch && !strcmp(pch, "exit"))
 	{
 		return -1;
