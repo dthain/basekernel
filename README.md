@@ -270,9 +270,9 @@ timer, and real-time clock.  These can be accessed in any processor mode.
 While your machine may not have this *specific* chipset, the basic
 functions are widely compatible.
 
-[1] http://wiki.osdev.org
-[2] http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
-[3] doc/ata-3-std.pdf
-[4] doc/phoenix-bios.pdf
-[5] doc/vesa-bios.pdf
-[6] doc/super-io.pdf
+[1]: http://wiki.osdev.org
+[2]: http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+[3]: doc/ata-3-std.pdf
+[4]: doc/phoenix-bios.pdf
+[5]: doc/vesa-bios.pdf
+[6]: doc/super-io.pdf
