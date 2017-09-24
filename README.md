@@ -109,8 +109,8 @@ Basekernel compilation on linux has been tested with the following compilers:
 |----------|--------------------------|
 | GCC 4.7  | :heavy_check_mark: Works |
 | GCC 5.4  | :heavy_check_mark: Works |
-| GCC 6.3  | :x: [Fails](https://github.com/dthain/basekernel/issues/9)                |
-| GCC 7.1  | :x: [Fails](https://github.com/dthain/basekernel/issues/9)                |
+| GCC 6.3  | :heavy_check_mark: Works |
+| GCC 7.1  | :heavy_check_mark: Works |
 
 Basekernel has been tested with the following VM hypervisors:
 
