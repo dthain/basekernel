@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #ifndef SYSCALLS_H
 #define SYSCALLS_H
 
+#include "kerneltypes.h"
+
 void debug( const char *str );
 void exit( int status );
 int yield();
@@ -17,5 +19,6 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+uint32_t gettimeofday();
 
 #endif
