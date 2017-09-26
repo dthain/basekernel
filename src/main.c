@@ -23,6 +23,8 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 
+struct cdrom_dirent *root_directory = 0;
+
 /*
 This is the C initialization point of the kernel.
 By the time we reach this point, we are in protected mode,
