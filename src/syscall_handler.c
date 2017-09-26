@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "clock.h"
 
 int sys_debug( const char *str )
 {
@@ -112,6 +113,12 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
+int sys_sleep(unsigned int ms)
+{
+	clock_wait(ms);
+	return 0;
+}
+
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
 	switch(n) {
@@ -125,6 +132,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_SLEEP:	return sys_sleep(a);
 	default:		return -1;
 	}
 }
