@@ -108,11 +108,12 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "help"))
 	{
 		printf(
-			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
-			"echo",
-			"run",
+			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			"Commands:",
+			"echo <text>",
+			"run <path>",
+			"test <function>",
 			"list",
-			"test",
 			"time",
 			"help",
 			"exit"
