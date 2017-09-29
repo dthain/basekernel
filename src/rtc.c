@@ -146,8 +146,6 @@ void rtc_init()
 {
 	uint8_t status;
 
-	rtc_fetch_time();
-
 	status = rtc_read_port(RTC_REGISTER_B);
 	status |= RTC_B_UIE;
 	rtc_write_port(status,RTC_REGISTER_B);
@@ -160,7 +158,6 @@ void rtc_init()
 
 void rtc_read( struct rtc_time *tout )
 {
-	rtc_fetch_time();
 	memcpy(tout,&cached_time,sizeof(cached_time));
 }
 
