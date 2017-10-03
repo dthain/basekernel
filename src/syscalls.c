@@ -47,5 +47,11 @@ int close( int fd ) {
 }
 
 int getpid() {
-	return syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 );
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
+}
+
+int getppid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
 }

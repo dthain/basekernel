@@ -192,3 +192,6 @@ uint32_t process_getpid() {
     return current->pid;
 }
 
+uint32_t process_getppid() {
+    return current->ppid;
+}
