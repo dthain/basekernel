@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "cdromfs.h"
 #include "memorylayout.h"
+#include "main.h"
 
 int sys_debug( const char *str )
 {
@@ -113,6 +114,44 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
+int sys_w_color( int wd, int r, int g, int b ) {
+    struct graphics_color c;
+    c.r = r;
+    c.g = g;
+    c.b = b;
+    c.a = 0;
+    graphics_fgcolor( &graphics_root, c );
+    return 0;
+}
+
+int sys_w_rect( int wd, int x, int y, int w, int h ) {
+    graphics_rect( &graphics_root, x, y, w, h );
+    return 0;
+}
+
+int sys_w_clear( int wd, int x, int y, int w, int h ) {
+    graphics_clear( &graphics_root, x, y, w, h );
+    return 0;
+}
+
+int sys_w_line( int wd, int x, int y, int w, int h ) {
+    graphics_line( &graphics_root, x, y, w, h );
+    return 0;
+}
+
+int sys_w_char( int wd, int x, int y, char c ) {
+    graphics_char( &graphics_root, x, y, c );
+    return 0;
+}
+
+int sys_w_string( int wd, int x, int y, char *s ) {
+    int i;
+    for (i = 0; s[i]; i++) {
+        graphics_char( &graphics_root, x+i*8, y, s[i] );
+    }
+    return 0;
+}
+
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
 	switch(n) {
@@ -126,6 +165,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_W_COLOR:	return sys_w_color(a, b, c, d);
+	case SYSCALL_W_RECT:	return sys_w_rect(a, b, c, d, e);
+	case SYSCALL_W_LINE:	return sys_w_line(a, b, c, d, e);
+	case SYSCALL_W_CLEAR:	return sys_w_clear(a, b, c, d, e);
+	case SYSCALL_W_CHAR:	return sys_w_char(a, b, c, (char)d);
+	case SYSCALL_W_STRING:	return sys_w_string(a, b, c, (char*)d);
 	default:		return -1;
 	}
 }

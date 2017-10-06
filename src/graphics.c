@@ -21,7 +21,7 @@ See the file LICENSE for details.
 static struct graphics_color color_black = {0,0,0,0};
 static struct graphics_color color_white = {255,255,255,0};
 
-static struct graphics graphics_root;
+struct graphics graphics_root;
 
 struct graphics * graphics_create_root()
 {

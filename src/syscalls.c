@@ -45,3 +45,27 @@ int lseek( int fd, int offset, int whence ) {
 int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
+
+int w_color( int wd, int r, int g, int b ) {
+	return syscall( SYSCALL_W_COLOR, wd, r, g, b, 0 );
+}
+
+int w_rect( int wd, int x, int y, int w, int h ) {
+	return syscall( SYSCALL_W_RECT, wd, x, y, w, h );
+}
+
+int w_clear( int wd, int x, int y, int w, int h ) {
+	return syscall( SYSCALL_W_CLEAR, wd, x, y, w, h );
+}
+
+int w_line( int wd, int x, int y, int w, int h ) {
+	return syscall( SYSCALL_W_LINE, wd, x, y, w, h );
+}
+
+int w_char( int wd, int x, int y, char c ) {
+	return syscall( SYSCALL_W_CHAR, wd, x, y, c, 0);
+}
+
+int w_string( int wd, int x, int y, char *s ) {
+	return syscall( SYSCALL_W_STRING, wd, x, y, (uint32_t)s, 0);
+}
