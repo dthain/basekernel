@@ -23,5 +23,6 @@ int w_clear( int wd, int x, int y, int w, int h );
 int w_line( int wd, int x, int y, int w, int h );
 int w_char( int wd, int x, int y, char c );
 int w_string( int wd, int x, int y, char *s );
+int w_create( int x, int y, int w, int h );
 
 #endif

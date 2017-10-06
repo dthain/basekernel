@@ -113,41 +113,76 @@ int sys_close( int fd )
 }
 
 int sys_w_color( int wd, int r, int g, int b ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
     struct graphics_color c;
     c.r = r;
     c.g = g;
     c.b = b;
     c.a = 0;
-    graphics_fgcolor( &graphics_root, c );
+    graphics_fgcolor( current->windows[wd], c );
     return 0;
 }
 
 int sys_w_rect( int wd, int x, int y, int w, int h ) {
-    graphics_rect( &graphics_root, x, y, w, h );
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_rect( current->windows[wd], x, y, w, h );
     return 0;
 }
 
 int sys_w_clear( int wd, int x, int y, int w, int h ) {
-    graphics_clear( &graphics_root, x, y, w, h );
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_clear( current->windows[wd], x, y, w, h );
     return 0;
 }
 
 int sys_w_line( int wd, int x, int y, int w, int h ) {
-    graphics_line( &graphics_root, x, y, w, h );
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_line( current->windows[wd], x, y, w, h );
     return 0;
 }
 
 int sys_w_char( int wd, int x, int y, char c ) {
-    graphics_char( &graphics_root, x, y, c );
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_char( current->windows[wd], x, y, c );
     return 0;
 }
 
 int sys_w_string( int wd, int x, int y, char *s ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
     int i;
     for (i = 0; s[i]; i++) {
-        graphics_char( &graphics_root, x+i*8, y, s[i] );
+        graphics_char( current->windows[wd], x+i*8, y, s[i] );
     }
     return 0;
+}
+
+int sys_w_create( int x, int y, int w, int h ) {
+    if (current->window_count >= PROCESS_MAX_WINDOWS) {
+        return ENOENT;
+    }
+    current->windows[current->window_count] = graphics_create(&graphics_root);
+    if (!current->windows[current->window_count]) {
+        return ENOENT;
+    }
+
+    current->windows[current->window_count]->clip.x = x;
+    current->windows[current->window_count]->clip.y = y;
+    current->windows[current->window_count]->clip.w = w;
+    current->windows[current->window_count]->clip.h = h;
+
+    return current->window_count++;
 }
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
@@ -169,6 +204,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_W_CLEAR:	return sys_w_clear(a, b, c, d, e);
 	case SYSCALL_W_CHAR:	return sys_w_char(a, b, c, (char)d);
 	case SYSCALL_W_STRING:	return sys_w_string(a, b, c, (char*)d);
+	case SYSCALL_W_CREATE:	return sys_w_create(a, b, c, d);
 	default:		return -1;
 	}
 }

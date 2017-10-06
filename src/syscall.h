@@ -25,7 +25,8 @@ typedef enum {
 	SYSCALL_W_RECT,
 	SYSCALL_W_CLEAR,
 	SYSCALL_W_CHAR,
-	SYSCALL_W_STRING
+	SYSCALL_W_STRING,
+	SYSCALL_W_CREATE
 } syscall_t;
 
 typedef enum {

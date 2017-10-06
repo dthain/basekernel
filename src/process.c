@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "x86.h"
 #include "interrupt.h"
 #include "memorylayout.h"
+#include "kmalloc.h"
 #include "kernelcore.h"
 
 struct process *current=0;
@@ -65,6 +66,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
+    p->window_count = 0;
 
 	process_stack_init(p);
 
@@ -142,6 +144,11 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
+    int i;
+    for (i = 0; i < current->window_count; i++) {
+        kfree(current->windows[i]);
+    }
+    current->window_count = 0;
 	process_switch(PROCESS_STATE_GRAVE);
 }
 

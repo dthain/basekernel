@@ -63,9 +63,13 @@ int w_line( int wd, int x, int y, int w, int h ) {
 }
 
 int w_char( int wd, int x, int y, char c ) {
-	return syscall( SYSCALL_W_CHAR, wd, x, y, c, 0);
+	return syscall( SYSCALL_W_CHAR, wd, x, y, c, 0 );
 }
 
 int w_string( int wd, int x, int y, char *s ) {
-	return syscall( SYSCALL_W_STRING, wd, x, y, (uint32_t)s, 0);
+	return syscall( SYSCALL_W_STRING, wd, x, y, (uint32_t)s, 0 );
+}
+
+int w_create( int x, int y, int w, int h ) {
+	return syscall( SYSCALL_W_CREATE, x, y, w, h, 0 );
 }

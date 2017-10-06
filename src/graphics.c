@@ -28,7 +28,7 @@ struct graphics * graphics_create_root()
 	struct graphics *g = &graphics_root;
 	g->bitmap = bitmap_create_root();
 	g->fgcolor = color_white;
-	g->fgcolor = color_black;
+	g->bgcolor = color_black;
 	g->clip.x = 0;
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
@@ -41,7 +41,15 @@ struct graphics * graphics_create( struct graphics *parent )
 	struct graphics *g = kmalloc(sizeof(*g));
 	if(!g) return 0;
 
-	*g = *parent;
+	//*g = *parent;
+    //Temporary workaround for VirtualBox struct copy crash
+	g->bitmap = parent->bitmap;
+	g->fgcolor = color_white;
+	g->bgcolor = color_black;
+	g->clip.x = parent->clip.x;
+	g->clip.y = parent->clip.y;
+	g->clip.w = parent->clip.w;
+	g->clip.h = parent->clip.h;
 	return g;
 }
 
