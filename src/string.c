@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "console.h"
 #include "kerneltypes.h"
+#include "ascii.h"
 
 #include "stdarg.h"
 
@@ -97,6 +98,19 @@ char * strtok ( char *s, const char *delim)
 	}
 
 	return word;
+}
+
+int str2int( const char *s, int *d ) {
+    int val = 0;
+    for (;*s;++s) {
+        val *= 10;
+        if (*s > ASCII_9 || *s < ASCII_0) {
+            return 0;
+        }
+        val += (*s - '0');
+    }
+    *d = val;
+    return 1;
 }
 
 void	memset( void *vd, char value, unsigned length )
