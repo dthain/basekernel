@@ -23,6 +23,94 @@ or solve build problems, we would be happy to accept your contributions.
 
 ## How to Run Basekernel
 
+### Installing a cross-compiler
+
+To avoid potential system-dependent behavior changes, you will probably
+want to use a cross-compiler. A cross-compiler is a compiler intended to
+run on one system, but compile code for a different one. In this case,
+your computer is the former system ("host"), and basekernel is the
+latter system ("target").
+
+The Makefile as-is coerces the compiler to build for an x86 target
+anyway, but it is preferable to use a version of GCC actually 
+pre-configured for x86 at build time.
+
+We hope to eventually move from this coersion and just expect the user
+to have a cross-compiler, so any feedback about your experience with
+these instructions is greatly appreciated.
+
+#### Building from sources
+
+To build from sources (installs in $HOME directory):
+
+```
+# get and extract sources
+curl -O https://ftp.gnu.org/gnu/binutils/binutils-2.29.1.tar.gz
+curl -O https://ftp.gnu.org/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.gz
+tar -zxf gcc-7.2.0.tar.gz
+tar -zxf binutils-2.29.1.tar.gz
+
+# build and install binutils
+cd binutils-2.29.1
+./configure --prefix=$HOME/cross --target=i386-elf \
+	--disable-nls --disable-werror
+make && make install
+cd ..
+
+#build and install gcc
+mkdir gcc-7.2.0-elf-objs
+cd gcc-7.2.0-elf-objs
+../gcc-7.2.0/configure --prefix=$HOME/cross --target=i386-elf \
+	--disable-nls --enable-languages=c --without-headers
+make all-gcc && \
+make all-target-libgcc && \
+make install-gcc && \
+make install-target-libgcc
+```
+
+This will take a long time to run! Try adding -j\<n\> (n depending on
+how many cores you have, a good heuristic is numcores + 1) to all your
+make commands. This will build the sources in parallel.
+
+#### Using package managers
+
+Treat installing precompiled builds as a 'quick and dirty' method. This,
+while faster, will likely diverge from our configuration or chosen
+versions. It is great, however, for getting Basekernel up and running
+quickly, or when you run into nasty issues building (and again, please
+report that to us if you do :)).
+
+Anyway, I've warned you enough.
+
+On OS X, you might have an easier time using
+[MacPorts](https://guide.macports.org/#installing.macports)
+
+```
+port install i386-elf-gcc
+port install i386-elf-binutils
+```
+
+We welcome any other additions here, and whether or not you were
+successful using those versions.
+
+#### Using your cross-compiler
+
+You can include these new executables in your $PATH to be able to
+run them as normal:
+
+```
+export PATH=$HOME/cross/bin:$PATH"
+```
+
+Then, you'll want to set some environment variables so that `make` uses
+them (*be careful compiling other programs in the same session*, you'll
+want to unset these variables or start a new session):
+
+```
+export CC=i386-elf-gcc
+export LD=i386-elf-ld
+```
+
 ### Compilation: Linux x86 machine
 
 From a standard Linux X86 machine with the GCC compiler:
@@ -55,20 +143,10 @@ make
 ```
 
 On recent versions of OS X, `gcc` links to LLVM GCC or clang. If you try running
-`make` with the defaults and compilation or linking doesn't work, it's easiest
-to just install the complete gcc and binutils for i386 ELF:
-
-```
-port install i386-elf-gcc
-port install i386-elf-binutils
-```
-
-Then update your environment like before:
-
-```
-export CC=i386-elf-gcc
-export LD=i386-elf-ld
-```
+`make` with the defaults and compilation or linking doesn't work, then you will
+have to [install a cross-compiler](#installing-a-cross-compiler) as mentioned above
+(or well...the problem lies in not having GCC, but if you are going to go
+through the trouble of installing it then you should choose to cross-compile).
 
 Run `make` again and, if the tools were referenced correctly, it should finish
 successfully and create the image.
