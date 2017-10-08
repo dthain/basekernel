@@ -11,9 +11,11 @@ See the file LICENSE for details.
 
 #define CDROM_BLOCK_SIZE 2048
 
-struct cdrom_volume * cdrom_volume_open( int unit );
-void                  cdrom_volume_close( struct cdrom_volume *v );
-struct cdrom_dirent * cdrom_volume_root( struct cdrom_volume *v );
+struct cdrom_volume;
+
+struct volume * cdrom_volume_open( uint32_t unit );
+void                  cdrom_volume_close( struct volume *v );
+struct cdrom_dirent * cdrom_volume_root( struct volume *v );
 int                   cdrom_volume_block_size( struct cdrom_volume *v );
 
 struct cdrom_dirent * cdrom_dirent_namei( struct cdrom_dirent *d, const char *path );

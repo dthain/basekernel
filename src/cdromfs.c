@@ -223,19 +223,20 @@ void cdrom_dirent_close( struct cdrom_dirent *d )
 	kfree(d);
 }
 
-struct cdrom_dirent * cdrom_volume_root( struct cdrom_volume *v )
+struct cdrom_dirent * cdrom_volume_root( struct volume *v )
 {
-	return cdrom_dirent_create(v,v->root_sector,v->root_length,1);
+	struct cdrom_volume *cdv = v->private_data;
+	return cdrom_dirent_create(cdv,cdv->root_sector,cdv->root_length,1);
 }
 
-struct cdrom_volume * cdrom_volume_open( int unit )
+struct volume * cdrom_volume_open( uint32_t unit )
 {
-	struct cdrom_volume *v = kmalloc(sizeof(*v));
-	if(!v) return 0;
+	struct cdrom_volume *cdv = kmalloc(sizeof(*cdv));
+	if(!cdv) return 0;
 
 	struct iso_9660_volume_descriptor *d = memory_alloc_page(0);
 	if(!d) {
-		kfree(v);
+		kfree(cdv);
 		return 0;
 	}
 
@@ -251,16 +252,16 @@ struct cdrom_volume * cdrom_volume_open( int unit )
 		if(strncmp(d->magic,"CD001",5)) continue;
 
 		if(d->type==ISO_9660_VOLUME_TYPE_PRIMARY) {
-			v->root_sector = d->root.first_sector_little;
-			v->root_length = d->root.length_little;
-			v->total_sectors = d->nsectors_little;
-			v->unit = unit;
+			cdv->root_sector = d->root.first_sector_little;
+			cdv->root_length = d->root.length_little;
+			cdv->total_sectors = d->nsectors_little;
+			cdv->unit = unit;
 
-			printf("cdromfs: mounted filesystem on unit %d\n",v->unit);
+			printf("cdromfs: mounted filesystem on unit %d\n",cdv->unit);
 
 			memory_free_page(d);
 
-			return v;
+			return cdrom_volume_as_volume(cdv);
 
 		} else if(d->type==ISO_9660_VOLUME_TYPE_TERMINATOR) {
 			break;
@@ -273,9 +274,10 @@ struct cdrom_volume * cdrom_volume_open( int unit )
 	return 0;		
 }
 
-void cdrom_volume_close( struct cdrom_volume *v )
+void cdrom_volume_close( struct volume *v )
 {
-	console_printf("cdromfs: umounted filesystem from unit %d\n",v->unit);
+	struct cdrom_volume *cdv = v->private_data;
+	console_printf("cdromfs: umounted filesystem from unit %d\n",cdv->unit);
 	kfree(v);
 }
 

@@ -9,6 +9,7 @@
 #include "process.h"
 #include "main.h"
 #include "ascii.h"
+#include "fs.h"
 
 static int print_directory( char *d, int length )
 {
@@ -23,7 +24,7 @@ static int print_directory( char *d, int length )
 
 static int mount_cd( int unit )
 {
-	struct cdrom_volume *v = cdrom_volume_open(unit);
+	struct volume *v = cdrom_volume_open(unit);
 	if(v) {
 		struct cdrom_dirent *d = cdrom_volume_root(v);
 		if(d) {
