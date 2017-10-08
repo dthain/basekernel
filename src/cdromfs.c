@@ -37,6 +37,21 @@ int cdrom_init() {
 	return 0;
 }
 
+static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv) {
+	struct volume *v = kmalloc(sizeof(struct volume));
+	memset(v, 0, sizeof(struct volume));
+	v->private_data = cdv;
+	return v;
+}
+
+static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
+	struct dirent *d = kmalloc(sizeof(struct dirent));
+	memset(d, 0, sizeof(struct volume));
+	d->private_data = cdd;
+	d->sz = cdd->length;
+	return d;
+}
+
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {
 	struct cdrom_dirent *d = kmalloc(sizeof(*d));
