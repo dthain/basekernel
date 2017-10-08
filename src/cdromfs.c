@@ -28,6 +28,14 @@ struct cdrom_dirent {
 	int isdir;
 };
 
+struct cdrom_file {
+	struct cdrom_dirent *dirent;
+	char *buffer;
+	uint32_t block;
+	uint32_t offset;
+	uint32_t buffer_size;
+};
+
 int cdrom_init() {
 	char cdrom_name[] = "cdrom";
 	char *cdrom_name_cpy = kmalloc(6);
@@ -52,6 +60,13 @@ static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
 	return d;
 }
 
+static struct file *cdrom_file_as_file(struct cdrom_file *cdf) {
+	struct file *f = kmalloc(sizeof(struct file));
+	memset(f, 0, sizeof(struct file));
+	f->private_data = cdf;
+	return f;
+}
+
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {
 	struct cdrom_dirent *d = kmalloc(sizeof(*d));
@@ -62,6 +77,21 @@ static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, i
 	d->length = length;
 	d->isdir = isdir;
 	return d;
+}
+
+static struct cdrom_file *cdrom_file_create( struct cdrom_dirent *d )
+{
+	struct cdrom_file *f = kmalloc(sizeof(struct cdrom_file));
+	memset(f, 0, sizeof(struct cdrom_file));
+	f->buffer = kmalloc(ATAPI_BLOCKSIZE);
+	f->dirent = d;
+	return f;
+}
+
+static void cdrom_file_dealloc( struct cdrom_file *f )
+{
+	kfree(f->buffer);
+	kfree(f);
 }
 
 static char * cdrom_dirent_load( struct dirent *d )
