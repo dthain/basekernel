@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "iso9660.h"
 #include "ata.h"
 #include "memory.h"
+#include "fs.h"
 #include "cdromfs.h"
 
 struct cdrom_volume {
@@ -26,6 +27,15 @@ struct cdrom_dirent {
 	int length;
 	int isdir;
 };
+
+int cdrom_init() {
+	char cdrom_name[] = "cdrom";
+	char *cdrom_name_cpy = kmalloc(6);
+	struct fs f;
+	strcpy(cdrom_name_cpy, cdrom_name);
+	fs_register(&f);
+	return 0;
+}
 
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {

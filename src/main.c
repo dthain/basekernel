@@ -22,6 +22,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "memorylayout.h"
 #include "kshell.h"
+#include "cdromfs.h"
 
 struct cdrom_dirent *root_directory = 0;
 
@@ -50,6 +51,7 @@ int kernel_main()
 	keyboard_init();
 	process_init();
 	ata_init();
+	cdrom_init();
 
 	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
