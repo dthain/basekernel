@@ -64,13 +64,14 @@ static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, i
 	return d;
 }
 
-static char * cdrom_dirent_load( struct cdrom_dirent *d )
+static char * cdrom_dirent_load( struct dirent *d )
 {
-	int nsectors = d->length/ATAPI_BLOCKSIZE + (d->length&ATAPI_BLOCKSIZE)?1:0;
+	struct cdrom_dirent *cdd = d->private_data;
+	int nsectors = cdd->length/ATAPI_BLOCKSIZE + (cdd->length&ATAPI_BLOCKSIZE)?1:0;
 	char *data = kmalloc(nsectors*ATAPI_BLOCKSIZE);
 	if(!data) return 0;
 
-	atapi_read(d->volume->unit,data,nsectors,d->sector);
+	atapi_read(cdd->volume->unit,data,nsectors,cdd->sector);
 	// XXX check result
 
 	return data;
@@ -94,9 +95,10 @@ static void fix_filename( char *name, int length )
 Read an entire cdrom file into the target address.
 */
 
-int  cdrom_dirent_read_block( struct cdrom_dirent *d, char *buffer, int blocknum )
+int  cdrom_dirent_read_block( struct dirent *d, char *buffer, int blocknum )
 {
-	return atapi_read( d->volume->unit, buffer, 1, d->sector + blocknum );
+	struct cdrom_dirent *cdd = d->private_data;
+	return atapi_read( cdd->volume->unit, buffer, 1, cdd->sector + blocknum );
 }
 
 #if 0
@@ -126,7 +128,7 @@ int cdrom_dirent_readfile( struct cdrom_dirent *d, char *data, int length )
 }
 #endif
 
-struct cdrom_dirent * cdrom_dirent_namei( struct cdrom_dirent *d, const char *path )
+struct dirent * cdrom_dirent_namei( struct dirent *d, const char *path )
 {
 	char *lpath = kmalloc(strlen(path)+1);
 	strcpy(lpath,path);
@@ -142,12 +144,13 @@ struct cdrom_dirent * cdrom_dirent_namei( struct cdrom_dirent *d, const char *pa
 	return d;
 }
 
-struct cdrom_dirent * cdrom_dirent_lookup( struct cdrom_dirent *dir, const char *name )
+struct dirent * cdrom_dirent_lookup( struct dirent *dir, const char *name )
 {
+	struct cdrom_dirent *cddir = dir->private_data;
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;
 
-	int data_length = dir->length;
+	int data_length = cddir->length;
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
 
@@ -156,13 +159,13 @@ struct cdrom_dirent * cdrom_dirent_lookup( struct cdrom_dirent *dir, const char 
 
 		if(!strcmp(name,d->ident)) {
 			struct cdrom_dirent *r = cdrom_dirent_create(
-				dir->volume,
+				cddir->volume,
 				d->first_sector_little,
 				d->length_little,
 				d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY );
 
 			kfree(data);
-			return r;
+			return cdrom_dirent_as_dirent(r);
 		}
 
 		d = (struct iso_9660_directory_entry *)((char*)d+d->descriptor_length);
@@ -174,12 +177,13 @@ struct cdrom_dirent * cdrom_dirent_lookup( struct cdrom_dirent *dir, const char 
 	return 0;
 }
 
-int cdrom_dirent_read_dir( struct cdrom_dirent *dir, char *buffer, int buffer_length )
+int cdrom_dirent_read_dir( struct dirent *dir, char *buffer, int buffer_length )
 {
+	struct cdrom_dirent *cddir = dir->private_data;
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;
 
-	int data_length = dir->length;
+	int data_length = cddir->length;
 	int total = 0;
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
@@ -213,20 +217,18 @@ int cdrom_dirent_read_dir( struct cdrom_dirent *dir, char *buffer, int buffer_le
 	return total;
 }
 
-int  cdrom_dirent_length( struct cdrom_dirent *d )
+void cdrom_dirent_close( struct dirent *d )
 {
-	return d->length;
-}
-
-void cdrom_dirent_close( struct cdrom_dirent *d )
-{
+	struct cdrom_dirent *cdd = d->private_data;
+	kfree(cdd);
 	kfree(d);
 }
 
-struct cdrom_dirent * cdrom_volume_root( struct volume *v )
+struct dirent * cdrom_volume_root( struct volume *v )
 {
 	struct cdrom_volume *cdv = v->private_data;
-	return cdrom_dirent_create(cdv,cdv->root_sector,cdv->root_length,1);
+	struct cdrom_dirent *cdd = cdrom_dirent_create(cdv,cdv->root_sector,cdv->root_length,1);
+	return cdrom_dirent_as_dirent(cdd);
 }
 
 struct volume * cdrom_volume_open( uint32_t unit )

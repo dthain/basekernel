@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "fs.h"
 
 int sys_debug( const char *str )
 {
@@ -42,12 +43,12 @@ int sys_run( const char *path )
 
 	if(!root_directory) return ENOENT;
 
-	struct cdrom_dirent *d = cdrom_dirent_namei(root_directory,path);
+	struct dirent *d = cdrom_dirent_namei(root_directory,path);
 	if(!d) {
 		return ENOENT;
 	}
 
-	int length = cdrom_dirent_length(d);
+	int length = d->sz;
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
