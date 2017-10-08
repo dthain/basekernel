@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define CDROMFS_H
 
 #include "kerneltypes.h"
+#include "fs.h"
 
 #define CDROM_BLOCK_SIZE 2048
 
@@ -26,4 +27,6 @@ int  cdrom_dirent_read_block( struct dirent *d, char *buffer, int nblock );
 int  cdrom_dirent_read_dir( struct dirent *d, char *buffer, int buffer_length );
 void cdrom_dirent_close( struct dirent *d );
 
+int cdrom_file_read(struct file *f, char *buffer, uint32_t n);
+struct file *cdrom_file_open(struct dirent *d, int8_t mode);
 #endif

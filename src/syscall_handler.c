@@ -60,6 +60,8 @@ int sys_run( const char *path )
 	int i;
 	int npages = length/PAGE_SIZE + length%PAGE_SIZE ? 1 : 0;
 
+	struct file *f = cdrom_file_open(d, 0);
+
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
 
@@ -68,8 +70,7 @@ int sys_run( const char *path )
 		unsigned paddr;
 
 		pagetable_getmap(p->pagetable,vaddr,&paddr);
-		cdrom_dirent_read_block(d,(void*)paddr,i*2);
-		cdrom_dirent_read_block(d,(void*)paddr+CDROM_BLOCK_SIZE,i*2+1);
+		cdrom_file_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
 	/* Close everything up */

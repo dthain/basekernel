@@ -313,3 +313,40 @@ void cdrom_volume_close( struct volume *v )
 	kfree(v);
 }
 
+
+
+int cdrom_file_read(struct file *f, char *buffer, uint32_t n)
+{
+	struct cdrom_file *cdf = f->private_data;
+	struct cdrom_dirent *cdd = cdf->dirent;
+	uint32_t read = 0;
+	while (n > 0 && cdf->block * ATAPI_BLOCKSIZE + cdf->offset < cdd->length) {
+		uint32_t to_read = 0;
+		if (cdf->offset == cdf->buffer_size) {
+			cdrom_dirent_read_block(cdd, cdf->buffer, cdf->block);
+			if (cdd->length <= (cdf->block + 1) * ATAPI_BLOCKSIZE) {
+				cdf->buffer_size = cdd->length - cdf->block * ATAPI_BLOCKSIZE;
+			} else {
+				cdf->buffer_size = ATAPI_BLOCKSIZE;
+			}
+			cdf->block++;
+			cdf->offset = 0;
+		}
+		to_read = cdf->buffer_size - cdf->offset;
+		if (n < cdf->buffer_size - cdf->offset) {
+			to_read = n;
+		}
+		memcpy(buffer + read, cdf->buffer + cdf->offset, to_read);
+		cdf->offset += to_read;
+		n -= to_read;
+		read += to_read;
+	}
+	return read;
+}
+
+struct file *cdrom_file_open(struct dirent *d, int8_t mode)
+{
+	struct cdrom_dirent *cdd = d->private_data;
+	struct cdrom_file *cdf = cdrom_file_create(cdd);
+	return cdrom_file_as_file(cdf);
+}
