@@ -18,7 +18,6 @@ struct cdrom_dirent;
 struct volume * cdrom_volume_open( uint32_t unit );
 void                  cdrom_volume_close( struct volume *v );
 struct dirent * cdrom_volume_root( struct volume *v );
-int                   cdrom_volume_block_size( struct cdrom_volume *v );
 
 struct dirent * cdrom_dirent_namei( struct dirent *d, const char *path );
 struct dirent * cdrom_dirent_lookup( struct dirent *d, const char *name );
