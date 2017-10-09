@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "kmalloc.h"
 #include "bitmap.h"
+#include "string.h"
 
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y) )
@@ -41,15 +42,8 @@ struct graphics * graphics_create( struct graphics *parent )
 	struct graphics *g = kmalloc(sizeof(*g));
 	if(!g) return 0;
 
-	//*g = *parent;
-    //Temporary workaround for VirtualBox struct copy crash
-	g->bitmap = parent->bitmap;
-	g->fgcolor = color_white;
-	g->bgcolor = color_black;
-	g->clip.x = parent->clip.x;
-	g->clip.y = parent->clip.y;
-	g->clip.w = parent->clip.w;
-	g->clip.h = parent->clip.h;
+    memcpy(g, parent, sizeof(*g));
+
 	return g;
 }
 

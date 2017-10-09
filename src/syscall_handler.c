@@ -75,6 +75,10 @@ int sys_run( const char *path )
 	
 	cdrom_dirent_close(d);
 
+    /* Copy open windows */
+    memcpy(p->windows, current->windows, sizeof(p->windows));
+    p->window_count = current->window_count;
+
 	/* Put the new process into the ready list */
 
 	process_launch(p);
@@ -112,7 +116,7 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
-int sys_w_color( int wd, int r, int g, int b ) {
+int sys_draw_color( int wd, int r, int g, int b ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -125,7 +129,7 @@ int sys_w_color( int wd, int r, int g, int b ) {
     return 0;
 }
 
-int sys_w_rect( int wd, int x, int y, int w, int h ) {
+int sys_draw_rect( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -133,7 +137,7 @@ int sys_w_rect( int wd, int x, int y, int w, int h ) {
     return 0;
 }
 
-int sys_w_clear( int wd, int x, int y, int w, int h ) {
+int sys_draw_clear( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -141,7 +145,7 @@ int sys_w_clear( int wd, int x, int y, int w, int h ) {
     return 0;
 }
 
-int sys_w_line( int wd, int x, int y, int w, int h ) {
+int sys_draw_line( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -149,7 +153,7 @@ int sys_w_line( int wd, int x, int y, int w, int h ) {
     return 0;
 }
 
-int sys_w_char( int wd, int x, int y, char c ) {
+int sys_draw_char( int wd, int x, int y, char c ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -157,7 +161,7 @@ int sys_w_char( int wd, int x, int y, char c ) {
     return 0;
 }
 
-int sys_w_string( int wd, int x, int y, char *s ) {
+int sys_draw_string( int wd, int x, int y, char *s ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
@@ -168,11 +172,11 @@ int sys_w_string( int wd, int x, int y, char *s ) {
     return 0;
 }
 
-int sys_w_create( int x, int y, int w, int h ) {
-    if (current->window_count >= PROCESS_MAX_WINDOWS) {
+int sys_draw_create( int wd, int x, int y, int w, int h ) {
+    if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count) {
         return ENOENT;
     }
-    current->windows[current->window_count] = graphics_create(&graphics_root);
+    current->windows[current->window_count] = graphics_create(current->windows[wd]);
     if (!current->windows[current->window_count]) {
         return ENOENT;
     }
@@ -198,13 +202,13 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
-	case SYSCALL_W_COLOR:	return sys_w_color(a, b, c, d);
-	case SYSCALL_W_RECT:	return sys_w_rect(a, b, c, d, e);
-	case SYSCALL_W_LINE:	return sys_w_line(a, b, c, d, e);
-	case SYSCALL_W_CLEAR:	return sys_w_clear(a, b, c, d, e);
-	case SYSCALL_W_CHAR:	return sys_w_char(a, b, c, (char)d);
-	case SYSCALL_W_STRING:	return sys_w_string(a, b, c, (char*)d);
-	case SYSCALL_W_CREATE:	return sys_w_create(a, b, c, d);
+	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
+	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
+	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);
+	case SYSCALL_DRAW_CLEAR:	return sys_draw_clear(a, b, c, d, e);
+	case SYSCALL_DRAW_CHAR:	return sys_draw_char(a, b, c, (char)d);
+	case SYSCALL_DRAW_STRING:	return sys_draw_string(a, b, c, (char*)d);
+	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
 	default:		return -1;
 	}
 }
