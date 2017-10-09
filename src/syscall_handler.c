@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "clock.h"
 #include "rtc.h"
 
 int sys_debug( const char *str )
@@ -123,6 +124,12 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
+int sys_sleep(unsigned int ms)
+{
+	clock_wait(ms);
+	return 0;
+}
+
 int sys_getpid()
 {
 	return process_getpid();
@@ -146,6 +153,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_GETPID:	return sys_getpid();
 	case SYSCALL_GETPPID:	return sys_getppid();

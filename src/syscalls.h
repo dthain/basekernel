@@ -19,6 +19,7 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+int sleep( unsigned int ms );
 uint32_t gettimeofday();
 int getpid();
 int getppid();
