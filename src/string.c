@@ -182,6 +182,21 @@ static void printf_putint( int32_t i )
 	}
 }
 
+static void printf_putuint( uint32_t u )
+{
+	int f, d;
+	f = 1;
+	while((u/f) >= 10) {
+		f*=10;
+	}
+	while(f>0) {
+		d = u/f;
+		printf_putchar('0'+d);
+		u = u-d*f;
+		f = f/10;
+	}
+}
+
 void printf( const char *s, ... )
 {
 	va_list args;
@@ -205,6 +220,10 @@ void printf( const char *s, ... )
 				case 'x':
 					u = va_arg(args,uint32_t);
 					printf_puthex(u);
+					break;
+				case 'u':
+					u = va_arg(args,uint32_t);
+					printf_putuint(u);
 					break;
 				case 's':
 					str = va_arg(args,char*);
