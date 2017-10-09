@@ -17,5 +17,7 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+int getpid();
+int getppid();
 
 #endif
