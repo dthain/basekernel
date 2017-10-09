@@ -21,6 +21,8 @@ typedef enum {
 	SYSCALL_LSEEK,
 	SYSCALL_CLOSE,
 	SYSCALL_GETTIMEOFDAY,
+	SYSCALL_GETPID,
+	SYSCALL_GETPPID,
 } syscall_t;
 
 typedef enum {
