@@ -125,9 +125,8 @@ static void fix_filename( char *name, int length )
 Read an entire cdrom file into the target address.
 */
 
-int  cdrom_dirent_read_block( struct dirent *d, char *buffer, int blocknum )
+static int  cdrom_dirent_read_block( struct cdrom_dirent *cdd, char *buffer, int blocknum )
 {
-	struct cdrom_dirent *cdd = d->private_data;
 	return atapi_read( cdd->volume->unit, buffer, 1, cdd->sector + blocknum );
 }
 

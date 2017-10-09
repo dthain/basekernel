@@ -26,7 +26,7 @@ static int mount_cd( int unit )
 {
 	struct volume *v = cdrom_volume_open(unit);
 	if(v) {
-		struct cdrom_dirent *d = cdrom_volume_root(v);
+		struct dirent *d = cdrom_volume_root(v);
 		if(d) {
             root_directory = d;
             return 0;
@@ -45,7 +45,7 @@ static int mount_cd( int unit )
 
 static int list_directory( const char *path )
 {
-    struct cdrom_dirent *d = root_directory;
+    struct dirent *d = root_directory;
     if(d) {
         int buffer_length = 1024;
         char *buffer = kmalloc(buffer_length);
