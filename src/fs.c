@@ -73,10 +73,17 @@ struct dirent *fs_lookup(struct dirent *d, const char *name)
 	return 0;
 }
 
-int fs_close(struct dirent *d)
+int fs_dirent_close(struct dirent *d)
 {
 	if (d->close)
 		return d->close(d);
+	return -1;
+}
+
+int fs_close(struct file *f)
+{
+	if (f->close)
+		return f->close(f);
 	return -1;
 }
 

@@ -46,7 +46,8 @@ struct dirent *fs_root(struct volume *);
 
 struct file *fs_open(struct dirent *d, uint8_t mode);
 int fs_read(struct file *f, char *buffer, uint32_t n);
-int fs_close(struct dirent *d);
+int fs_dirent_close(struct dirent *d);
+int fs_close(struct file *f);
 struct dirent *fs_create(struct dirent *d, const char *name);
 struct dirent *fs_lookup(struct dirent *d, const char *name);
 int fs_readdir(struct dirent *d, char *buffer, int buffer_length);

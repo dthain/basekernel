@@ -24,9 +24,10 @@ static int print_directory( char *d, int length )
 
 static int mount_cd( int unit )
 {
-	struct volume *v = cdrom_volume_open(unit);
+	struct fs *cdrom = fs_get("cdrom");
+	struct volume *v = fs_mount(cdrom, unit);
 	if(v) {
-		struct dirent *d = cdrom_volume_root(v);
+		struct dirent *d = fs_root(v);
 		if(d) {
             root_directory = d;
             return 0;
@@ -34,7 +35,7 @@ static int mount_cd( int unit )
 			printf("couldn't access root dir!\n");
             return 1;
 		}
-		cdrom_volume_close(v);
+		fs_umount(v);
 	} else {
 		printf("couldn't mount filesystem!\n");
         return 2;
@@ -50,7 +51,7 @@ static int list_directory( const char *path )
         int buffer_length = 1024;
         char *buffer = kmalloc(buffer_length);
         if(buffer) {
-            int length = cdrom_dirent_read_dir(d,buffer,buffer_length);
+            int length = fs_readdir(d,buffer,buffer_length);
             print_directory(buffer,length);
             kfree(buffer);
         }
