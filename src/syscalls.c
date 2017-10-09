@@ -49,3 +49,17 @@ int close( int fd ) {
 int sleep( unsigned int ms ) {
 	return syscall( SYSCALL_SLEEP, ms, 0, 0, 0, 0 );
 }
+
+uint32_t gettimeofday() {
+	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
+}
+
+int getpid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
+}
+
+int getppid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
+}
