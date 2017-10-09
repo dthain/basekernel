@@ -312,8 +312,6 @@ void cdrom_volume_close( struct volume *v )
 	kfree(v);
 }
 
-
-
 int cdrom_file_read(struct file *f, char *buffer, uint32_t n)
 {
 	struct cdrom_file *cdf = f->private_data;
@@ -348,4 +346,11 @@ struct file *cdrom_file_open(struct dirent *d, int8_t mode)
 	struct cdrom_dirent *cdd = d->private_data;
 	struct cdrom_file *cdf = cdrom_file_create(cdd);
 	return cdrom_file_as_file(cdf);
+}
+
+int cdrom_file_close(struct file *f)
+{
+	struct cdrom_file *cdf = f->private_data;
+	cdrom_file_dealloc(cdf);
+	return 0;
 }

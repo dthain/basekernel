@@ -29,4 +29,5 @@ void cdrom_dirent_close( struct dirent *d );
 
 int cdrom_file_read(struct file *f, char *buffer, uint32_t n);
 struct file *cdrom_file_open(struct dirent *d, int8_t mode);
+int cdrom_file_close(struct file *f);
 #endif

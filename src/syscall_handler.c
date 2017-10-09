@@ -76,6 +76,7 @@ int sys_run( const char *path )
 	/* Close everything up */
 	
 	cdrom_dirent_close(d);
+	cdrom_file_close(f);
 
 	/* Put the new process into the ready list */
 
