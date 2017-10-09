@@ -28,6 +28,8 @@ void process_init()
 
     current->windows[0] = &graphics_root;
     current->window_count = 1;
+    graphics_root.count++;
+
 	current->state = PROCESS_STATE_READY;
 
 	console_printf("process: ready\n");
@@ -147,6 +149,15 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
+
+    int i;
+    for (i = 0; i < current->window_count; i++) {
+        if (!(--(current->windows[i]->count))) {
+            kfree(current->windows[i]);
+        }
+    }
+    current->window_count = 0;
+
 	process_switch(PROCESS_STATE_GRAVE);
 }
 

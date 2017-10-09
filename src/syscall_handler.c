@@ -78,6 +78,9 @@ int sys_run( const char *path )
     /* Copy open windows */
     memcpy(p->windows, current->windows, sizeof(p->windows));
     p->window_count = current->window_count;
+    for(i=0;i<p->window_count;i++) {
+        p->windows[i]->count++;
+    }
 
 	/* Put the new process into the ready list */
 

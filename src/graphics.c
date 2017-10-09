@@ -30,6 +30,7 @@ struct graphics * graphics_create_root()
 	g->bitmap = bitmap_create_root();
 	g->fgcolor = color_white;
 	g->bgcolor = color_black;
+    g->count = 0;
 	g->clip.x = 0;
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
