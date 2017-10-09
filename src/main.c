@@ -24,7 +24,7 @@ See the file LICENSE for details.
 #include "kshell.h"
 #include "cdromfs.h"
 
-struct cdrom_dirent *root_directory = 0;
+struct dirent *root_directory = 0;
 
 /*
 This is the C initialization point of the kernel.
