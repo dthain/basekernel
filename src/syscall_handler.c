@@ -188,16 +188,18 @@ int sys_draw_string( int wd, int x, int y, char *s ) {
 }
 
 int sys_draw_create( int wd, int x, int y, int w, int h ) {
-    if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count) {
+    if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count || current->windows[wd]->clip.w < x + w || current->windows[wd]->clip.h < y + h) {
         return ENOENT;
     }
+
     current->windows[current->window_count] = graphics_create(current->windows[wd]);
+
     if (!current->windows[current->window_count]) {
         return ENOENT;
     }
 
-    current->windows[current->window_count]->clip.x = x;
-    current->windows[current->window_count]->clip.y = y;
+    current->windows[current->window_count]->clip.x = x + current->windows[wd]->clip.x;
+    current->windows[current->window_count]->clip.y = y + current->windows[wd]->clip.y;
     current->windows[current->window_count]->clip.w = w;
     current->windows[current->window_count]->clip.h = h;
 
