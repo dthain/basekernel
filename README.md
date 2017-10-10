@@ -109,8 +109,8 @@ Basekernel compilation on linux has been tested with the following compilers:
 |----------|--------------------------|
 | GCC 4.7  | :heavy_check_mark: Works |
 | GCC 5.4  | :heavy_check_mark: Works |
-| GCC 6.3  | :x: Fails                |
-| GCC 7.1  | :x: Fails                |
+| GCC 6.3  | :heavy_check_mark: Works |
+| GCC 7.1  | :heavy_check_mark: Works |
 
 Basekernel has been tested with the following VM hypervisors:
 
@@ -118,7 +118,7 @@ Basekernel has been tested with the following VM hypervisors:
 |---------------|-----------------------------|------------------------------------------------|
 | qemu          | :heavy_check_mark: Works    | No known issues                                |
 | VirtualBox    | :warning: Works with issues | Mouse does not work, struct copies fail        |
-| VMware Player | :x: Fails                   | No suitable video mode found at boot           |
+| VMware Player | :x: [Fails](https://github.com/dthain/basekernel/issues/38)                   | No suitable video mode found at boot           |
 
 ### Starter Project
 
@@ -270,9 +270,9 @@ timer, and real-time clock.  These can be accessed in any processor mode.
 While your machine may not have this *specific* chipset, the basic
 functions are widely compatible.
 
-[1] http://wiki.osdev.org
-[2] http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
-[3] doc/ata-3-std.pdf
-[4] doc/phoenix-bios.pdf
-[5] doc/vesa-bios.pdf
-[6] doc/super-io.pdf
+[1]: http://wiki.osdev.org
+[2]: http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
+[3]: doc/ata-3-std.pdf
+[4]: doc/phoenix-bios.pdf
+[5]: doc/vesa-bios.pdf
+[6]: doc/super-io.pdf

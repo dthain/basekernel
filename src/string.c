@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "console.h"
 #include "kerneltypes.h"
+#include "ascii.h"
 
 #include "stdarg.h"
 
@@ -99,6 +100,19 @@ char * strtok ( char *s, const char *delim)
 	return word;
 }
 
+int str2int( const char *s, int *d ) {
+    int val = 0;
+    for (;*s;++s) {
+        val *= 10;
+        if (*s > ASCII_9 || *s < ASCII_0) {
+            return 0;
+        }
+        val += (*s - '0');
+    }
+    *d = val;
+    return 1;
+}
+
 void	memset( void *vd, char value, unsigned length )
 {
 	char *d = vd;
@@ -158,6 +172,21 @@ static void printf_putint( int32_t i )
 	}
 }
 
+static void printf_putuint( uint32_t u )
+{
+	int f, d;
+	f = 1;
+	while((u/f) >= 10) {
+		f*=10;
+	}
+	while(f>0) {
+		d = u/f;
+		printf_putchar('0'+d);
+		u = u-d*f;
+		f = f/10;
+	}
+}
+
 void printf( const char *s, ... )
 {
 	va_list args;
@@ -181,6 +210,10 @@ void printf( const char *s, ... )
 				case 'x':
 					u = va_arg(args,uint32_t);
 					printf_puthex(u);
+					break;
+				case 'u':
+					u = va_arg(args,uint32_t);
+					printf_putuint(u);
 					break;
 				case 's':
 					str = va_arg(args,char*);

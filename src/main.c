@@ -23,6 +23,8 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 
+struct cdrom_dirent *root_directory = 0;
+
 /*
 This is the C initialization point of the kernel.
 By the time we reach this point, we are in protected mode,
@@ -49,14 +51,8 @@ int kernel_main()
 	process_init();
 	ata_init();
 
-	/*
-	Test out some basic operations by listing the root filesystem,
-	then creating a child process.
-	*/
-
+	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
-
-	console_printf("\nBASEKERNEL READY:\n");
 
 	while(1) console_putchar(keyboard_read());
 

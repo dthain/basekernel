@@ -45,3 +45,21 @@ int lseek( int fd, int offset, int whence ) {
 int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
+
+int sleep( unsigned int ms ) {
+	return syscall( SYSCALL_SLEEP, ms, 0, 0, 0, 0 );
+}
+
+uint32_t gettimeofday() {
+	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
+}
+
+int getpid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
+}
+
+int getppid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
+}
