@@ -10,7 +10,8 @@ This program requires that write() and exit() work correctly.
 */
 
 #include "syscalls.h"
-#include "ustring.h"
+#include "string.h"
+#include "userio.h"
 
 int main( const char *argv[], int argc )
 {

@@ -15,6 +15,8 @@ void console_init( struct graphics *g );
 void console_putchar( char c );
 int  console_write( int unit, const void *buffer, int nblocks, int offset );
 void console_heartbeat();
+void printf_putchar( char c );
+void printf_putstring( char *s );
 
 #define console_printf printf
 

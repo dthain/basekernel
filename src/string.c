@@ -121,16 +121,6 @@ void	memcpy( void *vd, const void *vs, unsigned length )
 	}
 }
 
-static void printf_putchar( char c )
-{
-	console_write(0,&c,1,0);
-}
-
-static void printf_putstring( char *s )
-{
-	console_write(0,s,strlen(s),0);
-}
-
 static void printf_puthexdigit( uint8_t i )
 {
 	if(i<10) {
