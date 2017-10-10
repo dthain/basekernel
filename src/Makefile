@@ -1,6 +1,6 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o
 
-USER_OBJECTS=user-start.o test.o syscall.o syscalls.o
+USER_OBJECTS=user-start.o syscall.o syscalls.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386 -fno-pie
 KERNEL_LDFLAGS=-m elf_i386
@@ -9,8 +9,8 @@ ISOGEN?=genisoimage
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe
-	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img test.exe
+basekernel.iso: basekernel.img test.exe saver.exe
+	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
 	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
@@ -28,6 +28,9 @@ kernel: ${KERNEL_OBJECTS}
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 test.exe: test.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+
+saver.exe: saver.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
