@@ -10,6 +10,8 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "clock.h"
+#include "rtc.h"
 
 int sys_debug( const char *str )
 {
@@ -81,12 +83,22 @@ int sys_run( const char *path )
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
+  
+    /* Set the parent of the new process to the calling process */
+    p->ppid = process_getpid();
 
 	/* Put the new process into the ready list */
 
 	process_launch(p);
 
 	return 0;
+}
+
+uint32_t sys_gettimeofday()
+{
+	struct rtc_time t;
+	rtc_read(&t);
+	return rtc_time_to_timestamp(&t);
 }
 
 int sys_wait()
@@ -192,6 +204,22 @@ int sys_draw_create( int wd, int x, int y, int w, int h ) {
     return current->window_count++;
 }
 
+int sys_sleep(unsigned int ms)
+{
+	clock_wait(ms);
+	return 0;
+}
+
+int sys_getpid()
+{
+	return process_getpid();
+}
+
+int sys_getppid()
+{
+	return process_getppid();
+}
+
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
 	switch(n) {
@@ -212,6 +240,10 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DRAW_CHAR:	return sys_draw_char(a, b, c, (char)d);
 	case SYSCALL_DRAW_STRING:	return sys_draw_string(a, b, c, (char*)d);
 	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
+	case SYSCALL_SLEEP:	return sys_sleep(a);
+	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
+	case SYSCALL_GETPID:	return sys_getpid();
+	case SYSCALL_GETPPID:	return sys_getppid();
 	default:		return -1;
 	}
 }

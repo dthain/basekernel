@@ -30,6 +30,8 @@ struct process {
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
 	uint32_t entry;
+	uint32_t pid;
+	uint32_t ppid;
 };
 
 void process_init();
@@ -45,6 +47,9 @@ void process_dump( struct process *p );
 void process_wait( struct list *q );
 void process_wakeup( struct list *q );
 void process_wakeup_all( struct list *q );
+
+uint32_t process_getpid();
+uint32_t process_getppid();
 
 extern struct process *current;
 
