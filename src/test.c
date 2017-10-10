@@ -13,11 +13,11 @@ This program requires that write() and exit() work correctly.
 
 int main( const char *argv[], int argc )
 {
-	int i, j;
+	int j;
 
 	for(j=0;j<10;j++) {
 		debug("hello world!\n");
-     		for(i=0;i<100000000;i++)  {}
+		sleep(1000);
 	}
 
 	exit(0);
