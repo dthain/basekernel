@@ -1,10 +1,10 @@
 /*
-Copyright (C) 2015 The University of Notre Dame
+Copyright (C) 2017 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "userio.h"
+#include "user-io.h"
 #include "kerneltypes.h"
 #include "syscalls.h"
 #include "string.h"
@@ -12,7 +12,7 @@ See the file LICENSE for details.
 static char stdio_buffer[PAGE_SIZE] = {0};
 static uint32_t stdio_buffer_index = 0;
 
-void flush()
+static void flush()
 {
     debug(stdio_buffer);
     stdio_buffer_index = 0;
