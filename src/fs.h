@@ -13,22 +13,33 @@ struct fs {
 struct file {
 	void *private_data;
 	uint32_t sz;
-	int (*read)(struct file *f, char *buffer, uint32_t n);
-	int (*write)(struct file *f, char *buffer, uint32_t n);
-	int (*close)(struct file *f);
+	const struct fs_file_ops *ops;
 };
 
 struct volume {
 	void *private_data;
-	struct dirent *(*root)(struct volume *d);
-	int (*umount)(struct volume *d);
+	const struct fs_volume_ops *ops;
 };
 
 struct dirent {
 	void *private_data;
 	struct volume *v;
 	uint32_t sz;
+	const struct fs_dirent_ops *ops;
+};
 
+struct fs_file_ops {
+	int (*read)(struct file *f, char *buffer, uint32_t n);
+	int (*write)(struct file *f, char *buffer, uint32_t n);
+	int (*close)(struct file *f);
+};
+
+struct fs_volume_ops {
+	struct dirent *(*root)(struct volume *d);
+	int (*umount)(struct volume *d);
+};
+
+struct fs_dirent_ops {
 	struct file *(*open)(struct dirent *d, int8_t mode);
 	int (*close)(struct dirent *d);
 	struct dirent *(*mkdir)(struct dirent *d, const char *name);

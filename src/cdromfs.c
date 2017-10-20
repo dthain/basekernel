@@ -325,12 +325,33 @@ int cdrom_init() {
 	return 0;
 }
 
+const struct fs_volume_ops cdrom_volume_ops = {
+	.root = cdrom_volume_root,
+	.umount = cdrom_volume_close,
+};
+
+const struct fs_dirent_ops cdrom_dirent_ops = {
+	.open = cdrom_file_open,
+	.close = cdrom_dirent_close,
+	.readdir = cdrom_dirent_read_dir,
+	.lookup = cdrom_dirent_lookup,
+	.mkdir = 0,
+	.rmdir = 0,
+	.link = 0,
+	.unlink = 0,
+};
+
+const struct fs_file_ops cdrom_file_ops = {
+	.read = cdrom_file_read,
+	.write = 0,
+	.close = cdrom_file_close,
+};
+
 static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv) {
 	struct volume *v = kmalloc(sizeof(struct volume));
 	memset(v, 0, sizeof(struct volume));
 	v->private_data = cdv;
-	v->root = cdrom_volume_root;
-	v->umount = cdrom_volume_close;
+	v->ops = &cdrom_volume_ops;
 	return v;
 }
 
@@ -339,10 +360,7 @@ static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
 	memset(d, 0, sizeof(struct volume));
 	d->private_data = cdd;
 	d->sz = cdd->length;
-	d->readdir = cdrom_dirent_read_dir;
-	d->open = cdrom_file_open;
-	d->close = cdrom_dirent_close;
-	d->lookup = cdrom_dirent_lookup;
+	d->ops = &cdrom_dirent_ops;
 	return d;
 }
 
@@ -350,7 +368,6 @@ static struct file *cdrom_file_as_file(struct cdrom_file *cdf) {
 	struct file *f = kmalloc(sizeof(struct file));
 	memset(f, 0, sizeof(struct file));
 	f->private_data = cdf;
-	f->read = cdrom_file_read;
-	f->close = cdrom_file_close;
+	f->ops = &cdrom_file_ops;
 	return f;
 }

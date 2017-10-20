@@ -33,60 +33,68 @@ struct volume *fs_mount(struct fs *f, uint32_t device_no)
 
 int fs_umount(struct volume *v)
 {
-	if (v->umount)
-		return v->umount(v);
+	const struct fs_volume_ops *ops = v->ops;
+	if (ops->umount)
+		return ops->umount(v);
 	return -1;
 }
 
 struct dirent *fs_root(struct volume *v)
 {
-	if (v->root)
-		return v->root(v);
+	const struct fs_volume_ops *ops = v->ops;
+	if (ops->root)
+		return ops->root(v);
 	return 0;
 }
 
 int fs_readdir(struct dirent *d, char *buffer, int buffer_length)
 {
-	if (d->readdir)
-		return d->readdir(d, buffer, buffer_length);
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->readdir)
+		return ops->readdir(d, buffer, buffer_length);
 	return -1;
 }
 
 struct dirent *fs_lookup(struct dirent *d, const char *name)
 {
-	if (d->lookup)
-		return d->lookup(d, name);
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->lookup)
+		return ops->lookup(d, name);
 	return 0;
 }
 
 int fs_dirent_close(struct dirent *d)
 {
-	if (d->close)
-		return d->close(d);
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->close)
+		return ops->close(d);
 	return -1;
 }
 
 int fs_close(struct file *f)
 {
-	if (f->close)
-		return f->close(f);
+	const struct fs_file_ops *ops = f->ops;
+	if (ops->close)
+		return ops->close(f);
 	return -1;
 }
 
 int fs_read(struct file *f, char *buffer, uint32_t n)
 {
-	if (f->read)
+	const struct fs_file_ops *ops = f->ops;
+	if (ops->read)
 	{
-		return f->read(f, buffer, n);
+		return ops->read(f, buffer, n);
 	}
 	return -1;
 }
 
 struct file *fs_open(struct dirent *d, uint8_t mode)
 {
-	if (d->open)
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->open)
 	{
-		return d->open(d, mode);
+		return ops->open(d, mode);
 	}
 	return 0;
 }
