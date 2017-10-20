@@ -2,8 +2,10 @@
 #define FS_H
 
 #include "kerneltypes.h"
+#include "list.h"
 
 struct fs {
+	struct list_node node;
 	char *name;
 	struct volume *(*mount)(uint32_t device_no);
 };

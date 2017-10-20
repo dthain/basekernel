@@ -1,36 +1,22 @@
 #include "fs.h"
 #include "kmalloc.h"
 #include "string.h"
+#include "list.h"
 
-struct singly_linked_list {
-	struct fs *f;
-	struct singly_linked_list *next;
-};
-
-struct singly_linked_list *head = 0;
+struct list l;
 
 int fs_register(struct fs *f) {
-	struct singly_linked_list *new = kmalloc(sizeof(struct singly_linked_list));
-	memset(new, 0, sizeof(struct singly_linked_list));
-	new->f = kmalloc(sizeof(struct singly_linked_list));
-	memcpy(new->f, f, sizeof(struct singly_linked_list));
-	if (!head) {
-		head = new;
-	}
-	else {
-		struct singly_linked_list *iter = head;
-		while (iter->next) iter = iter->next;
-		iter->next = new;
-	}
+	list_push_tail(&l, &f->node);
 	return 0;
 }
 
 struct fs *fs_get(const char *name) {
-	struct singly_linked_list *iter = head;
+	struct list_node *iter = l.head;
 	while (iter) {
-		if (!strcmp(name, iter->f->name)) {
+		struct fs *f = (struct fs*) iter;
+		if (!strcmp(name, f->name)) {
 			struct fs *ret = kmalloc(sizeof(struct fs));
-			memcpy(ret, iter->f, sizeof(struct fs));
+			memcpy(ret, f, sizeof(struct fs));
 			return ret;
 		}
 		iter = iter->next;
