@@ -61,7 +61,7 @@ static struct cdrom_file *cdrom_file_create( struct cdrom_dirent *d )
 	return f;
 }
 
-static void cdrom_file_dealloc( struct cdrom_file *f )
+static void cdrom_file_delete( struct cdrom_file *f )
 {
 	kfree(f->buffer);
 	kfree(f);
@@ -310,7 +310,7 @@ static struct file *cdrom_file_open(struct dirent *d, int8_t mode)
 static int cdrom_file_close(struct file *f)
 {
 	struct cdrom_file *cdf = f->private_data;
-	cdrom_file_dealloc(cdf);
+	cdrom_file_delete(cdf);
 	return 0;
 }
 
