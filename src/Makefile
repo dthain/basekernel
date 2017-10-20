@@ -2,7 +2,7 @@ KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o
 
 USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 
-KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386
+KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386 -fno-pie
 KERNEL_LDFLAGS=-m elf_i386
 LD?=ld
 ISOGEN?=genisoimage

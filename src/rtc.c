@@ -39,7 +39,7 @@ Recommended reading: page 11-15 of the RTC data sheet
 
 /* Register A bits */
 
-#define RTC_A_UIP (1<<7) 
+#define RTC_A_UIP (1<<7)
 #define RTC_A_DV2 (1<<6)
 #define RTC_A_DV1 (1<<5)
 #define RTC_A_DV0 (1<<4)
@@ -50,7 +50,7 @@ Recommended reading: page 11-15 of the RTC data sheet
 
 /* Register B bits */
 
-#define RTC_B_SET  (1<<7) /* if set, may write new time */ 
+#define RTC_B_SET  (1<<7) /* if set, may write new time */
 #define RTC_B_PIE  (1<<6) /* periodic interrupt enabled */
 #define RTC_B_AIE  (1<<5) /* alarm interrupt enabled */
 #define RTC_B_UIE  (1<<4) /* update interrupt enabled */
@@ -66,6 +66,17 @@ Recommended reading: page 11-15 of the RTC data sheet
 #define RTC_C_PF   (1<<6) /* periodic interrupt pending */
 #define RTC_C_AF   (1<<5) /* alarm interrupt pending */
 #define RTC_C_UF   (1<<4) /* update interrupt pending */
+
+#define SECS_PER_MIN  60
+#define SECS_PER_HOUR 3600
+#define SECS_PER_DAY  SECS_PER_HOUR * 24
+#define DAYS_PER_WEEK 7
+#define SECS_PER_WEEK SECS_PER_DAY * DAYS_PER_WEEK
+#define SECS_PER_YEAR SECS_PER_WEEK * 52
+
+#define LEAP_YEAR(Y) ( (Y>0) && !(Y%4) && ( (Y%100) || !(Y%400) ) )
+
+static const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31};
 
 static uint8_t rtc_bcd_to_binary( uint8_t bcd )
 {
@@ -135,8 +146,6 @@ void rtc_init()
 {
 	uint8_t status;
 
-	rtc_fetch_time();
-
 	status = rtc_read_port(RTC_REGISTER_B);
 	status |= RTC_B_UIE;
 	rtc_write_port(status,RTC_REGISTER_B);
@@ -149,6 +158,31 @@ void rtc_init()
 
 void rtc_read( struct rtc_time *tout )
 {
-	rtc_fetch_time();
 	memcpy(tout,&cached_time,sizeof(cached_time));
+}
+
+uint32_t rtc_time_to_timestamp(struct rtc_time *t)
+{
+	int i;
+	uint32_t seconds;
+
+	seconds = (t->year - 1970) * (SECS_PER_DAY * 365);
+	for (i = 1970; i < t->year; i++) {
+	  if (LEAP_YEAR(i)) {
+	    seconds +=  SECS_PER_DAY;
+	  }
+	}
+
+	for (i = 1; i < t->month; i++) {
+	  if ( (i == 2) && LEAP_YEAR(t->year)) {
+	    seconds += SECS_PER_DAY * 29;
+	  } else {
+	    seconds += SECS_PER_DAY * monthDays[i-1];
+	  }
+	}
+	seconds += (t->day-1) * SECS_PER_DAY;
+	seconds += t->hour * SECS_PER_HOUR;
+	seconds += t->minute * SECS_PER_MIN;
+	seconds += t->second;
+	return seconds;
 }

@@ -9,6 +9,9 @@ See the file LICENSE for details.
 #include "process.h"
 #include "cdromfs.h"
 #include "memorylayout.h"
+#include "main.h"
+#include "clock.h"
+#include "rtc.h"
 
 int sys_debug( const char *str )
 {
@@ -28,6 +31,7 @@ int sys_yield()
 	return 0;
 }
 
+
 /*
 sys_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
@@ -38,12 +42,10 @@ int sys_run( const char *path )
 {
 	/* Open and find the named path, if it exists. */
 
-	struct cdrom_volume *v= cdrom_volume_open(1);
-	if(!v) return ENOENT;
+	if(!root_directory) return ENOENT;
 
-	struct cdrom_dirent *d = cdrom_dirent_namei(cdrom_volume_root(v),path);
+	struct cdrom_dirent *d = cdrom_dirent_namei(root_directory,path);
 	if(!d) {
-		cdrom_volume_close(v);
 		return ENOENT;
 	}
 
@@ -74,13 +76,22 @@ int sys_run( const char *path )
 	/* Close everything up */
 	
 	cdrom_dirent_close(d);
-	cdrom_volume_close(v);
+
+    /* Set the parent of the new process to the calling process */
+    p->ppid = process_getpid();
 
 	/* Put the new process into the ready list */
 
 	process_launch(p);
 
 	return 0;
+}
+
+uint32_t sys_gettimeofday()
+{
+	struct rtc_time t;
+	rtc_read(&t);
+	return rtc_time_to_timestamp(&t);
 }
 
 int sys_wait()
@@ -113,6 +124,22 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
+int sys_sleep(unsigned int ms)
+{
+	clock_wait(ms);
+	return 0;
+}
+
+int sys_getpid()
+{
+	return process_getpid();
+}
+
+int sys_getppid()
+{
+	return process_getppid();
+}
+
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
 	switch(n) {
@@ -126,6 +153,10 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_SLEEP:	return sys_sleep(a);
+	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
+	case SYSCALL_GETPID:	return sys_getpid();
+	case SYSCALL_GETPPID:	return sys_getppid();
 	default:		return -1;
 	}
 }

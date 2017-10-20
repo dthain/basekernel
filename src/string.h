@@ -14,6 +14,8 @@ unsigned strlen( const char *s );
 
 char * strtok( char *s, const char *delim );
 
+int str2int( const char *s, int *d );
+
 const char * strchr( const char *s, char ch );
 
 void	memset( void *d, char value, unsigned length );
