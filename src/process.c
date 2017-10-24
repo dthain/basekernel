@@ -144,6 +144,7 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
+	pagetable_delete(current->pagetable);
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
