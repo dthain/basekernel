@@ -23,6 +23,8 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 #include "cdromfs.h"
+#include "kevinfs/kevinfs_test.h"
+#include "kevinfs/kevinfs.h"
 
 struct dirent *root_directory = 0;
 
