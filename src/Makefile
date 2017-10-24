@@ -1,6 +1,6 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o
 
-USER_OBJECTS=user-start.o test.o syscall.o syscalls.o
+USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386 -fno-pie
 KERNEL_LDFLAGS=-m elf_i386
@@ -28,7 +28,7 @@ kernel: ${KERNEL_OBJECTS}
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 test.exe: test.o $(USER_OBJECTS)
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o test.exe
