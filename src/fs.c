@@ -55,12 +55,28 @@ int fs_readdir(struct dirent *d, char *buffer, int buffer_length)
 	return -1;
 }
 
-struct dirent *fs_lookup(struct dirent *d, const char *name)
+static struct dirent *fs_lookup(struct dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->lookup)
 		return ops->lookup(d, name);
 	return 0;
+}
+
+struct dirent *fs_namei( struct dirent *d, const char *path )
+{
+	char *lpath = kmalloc(strlen(path)+1);
+	strcpy(lpath,path);
+
+	char *part = strtok(lpath,"/");
+	while(part) {
+		d = fs_lookup(d,part);
+		if(!d) break;
+
+		part = strtok(0,"/");
+	}
+	kfree(lpath);
+	return d;
 }
 
 int fs_dirent_close(struct dirent *d)
