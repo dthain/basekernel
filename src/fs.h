@@ -62,7 +62,7 @@ int fs_read(struct file *f, char *buffer, uint32_t n);
 int fs_dirent_close(struct dirent *d);
 int fs_close(struct file *f);
 struct dirent *fs_create(struct dirent *d, const char *name);
-struct dirent *fs_lookup(struct dirent *d, const char *name);
+struct dirent *fs_namei(struct dirent *d, const char *path);
 int fs_readdir(struct dirent *d, char *buffer, int buffer_length);
 int fs_rmdir(struct dirent *d, const char *name);
 int fs_link(struct dirent *d, const char *oldpath, const char *newpath);
