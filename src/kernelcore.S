@@ -97,7 +97,7 @@ memdone:
 #    D15    = 0 Clear display memory.
 #    ES:DI  = Pointer to CRCTCInfoBlock structure.
 
-jmp video640
+jmp video1024
 	
 video1280:
  	mov	$0x4f02, %ax
