@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 /*
-A fun graphics demo that features a line segment bouncing around the screen.
+A fun graphics demo that features text bouncing around the screen.
 */
 
 #include "syscalls.h"
@@ -18,7 +18,7 @@ void move(int *x, int *d, int min, int max);
 
 int main( const char *argv[], int argc )
 {
-    int wd = draw_create(0, 100, 100, WIDTH, HEIGHT);
+    int wd = draw_create(0, 300, 100, WIDTH, HEIGHT);
     if (wd < 0) {
         debug("Window create failed!\n");
         exit(1);
@@ -29,12 +29,8 @@ int main( const char *argv[], int argc )
     int b = 0;
     int x1 = 12;
     int y1 = 12;
-    int x2 = 48;
-    int y2 = 48;
     int dx1 = 4;
     int dy1 = 1;
-    int dx2 = -2;
-    int dy2 = -2;
     int dr = -1;
     int dg = 2;
     int db = 3;
@@ -43,16 +39,14 @@ int main( const char *argv[], int argc )
 
     int i, j;
     for (;;) {
-        move(&x1, &dx1, 0, WIDTH-1);
+        move(&x1, &dx1, 0, WIDTH-80);
         move(&y1, &dy1, 0, HEIGHT-1);
-        move(&x2, &dx2, 0, WIDTH-1);
-        move(&y2, &dy2, 0, HEIGHT-1);
         move(&r, &dr, 0, 255);
         move(&g, &dg, 0, 255);
         move(&b, &db, 0, 255);
         draw_color(wd, r, g, b);
+        draw_string(wd, x1, y1, "basekernel");
 
-        draw_line(wd, x1, y1, x2-x1, y2-y1);
         yield();
     }
 
