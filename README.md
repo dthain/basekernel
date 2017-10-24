@@ -52,7 +52,7 @@ tar -zxf binutils-2.29.1.tar.gz
 
 # build and install binutils
 cd binutils-2.29.1
-./configure --prefix=$HOME/cross --target=i386-elf \
+./configure --prefix="$HOME/cross" --target=i686-elf \
 	--disable-nls --disable-werror
 make && make install
 cd ..
@@ -60,7 +60,7 @@ cd ..
 #build and install gcc
 mkdir gcc-7.2.0-elf-objs
 cd gcc-7.2.0-elf-objs
-../gcc-7.2.0/configure --prefix=$HOME/cross --target=i386-elf \
+../gcc-7.2.0/configure --prefix="$HOME/cross" --target=i686-elf \
 	--disable-nls --enable-languages=c --without-headers
 make all-gcc && \
 make all-target-libgcc && \
@@ -86,8 +86,8 @@ On OS X, you might have an easier time using
 [MacPorts](https://guide.macports.org/#installing.macports)
 
 ```
-port install i386-elf-gcc
-port install i386-elf-binutils
+port install i686-elf-gcc
+port install i686-elf-binutils
 ```
 
 We welcome any other additions here, and whether or not you were
@@ -99,16 +99,7 @@ You can include these new executables in your $PATH to be able to
 run them as normal:
 
 ```
-export PATH=$HOME/cross/bin:$PATH"
-```
-
-Then, you'll want to set some environment variables so that `make` uses
-them (*be careful compiling other programs in the same session*, you'll
-want to unset these variables or start a new session):
-
-```
-export CC=i386-elf-gcc
-export LD=i386-elf-ld
+export PATH="$HOME/cross/bin:$PATH"
 ```
 
 ### Compilation: Linux x86 machine
