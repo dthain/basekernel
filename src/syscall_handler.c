@@ -45,7 +45,7 @@ int sys_run( const char *path )
 
 	if(!root_directory) return ENOENT;
 
-	struct dirent *d = fs_lookup(root_directory,path);
+	struct dirent *d = fs_namei(root_directory,path);
 	if(!d) {
 		return ENOENT;
 	}
