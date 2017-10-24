@@ -64,6 +64,25 @@ unsigned strlen( const char *s )
 	return len;
 }
 
+char * strrer( char *s)
+{
+	unsigned start=0;
+	unsigned end = strlen(str)-1;
+	char swap;
+
+	while(start<end)
+	{
+		swap=s[start];
+		s[start]=s[end];
+		s[end] = swap;
+
+		start++;
+		end--;
+	}
+
+	return s;
+}
+
 const char * strchr( const char *s, char ch )
 {
 	while(*s) {
