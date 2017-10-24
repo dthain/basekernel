@@ -148,6 +148,14 @@ videodone:
 	mov	$0x4f01, %ax
 	mov	%bx, %cx
 	int	$0x10
+
+# In order to use video resolutions higher than 640x480,
+# we must enable the A20 address line. The following
+# code works on motherboards with "FAST A20", which should
+# be everything since the IBM PS/2
+inb $0x92, %al
+orb $2, %al
+outb %al, $0x92
 	
 # Finally, we are ready to enter protected mode.
 # To do this, we disable interrupts so that
