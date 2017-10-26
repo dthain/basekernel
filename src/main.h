@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef MAIN_H
 #define MAIN_H
 
-extern struct cdrom_dirent *root_directory;
+extern struct dirent *root_directory;
 extern struct graphics graphics_root;
 
 #endif

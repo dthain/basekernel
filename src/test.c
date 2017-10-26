@@ -10,12 +10,13 @@ This program requires that write() and exit() work correctly.
 */
 
 #include "syscalls.h"
+#include "string.h"
 
 int main( const char *argv[], int argc )
 {
 	int j;
 	for(j=0;j<10;j++) {
-		debug("hello world!\n");
+		printf("hello world, I can count to %d!\n", j);
 		sleep(1000);
 	}
   
