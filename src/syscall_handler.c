@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "fs.h"
 #include "clock.h"
 #include "rtc.h"
 
@@ -44,12 +45,12 @@ int sys_run( const char *path )
 
 	if(!root_directory) return ENOENT;
 
-	struct cdrom_dirent *d = cdrom_dirent_namei(root_directory,path);
+	struct dirent *d = fs_namei(root_directory,path);
 	if(!d) {
 		return ENOENT;
 	}
 
-	int length = cdrom_dirent_length(d);
+	int length = d->sz;
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
@@ -61,6 +62,8 @@ int sys_run( const char *path )
 	int i;
 	int npages = length/PAGE_SIZE + length%PAGE_SIZE ? 1 : 0;
 
+	struct file *f = fs_open(d, 0);
+
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
 
@@ -69,13 +72,13 @@ int sys_run( const char *path )
 		unsigned paddr;
 
 		pagetable_getmap(p->pagetable,vaddr,&paddr);
-		cdrom_dirent_read_block(d,(void*)paddr,i*2);
-		cdrom_dirent_read_block(d,(void*)paddr+CDROM_BLOCK_SIZE,i*2+1);
+		fs_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
 	/* Close everything up */
 	
-	cdrom_dirent_close(d);
+	fs_dirent_close(d);
+	fs_close(f);
 
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
