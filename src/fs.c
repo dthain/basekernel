@@ -13,6 +13,26 @@ static struct block_map *init_block_map(uint32_t block_size) {
 	return res;
 }
 
+static void delete_block_map(struct block_map *bm) {
+	kfree(bm->buffer);
+	kfree(bm);
+}
+
+static struct file *init_file(struct dirent *d) {
+	struct file *res = kmalloc(sizeof(struct file));
+	struct volume *v = d->v;
+	res->sz = d->sz;
+	res->d = d;
+	res->private_data = init_block_map(v->block_size);
+	return res;
+}
+
+static void delete_file(struct file *f) {
+	struct block_map *bm = f->private_data;
+	delete_block_map(bm);
+	kfree(f);
+}
+
 int fs_register(struct fs *f) {
 	list_push_tail(&l, &f->node);
 	return 0;
@@ -50,8 +70,11 @@ int fs_umount(struct volume *v)
 struct dirent *fs_root(struct volume *v)
 {
 	const struct fs_volume_ops *ops = v->ops;
-	if (ops->root)
-		return ops->root(v);
+	if (ops->root) {
+		struct dirent *res = ops->root(v);
+		res->v = v;
+		return res;
+	}
 	return 0;
 }
 
@@ -66,8 +89,11 @@ int fs_readdir(struct dirent *d, char *buffer, int buffer_length)
 static struct dirent *fs_lookup(struct dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
-	if (ops->lookup)
-		return ops->lookup(d, name);
+	if (ops->lookup) {
+		struct dirent *res = ops->lookup(d, name);
+		res->v = d->v;
+		return res;
+	}
 	return 0;
 }
 
@@ -97,39 +123,29 @@ int fs_dirent_close(struct dirent *d)
 
 int fs_close(struct file *f)
 {
-	const struct fs_file_ops *ops = f->ops;
-	if (ops->close)
-		return ops->close(f);
-	return -1;
+	delete_file(f);
+	return 0;
 }
 
 static int fs_read_block(struct file *f, char *buffer, uint32_t blocknum)
 {
-	const struct fs_file_ops *ops = f->ops;
-	printf("%u\n", blocknum);
+	struct dirent *d = f->d;
+	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->read_block)
 	{
-		 return ops->read_block(f, buffer, blocknum);
+		 return ops->read_block(d, buffer, blocknum);
 	}
 	return -1;
 }
 
 struct file *fs_open(struct dirent *d, uint8_t mode)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	struct volume *v = d->v;
-	if (ops->open)
-	{
-		struct file *res = ops->open(d, mode);
-		res->private_map = init_block_map(v->block_size);
-		return res;
-	}
-	return 0;
+	return init_file(d);
 }
 
 int fs_read(struct file *f, char *buffer, uint32_t n)
 {
-	struct block_map *bm = f->private_map;
+	struct block_map *bm = f->private_data;
 	uint32_t read = 0;
 	while (read < n && bm->block * bm->block_size + bm->offset < f->sz) {
 		uint32_t to_read = 0;

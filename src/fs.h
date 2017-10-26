@@ -12,9 +12,8 @@ struct fs {
 
 struct file {
 	void *private_data;
-	void *private_map;
+	struct dirent *d;
 	uint32_t sz;
-	const struct fs_file_ops *ops;
 };
 
 struct block_map {
@@ -38,12 +37,6 @@ struct dirent {
 	const struct fs_dirent_ops *ops;
 };
 
-struct fs_file_ops {
-	int (*read_block)(struct file *f, char *buffer, uint32_t blocknum);
-	int (*write_block)(struct file *f, char *buffer, uint32_t blocknum);
-	int (*close)(struct file *f);
-};
-
 struct fs_volume_ops {
 	struct dirent *(*root)(struct volume *d);
 	int (*umount)(struct volume *d);
@@ -58,6 +51,8 @@ struct fs_dirent_ops {
 	int (*rmdir)(struct dirent *d, const char *name);
 	int (*link)(struct dirent *d, const char *oldpath, const char *newpath);
 	int (*unlink)(struct dirent *d, const char *name);
+	int (*read_block)(struct dirent *d, char *buffer, uint32_t blocknum);
+	int (*write_block)(struct dirent *d, char *buffer, uint32_t blocknum);
 };
 
 struct fs *fs_get(const char *name);
