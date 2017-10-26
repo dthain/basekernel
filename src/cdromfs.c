@@ -30,10 +30,6 @@ struct cdrom_dirent {
 
 struct cdrom_file {
 	struct cdrom_dirent *dirent;
-	char *buffer;
-	uint32_t block;
-	uint32_t offset;
-	uint32_t buffer_size;
 };
 
 static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
@@ -56,14 +52,12 @@ static struct cdrom_file *cdrom_file_create( struct cdrom_dirent *d )
 {
 	struct cdrom_file *f = kmalloc(sizeof(struct cdrom_file));
 	memset(f, 0, sizeof(struct cdrom_file));
-	f->buffer = kmalloc(ATAPI_BLOCKSIZE);
 	f->dirent = d;
 	return f;
 }
 
 static void cdrom_file_delete( struct cdrom_file *f )
 {
-	kfree(f->buffer);
 	kfree(f);
 }
 
@@ -101,6 +95,13 @@ Read an entire cdrom file into the target address.
 static int  cdrom_dirent_read_block( struct cdrom_dirent *cdd, char *buffer, int blocknum )
 {
 	return atapi_read( cdd->volume->unit, buffer, 1, cdd->sector + blocknum );
+}
+
+static int cdrom_file_read_block(struct file *f, char *buffer, uint32_t blocknum)
+{
+	struct cdrom_file *cdf = f->private_data;
+	struct cdrom_dirent *cdd = cdf->dirent;
+	return cdrom_dirent_read_block(cdd, buffer, (int) blocknum);
 }
 
 #if 0
@@ -271,35 +272,6 @@ static int cdrom_volume_close( struct volume *v )
 	return 0;
 }
 
-static int cdrom_file_read(struct file *f, char *buffer, uint32_t n)
-{
-	struct cdrom_file *cdf = f->private_data;
-	struct cdrom_dirent *cdd = cdf->dirent;
-	uint32_t read = 0;
-	while (n > 0 && cdf->block * ATAPI_BLOCKSIZE + cdf->offset < cdd->length) {
-		uint32_t to_read = 0;
-		if (cdf->offset == cdf->buffer_size) {
-			cdrom_dirent_read_block(cdd, cdf->buffer, cdf->block);
-			if (cdd->length <= (cdf->block + 1) * ATAPI_BLOCKSIZE) {
-				cdf->buffer_size = cdd->length - cdf->block * ATAPI_BLOCKSIZE;
-			} else {
-				cdf->buffer_size = ATAPI_BLOCKSIZE;
-			}
-			cdf->block++;
-			cdf->offset = 0;
-		}
-		to_read = cdf->buffer_size - cdf->offset;
-		if (n < cdf->buffer_size - cdf->offset) {
-			to_read = n;
-		}
-		memcpy(buffer + read, cdf->buffer + cdf->offset, to_read);
-		cdf->offset += to_read;
-		n -= to_read;
-		read += to_read;
-	}
-	return read;
-}
-
 static struct file *cdrom_file_open(struct dirent *d, int8_t mode)
 {
 	struct cdrom_dirent *cdd = d->private_data;
@@ -342,8 +314,8 @@ const struct fs_dirent_ops cdrom_dirent_ops = {
 };
 
 const struct fs_file_ops cdrom_file_ops = {
-	.read = cdrom_file_read,
-	.write = 0,
+	.read_block = cdrom_file_read_block,
+	.write_block = 0,
 	.close = cdrom_file_close,
 };
 
@@ -352,6 +324,7 @@ static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv) {
 	memset(v, 0, sizeof(struct volume));
 	v->private_data = cdv;
 	v->ops = &cdrom_volume_ops;
+	v->block_size = ATAPI_BLOCKSIZE;
 	return v;
 }
 
@@ -366,8 +339,10 @@ static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
 
 static struct file *cdrom_file_as_file(struct cdrom_file *cdf) {
 	struct file *f = kmalloc(sizeof(struct file));
+	struct cdrom_dirent *cdd = cdf->dirent;
 	memset(f, 0, sizeof(struct file));
 	f->private_data = cdf;
 	f->ops = &cdrom_file_ops;
+	f->sz = cdd->length;
 	return f;
 }

@@ -12,13 +12,23 @@ struct fs {
 
 struct file {
 	void *private_data;
+	void *private_map;
 	uint32_t sz;
 	const struct fs_file_ops *ops;
+};
+
+struct block_map {
+	char *buffer;
+	uint32_t block_size;
+	uint32_t block;
+	uint32_t offset;
+	uint32_t read_length;
 };
 
 struct volume {
 	void *private_data;
 	const struct fs_volume_ops *ops;
+	uint32_t block_size;
 };
 
 struct dirent {
@@ -29,8 +39,8 @@ struct dirent {
 };
 
 struct fs_file_ops {
-	int (*read)(struct file *f, char *buffer, uint32_t n);
-	int (*write)(struct file *f, char *buffer, uint32_t n);
+	int (*read_block)(struct file *f, char *buffer, uint32_t blocknum);
+	int (*write_block)(struct file *f, char *buffer, uint32_t blocknum);
 	int (*close)(struct file *f);
 };
 

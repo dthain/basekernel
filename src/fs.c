@@ -5,6 +5,14 @@
 
 struct list l;
 
+static struct block_map *init_block_map(uint32_t block_size) {
+	struct block_map *res = kmalloc(sizeof(struct block_map));
+	memset(res, 0, sizeof(struct block_map));
+	res->block_size = block_size;
+	res->buffer = kmalloc(sizeof(char) * block_size);
+	return res;
+}
+
 int fs_register(struct fs *f) {
 	list_push_tail(&l, &f->node);
 	return 0;
@@ -95,12 +103,13 @@ int fs_close(struct file *f)
 	return -1;
 }
 
-int fs_read(struct file *f, char *buffer, uint32_t n)
+static int fs_read_block(struct file *f, char *buffer, uint32_t blocknum)
 {
 	const struct fs_file_ops *ops = f->ops;
-	if (ops->read)
+	printf("%u\n", blocknum);
+	if (ops->read_block)
 	{
-		return ops->read(f, buffer, n);
+		 return ops->read_block(f, buffer, blocknum);
 	}
 	return -1;
 }
@@ -108,9 +117,39 @@ int fs_read(struct file *f, char *buffer, uint32_t n)
 struct file *fs_open(struct dirent *d, uint8_t mode)
 {
 	const struct fs_dirent_ops *ops = d->ops;
+	struct volume *v = d->v;
 	if (ops->open)
 	{
-		return ops->open(d, mode);
+		struct file *res = ops->open(d, mode);
+		res->private_map = init_block_map(v->block_size);
+		return res;
 	}
 	return 0;
+}
+
+int fs_read(struct file *f, char *buffer, uint32_t n)
+{
+	struct block_map *bm = f->private_map;
+	uint32_t read = 0;
+	while (read < n && bm->block * bm->block_size + bm->offset < f->sz) {
+		uint32_t to_read = 0;
+		if (bm->offset == bm->read_length) {
+			fs_read_block(f, bm->buffer, bm->block);
+			if (f->sz <= (bm->block + 1) * bm->block_size) {
+				bm->read_length = f->sz - bm->block * bm->block_size;
+			} else {
+				bm->read_length = bm->block_size;
+			}
+			bm->block++;
+			bm->offset = 0;
+		}
+		to_read = bm->block_size - bm->offset;
+		if (n - read < bm->block_size - bm->offset) {
+			to_read = n - read;
+		}
+		memcpy(buffer + read, bm->buffer + bm->offset, to_read);
+		bm->offset += to_read;
+		read += to_read;
+	}
+	return read;
 }
