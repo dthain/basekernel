@@ -9,8 +9,8 @@ ISOGEN?=genisoimage
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe
-	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img test.exe
+basekernel.iso: basekernel.img test.exe saver.exe ball.exe
+	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
 	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
@@ -29,6 +29,12 @@ kernel: ${KERNEL_OBJECTS}
 
 test.exe: test.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+saver.exe: saver.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+
+ball.exe: ball.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o test.exe
