@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "console.h"
 #include "kerneltypes.h"
 #include "ascii.h"
+#include "kmalloc.h"
 
 #include "stdarg.h"
 
@@ -62,6 +63,18 @@ unsigned strlen( const char *s )
 		s++;
 	}
 	return len;
+}
+
+char * strdup( const char *s)
+{
+	char *d=malloc(strlen(s)+1);
+
+	if(d==NULL) {
+		return NULL;
+	}
+
+	strcpy(d,s);
+	return d;
 }
 
 const char * strchr( const char *s, char ch )
@@ -134,6 +147,19 @@ void	memcpy( void *vd, const void *vs, unsigned length )
 		length--;
 	}
 }
+
+char * strdup( const char *s )
+{
+	unsigned len=strlen(s)+1;
+	char *res = malloc(len);
+
+	if (res == NULL) {
+		return NULL;
+	}
+
+	return (char*) memcpy(new, s, len);
+}
+
 
 static void printf_puthexdigit( uint8_t i )
 {
