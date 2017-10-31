@@ -827,7 +827,7 @@ cleanup:
 	return ret;
 }
 
-int kevinfs_rmdir(struct dirent *d, const char *filename)
+static int kevinfs_rmdir(struct dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *cwd_record_list;
 	struct kevinfs_inode *cwd_node = d->private_data;
@@ -851,7 +851,7 @@ int kevinfs_rmdir(struct dirent *d, const char *filename)
 	return ret;
 }
 
-struct file *kevinfs_open(struct dirent *d, uint8_t mode)
+static struct file *kevinfs_open(struct dirent *d, uint8_t mode)
 {
 	struct kevinfs_inode *node_to_access;
 	int ret = -1;
@@ -871,14 +871,14 @@ cleanup:
 	return 0;
 }
 
-int kevinfs_close(struct file *f)
+static int kevinfs_close(struct file *f)
 {
 	struct kevinfs_file *kf = f->private_data;
 	kfree(kf);
 	return 0;
 }
 
-int kevinfs_write(struct file *f, uint8_t *buffer, uint32_t n)
+static int kevinfs_write(struct file *f, uint8_t *buffer, uint32_t n)
 {
 	struct kevinfs_file *kf = f->private_data;
 	uint32_t original_offset = kf->offset, new_offset;
@@ -898,7 +898,7 @@ int kevinfs_write(struct file *f, uint8_t *buffer, uint32_t n)
 	return new_offset - original_offset;
 }
 
-int kevinfs_read(struct file *f, uint8_t *buffer, uint32_t n)
+static int kevinfs_read(struct file *f, uint8_t *buffer, uint32_t n)
 {
 	struct kevinfs_file *kf = f->private_data;
 	struct kevinfs_inode *inode = kf->inode;
@@ -973,9 +973,9 @@ cleanup:
 	return ret;
 }
 
-int kevinfs_link(char *filename, char *new_filename)
+static int kevinfs_link(struct dirent *d, char *filename, char *new_filename)
 {
-	struct kevinfs_inode *cwd_node = kevinfs_get_inode(cwd), *node_to_access = 0;
+	struct kevinfs_inode *cwd_node = d->private_data, *node_to_access = 0;
 	struct kevinfs_dir_record_list *cwd_record_list = kevinfs_readdir(cwd_node);
 	struct kevinfs_dir_record *new_record = 0;
 	int ret = -1;
@@ -1100,8 +1100,17 @@ static struct dirent *kevinfs_root(struct volume *v)
 	return node ? kevinfs_inode_as_dirent(node) : 0;
 }
 
+static int kevinfs_umount(struct volume *v)
+{
+	struct kevinfs_volume *kv = v->private_data;
+	struct kevinfs_inode *node = kevinfs_get_inode(kv->root_inode_num);
+	kfree(node);
+	kfree(kv);
+	return 0;
+}
+
 static struct fs_volume_ops kevinfs_volume_ops = {
-	.umount = 0,
+	.umount = kevinfs_umount,
 	.root = kevinfs_root
 };
 
@@ -1112,7 +1121,8 @@ static struct fs_dirent_ops kevinfs_dirent_ops = {
 	.lookup = kevinfs_dirent_lookup,
 	.rmdir = kevinfs_rmdir,
 	.open = kevinfs_open,
-	.unlink = kevinfs_unlink
+	.unlink = kevinfs_unlink,
+	.link = kevinfs_link
 };
 
 static struct fs_file_ops kevinfs_file_ops = {
