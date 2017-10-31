@@ -43,6 +43,7 @@ struct fs_dirent_ops {
 	struct file *(*open)(struct dirent *d, int8_t mode);
 	int (*close)(struct dirent *d);
 	struct dirent *(*mkdir)(struct dirent *d, const char *name);
+	struct dirent *(*mkfile)(struct dirent *d, const char *name);
 	struct dirent *(*lookup)(struct dirent *d, const char *name);
 	int (*readdir)(struct dirent *d, char *buffer, int buffer_length);
 	int (*rmdir)(struct dirent *d, const char *name);
@@ -59,6 +60,7 @@ struct dirent *fs_root(struct volume *);
 
 struct file *fs_open(struct dirent *d, uint8_t mode);
 int fs_read(struct file *f, char *buffer, uint32_t n);
+int fs_write(struct file *f, char *buffer, uint32_t n);
 int fs_dirent_close(struct dirent *d);
 int fs_close(struct file *f);
 struct dirent *fs_create(struct dirent *d, const char *name);
@@ -68,6 +70,7 @@ int fs_rmdir(struct dirent *d, const char *name);
 int fs_link(struct dirent *d, const char *oldpath, const char *newpath);
 int fs_unlink(struct dirent *d, const char *name);
 struct dirent *fs_mkdir(struct dirent *d, const char *name);
+struct dirent *fs_mkfile(struct dirent *d, const char *name);
 int fs_rmdir(struct dirent *d, const char *name);
 
 #endif

@@ -125,12 +125,43 @@ struct dirent *fs_mkdir(struct dirent *d, const char *name)
 	return 0;
 }
 
+struct dirent *fs_mkfile(struct dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->mkfile)
+	{
+		return ops->mkfile(d, name);
+	}
+	return 0;
+}
+
 int fs_rmdir(struct dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->rmdir)
 	{
 		return ops->rmdir(d, name);
+	}
+	return 0;
+}
+
+int fs_unlink(struct dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->unlink)
+	{
+		return ops->unlink(d, name);
+	}
+	return 0;
+}
+
+
+int fs_write(struct file *f, char *buffer, uint32_t buffer_length)
+{
+	const struct fs_file_ops *ops = f->ops;
+	if (ops->write)
+	{
+		return ops->write(f, buffer, buffer_length);
 	}
 	return 0;
 }

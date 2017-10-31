@@ -71,12 +71,7 @@ int kevinfs_init (void);
 int kevinfs_mkfs (void);
 int kevinfs_chdir(char *filename);
 int kevinfs_lsdir (void);
-int kevinfs_open (char *filename, uint8_t mode);
-int kevinfs_close (int fd);
 int kevinfs_link(char *filename, char *new_filename);
-int kevinfs_unlink(char *filname);
-int kevinfs_write (int fd, uint8_t *buffer, uint32_t n);
-int kevinfs_read (int fd, uint8_t *buffer, uint32_t n);
 int kevinfs_lseek(int fd, uint32_t offset);
 int kevinfs_stat(char *filename, struct kevinfs_stat *stat);
 
