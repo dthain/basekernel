@@ -13,6 +13,7 @@ See the file LICENSE for details.
 #include "../fdtable.h"
 #include "../string.h"
 #include "../hashtable.h"
+#include "../fs.h"
 
 static uint32_t ceiling(double d)
 {
@@ -28,6 +29,15 @@ static struct kevinfs_superblock *super;
 static struct fdtable table;
 static uint32_t cwd;
 static struct kevinfs_transaction transaction;
+
+struct kevinfs_volume {
+       uint32_t unit;
+       int root_inode_num;
+};
+
+static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *s, uint32_t unit);
+static struct volume *kevinfs_volume_as_volume(struct kevinfs_volume *v);
+static struct dirent *kevinfs_inode_as_dirent(struct kevinfs_inode *node);
 
 static void kevinfs_print_superblock(struct kevinfs_superblock *s)
 {
@@ -652,6 +662,15 @@ static int kevinfs_read_file_range(struct kevinfs_inode *node, uint8_t *buffer, 
 	return total_copy_length;
 }
 
+static struct volume *kevinfs_mount(uint32_t unit_no)
+{
+	struct kevinfs_superblock *super = kevinfs_ata_get_superblock();
+	if (!super) return 0;
+	struct kevinfs_volume *kv = kevinfs_superblock_as_kevinfs_volume(super, unit_no);
+	struct volume *v = kevinfs_volume_as_volume(kv);
+	return v;
+}
+
 int kevinfs_lsdir()
 {
 	struct kevinfs_inode *node = kevinfs_get_inode(cwd);
@@ -899,6 +918,18 @@ cleanup:
 	return ret;
 }
 
+static int kevinfs_register()
+{
+	char kevin_name[] = "kevin";
+	char *kevin_name_cpy = kmalloc(6);
+	struct fs f;
+	strcpy(kevin_name_cpy, kevin_name);
+	f.mount = kevinfs_mount;
+	f.name = kevin_name_cpy;
+	fs_register(&f);
+	return 0;
+}
+
 int kevinfs_init(void)
 {
 	bool formatted;
@@ -909,6 +940,7 @@ int kevinfs_init(void)
 	super = kevinfs_ata_get_superblock();
 	if (!super || kevinfs_transactions_init(super) < 0)
 		return -1;
+	kevinfs_register();
 	return formatted || !kevinfs_mkfs() ? 0 : -1;
 }
 
@@ -969,4 +1001,39 @@ int kevinfs_mkfs(void)
 	if (top_dir)
 		kevinfs_dir_dealloc(top_dir);
 	return ret;
+}
+
+static struct dirent *kevinfs_root(struct volume *v)
+{
+	struct kevinfs_volume *kv = v->private_data;
+	struct kevinfs_inode *node = kevinfs_get_inode(kv->root_inode_num);
+	return node ? kevinfs_inode_as_dirent(node) : 0;
+}
+
+static struct fs_volume_ops kevinfs_volume_ops = {
+	.umount = 0,
+	.root = kevinfs_root
+};
+
+static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *super, uint32_t unit)
+{
+	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
+	kv->root_inode_num = 1;
+	kv->unit = unit;
+	return kv;
+}
+
+static struct volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv)
+{
+	struct volume *v = kmalloc(sizeof(struct volume));
+	v->private_data = kv;
+	v->ops = &kevinfs_volume_ops;
+	return v;
+}
+
+static struct dirent *kevinfs_inode_as_dirent(struct kevinfs_inode *node)
+{
+	struct dirent *d = kmalloc(sizeof(struct dirent));
+	d->sz = node->sz;
+	return d;
 }
