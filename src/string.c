@@ -64,6 +64,12 @@ unsigned strlen( const char *s )
 	return len;
 }
 
+char * strcat( char *d, const char *s )
+{
+	strcpy(d + strlen(d), s);
+	return d;
+}
+
 const char * strchr( const char *s, char ch )
 {
 	while(*s) {
