@@ -6,7 +6,9 @@
 struct list l;
 
 int fs_register(struct fs *f) {
-	list_push_tail(&l, &f->node);
+	struct fs *f_final = kmalloc(sizeof(struct fs));
+	memcpy(f_final, f, sizeof(struct fs));
+	list_push_tail(&l, &f_final->node);
 	return 0;
 }
 
