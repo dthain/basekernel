@@ -4,8 +4,8 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#ifndef FS_H
-#define FS_H
+#ifndef KEVINFS_H
+#define KEVINFS_H
 
 #define FS_FILENAME_MAXLEN 255
 #define FS_MAGIC 0x1209
