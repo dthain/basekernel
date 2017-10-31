@@ -41,7 +41,7 @@ void test_rmdir() {
 	struct fs *f = fs_get("kevin");
 	struct volume *v = fs_mount(f, 0);
 	struct dirent *d = fs_root(v);
-	fs_rmdir(d, "example");
+	fs_rmdir(d, "example_directory");
 	char buffer[1000];
 	int n = fs_readdir(d, buffer, 1000);
 	buffer[n] = 0;
