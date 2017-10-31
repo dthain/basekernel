@@ -117,7 +117,7 @@ struct file *fs_open(struct dirent *d, uint8_t mode)
 	return 0;
 }
 
-struct dirent *fs_mkdir(struct dirent *d, const char *name)
+int fs_mkdir(struct dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->mkdir)
@@ -127,7 +127,7 @@ struct dirent *fs_mkdir(struct dirent *d, const char *name)
 	return 0;
 }
 
-struct dirent *fs_mkfile(struct dirent *d, const char *name)
+int fs_mkfile(struct dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->mkfile)

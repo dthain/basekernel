@@ -48,35 +48,46 @@ void test_rmdir() {
 	printf("%s\n", buffer);
 }
 
-//void test_mkdir_to_max() {
-//	uint32_t i;
-//	printf("test_mkdir_to_max\n");
-//	for (i = 0;; i++) {
-//		char filename[30] = "example";
-//		char id[4];
-//		strcat(filename, uint_to_string(i, id));
-//		printf("hello?");
-//		printf("writing %s\n", filename);
-//		if(kevinfs_mkdir(filename) < 0)
-//			break;
-//	}
-//	kevinfs_lsdir();
-//}
-//
-//void test_rmdir_to_min() {
-//	uint32_t i;
-//	printf("test_rmdir_to_min\n");
-//	for (i = 0;; i++) {
-//		char filename[30] = "example";
-//		char id[4];
-//		strcat(filename, uint_to_string(i, id));
-//		if(kevinfs_rmdir(filename) < 0)
-//			break;
-//	}
-//	kevinfs_lsdir();
-//}
-//
-void test_open_fd() {
+void test_mkdir_to_max() {
+	printf("test_mkdir_to_max\n");
+	struct fs *f = fs_get("kevin");
+	struct volume *v = fs_mount(f, 0);
+	struct dirent *d = fs_root(v);
+	uint32_t i;
+	for (i = 0;; i++) {
+		char filename[30] = "example";
+		char id[4];
+		strcat(filename, uint_to_string(i, id));
+		printf("writing %s\n", filename);
+		if(fs_mkdir(d, filename) < 0)
+			break;
+	}
+	char buffer[1000];
+	int n = fs_readdir(d, buffer, 1000);
+	buffer[n] = 0;
+	printf("%s\n", buffer);
+}
+
+void test_rmdir_to_min() {
+	printf("test_rmdir_to_min\n");
+	struct fs *f = fs_get("kevin");
+	struct volume *v = fs_mount(f, 0);
+	struct dirent *d = fs_root(v);
+	uint32_t i;
+	for (i = 0;; i++) {
+		char filename[30] = "example";
+		char id[4];
+		strcat(filename, uint_to_string(i, id));
+		if(fs_rmdir(d, filename) < 0)
+			break;
+	}
+	char buffer[1000];
+	int n = fs_readdir(d, buffer, 1000);
+	buffer[n] = 0;
+	printf("%s\n", buffer);
+}
+
+void test_write_file() {
 	printf("test_file_read_write\n");
 	struct fs *f = fs_get("kevin");
 	struct volume *v = fs_mount(f, 0);
@@ -114,9 +125,9 @@ int kevinfs_test() {
 	test_lsdir_empty();
 	test_mkdir();
 	test_rmdir();
-	//test_mkdir_to_max();
-	//test_rmdir_to_min();
-	test_open_fd();
+	test_mkdir_to_max();
+	test_rmdir_to_min();
+	test_write_file();
 
 	return 0;
 }

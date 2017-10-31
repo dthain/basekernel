@@ -737,13 +737,13 @@ int kevinfs_lsdir()
 	return ret;
 }
 
-static struct dirent *kevinfs_mkdir(struct dirent *d, const char *filename)
+static int kevinfs_mkdir(struct dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *new_dir_record_list, *cwd_record_list;
 	struct kevinfs_dir_record *new_cwd_record;
 	struct kevinfs_inode *new_node, *cwd_node;
 	bool is_directory = 1;
-	int ret;
+	int ret = 0;
 
 	kevinfs_transaction_init(&transaction);
 
@@ -779,16 +779,16 @@ cleanup:
 		kfree(new_cwd_record);
 	if (new_node)
 		kfree(new_node);
-	return 0;
+	return ret;
 }
 
-static struct dirent *kevinfs_mkfile(struct dirent *d, const char *filename)
+static int kevinfs_mkfile(struct dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *new_dir_record_list, *cwd_record_list;
 	struct kevinfs_dir_record *new_cwd_record;
 	struct kevinfs_inode *new_node, *cwd_node;
 	bool is_directory = 0;
-	int ret;
+	int ret = 0;
 
 	kevinfs_transaction_init(&transaction);
 
@@ -824,7 +824,7 @@ cleanup:
 		kfree(new_cwd_record);
 	if (new_node)
 		kfree(new_node);
-	return 0;
+	return ret;
 }
 
 int kevinfs_rmdir(struct dirent *d, const char *filename)
