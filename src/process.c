@@ -18,6 +18,7 @@ See the file LICENSE for details.
 
 struct process *current=0;
 struct list ready_list = {0,0};
+struct list grave_list = {0,0};
 uint32_t current_pid = 1;
 
 void process_init()
@@ -105,6 +106,9 @@ static void process_switch( int newstate )
 		if(newstate==PROCESS_STATE_READY) {
 			list_push_tail(&ready_list,&current->node);
 		}
+		if(newstate==PROCESS_STATE_GRAVE) {
+			list_push_tail(&grave_list,&current->node);
+		}
 	}
 
 	current = 0;
@@ -176,6 +180,14 @@ void process_wakeup( struct list *q )
 	if(p) {
 		p->state = PROCESS_STATE_READY;
 		list_push_tail(&ready_list,&p->node);
+	}
+}
+
+void process_reap_all()
+{
+	struct process *p;
+	while((p = (struct process*)list_pop_head(&grave_list))) {
+        pagetable_delete(p->pagetable);
 	}
 }
 

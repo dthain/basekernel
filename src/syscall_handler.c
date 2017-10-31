@@ -227,6 +227,7 @@ int sys_getppid()
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
+    process_reap_all();
 	switch(n) {
 	case SYSCALL_EXIT:	return sys_exit(a);
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);

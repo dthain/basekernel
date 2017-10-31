@@ -101,6 +101,20 @@ static int process_command(char *line)
 			list_directory("/");
 
 	}
+	else if (pch && !strcmp(pch, "stress"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			printf("%s: unexpected argument\n", pch);
+		else {
+            int i;
+            for (i = 0; i < 100; i++) {
+                sys_run("TEST.EXE");
+                clock_wait(1000);
+            }
+        }
+
+	}
 	else if (pch && !strcmp(pch, "test"))
 	{
 		pch = strtok(0, " ");
@@ -135,7 +149,7 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "help"))
 	{
 		printf(
-			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 			"Commands:",
 			"echo <text>",
 			"run <path>",
@@ -143,7 +157,8 @@ static int process_command(char *line)
 			"list",
 			"time",
 			"help",
-			"exit"
+			"exit",
+            "stress"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))

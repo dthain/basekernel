@@ -47,6 +47,7 @@ void process_dump( struct process *p );
 void process_wait( struct list *q );
 void process_wakeup( struct list *q );
 void process_wakeup_all( struct list *q );
+void process_reap_all();
 
 uint32_t process_getpid();
 uint32_t process_getppid();
