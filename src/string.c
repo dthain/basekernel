@@ -64,10 +64,10 @@ unsigned strlen( const char *s )
 	return len;
 }
 
-char * strrer( char *s)
+char * strrev( char *s )
 {
 	unsigned start=0;
-	unsigned end = strlen(str)-1;
+	unsigned end=strlen(s)-1;
 	char swap;
 
 	while(start<end)
