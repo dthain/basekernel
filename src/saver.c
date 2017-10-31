@@ -10,7 +10,7 @@ A fun graphics demo that features a line segment bouncing around the screen.
 
 #include "syscalls.h"
 #define WIDTH    (200)
-#define HEIGHT   (300)
+#define HEIGHT   (200)
 typedef unsigned int uint32_t;
 
 uint32_t randint(uint32_t min, uint32_t max);
@@ -18,7 +18,7 @@ void move(int *x, int *d, int min, int max);
 
 int main( const char *argv[], int argc )
 {
-    int wd = draw_create(0, 100, 100, WIDTH, HEIGHT);
+    int wd = draw_create(0, 600, 500, WIDTH, HEIGHT);
     if (wd < 0) {
         debug("Window create failed!\n");
         exit(1);
@@ -41,7 +41,6 @@ int main( const char *argv[], int argc )
     
     draw_clear(wd, 0, 0, WIDTH, HEIGHT);
 
-    int i, j;
     for (;;) {
         move(&x1, &dx1, 0, WIDTH-1);
         move(&y1, &dy1, 0, HEIGHT-1);
@@ -53,7 +52,7 @@ int main( const char *argv[], int argc )
         draw_color(wd, r, g, b);
 
         draw_line(wd, x1, y1, x2-x1, y2-y1);
-        yield();
+        sleep(75);
     }
 
     draw_clear(wd, 0, 0, WIDTH+1, HEIGHT+1);

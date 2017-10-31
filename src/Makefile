@@ -37,4 +37,4 @@ ball.exe: ball.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
-	rm -rf basekernel.img bootblock kernel *.o test.exe
+	rm -rf basekernel.img bootblock kernel *.o test.exe saver.exe ball.exe
