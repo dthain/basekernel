@@ -67,5 +67,7 @@ int fs_readdir(struct dirent *d, char *buffer, int buffer_length);
 int fs_rmdir(struct dirent *d, const char *name);
 int fs_link(struct dirent *d, const char *oldpath, const char *newpath);
 int fs_unlink(struct dirent *d, const char *name);
+struct dirent *fs_mkdir(struct dirent *d, const char *name);
+int fs_rmdir(struct dirent *d, const char *name);
 
 #endif

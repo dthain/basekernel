@@ -6,6 +6,7 @@
 #include "../fs.h"
 
 void test_mount() {
+	printf("test_mount");
 	struct fs *f = fs_get("kevin");
 	struct volume *v = fs_mount(f, 0);
 	struct dirent *d = fs_root(v);
@@ -14,16 +15,40 @@ void test_mount() {
 
 //void test_lsdir_empty() {
 //	printf("test_lsdir_empty\n");
-//	kevinfs_lsdir();	
+//	struct fs *f = fs_get("kevin");
+//	struct volume *v = fs_mount(f, 0);
+//	struct dirent *d = fs_root(v);
+//	char buffer[1000];
+//	int n = fs_readdir(d, buffer, 1000);
+//	buffer[n] = 0;
+//	printf("%s\n", buffer);
 //}
-//
-//void test_mkdir() {
-//	kevinfs_lsdir();
-//	printf("test_mkdir\n");
-//	kevinfs_mkdir("example");
-//	kevinfs_lsdir();
-//}
-//
+
+void test_mkdir() {
+	printf("test_mkdir\n");
+	struct fs *f = fs_get("kevin");
+	struct volume *v = fs_mount(f, 0);
+	struct dirent *d = fs_root(v);
+	fs_mkdir(d, "example");
+	char buffer[1000];
+	int n = fs_readdir(d, buffer, 1000);
+	buffer[n] = 0;
+	printf("%s\n", buffer);
+}
+
+void test_rmdir() {
+	printf("test_rmdir\n");
+	struct fs *f = fs_get("kevin");
+	struct volume *v = fs_mount(f, 0);
+	struct dirent *d = fs_root(v);
+	fs_rmdir(d, "example");
+	char buffer[1000];
+	int n = fs_readdir(d, buffer, 1000);
+	buffer[n] = 0;
+	printf("%s\n", buffer);
+}
+
+
 //void test_mkdir_to_max() {
 //	uint32_t i;
 //	printf("test_mkdir_to_max\n");
@@ -126,12 +151,14 @@ void test_mount() {
 
 int kevinfs_test() {
 	//test_lsdir_empty();
+	test_mkdir();
+	test_rmdir();
 	//test_mkdir_to_max();
 	//test_rmdir_to_min();
 	//test_open_fd();
 	//test_chdir();
 	//test_rollback();
-	test_mount();
+	//test_mount();
 
 	return 0;
 }

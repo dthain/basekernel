@@ -71,8 +71,6 @@ int kevinfs_init (void);
 int kevinfs_mkfs (void);
 int kevinfs_chdir(char *filename);
 int kevinfs_lsdir (void);
-int kevinfs_mkdir (char *filename);
-int kevinfs_rmdir (char *filename);
 int kevinfs_open (char *filename, uint8_t mode);
 int kevinfs_close (int fd);
 int kevinfs_link(char *filename, char *new_filename);

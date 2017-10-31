@@ -114,3 +114,23 @@ struct file *fs_open(struct dirent *d, uint8_t mode)
 	}
 	return 0;
 }
+
+struct dirent *fs_mkdir(struct dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->mkdir)
+	{
+		return ops->mkdir(d, name);
+	}
+	return 0;
+}
+
+int fs_rmdir(struct dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->rmdir)
+	{
+		return ops->rmdir(d, name);
+	}
+	return 0;
+}
