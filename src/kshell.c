@@ -10,6 +10,7 @@
 #include "main.h"
 #include "ascii.h"
 #include "fs.h"
+#include "kevinfs/kevinfs_test.h"
 
 static int print_directory( char *d, int length )
 {
@@ -22,14 +23,15 @@ static int print_directory( char *d, int length )
 	return 0;
 }
 
-static int mount_cd( int unit )
+static int mount_cd( int unit , char *fs_type )
 {
-	struct fs *cdrom = fs_get("cdrom");
-	struct volume *v = fs_mount(cdrom, unit);
+	struct fs *fs = fs_get(fs_type);
+	struct volume *v = fs_mount(fs, unit);
 	if(v) {
 		struct dirent *d = fs_root(v);
 		if(d) {
             root_directory = d;
+	    current_directory = d;
             return 0;
 		} else {
 			printf("couldn't access root dir!\n");
@@ -46,7 +48,7 @@ static int mount_cd( int unit )
 
 static int list_directory( const char *path )
 {
-    struct dirent *d = root_directory;
+    struct dirent *d = current_directory;
     if(d) {
         int buffer_length = 1024;
         char *buffer = kmalloc(buffer_length);
@@ -86,7 +88,8 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
         int unit;
 		if (pch && str2int(pch, &unit)) {
-		    mount_cd(unit);	
+		    char *fs_type = strtok(0, " ");
+		    mount_cd(unit, fs_type);
         }
 		else
 			printf("mount: expected unit number but got %s\n", pch);
@@ -106,10 +109,36 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
 		if (pch && !strcmp(pch, "kmalloc"))
 			kmalloc_test();
+		else if (pch && !strcmp(pch, "kevinfs"))
+			kevinfs_test();
 		else if (pch)
 			printf("test: test '%s' not found\n", pch);
 		else
 			printf("test: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "mkdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			fs_mkdir(current_directory, pch);
+		else
+			printf("mkdir: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "rmdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			fs_rmdir(current_directory, pch);
+		else
+			printf("rmdir: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "chdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			current_directory = fs_namei(current_directory, pch);
+		else
+			printf("rmdir: missing argument\n");
 	}
 	else if (pch && !strcmp(pch, "time"))
 	{

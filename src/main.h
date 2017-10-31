@@ -8,5 +8,6 @@ See the file LICENSE for details.
 #define MAIN_H
 
 extern struct dirent *root_directory;
+extern struct dirent *current_directory;
 
 #endif
