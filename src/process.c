@@ -243,6 +243,9 @@ int process_kill( uint32_t pid ) {
         dead->exitreason = PROCESS_EXIT_KILLED;
         if (dead == current) {
             process_switch(PROCESS_STATE_GRAVE);
+        } else {
+            list_remove(&dead->node);
+            list_push_tail(&grave_list,&dead->node);
         }
         return 1;
     } else {
