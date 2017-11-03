@@ -30,7 +30,8 @@ typedef enum {
 	SYSCALL_SLEEP,
 	SYSCALL_GETTIMEOFDAY,
 	SYSCALL_GETPID,
-	SYSCALL_GETPPID
+	SYSCALL_GETPPID,
+    SYSCALL_KILL
 } syscall_t;
 
 typedef enum {

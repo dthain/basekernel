@@ -73,12 +73,23 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
-  p->window_count = 0;
+    p->window_count = 0;
 	p->pid = current_pid++;
 
 	process_stack_init(p);
 
 	return p;
+}
+
+void process_delete( struct process *p )
+{
+    int i;
+    for (i = 0; i < p->window_count; i++) {
+        if (!(--(p->windows[i]->count))) {
+            kfree(p->windows[i]);
+        }
+    }
+    pagetable_delete(p->pagetable);
 }
 
 void process_launch( struct process *p )
@@ -155,15 +166,7 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
-
-    int i;
-    for (i = 0; i < current->window_count; i++) {
-        if (!(--(current->windows[i]->count))) {
-            kfree(current->windows[i]);
-        }
-    }
-    current->window_count = 0;
-
+    current->exitreason = PROCESS_EXIT_NORMAL;
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -187,7 +190,7 @@ void process_reap_all()
 {
 	struct process *p;
 	while((p = (struct process*)list_pop_head(&grave_list))) {
-        pagetable_delete(p->pagetable);
+        process_delete(p);
 	}
 }
 
@@ -222,4 +225,36 @@ uint32_t process_getpid() {
 
 uint32_t process_getppid() {
     return current->ppid;
+}
+
+int process_kill( uint32_t pid ) {
+    struct process *dead = 0;
+    if (current->pid == pid) {
+        dead = current;
+    } else {
+        dead = (struct process*)(ready_list.head);
+        while (dead && dead->pid != pid) {
+            dead = (struct process*)(dead->node.next);
+        }
+    }
+    if (dead) {
+        console_printf("process killed\n");
+        dead->exitcode = 0;
+        dead->exitreason = PROCESS_EXIT_KILLED;
+        if (dead == current) {
+            process_switch(PROCESS_STATE_GRAVE);
+        }
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+/*
+int process_wait( uint32_t pid ) {
+
+}
+*/
+int process_reap( uint32_t pid ) {
+
 }

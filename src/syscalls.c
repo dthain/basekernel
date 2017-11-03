@@ -91,3 +91,7 @@ int getppid() {
     static int cache = 0;
     return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
 }
+
+int kill( unsigned int pid ) {
+    return syscall( SYSCALL_KILL, pid, 0, 0, 0, 0 );
+}

@@ -92,6 +92,17 @@ static int process_command(char *line)
 			printf("mount: expected unit number but got %s\n", pch);
 
 	}
+	else if (pch && !strcmp(pch, "kill"))
+	{
+		pch = strtok(0, " ");
+        int pid;
+		if (pch && str2int(pch, &pid)) {
+		    process_kill(pid);	
+        }
+		else
+			printf("kill: expected process id number but got %s\n", pch);
+
+	}
 	else if (pch && !strcmp(pch, "list"))
 	{
 		pch = strtok(0, " ");
@@ -158,7 +169,8 @@ static int process_command(char *line)
 			"time",
 			"help",
 			"exit",
-            "stress"
+            "stress",
+            "kill"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))
