@@ -75,12 +75,6 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
 	p->pid = current_pid++;
-    p->children.head = 0;
-    p->children.tail = 0;
-    if (current) {
-        printf("Adding to parent %d\n", current->pid);
-        list_push_head(&current->children, &p->node);
-    }
 
 	process_stack_init(p);
 
