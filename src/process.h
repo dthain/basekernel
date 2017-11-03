@@ -36,7 +36,12 @@ struct process {
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
-    //struct list children;
+    struct list children;
+};
+
+struct process_pointer {
+	struct list_node node;
+    struct process *p;
 };
 
 void process_init();

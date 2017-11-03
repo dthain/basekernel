@@ -75,6 +75,12 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
 	p->pid = current_pid++;
+    p->children.head = 0;
+    p->children.tail = 0;
+    if (current) {
+        printf("Adding to parent %d\n", current->pid);
+        list_push_head(&current->children, &p->node);
+    }
 
 	process_stack_init(p);
 
@@ -227,6 +233,26 @@ uint32_t process_getppid() {
     return current->ppid;
 }
 
+
+void process_make_dead( struct process *dead ) {
+    //can't do this, will have to figure out another way of listing children
+    struct process* p = (struct process*)(dead->children.head);
+    while (p) {
+        console_printf("killing kid\n");
+        struct process* next = p->node.next;
+        process_make_dead(p); //recurse on our children
+        p = next;
+    }
+    dead->exitcode = 0;
+    dead->exitreason = PROCESS_EXIT_KILLED;
+    if (dead == current) {
+        process_switch(PROCESS_STATE_GRAVE);
+    } else {
+        list_remove(&dead->node);
+        list_push_tail(&grave_list,&dead->node);
+    }
+
+}
 int process_kill( uint32_t pid ) {
     struct process *dead = 0;
     if (current->pid == pid) {
@@ -239,14 +265,7 @@ int process_kill( uint32_t pid ) {
     }
     if (dead) {
         console_printf("process killed\n");
-        dead->exitcode = 0;
-        dead->exitreason = PROCESS_EXIT_KILLED;
-        if (dead == current) {
-            process_switch(PROCESS_STATE_GRAVE);
-        } else {
-            list_remove(&dead->node);
-            list_push_tail(&grave_list,&dead->node);
-        }
+        process_make_dead(dead);
         return 1;
     } else {
         return 0;
