@@ -235,12 +235,15 @@ uint32_t process_getppid() {
 
 
 void process_make_dead( struct process *dead ) {
-    //can't do this, will have to figure out another way of listing children
-    struct process* p = (struct process*)(dead->children.head);
+    if (current->ppid == dead->pid) {
+        process_make_dead(current);
+    }
+    struct process *p = (struct process*)(ready_list.head);
     while (p) {
-        console_printf("killing kid\n");
         struct process* next = p->node.next;
-        process_make_dead(p); //recurse on our children
+        if (p->ppid == dead->pid) {
+            process_make_dead(p);
+        }
         p = next;
     }
     dead->exitcode = 0;
