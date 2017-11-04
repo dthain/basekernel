@@ -153,19 +153,6 @@ void	memcpy( void *vd, const void *vs, unsigned length )
 	}
 }
 
-char * strdup( const char *s )
-{
-	unsigned len=strlen(s)+1;
-	char *res = malloc(len);
-
-	if (res == NULL) {
-		return NULL;
-	}
-
-	return (char*) memcpy(new, s, len);
-}
-
-
 static void printf_puthexdigit( uint8_t i )
 {
 	if(i<10) {
