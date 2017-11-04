@@ -12,6 +12,7 @@ int	 strcmp( const char *a, const char *b );
 int	 strncmp( const char *a, const char *b, unsigned length );
 unsigned strlen( const char *s );
 char *	 strrev( char *s );
+char *	 strcat( char *d, const char *s );
 
 char * strtok( char *s, const char *delim );
 

@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
+#include "fs.h"
 #include "clock.h"
 #include "rtc.h"
 
@@ -44,12 +45,12 @@ int sys_run( const char *path )
 
 	if(!root_directory) return ENOENT;
 
-	struct cdrom_dirent *d = cdrom_dirent_namei(root_directory,path);
+	struct dirent *d = fs_namei(root_directory,path);
 	if(!d) {
 		return ENOENT;
 	}
 
-	int length = cdrom_dirent_length(d);
+	int length = d->sz;
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
@@ -61,6 +62,8 @@ int sys_run( const char *path )
 	int i;
 	int npages = length/PAGE_SIZE + length%PAGE_SIZE ? 1 : 0;
 
+	struct file *f = fs_open(d, 0);
+
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
 
@@ -69,14 +72,21 @@ int sys_run( const char *path )
 		unsigned paddr;
 
 		pagetable_getmap(p->pagetable,vaddr,&paddr);
-		cdrom_dirent_read_block(d,(void*)paddr,i*2);
-		cdrom_dirent_read_block(d,(void*)paddr+CDROM_BLOCK_SIZE,i*2+1);
+		fs_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
 	/* Close everything up */
 	
-	cdrom_dirent_close(d);
+	fs_dirent_close(d);
+	fs_close(f);
 
+    /* Copy open windows */
+    memcpy(p->windows, current->windows, sizeof(p->windows));
+    p->window_count = current->window_count;
+    for(i=0;i<p->window_count;i++) {
+        p->windows[i]->count++;
+    }
+  
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
 
@@ -124,6 +134,81 @@ int sys_close( int fd )
 	return ENOSYS;
 }
 
+int sys_draw_color( int wd, int r, int g, int b ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    struct graphics_color c;
+    c.r = r;
+    c.g = g;
+    c.b = b;
+    c.a = 0;
+    graphics_fgcolor( current->windows[wd], c );
+    return 0;
+}
+
+int sys_draw_rect( int wd, int x, int y, int w, int h ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_rect( current->windows[wd], x, y, w, h );
+    return 0;
+}
+
+int sys_draw_clear( int wd, int x, int y, int w, int h ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_clear( current->windows[wd], x, y, w, h );
+    return 0;
+}
+
+int sys_draw_line( int wd, int x, int y, int w, int h ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_line( current->windows[wd], x, y, w, h );
+    return 0;
+}
+
+int sys_draw_char( int wd, int x, int y, char c ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    graphics_char( current->windows[wd], x, y, c );
+    return 0;
+}
+
+int sys_draw_string( int wd, int x, int y, char *s ) {
+    if (wd < 0 || wd >= current->window_count) {
+        return ENOENT;
+    }
+    int i;
+    for (i = 0; s[i]; i++) {
+        graphics_char( current->windows[wd], x+i*8, y, s[i] );
+    }
+    return 0;
+}
+
+int sys_draw_create( int wd, int x, int y, int w, int h ) {
+    if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count || current->windows[wd]->clip.w < x + w || current->windows[wd]->clip.h < y + h) {
+        return ENOENT;
+    }
+
+    current->windows[current->window_count] = graphics_create(current->windows[wd]);
+
+    if (!current->windows[current->window_count]) {
+        return ENOENT;
+    }
+
+    current->windows[current->window_count]->clip.x = x + current->windows[wd]->clip.x;
+    current->windows[current->window_count]->clip.y = y + current->windows[wd]->clip.y;
+    current->windows[current->window_count]->clip.w = w;
+    current->windows[current->window_count]->clip.h = h;
+
+    return current->window_count++;
+}
+
 int sys_sleep(unsigned int ms)
 {
 	clock_wait(ms);
@@ -153,6 +238,13 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
+	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
+	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);
+	case SYSCALL_DRAW_CLEAR:	return sys_draw_clear(a, b, c, d, e);
+	case SYSCALL_DRAW_CHAR:	return sys_draw_char(a, b, c, (char)d);
+	case SYSCALL_DRAW_STRING:	return sys_draw_string(a, b, c, (char*)d);
+	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_GETPID:	return sys_getpid();

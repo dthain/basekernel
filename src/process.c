@@ -12,7 +12,9 @@ See the file LICENSE for details.
 #include "x86.h"
 #include "interrupt.h"
 #include "memorylayout.h"
+#include "kmalloc.h"
 #include "kernelcore.h"
+#include "main.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
@@ -24,6 +26,10 @@ void process_init()
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
+
+    current->windows[0] = &graphics_root;
+    current->window_count = 1;
+    graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
 
@@ -66,6 +72,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
+  p->window_count = 0;
 	p->pid = current_pid++;
 
 	process_stack_init(p);
@@ -144,6 +151,15 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
+
+    int i;
+    for (i = 0; i < current->window_count; i++) {
+        if (!(--(current->windows[i]->count))) {
+            kfree(current->windows[i]);
+        }
+    }
+    current->window_count = 0;
+
 	process_switch(PROCESS_STATE_GRAVE);
 }
 

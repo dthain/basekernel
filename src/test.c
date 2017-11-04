@@ -15,13 +15,12 @@ This program requires that write() and exit() work correctly.
 int main( const char *argv[], int argc )
 {
 	int j;
-
 	for(j=0;j<10;j++) {
 		printf("hello world, I can count to %d!\n", j);
 		sleep(1000);
 	}
-
+  
 	exit(0);
-
+  
 	return 0;
 }
