@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "console.h"
 #include "kerneltypes.h"
 #include "ascii.h"
+#include "kmalloc.h"
 
 #include "stdarg.h"
 
@@ -62,6 +63,17 @@ unsigned strlen( const char *s )
 		s++;
 	}
 	return len;
+}
+
+char * strdup( const char *s)
+{
+	char *d=malloc(strlen(s)+1);
+
+	if(d==NULL) {
+		return NULL;
+	}
+
+	strcpy(d,s);
 }
 
 char * strcat( char *d, const char *s )
