@@ -31,4 +31,10 @@ static inline uint16_t hton16( uint16_t x )
 	return (x&0xff)<<8 | (x>>8);
 }
 
+struct process_info {
+    uint32_t pid;
+    uint32_t exitcode;
+    uint32_t exitreason;
+};
+
 #endif

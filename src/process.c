@@ -15,6 +15,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "kernelcore.h"
 #include "main.h"
+#include "clock.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
@@ -234,7 +235,7 @@ void process_make_dead( struct process *dead ) {
     }
     struct process *p = (struct process*)(ready_list.head);
     while (p) {
-        struct process* next = p->node.next;
+        struct process* next = (struct process*)p->node.next;
         if (p->ppid == dead->pid) {
             process_make_dead(p);
         }
@@ -269,11 +270,40 @@ int process_kill( uint32_t pid ) {
     }
 }
 
-/*
-int process_wait( uint32_t pid ) {
 
+int process_wait_child(struct process_info *info, int timeout) {
+	clock_t start, elapsed;
+	uint32_t total;
+	start = clock_read();
+	do {
+        struct process *p = (struct process*)(grave_list.head);
+        while (p) {
+            struct process* next = (struct process*)p->node.next;
+            if (p->ppid == current->pid) {
+                info->exitcode = p->exitcode;
+                info->exitreason = p->exitreason;
+                info->pid = p->pid;
+                return process_reap(p->pid);
+            }
+            p = next;
+        }
+		process_wait(&ready_list);
+		elapsed = clock_diff(start,clock_read());
+		total = elapsed.millis + elapsed.seconds*1000;
+	} while(total<timeout);
+    return 0;
 }
-*/
-int process_reap( uint32_t pid ) {
 
+int process_reap( uint32_t pid ) {
+    struct process *p = (struct process*)(grave_list.head);
+    while (p) {
+        struct process* next = (struct process*)p->node.next;
+        if (p->pid == pid) {
+            list_remove(&p->node);
+            process_delete(p);
+            return 1;
+        }
+        p = next;
+    }
+    return 0;
 }
