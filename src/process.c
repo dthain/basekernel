@@ -70,7 +70,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->pagetable = pagetable_create();
 	pagetable_init(p->pagetable);
 	pagetable_alloc(p->pagetable,PROCESS_ENTRY_POINT,code_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
-	pagetable_alloc(p->pagetable,PROCESS_STACK_INIT-stack_size,stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+	pagetable_alloc(p->pagetable,PROCESS_STACK_INIT+0xF-stack_size+1,stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
@@ -91,6 +91,8 @@ void process_delete( struct process *p )
         }
     }
     pagetable_delete(p->pagetable);
+	memory_free_page(p->kstack);
+	memory_free_page(p);
 }
 
 void process_launch( struct process *p )

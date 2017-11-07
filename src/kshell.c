@@ -71,12 +71,28 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
 		if (pch) printf("%s\n", pch);
 	}
+	else if (pch && !strcmp(pch, "start"))
+	{
+		pch = strtok(0, " ");
+		if (pch) {
+			sys_run(pch, pch, "start", 0);
+			process_yield();
+		}
+		else
+			list_directory("run: missing argument");
+	}
 	else if (pch && !strcmp(pch, "run"))
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-			sys_run(pch);
-			process_yield();
+			sys_run(pch, pch, "run", 0);
+            struct process_info info;
+            if (process_wait_child(&info, 5000)) {
+                printf("process %d exited with status %d\n", info.pid, info.exitcode);
+
+            } else {
+                printf("run: timeout\n");
+            }
 		}
 		else
 			list_directory("run: missing argument");
@@ -101,6 +117,22 @@ static int process_command(char *line)
         }
 		else
 			printf("kill: expected process id number but got %s\n", pch);
+
+	}
+	else if (pch && !strcmp(pch, "wait"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			printf("%s: unexpected argument\n", pch);
+		else {
+            struct process_info info;
+            if (process_wait_child(&info, 5000)) {
+                printf("process %d exited with status %d\n", info.pid, info.exitcode);
+
+            } else {
+                printf("wait: timeout\n");
+            }
+        }
 
 	}
 	else if (pch && !strcmp(pch, "list"))
@@ -164,13 +196,15 @@ static int process_command(char *line)
 			"Commands:",
 			"echo <text>",
 			"run <path>",
+			"start <path>",
+            "kill <pid>",
+            "wait",
 			"test <function>",
 			"list",
 			"time",
 			"help",
 			"exit",
-            "stress",
-            "kill"
+            "stress"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))

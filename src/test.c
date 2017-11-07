@@ -11,13 +11,18 @@ This program requires that write() and exit() work correctly.
 
 #include "syscalls.h"
 #include "string.h"
-void a(){}
+
 int main( const char *argv[], int argc )
 {
+    printf("hello world, I am %d, and I have %d arguments!\n", getpid(), argc);
 
-    int wd = draw_create(0, 100, 100, 300, 300);
-    printf("hello world, I am %d!\n", getpid());
-	exit(0);
-  
+    printf("They are: ");
+
+    int i;
+    for (i = 0; i < argc; ++i) {
+        printf("(%s) ", argv[i]);
+    }
+    printf("\n");
+
 	return 0;
 }

@@ -20,6 +20,14 @@ void strcpy( char *d, const char *s )
 	*d = 0;
 }
 
+void strncpy( char *d, const char *s, unsigned length)
+{
+	while(*s && length--) {
+		*d++ = *s++;
+	}
+	*d = 0;
+}
+
 int strcmp( const char *a, const char *b )
 {
 	while(1) {

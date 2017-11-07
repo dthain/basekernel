@@ -13,6 +13,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "clock.h"
 #include "rtc.h"
+#include "stdarg.h"
 
 int sys_debug( const char *str )
 {
@@ -37,10 +38,13 @@ int sys_yield()
 sys_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
 (Instead, we should go through the abstract filesystem interface.)
+Takes in a NULL terminated list of command line arguments
 */
 
-int sys_run( const char *path )
+int sys_run( const char *path, ... )
 {
+	va_list args;
+	va_start(args,path);
 	/* Open and find the named path, if it exists. */
 
 	if(!root_directory) return ENOENT;
@@ -54,7 +58,7 @@ int sys_run( const char *path )
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
-	struct process *p = process_create(length,PAGE_SIZE);
+	struct process *p = process_create(length,PAGE_SIZE*2);
 	if(!p) return ENOENT;
 
 	/* Round up length of the executable to an even pages */
@@ -86,6 +90,32 @@ int sys_run( const char *path )
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
+
+    /* Copy command line arguments */
+	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
+    unsigned paddr;
+    pagetable_getmap(p->pagetable,PROCESS_STACK_INIT+0xF-PAGE_SIZE+1,&paddr);
+    char* esp= (char*)paddr+PAGE_SIZE-0x10;
+    char* ebp = esp;
+    int argc = 0;
+    /* Copy each argument, and calculate argc */
+    char* argv = va_arg(args,char*);
+    while (argv) {
+        argc++;
+        printf("arg %s\n", argv);
+        ebp -= 256;
+        strncpy(ebp, argv, 255);
+        argv = va_arg(args,char*);
+    }
+    /* Set pointers to each argument (argv) */
+    for (i = argc; i > 0; --i) {
+        ebp -= 4;
+        *((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - 256*i));
+    }
+    /* Set argumetns for _start on the stack */
+    *((char**)(ebp-12)) = (char*)(PROCESS_STACK_INIT-260*argc);
+    *((int*)(ebp-8)) = argc;
+	s->esp -= (esp-ebp)+16;
   
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
@@ -227,7 +257,7 @@ int sys_getppid()
 
 int sys_kill( int pid )
 {
-	process_kill(pid)?0:ENOSYS;
+	return process_kill(pid)?0:ENOSYS;
 }
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
