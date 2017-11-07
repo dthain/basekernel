@@ -138,7 +138,7 @@ static int process_command(char *line)
 		if (pch)
 			current_directory = fs_namei(current_directory, pch);
 		else
-			printf("rmdir: missing argument\n");
+			printf("chdir: missing argument\n");
 	}
 	else if (pch && !strcmp(pch, "time"))
 	{
