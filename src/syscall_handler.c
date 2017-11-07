@@ -102,7 +102,6 @@ int sys_run( const char *path, ... )
     char* argv = va_arg(args,char*);
     while (argv) {
         argc++;
-        printf("arg %s\n", argv);
         ebp -= 256;
         strncpy(ebp, argv, 255);
         argv = va_arg(args,char*);
