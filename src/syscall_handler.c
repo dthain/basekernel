@@ -123,7 +123,7 @@ int sys_run( const char *path, ... )
 
 	process_launch(p);
 
-	return 0;
+	return p->ppid;
 }
 
 uint32_t sys_gettimeofday()

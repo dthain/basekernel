@@ -75,7 +75,8 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-			sys_run(pch, pch, "start", 0);
+			int pid = sys_run(pch, pch, "start", 0);
+            printf("Launched process %d\n", pid);
 			process_yield();
 		}
 		else
@@ -85,7 +86,8 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-			sys_run(pch, pch, "run", 0);
+			int pid = sys_run(pch, pch, "run", 0);
+            printf("Launched process %d\n", pid);
             struct process_info info;
             if (process_wait_child(&info, 5000)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
