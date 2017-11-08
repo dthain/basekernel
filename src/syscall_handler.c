@@ -13,7 +13,6 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "clock.h"
 #include "rtc.h"
-#include "stdarg.h"
 
 int sys_debug( const char *str )
 {
@@ -38,13 +37,11 @@ int sys_yield()
 sys_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
 (Instead, we should go through the abstract filesystem interface.)
-Takes in a NULL terminated list of command line arguments
+Takes in argv and argc for the new process' main
 */
 
-int sys_run( const char *path, ... )
+int sys_run( const char *path, const char** argv, int argc )
 {
-	va_list args;
-	va_start(args,path);
 	/* Open and find the named path, if it exists. */
 
 	if(!root_directory) return ENOENT;
@@ -95,16 +92,12 @@ int sys_run( const char *path, ... )
 	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
     unsigned paddr;
     pagetable_getmap(p->pagetable,PROCESS_STACK_INIT+0xF-PAGE_SIZE+1,&paddr);
-    char* esp= (char*)paddr+PAGE_SIZE-0x10;
+    char* esp = (char*)paddr+PAGE_SIZE-0x10;
     char* ebp = esp;
-    int argc = 0;
-    /* Copy each argument, and calculate argc */
-    char* argv = va_arg(args,char*);
-    while (argv) {
-        argc++;
+    /* Copy each argument */
+    for (i = 0; i < argc; i++) {
         ebp -= 256;
-        strncpy(ebp, argv, 255);
-        argv = va_arg(args,char*);
+        strncpy(ebp, argv[i], 255);
     }
     /* Set pointers to each argument (argv) */
     for (i = argc; i > 0; --i) {
@@ -131,11 +124,6 @@ uint32_t sys_gettimeofday()
 	struct rtc_time t;
 	rtc_read(&t);
 	return rtc_time_to_timestamp(&t);
-}
-
-int sys_wait()
-{
-	return ENOSYS;
 }
 
 int sys_open( const char *path, int mode, int flags )
@@ -256,18 +244,26 @@ int sys_getppid()
 
 int sys_kill( int pid )
 {
-	return process_kill(pid)?0:ENOSYS;
+	return process_kill(pid);
+}
+
+int sys_wait( struct process_info *info, int timeout )
+{
+	return process_wait_child(info, timeout);
+}
+
+int sys_reap( int pid )
+{
+	return process_reap(pid);
 }
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
 {
-    //process_reap_all();
 	switch(n) {
 	case SYSCALL_EXIT:	return sys_exit(a);
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
-	case SYSCALL_RUN:	return sys_run((const char *)a);
-	case SYSCALL_WAIT:	return sys_wait();
+	case SYSCALL_RUN:	return sys_run((const char *)a, (const char**)b, c);
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
@@ -285,6 +281,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_GETPID:	return sys_getpid();
 	case SYSCALL_GETPPID:	return sys_getppid();
 	case SYSCALL_KILL:	return sys_kill(a);
+	case SYSCALL_WAIT:	return sys_wait((struct process_info*)a, b);
+	case SYSCALL_REAP:	return sys_reap(a);
 	default:		return -1;
 	}
 }

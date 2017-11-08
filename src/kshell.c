@@ -75,7 +75,9 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-			sys_run(pch, pch, "start", 0);
+            const char* argv[] = {pch, "start"};
+			int pid = sys_run(pch, argv, 2);
+            printf("started process %d\n", pid);
 			process_yield();
 		}
 		else
@@ -85,10 +87,13 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-			sys_run(pch, pch, "run", 0);
+            const char* argv[] = {pch, "run"};
+			int pid = sys_run(pch, argv, 2);
+            printf("started process %d\n", pid);
             struct process_info info;
-            if (process_wait_child(&info, 5000)) {
+            if (!process_wait_child(&info, 5000)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
+                process_reap(info.pid);
 
             } else {
                 printf("run: timeout\n");
@@ -106,6 +111,21 @@ static int process_command(char *line)
         }
 		else
 			printf("mount: expected unit number but got %s\n", pch);
+
+	}
+	else if (pch && !strcmp(pch, "reap"))
+	{
+		pch = strtok(0, " ");
+        int pid;
+		if (pch && str2int(pch, &pid)) {
+		    if (process_reap(pid)) {
+                printf("reap failed!\n");
+            } else {
+                printf("processed reaped!\n");
+            }
+        }
+		else
+			printf("reap: expected process id number but got %s\n", pch);
 
 	}
 	else if (pch && !strcmp(pch, "kill"))
@@ -126,7 +146,7 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
             struct process_info info;
-            if (process_wait_child(&info, 5000)) {
+            if (!process_wait_child(&info, 5000)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
 
             } else {
@@ -150,10 +170,13 @@ static int process_command(char *line)
 		if (pch)
 			printf("%s: unexpected argument\n", pch);
 		else {
-            int i;
-            for (i = 0; i < 100; i++) {
-                sys_run("TEST.EXE");
-                clock_wait(1000);
+            while (1) {
+                sys_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
+                struct process_info info;
+                if (process_wait_child(&info, 5000)) {
+                    printf("process %d exited with status %d\n", info.pid, info.exitcode);
+                    if (info.exitcode != 0) return 1;
+                }
             }
         }
 
@@ -198,6 +221,7 @@ static int process_command(char *line)
 			"run <path>",
 			"start <path>",
             "kill <pid>",
+            "reap <pid>",
             "wait",
 			"test <function>",
 			"list",
