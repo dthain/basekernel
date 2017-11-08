@@ -116,7 +116,7 @@ int sys_run( const char *path, const char** argv, int argc )
 
 	process_launch(p);
 
-	return 0;
+	return p->pid;
 }
 
 uint32_t sys_gettimeofday()
