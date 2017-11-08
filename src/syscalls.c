@@ -18,8 +18,8 @@ int yield() {
 	return syscall( SYSCALL_YIELD, 0, 0, 0, 0, 0 );
 }
 
-int run( const char *cmd ) {
-	return syscall( SYSCALL_RUN, (uint32_t) cmd, 0, 0, 0, 0 );
+int run( const char *cmd, const char** argv, int argc ) {
+	return syscall( SYSCALL_RUN, (uint32_t) cmd, argv, argc, 0, 0 );
 }
 
 int wait() {
@@ -94,4 +94,12 @@ int getppid() {
 
 int kill( unsigned int pid ) {
     return syscall( SYSCALL_KILL, pid, 0, 0, 0, 0 );
+}
+
+int reap( unsigned int pid ) {
+    return syscall( SYSCALL_REAP, pid, 0, 0, 0, 0 );
+}
+
+int wait( struct process_info* info, int timeout ) {
+    return syscall( SYSCALL_WAIT, info, timeout, 0, 0, 0 );
 }

@@ -266,9 +266,9 @@ int process_kill( uint32_t pid ) {
     if (dead) {
         console_printf("process killed\n");
         process_make_dead(dead);
-        return 1;
-    } else {
         return 0;
+    } else {
+        return 1;
     }
 }
 
@@ -285,7 +285,7 @@ int process_wait_child(struct process_info *info, int timeout) {
                 info->exitcode = p->exitcode;
                 info->exitreason = p->exitreason;
                 info->pid = p->pid;
-                return process_reap(p->pid);
+                return 0;
             }
             p = next;
         }
@@ -293,7 +293,7 @@ int process_wait_child(struct process_info *info, int timeout) {
 		elapsed = clock_diff(start,clock_read());
 		total = elapsed.millis + elapsed.seconds*1000;
 	} while(total<timeout);
-    return 0;
+    return 1;
 }
 
 int process_reap( uint32_t pid ) {
@@ -303,9 +303,9 @@ int process_reap( uint32_t pid ) {
         if (p->pid == pid) {
             list_remove(&p->node);
             process_delete(p);
-            return 1;
+            return 0;
         }
         p = next;
     }
-    return 0;
+    return 1;
 }

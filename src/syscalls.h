@@ -12,7 +12,7 @@ See the file LICENSE for details.
 void debug( const char *str );
 void exit( int status );
 int yield();
-int run( const char *cmd );
+int run( const char *cmd, const char** argv, int argc );
 int wait();
 int open( const char *path, int mode, int flags );
 int read( int fd, void *data, int length );
@@ -30,6 +30,8 @@ int sleep( unsigned int ms );
 uint32_t gettimeofday();
 int getpid();
 int getppid();
-int kill(unsigned int pid);
+int kill( unsigned int pid );
+int reap( unsigned int pid );
+int wait( struct process_info* info, int timeout );
 
 #endif
