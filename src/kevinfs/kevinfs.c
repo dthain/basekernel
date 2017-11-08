@@ -10,7 +10,6 @@ See the file LICENSE for details.
 #include "kevinfs.h"
 #include "kevinfs_ata.h"
 #include "kevinfs_transaction.h"
-#include "../fdtable.h"
 #include "../string.h"
 #include "../hashtable.h"
 #include "../fs.h"
@@ -26,7 +25,6 @@ static uint32_t ceiling(double d)
 static uint32_t ata_blocksize;
 
 static struct kevinfs_superblock *super;
-static struct fdtable table;
 static struct kevinfs_transaction transaction;
 
 struct kevinfs_volume {
@@ -982,7 +980,6 @@ static int kevinfs_register()
 int kevinfs_init(void)
 {
 	bool formatted;
-	memset(&table, 0, sizeof(struct fdtable));
 	if (kevinfs_ata_init(&formatted) < 0)
 		return -1;
 	super = kevinfs_ata_get_superblock();
