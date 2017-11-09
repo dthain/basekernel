@@ -13,6 +13,7 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "memorylayout.h"
 #include "kmalloc.h"
+#include "kerneltypes.h"
 #include "kernelcore.h"
 #include "main.h"
 #include "clock.h"
@@ -308,4 +309,28 @@ int process_reap( uint32_t pid ) {
         p = next;
     }
     return 1;
+}
+
+void process_pass_arguments(struct process* p, const char** argv, int argc) {
+    /* Copy command line arguments */
+	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
+    unsigned paddr;
+    pagetable_getmap(p->pagetable,PROCESS_STACK_INIT-PAGE_SIZE+0x10,&paddr);
+    char* esp = (char*)paddr+PAGE_SIZE-0x10;
+    char* ebp = esp;
+    /* Copy each argument */
+    int i;
+    for (i = 0; i < argc; i++) {
+        ebp -= MAX_ARGV_LENGTH;
+        strncpy(ebp, argv[i], MAX_ARGV_LENGTH-1);
+    }
+    /* Set pointers to each argument (argv) */
+    for (i = argc; i > 0; --i) {
+        ebp -= 4;
+        *((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - MAX_ARGV_LENGTH*i));
+    }
+    /* Set argumetns for _start on the stack */
+    *((char**)(ebp-12)) = (char*)(PROCESS_STACK_INIT-MAX_ARGV_LENGTH*argc-4*argc);
+    *((int*)(ebp-8)) = argc;
+	s->esp -= (esp-ebp)+16;
 }

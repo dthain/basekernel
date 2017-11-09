@@ -14,7 +14,7 @@ This program requires that write() and exit() work correctly.
 
 int main( const char *argv[], int argc )
 {
-    printf("hello world, I am %d, and I have %d arguments!\n", getpid(), argc);
+    printf("hello world, I am %d, and I have %d arguments!\n", process_self(), argc);
 
     printf("They are: ");
 

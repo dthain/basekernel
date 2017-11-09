@@ -87,27 +87,8 @@ int sys_run( const char *path, const char** argv, int argc )
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
+    process_pass_arguments(p, argv, argc);
 
-    /* Copy command line arguments */
-	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
-    unsigned paddr;
-    pagetable_getmap(p->pagetable,PROCESS_STACK_INIT+0xF-PAGE_SIZE+1,&paddr);
-    char* esp = (char*)paddr+PAGE_SIZE-0x10;
-    char* ebp = esp;
-    /* Copy each argument */
-    for (i = 0; i < argc; i++) {
-        ebp -= 256;
-        strncpy(ebp, argv[i], 255);
-    }
-    /* Set pointers to each argument (argv) */
-    for (i = argc; i > 0; --i) {
-        ebp -= 4;
-        *((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - 256*i));
-    }
-    /* Set argumetns for _start on the stack */
-    *((char**)(ebp-12)) = (char*)(PROCESS_STACK_INIT-260*argc);
-    *((int*)(ebp-8)) = argc;
-	s->esp -= (esp-ebp)+16;
   
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
