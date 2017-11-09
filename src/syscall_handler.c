@@ -60,7 +60,7 @@ int sys_run( const char *path )
 	/* Round up length of the executable to an even pages */
 
 	int i;
-	int npages = length/PAGE_SIZE + length%PAGE_SIZE ? 1 : 0;
+	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
 
 	struct file *f = fs_open(d, 0);
 

@@ -276,7 +276,7 @@ static int cdrom_file_read(struct file *f, char *buffer, uint32_t n)
 	struct cdrom_file *cdf = f->private_data;
 	struct cdrom_dirent *cdd = cdf->dirent;
 	uint32_t read = 0;
-	while (n > 0 && cdf->block * ATAPI_BLOCKSIZE + cdf->offset < cdd->length) {
+	while (read < n && cdf->block * ATAPI_BLOCKSIZE + (cdf->offset % ATAPI_BLOCKSIZE) < cdd->length) {
 		uint32_t to_read = 0;
 		if (cdf->offset == cdf->buffer_size) {
 			cdrom_dirent_read_block(cdd, cdf->buffer, cdf->block);
@@ -289,12 +289,11 @@ static int cdrom_file_read(struct file *f, char *buffer, uint32_t n)
 			cdf->offset = 0;
 		}
 		to_read = cdf->buffer_size - cdf->offset;
-		if (n < cdf->buffer_size - cdf->offset) {
-			to_read = n;
+		if (n - read < cdf->buffer_size - cdf->offset) {
+			to_read = n - read;
 		}
 		memcpy(buffer + read, cdf->buffer + cdf->offset, to_read);
 		cdf->offset += to_read;
-		n -= to_read;
 		read += to_read;
 	}
 	return read;
