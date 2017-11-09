@@ -301,7 +301,6 @@ static int ata_write_unlocked( int id, const void *buffer, int nblocks, int offs
 		buffer = ((char*)buffer)+ATA_BLOCKSIZE;
 		offset++;
 	}
-	if(ata_interrupt_active) process_wait(&queue);
 	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
 	return nblocks;
 }

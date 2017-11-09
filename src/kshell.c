@@ -124,6 +124,19 @@ static int process_command(char *line)
 		else
 			printf("mkdir: missing argument\n");
 	}
+	else if (pch && !strcmp(pch, "format"))
+	{
+		pch = strtok(0, " ");
+		int unit;
+		if (pch && str2int(pch, &unit)) {
+		    char *fs_type = strtok(0, " ");
+		    struct fs *f = fs_get(fs_type);
+		    fs_mkfs(f, unit);
+		}
+		else
+			printf("mount: expected unit number but got %s\n", pch);
+
+	}
 	else if (pch && !strcmp(pch, "rmdir"))
 	{
 		pch = strtok(0, " ");

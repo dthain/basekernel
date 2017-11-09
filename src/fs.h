@@ -8,6 +8,7 @@ struct fs {
 	struct list_node node;
 	char *name;
 	struct volume *(*mount)(uint32_t device_no);
+	int (*mkfs)(uint32_t device_no);
 };
 
 struct file {
@@ -72,5 +73,6 @@ int fs_unlink(struct dirent *d, const char *name);
 int fs_mkdir(struct dirent *d, const char *name);
 int fs_mkfile(struct dirent *d, const char *name);
 int fs_rmdir(struct dirent *d, const char *name);
+int fs_mkfs(struct fs *f, uint32_t device_no);
 
 #endif

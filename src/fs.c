@@ -167,3 +167,12 @@ int fs_write(struct file *f, char *buffer, uint32_t buffer_length)
 	}
 	return 0;
 }
+
+int fs_mkfs(struct fs *f, uint32_t device_no)
+{
+	if (f->mkfs)
+	{
+		return f->mkfs(device_no);
+	}
+	return 0;
+}

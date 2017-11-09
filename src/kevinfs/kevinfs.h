@@ -68,9 +68,6 @@ struct kevinfs_stat {
 };
 
 int kevinfs_init (void);
-int kevinfs_mkfs (void);
-int kevinfs_chdir(char *filename);
-int kevinfs_lsdir (void);
 int kevinfs_lseek(int fd, uint32_t offset);
 int kevinfs_stat(char *filename, struct kevinfs_stat *stat);
 
