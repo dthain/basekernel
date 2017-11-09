@@ -64,6 +64,25 @@ unsigned strlen( const char *s )
 	return len;
 }
 
+char * strrev( char *s )
+{
+	unsigned start=0;
+	unsigned end=strlen(s)-1;
+	char swap;
+
+	while(start<end)
+	{
+		swap=s[start];
+		s[start]=s[end];
+		s[end] = swap;
+
+		start++;
+		end--;
+	}
+
+	return s;
+}
+
 char * strcat( char *d, const char *s )
 {
 	strcpy(d + strlen(d), s);
