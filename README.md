@@ -53,7 +53,7 @@ tar -zxf binutils-2.29.1.tar.gz
 # build and install binutils
 cd binutils-2.29.1
 ./configure --prefix="$HOME/cross" --target=i686-elf \
-	--disable-nls --disable-werror
+	--with-sysroot --disable-nls --disable-werror
 make && make install
 cd ..
 
