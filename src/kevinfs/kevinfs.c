@@ -769,6 +769,8 @@ cleanup:
 		kfree(new_cwd_record);
 	if (new_node)
 		kfree(new_node);
+	if (new_kd)
+		kfree(new_kd);
 	return ret;
 }
 
