@@ -1073,17 +1073,17 @@ static struct dirent *kevinfs_root(struct volume *v)
 	return kd ? kevinfs_dirent_as_dirent(kd) : 0;
 }
 
-//static int kevinfs_umount(struct volume *v)
-//{
-//	struct kevinfs_volume *kv = v->private_data;
-//	struct kevinfs_inode *node = kevinfs_get_inode(kv->root_inode_num);
-//	kfree(node);
-//	kfree(kv);
-//	return 0;
-//}
-//
+static int kevinfs_umount(struct volume *v)
+{
+	struct kevinfs_volume *kv = v->private_data;
+	struct kevinfs_inode *node = kevinfs_get_inode(kv, kv->root_inode_num);
+	kfree(node);
+	kfree(kv);
+	return 0;
+}
+
 static struct fs_volume_ops kevinfs_volume_ops = {
-//	.umount = kevinfs_umount,
+	.umount = kevinfs_umount,
 	.root = kevinfs_root
 };
 
