@@ -101,13 +101,13 @@ static int kevinfs_ata_get_available_bit(int unit, uint32_t index, uint32_t *res
 int kevinfs_ata_read_block(int unit, uint32_t index, void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return ata_read(0, buffer, num_blocks, index) ? 0 : -1;
+	return ata_read(unit, buffer, num_blocks, index) ? 0 : -1;
 }
 
 int kevinfs_ata_write_block(int unit, uint32_t index, void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return ata_write(0, buffer, num_blocks, index) ? 0 : -1;
+	return ata_write(unit, buffer, num_blocks, index) ? 0 : -1;
 }
 
 int kevinfs_ata_set_bit(int unit, uint32_t index, uint32_t begin, uint32_t end)

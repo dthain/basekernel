@@ -117,7 +117,7 @@ static int kevinfs_do_delete_dirent(struct kevinfs_dirent *kd)
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_superblock *super = kv->super;
-	uint32_t index = node->inode_number;
+	uint32_t index = node->inode_number - 1;
 
 	if (kevinfs_ata_unset_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start) < 0)
 		return -1;
@@ -133,18 +133,20 @@ static int kevinfs_do_save_dirent(struct kevinfs_dirent *kd)
 	uint32_t index = node->inode_number - 1;
 	uint32_t inodes_per_block = FS_BLOCKSIZE / sizeof(struct kevinfs_inode);
 	uint32_t block = index / inodes_per_block;
-	uint32_t offset = index % inodes_per_block;
-	struct kevinfs_inode current_nodes[inodes_per_block];
+	uint32_t offset = (index % inodes_per_block);
+	struct kevinfs_inode current_nodes[inodes_per_block + 1];
 	bool is_valid;
 
-	if (kevinfs_ata_check_bit(kv->unit, index, super->block_bitmap_start, super->free_block_start, &is_valid) < 0 || !is_valid)
+	if (kevinfs_ata_check_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start, &is_valid) < 0 || !is_valid) {
 		return -1;
-	if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, current_nodes) < 0)
+	}
+	if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
 		return -1;
+	}
 	memcpy(current_nodes + offset, node, sizeof(struct kevinfs_inode));
-	if (kevinfs_ata_write_block(kv->unit, super->inode_start + block, current_nodes) < 0)
+	if (kevinfs_ata_write_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
 		return -1;
-
+	}
 	return 0;
 }
 
