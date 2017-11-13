@@ -192,14 +192,14 @@ static struct kevinfs_inode *kevinfs_create_new_inode(struct kevinfs_volume *kv,
 
 static struct kevinfs_inode *kevinfs_get_inode(struct kevinfs_volume *kv, uint32_t inode_number)
 {
-	uint8_t buffer[FS_BLOCKSIZE];
 	struct kevinfs_superblock *super = kv->super;
-	struct kevinfs_inode *node;
+	struct kevinfs_inode *node = 0;
 	uint32_t index = inode_number - 1;
 	uint32_t inodes_per_block = FS_BLOCKSIZE / sizeof(struct kevinfs_inode);
 	uint32_t block = index / inodes_per_block;
-	uint32_t offset = (index % inodes_per_block) * sizeof(struct kevinfs_inode);
+	uint32_t offset = index % inodes_per_block;
 	bool is_active;
+	struct kevinfs_inode current_nodes[inodes_per_block + 1];
 
 	if (kevinfs_ata_check_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start, &is_active) < 0)
 		return 0;
@@ -208,12 +208,12 @@ static struct kevinfs_inode *kevinfs_get_inode(struct kevinfs_volume *kv, uint32
 
 	node = kmalloc(sizeof(struct kevinfs_inode));
 	if (node) {
-		if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, buffer) < 0) {
+		if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
 			kfree(node);
 			node = 0;
 		}
 		else {
-			memcpy(node, buffer + offset, sizeof(struct kevinfs_inode));
+			memcpy(node, current_nodes + offset, sizeof(struct kevinfs_inode));
 		}
 	}
 
@@ -225,28 +225,29 @@ static int kevinfs_save_dirent(struct kevinfs_dirent *kd)
 	return kevinfs_do_save_dirent(kd);
 }
 
-//static int kevinfs_delete_data_block(uint32_t index, uint8_t *buffer)
-//{
-//	return kevinfs_transaction_stage_data(&transaction, index, buffer, FS_TRANSACTION_DELETE);
-//}
-//
-//static int kevinfs_delete_inode_or_decrement_links(struct kevinfs_inode *node)
-//{
-//       uint32_t i;
-//       if (node->is_directory)
-//	       node->link_count--;
-//       node->link_count--;
-//       if (node->link_count > 0)
-//	       return kevinfs_transaction_stage_inode(&transaction, node, FS_TRANSACTION_MODIFY);
-//       if (kevinfs_transaction_stage_inode(&transaction, node, FS_TRANSACTION_DELETE) < 0)
-//	       return -1;
-//       for (i = 0; i < node->direct_addresses_len; i++) {
-//	       if (kevinfs_delete_data_block(node->direct_addresses[i], 0) < 0)
-//		       return -1;
-//       }
-//       return 0;
-//}
-//
+static int kevinfs_delete_data_block(struct kevinfs_dirent *kd, uint32_t index)
+{
+	return kevinfs_do_delete_data(kd->kv, index);
+}
+
+static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
+{
+       uint32_t i;
+       struct kevinfs_inode *node = kd->node;
+       if (node->is_directory)
+	       node->link_count--;
+       node->link_count--;
+       if (node->link_count > 0)
+	       return kevinfs_do_save_dirent(kd);
+       if (kevinfs_do_delete_dirent(kd))
+	       return -1;
+       for (i = 0; i < node->direct_addresses_len; i++) {
+	       if (kevinfs_delete_data_block(kd, node->direct_addresses[i]) < 0)
+		       return -1;
+       }
+       return 0;
+}
+
 static int kevinfs_write_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t *buffer)
 {
 	struct kevinfs_superblock *super = kv->super;
@@ -378,7 +379,7 @@ static int kevinfs_dirent_resize(struct kevinfs_dirent *kd, uint32_t num_blocks)
 	return 0;
 }
 
-static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(char *filename, struct kevinfs_dir_record_list *dir_list)
+static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
 	struct kevinfs_dir_record *iter = dir_list->list, *prev = 0;
 	while (strcmp(iter->filename, filename) < 0) {
@@ -401,21 +402,6 @@ static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(char *filename, struct
 //	}
 //	return (strcmp(prev->filename, filename) == 0) ? prev : 0;
 //}
-//
-//static struct kevinfs_inode *kevinfs_lookup_dir_node(char *filename, struct kevinfs_dir_record_list *dir_list)
-//{
-//	struct kevinfs_dir_record *res = kevinfs_lookup_dir_exact(filename, dir_list);
-//	return res ? kevinfs_get_inode(res->inode_number) : 0;
-//}
-//
-//static struct dirent *kevinfs_dirent_lookup(struct dirent *d, char *name)
-//{
-//	struct kevinfs_inode *node = d->private_data;
-//	struct kevinfs_dir_record_list *dir_list = kevinfs_readdir(node);
-//	struct kevinfs_inode *res = dir_list ? kevinfs_lookup_dir_node(name, dir_list) : 0;
-//	return res ? kevinfs_inode_as_dirent(res) : 0;
-//}
-//
 //
 
 static int kevinfs_dir_record_insert_after(struct kevinfs_dir_record_list *dir_list,
@@ -460,57 +446,57 @@ static int kevinfs_dir_record_insert_after(struct kevinfs_dir_record_list *dir_l
 	return 0;
 }
 
-//static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
-//		struct kevinfs_dir_record *prev)
-//{
-//	struct kevinfs_dir_record *to_rm, *next, *last, *last_prev, *list_head;
-//	bool is_removing_end;
-//
-//	list_head = dir_list->list;
-//	last = dir_list->list + dir_list->list_len - 1;
-//	to_rm = prev + prev->offset_to_next;
-//	next = to_rm + to_rm->offset_to_next;
-//	last_prev = kevinfs_lookup_dir_prev(last->filename, dir_list);
-//	is_removing_end = to_rm->offset_to_next == 0;
-//
-//	if (last != to_rm) {
-//		memcpy(to_rm, last, sizeof(struct kevinfs_dir_record));
-//
-//		if (last == next)
-//			next = to_rm;
-//		if (last == prev)
-//			prev = to_rm;
-//
-//		if (to_rm != last_prev)
-//			last_prev->offset_to_next = last_prev->offset_to_next - (last - to_rm);
-//		if (to_rm->offset_to_next != 0)
-//			to_rm->offset_to_next = to_rm->offset_to_next + (last - to_rm);
-//
-//		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-//		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
-//
-//		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-//		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
-//
-//	}
-//
-//	if (is_removing_end)
-//		prev->offset_to_next = 0;
-//	else
-//		prev->offset_to_next = next - prev;
-//
-//	memset(last, 0, sizeof(struct kevinfs_dir_record));
-//
-//	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-//	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
-//
-//	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-//	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
-//
-//	dir_list->list_len--;
-//	return 0;
-//}
-//
+static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
+		struct kevinfs_dir_record *prev)
+{
+	struct kevinfs_dir_record *to_rm, *next, *last, *last_prev, *list_head;
+	bool is_removing_end;
+
+	list_head = dir_list->list;
+	last = dir_list->list + dir_list->list_len - 1;
+	to_rm = prev + prev->offset_to_next;
+	next = to_rm + to_rm->offset_to_next;
+	last_prev = kevinfs_lookup_dir_prev(last->filename, dir_list);
+	is_removing_end = to_rm->offset_to_next == 0;
+
+	if (last != to_rm) {
+		memcpy(to_rm, last, sizeof(struct kevinfs_dir_record));
+
+		if (last == next)
+			next = to_rm;
+		if (last == prev)
+			prev = to_rm;
+
+		if (to_rm != last_prev)
+			last_prev->offset_to_next = last_prev->offset_to_next - (last - to_rm);
+		if (to_rm->offset_to_next != 0)
+			to_rm->offset_to_next = to_rm->offset_to_next + (last - to_rm);
+
+		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+
+		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+
+	}
+
+	if (is_removing_end)
+		prev->offset_to_next = 0;
+	else
+		prev->offset_to_next = next - prev;
+
+	memset(last, 0, sizeof(struct kevinfs_dir_record));
+
+	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
+	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+
+	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
+	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+
+	dir_list->list_len--;
+	return 0;
+}
+
 static int kevinfs_dir_add(struct kevinfs_dir_record_list *current_files,
 		struct kevinfs_dir_record *new_file,
 		struct kevinfs_inode *parent)
@@ -534,30 +520,33 @@ static int kevinfs_dir_add(struct kevinfs_dir_record_list *current_files,
 	return 0;
 }
 
-//static int kevinfs_dir_rm(struct kevinfs_dir_record_list *current_files,
-//		char *filename,
-//		struct kevinfs_inode *parent)
-//{
-//	uint32_t len = current_files->list_len;
-//	struct kevinfs_dir_record *lookup, *next;
-//	struct kevinfs_inode *node;
-//
-//	if (len < FS_EMPTY_DIR_SIZE) {
-//		return -1;
-//	}
-//
-//	lookup = kevinfs_lookup_dir_prev(filename, current_files);
-//	node = kevinfs_lookup_dir_node(filename, current_files);
-//	next = lookup + lookup->offset_to_next;
-//	if (node && node->is_directory && node->sz == FS_EMPTY_DIR_SIZE_BYTES && next->is_directory && strcmp(next->filename, filename) == 0) {
-//		parent->link_count--;
-//		return kevinfs_delete_inode_or_decrement_links(node) < 0 || kevinfs_dir_record_rm_after(current_files, lookup) < 0 ? -1 : 0;
-//	}
-//	if (node)
-//		kfree(node);
-//	return -1;
-//}
-//
+static int kevinfs_dir_rm(struct kevinfs_dir_record_list *current_files,
+		const char *filename,
+		struct kevinfs_dirent *parent)
+{
+	struct kevinfs_inode *parent_node = parent->node, *node;
+	uint32_t len = current_files->list_len;
+	struct kevinfs_dir_record *lookup, *next;
+	struct kevinfs_dirent *kd;
+
+	if (len < FS_EMPTY_DIR_SIZE) {
+		return -1;
+	}
+
+	lookup = kevinfs_lookup_dir_prev(filename, current_files);
+	next = lookup + lookup->offset_to_next;
+	node = kevinfs_get_inode(parent->kv, next->inode_number);
+	kd = kevinfs_inode_as_kevinfs_dirent(parent->kv, node);
+
+	if (node && node->is_directory && node->sz == FS_EMPTY_DIR_SIZE_BYTES && next->is_directory && strcmp(next->filename, filename) == 0) {
+		parent_node->link_count--;
+		return kevinfs_delete_dirent_or_decrement_links(kd) < 0 || kevinfs_dir_record_rm_after(current_files, lookup) < 0 ? -1 : 0;
+	}
+	if (node)
+		kfree(node);
+	return -1;
+}
+
 static int kevinfs_writedir(struct kevinfs_dirent *kd, struct kevinfs_dir_record_list *files)
 {
 	struct kevinfs_volume *kv = kd->kv;
@@ -766,6 +755,10 @@ static int kevinfs_mkdir(struct dirent *d, const char *filename)
 		ret = -1;
 		goto cleanup;
 	}
+	printf("%u\n", new_node->inode_number);
+	struct kevinfs_inode *node = kevinfs_get_inode(kv, new_node->inode_number);
+	kevinfs_print_inode(node);
+	kfree(node);
 
 cleanup:
 	if (new_dir_record_list)
@@ -824,29 +817,25 @@ cleanup:
 //	return ret;
 //}
 //
-//static int kevinfs_rmdir(struct dirent *d, const char *filename)
-//{
-//	struct kevinfs_dir_record_list *cwd_record_list;
-//	struct kevinfs_inode *cwd_node = d->private_data;
-//	int ret = -1;
-//
-//	kevinfs_transaction_init(&transaction);
-//
-//	cwd_record_list = kevinfs_readdir(cwd_node);
-//
-//	if (cwd_node && cwd_record_list) {
-//		ret = !kevinfs_dir_rm(cwd_record_list, filename, cwd_node) &&
-//			!kevinfs_writedir(cwd_node, cwd_record_list) &&
-//			!kevinfs_save_inode(cwd_node) &&
-//			!kevinfs_transaction_commit(&transaction) ? 0 : -1;
-//	}
-//
-//	if (cwd_record_list)
-//		kevinfs_dir_dealloc(cwd_record_list);
-//
-//	return ret;
-//}
-//
+static int kevinfs_rmdir(struct dirent *d, const char *filename)
+{
+	struct kevinfs_dir_record_list *cwd_record_list;
+	struct kevinfs_dirent *kd = d->private_data;
+	int ret = -1;
+
+
+	cwd_record_list = kevinfs_readdir(kd);
+
+	if (cwd_record_list) {
+		ret = !kevinfs_dir_rm(cwd_record_list, filename, kd) &&
+			!kevinfs_writedir(kd, cwd_record_list) &&
+			!kevinfs_save_dirent(kd) ? 0 : -1;
+		kevinfs_dir_dealloc(cwd_record_list);
+	}
+
+	return ret;
+}
+
 //static struct file *kevinfs_open(struct dirent *d, uint8_t mode)
 //{
 //	struct kevinfs_inode *node_to_access;
@@ -1103,7 +1092,7 @@ static struct fs_dirent_ops kevinfs_dirent_ops = {
 	.mkdir = kevinfs_mkdir,
 //	.mkfile = kevinfs_mkfile,
 //	.lookup = kevinfs_dirent_lookup,
-//	.rmdir = kevinfs_rmdir,
+	.rmdir = kevinfs_rmdir,
 //	.open = kevinfs_open,
 //	.unlink = kevinfs_unlink,
 //	.link = kevinfs_link
