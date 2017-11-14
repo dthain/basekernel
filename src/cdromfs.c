@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "memory.h"
 #include "fs.h"
+#include "fs_ops.h"
 #include "cdromfs.h"
 
 struct cdrom_volume {
