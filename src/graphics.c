@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "kmalloc.h"
 #include "bitmap.h"
+#include "string.h"
 
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y) )
@@ -21,14 +22,15 @@ See the file LICENSE for details.
 static struct graphics_color color_black = {0,0,0,0};
 static struct graphics_color color_white = {255,255,255,0};
 
-static struct graphics graphics_root;
+struct graphics graphics_root;
 
 struct graphics * graphics_create_root()
 {
 	struct graphics *g = &graphics_root;
 	g->bitmap = bitmap_create_root();
 	g->fgcolor = color_white;
-	g->fgcolor = color_black;
+	g->bgcolor = color_black;
+    g->count = 0;
 	g->clip.x = 0;
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
@@ -41,7 +43,8 @@ struct graphics * graphics_create( struct graphics *parent )
 	struct graphics *g = kmalloc(sizeof(*g));
 	if(!g) return 0;
 
-	*g = *parent;
+    memcpy(g, parent, sizeof(*g));
+
 	return g;
 }
 

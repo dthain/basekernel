@@ -29,6 +29,7 @@ struct graphics {
 	struct graphics_color fgcolor;
 	struct graphics_color bgcolor;
 	struct clip clip;
+    uint32_t count;
 };
 
 struct graphics * graphics_create_root();
