@@ -28,8 +28,8 @@ struct cdrom_dirent {
 	int isdir;
 };
 
-static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
-static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
+static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
+static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
 
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {
@@ -43,7 +43,7 @@ static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, i
 	return d;
 }
 
-static char * cdrom_dirent_load( struct dirent *d )
+static char * cdrom_dirent_load( struct fs_dirent *d )
 {
 	struct cdrom_dirent *cdd = d->private_data;
 	int nsectors = cdd->length/ATAPI_BLOCKSIZE + (cdd->length&ATAPI_BLOCKSIZE)?1:0;
@@ -74,7 +74,7 @@ static void fix_filename( char *name, int length )
 Read an entire cdrom file into the target address.
 */
 
-static int  cdrom_dirent_read_block( struct dirent *d, char *buffer, uint32_t blocknum )
+static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
 {
 	struct cdrom_dirent *cdd = d->private_data;
 	return atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
@@ -107,7 +107,7 @@ int cdrom_dirent_readfile( struct cdrom_dirent *d, char *data, int length )
 }
 #endif
 
-static struct dirent * cdrom_dirent_lookup( struct dirent *dir, const char *name )
+static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char *name )
 {
 	struct cdrom_dirent *cddir = dir->private_data;
 	char *data = cdrom_dirent_load(dir);
@@ -140,7 +140,7 @@ static struct dirent * cdrom_dirent_lookup( struct dirent *dir, const char *name
 	return 0;
 }
 
-static int cdrom_dirent_read_dir( struct dirent *dir, char *buffer, int buffer_length )
+static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffer_length )
 {
 	struct cdrom_dirent *cddir = dir->private_data;
 	char *data = cdrom_dirent_load(dir);
@@ -180,7 +180,7 @@ static int cdrom_dirent_read_dir( struct dirent *dir, char *buffer, int buffer_l
 	return total;
 }
 
-static int cdrom_dirent_close( struct dirent *d )
+static int cdrom_dirent_close( struct fs_dirent *d )
 {
 	struct cdrom_dirent *cdd = d->private_data;
 	kfree(cdd);
@@ -188,14 +188,14 @@ static int cdrom_dirent_close( struct dirent *d )
 	return 0;
 }
 
-static struct dirent * cdrom_volume_root( struct volume *v )
+static struct fs_dirent * cdrom_volume_root( struct fs_volume *v )
 {
 	struct cdrom_volume *cdv = v->private_data;
 	struct cdrom_dirent *cdd = cdrom_dirent_create(cdv,cdv->root_sector,cdv->root_length,1);
 	return cdrom_dirent_as_dirent(cdd);
 }
 
-static struct volume * cdrom_volume_open( uint32_t unit )
+static struct fs_volume * cdrom_volume_open( uint32_t unit )
 {
 	struct cdrom_volume *cdv = kmalloc(sizeof(*cdv));
 	if(!cdv) return 0;
@@ -240,7 +240,7 @@ static struct volume * cdrom_volume_open( uint32_t unit )
 	return 0;		
 }
 
-static int cdrom_volume_close( struct volume *v )
+static int cdrom_volume_close( struct fs_volume *v )
 {
 	struct cdrom_volume *cdv = v->private_data;
 	console_printf("cdromfs: umounted filesystem from unit %d\n",cdv->unit);
@@ -276,18 +276,18 @@ const struct fs_dirent_ops cdrom_dirent_ops = {
 	.write_block = 0,
 };
 
-static struct volume *cdrom_volume_as_volume(struct cdrom_volume *cdv) {
-	struct volume *v = kmalloc(sizeof(struct volume));
-	memset(v, 0, sizeof(struct volume));
+static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv) {
+	struct fs_volume *v = kmalloc(sizeof(struct fs_volume));
+	memset(v, 0, sizeof(struct fs_volume));
 	v->private_data = cdv;
 	v->ops = &cdrom_volume_ops;
 	v->block_size = ATAPI_BLOCKSIZE;
 	return v;
 }
 
-static struct dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
-	struct dirent *d = kmalloc(sizeof(struct dirent));
-	memset(d, 0, sizeof(struct volume));
+static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
+	struct fs_dirent *d = kmalloc(sizeof(struct fs_dirent));
+	memset(d, 0, sizeof(struct fs_volume));
 	d->private_data = cdd;
 	d->sz = cdd->length;
 	d->ops = &cdrom_dirent_ops;

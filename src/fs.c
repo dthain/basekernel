@@ -5,30 +5,30 @@
 
 struct list l;
 
-static struct block_map *init_block_map(uint32_t block_size) {
-	struct block_map *res = kmalloc(sizeof(struct block_map));
-	memset(res, 0, sizeof(struct block_map));
+static struct fs_block_map *init_block_map(uint32_t block_size) {
+	struct fs_block_map *res = kmalloc(sizeof(struct fs_block_map));
+	memset(res, 0, sizeof(struct fs_block_map));
 	res->block_size = block_size;
 	res->buffer = kmalloc(sizeof(char) * block_size);
 	return res;
 }
 
-static void delete_block_map(struct block_map *bm) {
+static void delete_block_map(struct fs_block_map *bm) {
 	kfree(bm->buffer);
 	kfree(bm);
 }
 
-static struct file *init_file(struct dirent *d) {
-	struct file *res = kmalloc(sizeof(struct file));
-	struct volume *v = d->v;
+static struct fs_file *init_file(struct fs_dirent *d) {
+	struct fs_file *res = kmalloc(sizeof(struct fs_file));
+	struct fs_volume *v = d->v;
 	res->sz = d->sz;
 	res->d = d;
 	res->private_data = init_block_map(v->block_size);
 	return res;
 }
 
-static void delete_file(struct file *f) {
-	struct block_map *bm = f->private_data;
+static void delete_file(struct fs_file *f) {
+	struct fs_block_map *bm = f->private_data;
 	delete_block_map(bm);
 	kfree(f);
 }
@@ -52,14 +52,14 @@ struct fs *fs_get(const char *name) {
 	return 0;
 }
 
-struct volume *fs_mount(struct fs *f, uint32_t device_no)
+struct fs_volume *fs_volume_mount(struct fs *f, uint32_t device_no)
 {
 	if (f->mount)
 		return f->mount(device_no);
 	return 0;
 }
 
-int fs_umount(struct volume *v)
+int fs_volume_umount(struct fs_volume *v)
 {
 	const struct fs_volume_ops *ops = v->ops;
 	if (ops->umount)
@@ -67,18 +67,18 @@ int fs_umount(struct volume *v)
 	return -1;
 }
 
-struct dirent *fs_root(struct volume *v)
+struct fs_dirent *fs_volume_root(struct fs_volume *v)
 {
 	const struct fs_volume_ops *ops = v->ops;
 	if (ops->root) {
-		struct dirent *res = ops->root(v);
+		struct fs_dirent *res = ops->root(v);
 		res->v = v;
 		return res;
 	}
 	return 0;
 }
 
-int fs_readdir(struct dirent *d, char *buffer, int buffer_length)
+int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->readdir)
@@ -86,25 +86,25 @@ int fs_readdir(struct dirent *d, char *buffer, int buffer_length)
 	return -1;
 }
 
-static struct dirent *fs_lookup(struct dirent *d, const char *name)
+static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->lookup) {
-		struct dirent *res = ops->lookup(d, name);
+		struct fs_dirent *res = ops->lookup(d, name);
 		res->v = d->v;
 		return res;
 	}
 	return 0;
 }
 
-struct dirent *fs_namei( struct dirent *d, const char *path )
+struct fs_dirent *fs_dirent_namei( struct fs_dirent *d, const char *path )
 {
 	char *lpath = kmalloc(strlen(path)+1);
 	strcpy(lpath,path);
 
 	char *part = strtok(lpath,"/");
 	while(part) {
-		d = fs_lookup(d,part);
+		d = fs_dirent_lookup(d,part);
 		if(!d) break;
 
 		part = strtok(0,"/");
@@ -113,7 +113,7 @@ struct dirent *fs_namei( struct dirent *d, const char *path )
 	return d;
 }
 
-int fs_dirent_close(struct dirent *d)
+int fs_dirent_close(struct fs_dirent *d)
 {
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->close)
@@ -121,15 +121,15 @@ int fs_dirent_close(struct dirent *d)
 	return -1;
 }
 
-int fs_close(struct file *f)
+int fs_file_close(struct fs_file *f)
 {
 	delete_file(f);
 	return 0;
 }
 
-static int fs_read_block(struct file *f, char *buffer, uint32_t blocknum)
+static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
 {
-	struct dirent *d = f->d;
+	struct fs_dirent *d = f->d;
 	const struct fs_dirent_ops *ops = d->ops;
 	if (ops->read_block)
 	{
@@ -138,19 +138,19 @@ static int fs_read_block(struct file *f, char *buffer, uint32_t blocknum)
 	return -1;
 }
 
-struct file *fs_open(struct dirent *d, uint8_t mode)
+struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
 	return init_file(d);
 }
 
-int fs_read(struct file *f, char *buffer, uint32_t n)
+int fs_file_read(struct fs_file *f, char *buffer, uint32_t n)
 {
-	struct block_map *bm = f->private_data;
+	struct fs_block_map *bm = f->private_data;
 	uint32_t read = 0;
 	while (read < n && bm->block * bm->block_size + bm->offset < f->sz) {
 		uint32_t to_read = 0;
 		if (bm->offset == bm->read_length) {
-			fs_read_block(f, bm->buffer, bm->block);
+			fs_file_read_block(f, bm->buffer, bm->block);
 			if (f->sz <= (bm->block + 1) * bm->block_size) {
 				bm->read_length = f->sz - bm->block * bm->block_size;
 			} else {
