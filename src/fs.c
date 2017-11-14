@@ -5,6 +5,14 @@
 
 struct list l;
 
+struct fs_block_map {
+	char *buffer;
+	uint32_t block_size;
+	uint32_t block;
+	uint32_t offset;
+	uint32_t read_length;
+};
+
 static struct fs_block_map *init_block_map(uint32_t block_size) {
 	struct fs_block_map *res = kmalloc(sizeof(struct fs_block_map));
 	memset(res, 0, sizeof(struct fs_block_map));

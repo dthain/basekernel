@@ -4,14 +4,6 @@
 #include "kerneltypes.h"
 #include "list.h"
 
-struct fs_block_map {
-	char *buffer;
-	uint32_t block_size;
-	uint32_t block;
-	uint32_t offset;
-	uint32_t read_length;
-};
-
 struct fs {
 	struct list_node node;
 	char *name;
