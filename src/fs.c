@@ -156,7 +156,7 @@ int fs_file_read(struct fs_file *f, char *buffer, uint32_t n)
 {
 	struct fs_block_map *bm = f->private_data;
 	uint32_t read = 0;
-	while (read < n && bm->block * bm->block_size + bm->offset < f->sz) {
+	while (read < n && bm->block * bm->block_size + (bm->offset % bm->block_size) < f->sz) {
 		uint32_t to_read = 0;
 		if (bm->offset == bm->read_length) {
 			fs_file_read_block(f, bm->buffer, bm->block);
