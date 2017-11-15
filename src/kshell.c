@@ -76,7 +76,7 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
 		if (pch) {
             const char* argv[] = {pch, "start"};
-			int pid = sys_run(pch, argv, 2);
+			int pid = sys_process_run(pch, argv, 2);
             printf("started process %d\n", pid);
 			process_yield();
 		}
@@ -88,7 +88,7 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
 		if (pch) {
             const char* argv[] = {pch, "run"};
-			int pid = sys_run(pch, argv, 2);
+			int pid = sys_process_run(pch, argv, 2);
             printf("started process %d\n", pid);
             struct process_info info;
             if (!process_wait_child(&info, 5000)) {
@@ -171,7 +171,7 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
             while (1) {
-                sys_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
+                sys_process_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
                 struct process_info info;
                 if (process_wait_child(&info, 5000)) {
                     printf("process %d exited with status %d\n", info.pid, info.exitcode);

@@ -40,7 +40,7 @@ In this temporary implementation, we use the cdrom filesystem directly.
 Takes in argv and argc for the new process' main
 */
 
-int sys_run( const char *path, const char** argv, int argc )
+int sys_process_run( const char *path, const char** argv, int argc )
 {
 	/* Open and find the named path, if it exists. */
 
@@ -213,27 +213,27 @@ int sys_sleep(unsigned int ms)
 	return 0;
 }
 
-int sys_getpid()
+int sys_process_self()
 {
 	return process_getpid();
 }
 
-int sys_getppid()
+int sys_process_parent()
 {
 	return process_getppid();
 }
 
-int sys_kill( int pid )
+int sys_process_kill( int pid )
 {
 	return process_kill(pid);
 }
 
-int sys_wait( struct process_info *info, int timeout )
+int sys_process_wait( struct process_info *info, int timeout )
 {
 	return process_wait_child(info, timeout);
 }
 
-int sys_reap( int pid )
+int sys_process_reap( int pid )
 {
 	return process_reap(pid);
 }
@@ -244,7 +244,6 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_EXIT:	return sys_exit(a);
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
-	case SYSCALL_RUN:	return sys_run((const char *)a, (const char**)b, c);
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
@@ -259,11 +258,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
-	case SYSCALL_GETPID:	return sys_getpid();
-	case SYSCALL_GETPPID:	return sys_getppid();
-	case SYSCALL_KILL:	return sys_kill(a);
-	case SYSCALL_WAIT:	return sys_wait((struct process_info*)a, b);
-	case SYSCALL_REAP:	return sys_reap(a);
+	case SYSCALL_PROCESS_SELF:	return sys_process_self();
+	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
+	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
+	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
+	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
 	default:		return -1;
 	}
 }

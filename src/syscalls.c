@@ -76,26 +76,26 @@ uint32_t gettimeofday() {
 
 int process_self() {
     static int cache = 0;
-    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
+    return cache? (cache) : (cache=syscall( SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0 ));
 }
 
 int process_parent() {
     static int cache = 0;
-    return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
+    return cache? (cache) : (cache=syscall( SYSCALL_PROCESS_PARENT, 0, 0, 0, 0, 0 ));
 }
 
 int process_run( const char *cmd, const char** argv, int argc ) {
-	return syscall( SYSCALL_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0 );
+	return syscall( SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0 );
 }
 
 int process_kill( unsigned int pid ) {
-    return syscall( SYSCALL_KILL, pid, 0, 0, 0, 0 );
+    return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }
 
 int process_reap( unsigned int pid ) {
-    return syscall( SYSCALL_REAP, pid, 0, 0, 0, 0 );
+    return syscall( SYSCALL_PROCESS_REAP, pid, 0, 0, 0, 0 );
 }
 
 int process_wait( struct process_info* info, int timeout ) {
-    return syscall( SYSCALL_WAIT, (uint32_t)info, timeout, 0, 0, 0 );
+    return syscall( SYSCALL_PROCESS_WAIT, (uint32_t)info, timeout, 0, 0, 0 );
 }
