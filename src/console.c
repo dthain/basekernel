@@ -108,3 +108,14 @@ void console_init( struct graphics *g )
        	console_reset();
 	console_putstring("\nconsole: initialized\n");
 }
+
+void printf_putchar( char c )
+{
+	console_write(0,&c,1,0);
+}
+
+void printf_putstring( char *s )
+{
+	console_write(0,s,strlen(s),0);
+}
+

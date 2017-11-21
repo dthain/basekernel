@@ -9,5 +9,6 @@ See the file LICENSE for details.
 
 extern struct dirent *root_directory;
 extern struct dirent *current_directory;
+extern struct graphics graphics_root;
 
 #endif
