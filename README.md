@@ -21,156 +21,108 @@ To be clear, this is raw low-level code, and there is no guarantee that
 it will work on your particular machine, or work at all. If you fix bugs
 or solve build problems, we would be happy to accept your contributions.
 
-## How to Run Basekernel
+## How to Build Basekernel on Linux
 
-### Installing a cross-compiler
-
-To avoid potential system-dependent behavior changes, you will probably
+To avoid potential system-dependent behavior changes, you will
 want to use a cross-compiler. A cross-compiler is a compiler intended to
 run on one system, but compile code for a different one. In this case,
 your computer is the former system ("host"), and basekernel is the
 latter system ("target").
 
-The Makefile as-is coerces the compiler to build for an x86 target
-anyway, but it is preferable to use a version of GCC actually 
-pre-configured for x86 at build time.
-
-We hope to eventually move from this coersion and just expect the user
-to have a cross-compiler, so any feedback about your experience with
-these instructions is greatly appreciated.
-
-#### Building from sources
-
-To build from sources (installs in $HOME directory):
+The following script will build a suitable cross-compiler
+for Basekernel in the `cross` subdirectory:
 
 ```
-# get and extract sources
-curl -O https://ftp.gnu.org/gnu/binutils/binutils-2.29.1.tar.gz
-curl -O https://ftp.gnu.org/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.gz
-tar -zxf gcc-7.2.0.tar.gz
-tar -zxf binutils-2.29.1.tar.gz
-
-# build and install binutils
-cd binutils-2.29.1
-./configure --prefix="$HOME/cross" --target=i686-elf \
-	--disable-nls --disable-werror
-make && make install
-cd ..
-
-#build and install gcc
-mkdir gcc-7.2.0-elf-objs
-cd gcc-7.2.0-elf-objs
-../gcc-7.2.0/configure --prefix="$HOME/cross" --target=i686-elf \
-	--disable-nls --enable-languages=c --without-headers
-make all-gcc && \
-make all-target-libgcc && \
-make install-gcc && \
-make install-target-libgcc
+./build-cross-compiler.sh
 ```
 
-This will take a long time to run! Try adding -j\<n\> (n depending on
-how many cores you have, a good heuristic is numcores + 1) to all your
-make commands. This will build the sources in parallel.
+This may take a long time to run, so go get a cup of coffee.
+You only need to do this once before building basekernel.
 
-#### Using package managers
+Once the build is complete, add the cross compiler to your PATH:
 
-Treat installing precompiled builds as a 'quick and dirty' method. This,
-while faster, will likely diverge from our configuration or chosen
-versions. It is great, however, for getting Basekernel up and running
-quickly, or when you run into nasty issues building (and again, please
-report that to us if you do :)).
+```
+export PATH="$PWD/cross/bin:$PATH"
+```
 
-Anyway, I've warned you enough.
+And then build Basekernel itself:
 
-On OS X, you might have an easier time using
-[MacPorts](https://guide.macports.org/#installing.macports)
+```
+cd src
+make
+```
+
+## How to Build Basekernel on Mac OSX
+
+Although less tested, it is possible to build basekernel on OSX.
+First install [MacPorts](https://guide.macports.org/#installing.macports)
+and then use it to install a cross compiler:
 
 ```
 port install i686-elf-gcc
 port install i686-elf-binutils
 ```
 
-We welcome any other additions here, and whether or not you were
-successful using those versions.
-
-#### Using your cross-compiler
-
-You can include these new executables in your $PATH to be able to
-run them as normal:
-
-```
-export PATH="$HOME/cross/bin:$PATH"
-```
-
-### Compilation: Linux x86 machine
-
-From a standard Linux X86 machine with the GCC compiler:
-
-```
-cd src
-make
-```
-
-### Compilation: OS X
-
-Getting basekernel to work with OS X will require installing a few dependencies.
-The easiest way to do this is with
-[MacPorts](https://guide.macports.org/#installing.macports).
-
-By default, running `make` attempts to use `genisoimage`, which no version of OS
-X has or supports. You will have to install cdrtools and use the near-identical
-`mkisofs`, then update your environment so `make` will handle it:
+And also the `mkisofs` tool, which substitutes for `genisoimage`:
 
 ```
 port install cdrtools
 export ISOGEN=mkisofs
 ```
 
-You can then attempt to build the image:
+Then build Basekernel as usual:
 
 ```
 cd src
 make
 ```
 
-On recent versions of OS X, `gcc` links to LLVM GCC or clang. If you try running
-`make` with the defaults and compilation or linking doesn't work, then you will
-have to [install a cross-compiler](#installing-a-cross-compiler) as mentioned above
-(or well...the problem lies in not having GCC, but if you are going to go
-through the trouble of installing it then you should choose to cross-compile).
+## Running Basekernel in a Virtual Machine
 
-Run `make` again and, if the tools were referenced correctly, it should finish
-successfully and create the image.
+Once the build is complete, you should see a file `basekernel.iso`
+which is a bootable CD-ROM image containing the boot program,
+Basekernel itself, and a small number of sample programs.
+You can browse the contents of this CD-ROM using any standard utility.
 
-### Running the image
+To execute the operating system, use a virtual machine technology
+like VMWare, VirtualBox, or QEMU, and direct it to use that image.
 
-You should have a file called `basekernel.img`, which is an image of a floppy
-disk that can be mounted in a virtual machine.
-
-Next, set up a virtual machine system
-like VMWare, VirtualBox, or QEUM, and direct it to use that image.
-
-If you are using QEMU, this command-line should do it:
+For example, if you are using QEMU, this command-line should do it:
 
 ```
-qemu-system-i386 -fda basekernel.img 
+qemu-system-i386 -cdrom basekernel.iso
 ```
 
 You should see something like this:
 
 <img src=screenshot.png align=center>
 
-(Hint: VirtualBox doesn't have floppy support enabled by default.  With your VM stopped, go to Settings->Storage and add a new floppy controller, then you can mount the image.)
+After some initial boot messages, you will see the kernel shell prompt.
+This allows you to take some simple actions before running the first
+user level program.  For example, read the boot messages to see
+which ata unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
+to mount the cdrom filesystem on that unit:
 
-If you want to try it on a real machine, then write out a physical floppy disk like this:
+<pre>
+mount 2
+</pre>
 
-```
-dd if=basekernel.img of=/dev/floppy
-```
+Use the <tt>list</tt> command to examine the root directory:
 
-Of course, nobody uses floppies any more.  To cold boot a physical machine, then you want to write out an optical disk containing the boot image.  That leads to your first little starter project:
+<pre>
+list /
+</pre>
 
-### Compatibility
+And use the <tt>run</tt> command to run a program:
+
+<pre>
+run /SAVER.EXE
+</pre>
+
+If you want to try it on a real machine, burn the CD-ROM image
+to a physical disc and reboot the machine.  It may or may not work!
+
+## Compatibility
 
 Basekernel compilation on linux has been tested with the following compilers:  
 
@@ -189,14 +141,7 @@ Basekernel has been tested with the following VM hypervisors:
 | VirtualBox    | :warning: Works with issues | Mouse does not work, struct copies fail        |
 | VMware Player | :x: [Fails](https://github.com/dthain/basekernel/issues/38)                   | No suitable video mode found at boot           |
 
-### Starter Project
-
-Read up on the `mkisofs` tool, and figure out how to create a CD-ROM
-image that has `basekernel.img` embedded within it as a bootable floppy.
-Use that CD as a bootable image with your virtual machine, or write
-it out to a physical CD, and use it to boot a real machine.
-
-## More Tweaks and Projects
+## Hacks, Projects, and Other Ideas
 
 Now that you have the code running, here is a whole raft of ideas to
 try, starting some single-line code changes to more elaborate projects:
@@ -232,8 +177,6 @@ is exhausted.
 * Write some easily-recognizable data to a file, then mount it as a virtual disk
 image in your virtual machine of choice.  Use the ATA driver to load and
 display the raw data on the virtual disk.
-
-* Write a read-only driver for the ISO-9660 (CDROM) filesystem, and use it with the  ATAPI driver to browse and access an entire filesystem tree.
 
 * Write a read-write driver for a Unix-style filesystem with proper inodes
 and directory entries.  Copy data from your CDROM filesystem into the Unix
