@@ -45,7 +45,7 @@ int sys_run( const char *path )
 
 	if(!root_directory) return ENOENT;
 
-	struct dirent *d = fs_namei(root_directory,path);
+	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
 	if(!d) {
 		return ENOENT;
 	}
@@ -62,7 +62,7 @@ int sys_run( const char *path )
 	int i;
 	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
 
-	struct file *f = fs_open(d, 0);
+	struct fs_file *f = fs_file_open(d, 0);
 
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
@@ -72,13 +72,13 @@ int sys_run( const char *path )
 		unsigned paddr;
 
 		pagetable_getmap(p->pagetable,vaddr,&paddr);
-		fs_read(f,(void*)paddr, PAGE_SIZE);
+		fs_file_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
 	/* Close everything up */
 	
 	fs_dirent_close(d);
-	fs_close(f);
+	fs_file_close(f);
 
     /* Copy open windows */
     memcpy(p->windows, current->windows, sizeof(p->windows));
