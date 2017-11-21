@@ -12,8 +12,7 @@ See the file LICENSE for details.
 void debug( const char *str );
 void exit( int status );
 int yield();
-int run( const char *cmd );
-int wait();
+int run( const char *cmd, const char** argv, int argc );
 int open( const char *path, int mode, int flags );
 int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
@@ -28,7 +27,10 @@ int draw_string( int wd, int x, int y, char *s );
 int draw_create( int wd, int x, int y, int w, int h );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();
-int getpid();
-int getppid();
+int process_self();
+int process_parent();
+int process_kill( unsigned int pid );
+int process_reap( unsigned int pid );
+int process_wait( struct process_info* info, int timeout );
 
 #endif

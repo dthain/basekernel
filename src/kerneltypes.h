@@ -11,6 +11,8 @@
 #define MEGA (KILO*KILO)
 #define GIGA (KILO*KILO*KILO)
 
+#define MAX_ARGV_LENGTH 256
+
 typedef int   int32_t;
 typedef short int16_t;
 typedef char  int8_t;
@@ -30,5 +32,11 @@ static inline uint16_t hton16( uint16_t x )
 {
 	return (x&0xff)<<8 | (x>>8);
 }
+
+struct process_info {
+    int pid;
+    int exitcode;
+    int exitreason;
+};
 
 #endif

@@ -37,9 +37,10 @@ int sys_yield()
 sys_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
 (Instead, we should go through the abstract filesystem interface.)
+Takes in argv and argc for the new process' main
 */
 
-int sys_run( const char *path )
+int sys_process_run( const char *path, const char** argv, int argc )
 {
 	/* Open and find the named path, if it exists. */
 
@@ -54,7 +55,7 @@ int sys_run( const char *path )
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
-	struct process *p = process_create(length,PAGE_SIZE);
+	struct process *p = process_create(length,PAGE_SIZE*2);
 	if(!p) return ENOENT;
 
 	/* Round up length of the executable to an even pages */
@@ -86,6 +87,8 @@ int sys_run( const char *path )
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
+    process_pass_arguments(p, argv, argc);
+
   
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
@@ -94,7 +97,7 @@ int sys_run( const char *path )
 
 	process_launch(p);
 
-	return 0;
+	return p->pid;
 }
 
 uint32_t sys_gettimeofday()
@@ -102,11 +105,6 @@ uint32_t sys_gettimeofday()
 	struct rtc_time t;
 	rtc_read(&t);
 	return rtc_time_to_timestamp(&t);
-}
-
-int sys_wait()
-{
-	return ENOSYS;
 }
 
 int sys_open( const char *path, int mode, int flags )
@@ -215,14 +213,29 @@ int sys_sleep(unsigned int ms)
 	return 0;
 }
 
-int sys_getpid()
+int sys_process_self()
 {
 	return process_getpid();
 }
 
-int sys_getppid()
+int sys_process_parent()
 {
 	return process_getppid();
+}
+
+int sys_process_kill( int pid )
+{
+	return process_kill(pid);
+}
+
+int sys_process_wait( struct process_info *info, int timeout )
+{
+	return process_wait_child(info, timeout);
+}
+
+int sys_process_reap( int pid )
+{
+	return process_reap(pid);
 }
 
 int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e )
@@ -231,8 +244,6 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_EXIT:	return sys_exit(a);
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
-	case SYSCALL_RUN:	return sys_run((const char *)a);
-	case SYSCALL_WAIT:	return sys_wait();
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
@@ -247,8 +258,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
-	case SYSCALL_GETPID:	return sys_getpid();
-	case SYSCALL_GETPPID:	return sys_getppid();
+	case SYSCALL_PROCESS_SELF:	return sys_process_self();
+	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
+	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
+	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
+	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
 	default:		return -1;
 	}
 }

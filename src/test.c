@@ -14,13 +14,15 @@ This program requires that write() and exit() work correctly.
 
 int main( const char *argv[], int argc )
 {
-	int j;
-	for(j=0;j<10;j++) {
-		printf("hello world, I can count to %d!\n", j);
-		sleep(1000);
-	}
-  
-	exit(0);
-  
+    printf("hello world, I am %d, and I have %d arguments!\n", process_self(), argc);
+
+    printf("They are: ");
+
+    int i;
+    for (i = 0; i < argc; ++i) {
+        printf("(%s) ", argv[i]);
+    }
+    printf("\n");
+
 	return 0;
 }
