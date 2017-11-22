@@ -21,7 +21,7 @@ See the file LICENSE for details.
 struct process *current=0;
 struct list ready_list = {0,0};
 struct list grave_list = {0,0};
-uint32_t current_pid = 1;
+struct process *processes[MAX_PID] = {0};
 
 void process_init()
 {
@@ -62,6 +62,19 @@ static void process_stack_init( struct process *p )
 	s->ss = X86_SEGMENT_USER_DATA;
 }
 
+static int process_allocate_pid() {
+    static int last = 0;
+    int i;
+    for (i = 0; i < MAX_PID; i++) {
+        int pid = 1 + ((last + i) % MAX_PID);
+        if (!processes[pid-1]) {
+            last = pid;
+            return pid;
+        }
+    }
+    return 0;
+}
+
 struct process * process_create( unsigned code_size, unsigned stack_size )
 {
 	struct process *p;
@@ -76,7 +89,12 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
-	p->pid = current_pid++;
+	p->pid = process_allocate_pid();
+    if (p->pid) {
+        processes[p->pid-1] = p;
+    } else {
+        return 0;
+    }
 
 	process_stack_init(p);
 
@@ -92,6 +110,7 @@ void process_delete( struct process *p )
         }
     }
     pagetable_delete(p->pagetable);
+    processes[p->pid-1] = 0;
 	memory_free_page(p->kstack);
 	memory_free_page(p);
 }
@@ -233,16 +252,11 @@ uint32_t process_getppid() {
 
 
 void process_make_dead( struct process *dead ) {
-    if (current->ppid == dead->pid) {
-        process_make_dead(current);
-    }
-    struct process *p = (struct process*)(ready_list.head);
-    while (p) {
-        struct process* next = (struct process*)p->node.next;
-        if (p->ppid == dead->pid) {
-            process_make_dead(p);
+    int i;
+    for (i = 0; i < MAX_PID; i++) {
+        if (processes[i] && processes[i]->ppid == dead->pid) {
+            process_make_dead(processes[i]);
         }
-        p = next;
     }
     dead->exitcode = 0;
     dead->exitreason = PROCESS_EXIT_KILLED;
@@ -252,27 +266,22 @@ void process_make_dead( struct process *dead ) {
         list_remove(&dead->node);
         list_push_tail(&grave_list,&dead->node);
     }
-
 }
+
 int process_kill( uint32_t pid ) {
-    struct process *dead = 0;
-    if (current->pid == pid) {
-        dead = current;
-    } else {
-        dead = (struct process*)(ready_list.head);
-        while (dead && dead->pid != pid) {
-            dead = (struct process*)(dead->node.next);
+    if (pid > 0 && pid <= MAX_PID) {
+        struct process *dead = processes[pid-1];
+        if (dead) {
+            console_printf("process killed\n");
+            process_make_dead(dead);
+            return 0;
+        } else {
+            return 1;
         }
-    }
-    if (dead) {
-        console_printf("process killed\n");
-        process_make_dead(dead);
-        return 0;
     } else {
         return 1;
     }
 }
-
 
 int process_wait_child(struct process_info *info, int timeout) {
 	clock_t start, elapsed;
