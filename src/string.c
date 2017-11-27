@@ -91,12 +91,6 @@ char * strrev( char *s )
 	return s;
 }
 
-char * strcat( char *d, const char *s )
-{
-	strcpy(d + strlen(d), s);
-	return d;
-}
-
 const char * strchr( const char *s, char ch )
 {
 	while(*s) {
@@ -277,7 +271,7 @@ char *uint_to_string(uint32_t u, char *s)
 	while(f>0) {
 		d = u/f;
 		s[i]='0'+d;
-		i = u-d*f;
+		u = u % f;
 		f = f/10;
 		i++;
 	}
