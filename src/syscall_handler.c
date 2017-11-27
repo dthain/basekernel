@@ -111,17 +111,34 @@ int sys_wait()
 
 int sys_open( const char *path, int mode, int flags )
 {
-	return ENOSYS;
+	int fd = process_available_fd();
+	int ret = 0;
+	if (fd < 0)
+		return -1;
+	struct fs *f = fs_get("kevin");
+	struct volume *v = fs_mount(f, 0);
+	struct dirent *root = fs_root(v);
+
+	struct dirent *d = fs_namei(root, path);
+	if (!d) {
+		ret = fs_mkfile(root, path);
+		d = fs_namei(root, path);
+	}
+	struct file *fp = fs_open(d, mode);
+	current->fdtable[fd] = fp;
+	return fd;
 }
 
 int sys_read( int fd, void *data, int length )
 {
-	return ENOSYS;
+	struct file *fp = current->fdtable[fd];
+	return fs_read(fp, data, length);
 }
 
 int sys_write( int fd, void *data, int length )
 {
-	return ENOSYS;
+	struct file *fp = current->fdtable[fd];
+	return fs_write(fp, data, length);
 }
 
 int sys_lseek( int fd, int offset, int whence )
@@ -131,7 +148,10 @@ int sys_lseek( int fd, int offset, int whence )
 
 int sys_close( int fd )
 {
-	return ENOSYS;
+	struct file *fp = current->fdtable[fd];
+	fs_close(fp);
+	current->fdtable[fd] = 0;
+	return 0;
 }
 
 int sys_draw_color( int wd, int r, int g, int b ) {
