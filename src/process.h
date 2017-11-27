@@ -18,6 +18,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
 #define PROCESS_MAX_WINDOWS   5
+#define PROCESS_MAX_FILES   100
 
 struct process {
 	struct list_node node;
@@ -29,6 +30,7 @@ struct process {
 	char *stack_ptr;
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
+	struct file *fdtable[PROCESS_MAX_FILES];
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
@@ -50,6 +52,8 @@ void process_wakeup_all( struct list *q );
 
 uint32_t process_getpid();
 uint32_t process_getppid();
+
+int process_available_fd();
 
 extern struct process *current;
 

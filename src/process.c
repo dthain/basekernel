@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "process.h"
+#include "fs.h"
 #include "console.h"
 #include "memory.h"
 #include "string.h"
@@ -210,4 +211,16 @@ uint32_t process_getpid() {
 
 uint32_t process_getppid() {
     return current->ppid;
+}
+
+int process_available_fd()
+{
+	struct file **fdtable = current->fdtable;
+	for (int i = 0; i < PROCESS_MAX_FILES; i++)
+	{
+		if (fdtable[i] == 0)
+			fdtable[i] = kmalloc(sizeof(struct file));
+			return fdtable[i] ? i : -1;
+	}
+	return -1;
 }
