@@ -12,7 +12,7 @@ See the file LICENSE for details.
 static char stdio_buffer[PAGE_SIZE] = {0};
 static uint32_t stdio_buffer_index = 0;
 
-static void flush()
+void flush()
 {
     debug(stdio_buffer);
     stdio_buffer_index = 0;

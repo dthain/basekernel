@@ -9,5 +9,6 @@ See the file LICENSE for details.
 
 void printf_putchar( char c );
 void printf_putstring( char *s );
+void flush();
 
 #endif
