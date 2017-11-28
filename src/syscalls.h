@@ -25,6 +25,7 @@ int draw_line( int wd, int x, int y, int w, int h );
 int draw_char( int wd, int x, int y, char c );
 int draw_string( int wd, int x, int y, char *s );
 int draw_create( int wd, int x, int y, int w, int h );
+void draw_write( char *str );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();
 int process_self();

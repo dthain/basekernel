@@ -66,6 +66,10 @@ int draw_create( int wd, int x, int y, int w, int h ) {
 	return syscall( SYSCALL_DRAW_CREATE, wd, x, y, w, h );
 }
 
+void draw_write( char *str ) {
+	syscall( SYSCALL_DRAW_WRITE, (uint32_t) str, 0, 0, 0, 0 );
+}
+
 int sleep( unsigned int ms ) {
 	return syscall( SYSCALL_SLEEP, ms, 0, 0, 0, 0 );
 }

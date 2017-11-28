@@ -9,6 +9,7 @@ A fun graphics demo that features text bouncing around the screen.
 */
 
 #include "syscalls.h"
+#include "user-io.h"
 #define WIDTH    (200)
 #define HEIGHT   (200)
 typedef unsigned int uint32_t;
@@ -35,7 +36,7 @@ int main( const char *argv[], int argc )
     int dg = 2;
     int db = 3;
     
-    draw_clear(wd, 0, 0, WIDTH, HEIGHT);
+    printf_graphics("window %d clear %d %d %d %d", wd, 0, 0, WIDTH, HEIGHT);
 
     for (;;) {
         move(&x1, &dx1, 0, WIDTH-80);
@@ -43,15 +44,14 @@ int main( const char *argv[], int argc )
         move(&r, &dr, 0, 255);
         move(&g, &dg, 0, 255);
         move(&b, &db, 0, 255);
-        draw_color(wd, r, g, b);
-        draw_string(wd, x1, y1, "basekernel");
+        printf_graphics("window %d color %d %d %d text %d %d \"basekernel\"", wd, r, g, b, x1, y1);
 
         sleep(75);
     }
 
-    draw_clear(wd, 0, 0, WIDTH+1, HEIGHT+1);
-	exit(0);
+    printf_graphics("window %d clear %d %d %d %d", wd, 0, 0, WIDTH+1, HEIGHT+1);
 
+	exit(0);
 	return 0;
 }
 

@@ -207,6 +207,10 @@ int sys_draw_create( int wd, int x, int y, int w, int h ) {
     return current->window_count++;
 }
 
+int sys_draw_write( char *s ) {
+    return graphics_write(s);
+}
+
 int sys_sleep(unsigned int ms)
 {
 	clock_wait(ms);
@@ -256,6 +260,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DRAW_CHAR:	return sys_draw_char(a, b, c, (char)d);
 	case SYSCALL_DRAW_STRING:	return sys_draw_string(a, b, c, (char*)d);
 	case SYSCALL_DRAW_CREATE:	return sys_draw_create(a, b, c, d, e);
+	case SYSCALL_DRAW_WRITE:	return sys_draw_write((char*)a);
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();

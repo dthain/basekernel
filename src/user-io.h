@@ -10,4 +10,6 @@ See the file LICENSE for details.
 void printf_putchar( char c );
 void printf_putstring( char *s );
 
+void printf_graphics( const char *s, ... );
+
 #endif

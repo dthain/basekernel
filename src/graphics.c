@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "bitmap.h"
 #include "string.h"
+#include "process.h"
 
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y) )
@@ -46,6 +47,99 @@ struct graphics * graphics_create( struct graphics *parent )
     memcpy(g, parent, sizeof(*g));
 
 	return g;
+}
+
+int graphics_write( char *s ) {
+    int window = -1;
+    const char* action = strtok(s, " ");
+    while (action) {
+        if (!strcmp(action, "window")) {
+            const char* arg1 = strtok(0, " ");
+            if (!arg1 || !str2int(arg1, &window) || window < 0 || window >= current->window_count) {
+                return -1;
+            }
+        } else if (!strcmp(action, "color")) {
+			struct graphics_color c;
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, " ");
+            int r;
+            int g;
+            int b;
+            if (!arg1 || !str2int(arg1, &r) || !arg2 || !str2int(arg2, &g) || !arg3 || !str2int(arg3, &b) || window == -1) {
+                return -1;
+            }
+            c.r = r;
+            c.g = g;
+            c.b = b;
+			c.a = 0;
+		    graphics_fgcolor(current->windows[window], c);
+        } else if (!strcmp(action, "rect")) {
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, " ");
+			const char* arg4 = strtok(0, " ");
+			int x;
+			int y;
+			int w;
+			int h;
+            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
+                return -1;
+            }
+		    graphics_rect(current->windows[window], x, y, w, h);
+        } else if (!strcmp(action, "clear")) {
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, " ");
+			const char* arg4 = strtok(0, " ");
+			int x;
+			int y;
+			int w;
+			int h;
+            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
+                return -1;
+            }
+		    graphics_clear(current->windows[window], x, y, w, h);
+        } else if (!strcmp(action, "line")) {
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, " ");
+			const char* arg4 = strtok(0, " ");
+			int x;
+			int y;
+			int w;
+			int h;
+            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
+                return -1;
+            }
+		    graphics_line(current->windows[window], x, y, w, h);
+        } else if (!strcmp(action, "text")) {
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, "\"");
+            int x;
+            int y;
+            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || window == -1) {
+                return -1;
+            }
+			int i;
+			for (i = 0; arg3[i]; i++) {
+			    graphics_char(current->windows[window],	x+i*8, y, arg3[i]);
+			} 
+        } else if (!strcmp(action, "char")) {
+			const char* arg1 = strtok(0, " ");
+			const char* arg2 = strtok(0, " ");
+			const char* arg3 = strtok(0, " ");
+            int x;
+            int y;
+            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || window == -1) {
+                return -1;
+            }
+            graphics_char(current->windows[window],	x, y, arg3[0]);
+		}
+        action = strtok(0, " ");
+    }
+    return 0;
 }
 
 int32_t graphics_width( struct graphics *g )
