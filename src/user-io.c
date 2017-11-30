@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "user-io.h"
+#include "graphics_lib.h"
 #include "kerneltypes.h"
 #include "syscalls.h"
 #include "string.h"
@@ -13,7 +14,7 @@ See the file LICENSE for details.
 static char stdio_buffer[PAGE_SIZE] = {0};
 static uint32_t stdio_buffer_index = 0;
 
-static char graphics_buffer[PAGE_SIZE] = {0};
+static struct gfx_command graphics_buffer[PAGE_SIZE] = {0};
 static uint32_t graphics_buffer_index = 0;
 
 static void flush()
@@ -50,92 +51,38 @@ void printf_putstring( char *s )
     printf_buffer(s, strlen(s));
 }
 
-static void flush_graphics()
-{
+static void draw_set_buffer(int t, int a0, int a1, int a2, int a3) {
+    struct gfx_command c = {t, {a0, a1, a2, a3}};
+    graphics_buffer[graphics_buffer_index++] = c;
+}
+
+void draw_flush() {
+    draw_set_buffer(END, 0, 0, 0, 0);
     draw_write(graphics_buffer);
     graphics_buffer_index = 0;
-    graphics_buffer[0] = 0;
 }
 
-static void printf_buffer_graphics( char *s, unsigned len )
-{
-    while (len)
-    {
-        unsigned l = len % (PAGE_SIZE - 1);
-        if (l > PAGE_SIZE - graphics_buffer_index - 1)
-        {
-            flush_graphics();
-        }
-        memcpy(graphics_buffer + graphics_buffer_index, s, l);
-        graphics_buffer_index += l;
-        len -= l; 
-    }
-    graphics_buffer[graphics_buffer_index] = 0;
+void draw_window( int wd ) {
+    draw_set_buffer(WINDOW, wd, 0, 0, 0);
 }
 
-static void printf_putchar_graphics( char c )
-{
-    printf_buffer_graphics(&c, 1);
+void draw_color( int r, int g, int b ) {
+    draw_set_buffer(COLOR, r, g, b, 0);
 }
 
-static void printf_putstring_graphics( char *s )
-{
-    printf_buffer_graphics(s, strlen(s));
+void draw_rect( int x, int y, int w, int h ) {
+    draw_set_buffer(RECT, x, y, w, h);
 }
 
-static void printf_putint_graphics( int32_t i )
-{
-	int f, d;
-	if(i<0 && i!=0) {
-		printf_putchar_graphics('-');
-		i=-i;
-	}
-
-	f = 1;
-	while((i/f) >= 10) {
-		f*=10;
-	}
-	while(f>0) {
-		d = i/f;
-		printf_putchar_graphics('0'+d);
-		i = i-d*f;
-		f = f/10;
-	}
+void draw_clear( int x, int y, int w, int h ) {
+    draw_set_buffer(CLEAR, x, y, w, h);
 }
 
-void printf_graphics( const char *s, ... )
-{
-	va_list args;
-
-	int32_t i;
-	char *str;
-
-	va_start(args,s);
-
-	while(*s) {
-		if(*s!='%') {
-			printf_putchar_graphics(*s);
-		} else {
-			s++;
-			switch(*s) {
-				case 'd':
-					i = va_arg(args,int32_t);
-					printf_putint_graphics(i);
-					break;
-				case 's':
-					str = va_arg(args,char*);
-					printf_putstring_graphics(str);
-					break;
-				case 0:
-					return;
-					break;
-				default:
-					printf_putchar_graphics(*s);
-					break;
-			}
-		}
-		s++;
-	}
-    flush_graphics();
-	va_end(args);
+void draw_line( int x, int y, int w, int h ) {
+    draw_set_buffer(LINE, x, y, w, h);
 }
+
+void draw_string( int x, int y, char *s ) {
+    draw_set_buffer(TEXT, x, y, (int)s, 0);
+}
+

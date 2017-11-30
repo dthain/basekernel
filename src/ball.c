@@ -36,22 +36,26 @@ int main( const char *argv[], int argc )
     int dg = 2;
     int db = 3;
     
-    printf_graphics("window %d clear %d %d %d %d", wd, 0, 0, WIDTH, HEIGHT);
+    draw_window(wd);
+    draw_clear(0, 0, WIDTH, HEIGHT);
+    draw_flush();
 
     for (;;) {
+        draw_window(wd);
         move(&x1, &dx1, 0, WIDTH-80);
         move(&y1, &dy1, 0, HEIGHT-1);
         move(&r, &dr, 0, 255);
         move(&g, &dg, 0, 255);
         move(&b, &db, 0, 255);
-        printf_graphics("window %d color %d %d %d text %d %d \"basekernel\"", wd, r, g, b, x1, y1);
+        draw_color(r, g, b);
+        draw_string(x1, y1, "basekernel");
+        draw_flush();
 
         sleep(75);
     }
 
-    printf_graphics("window %d clear %d %d %d %d", wd, 0, 0, WIDTH+1, HEIGHT+1);
-
 	exit(0);
+
 	return 0;
 }
 

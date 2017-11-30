@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2016 The University of Notre Dame
+opyright (C) 2016 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -49,95 +49,46 @@ struct graphics * graphics_create( struct graphics *parent )
 	return g;
 }
 
-int graphics_write( char *s ) {
+int graphics_write( struct gfx_command *command ) {
     int window = -1;
-    const char* action = strtok(s, " ");
-    while (action) {
-        if (!strcmp(action, "window")) {
-            const char* arg1 = strtok(0, " ");
-            if (!arg1 || !str2int(arg1, &window) || window < 0 || window >= current->window_count) {
-                return -1;
-            }
-        } else if (!strcmp(action, "color")) {
-			struct graphics_color c;
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, " ");
-            int r;
-            int g;
-            int b;
-            if (!arg1 || !str2int(arg1, &r) || !arg2 || !str2int(arg2, &g) || !arg3 || !str2int(arg3, &b) || window == -1) {
-                return -1;
-            }
-            c.r = r;
-            c.g = g;
-            c.b = b;
-			c.a = 0;
-		    graphics_fgcolor(current->windows[window], c);
-        } else if (!strcmp(action, "rect")) {
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, " ");
-			const char* arg4 = strtok(0, " ");
-			int x;
-			int y;
-			int w;
-			int h;
-            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
-                return -1;
-            }
-		    graphics_rect(current->windows[window], x, y, w, h);
-        } else if (!strcmp(action, "clear")) {
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, " ");
-			const char* arg4 = strtok(0, " ");
-			int x;
-			int y;
-			int w;
-			int h;
-            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
-                return -1;
-            }
-		    graphics_clear(current->windows[window], x, y, w, h);
-        } else if (!strcmp(action, "line")) {
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, " ");
-			const char* arg4 = strtok(0, " ");
-			int x;
-			int y;
-			int w;
-			int h;
-            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || !str2int(arg3, &w) || !arg4 || !str2int(arg4, &h) || window == -1) {
-                return -1;
-            }
-		    graphics_line(current->windows[window], x, y, w, h);
-        } else if (!strcmp(action, "text")) {
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, "\"");
-            int x;
-            int y;
-            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || window == -1) {
-                return -1;
-            }
-			int i;
-			for (i = 0; arg3[i]; i++) {
-			    graphics_char(current->windows[window],	x+i*8, y, arg3[i]);
-			} 
-        } else if (!strcmp(action, "char")) {
-			const char* arg1 = strtok(0, " ");
-			const char* arg2 = strtok(0, " ");
-			const char* arg3 = strtok(0, " ");
-            int x;
-            int y;
-            if (!arg1 || !str2int(arg1, &x) || !arg2 || !str2int(arg2, &y) || !arg3 || window == -1) {
-                return -1;
-            }
-            graphics_char(current->windows[window],	x, y, arg3[0]);
-		}
-        action = strtok(0, " ");
+    char* str;
+    struct graphics_color c;
+
+    while (command && command->type) {
+        switch (command->type) {
+            case WINDOW:
+                window = command->args[0];
+                if (window < 0 || window >= current->window_count) {
+                    return -1;
+                }
+                break;
+            case COLOR:
+                c.r = command->args[0];
+                c.g = command->args[1];
+                c.b = command->args[2];
+                c.a = 0;
+                graphics_fgcolor(current->windows[window], c);
+                break;
+            case RECT:
+                graphics_rect(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case CLEAR:
+                graphics_clear(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case LINE:
+                graphics_line(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case TEXT:
+                str = (char*)command->args[2];
+                int i;
+                for (i = 0; str[i]; i++) {
+                    graphics_char(current->windows[window],	command->args[0]+i*8, command->args[1], str[i]);
+                }
+                break;
+            default:
+                break;
+        }
+        command++;
     }
     return 0;
 }

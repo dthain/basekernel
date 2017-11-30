@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define SYSCALLS_H
 
 #include "kerneltypes.h"
+#include "graphics_lib.h"
 
 void debug( const char *str );
 void exit( int status );
@@ -18,14 +19,8 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
-int draw_color( int wd, int r, int g, int b );
-int draw_rect( int wd, int x, int y, int w, int h );
-int draw_clear( int wd, int x, int y, int w, int h );
-int draw_line( int wd, int x, int y, int w, int h );
-int draw_char( int wd, int x, int y, char c );
-int draw_string( int wd, int x, int y, char *s );
 int draw_create( int wd, int x, int y, int w, int h );
-void draw_write( char *str );
+void draw_write( struct gfx_command *s );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();
 int process_self();
