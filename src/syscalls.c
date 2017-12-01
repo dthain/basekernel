@@ -38,6 +38,10 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
+int sbrk( int a ) {
+	return syscall( SYSCALL_SBRK, a, 0, 0, 0, 0 );
+}
+
 int draw_color( int wd, int r, int g, int b ) {
 	return syscall( SYSCALL_DRAW_COLOR, wd, r, g, b, 0 );
 }

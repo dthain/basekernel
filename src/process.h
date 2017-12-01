@@ -36,6 +36,7 @@ struct process {
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
+    void* brk;
 };
 
 struct process_pointer {

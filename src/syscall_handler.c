@@ -76,6 +76,8 @@ int sys_process_run( const char *path, const char** argv, int argc )
 		fs_file_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
+    p->brk = (void*)(PROCESS_ENTRY_POINT + (npages+4)*PAGE_SIZE);
+
 	/* Close everything up */
 	
 	fs_dirent_close(d);
@@ -98,6 +100,24 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	process_launch(p);
 
 	return p->pid;
+}
+
+int sys_sbrk(int a) {
+    unsigned int vaddr = (unsigned int)current->brk;
+    unsigned int paddr;
+    unsigned int i;
+    for (i=0; i < (unsigned int)a; i+=PAGE_SIZE) {
+        if (!pagetable_getmap(current->pagetable,vaddr,&paddr)) { 
+            pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+        }
+        vaddr += PAGE_SIZE;
+    }
+    if (!pagetable_getmap(current->pagetable,vaddr,&paddr)) { 
+        pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+    }
+    vaddr = (unsigned int)current->brk;
+    current->brk += a;
+    return vaddr;
 }
 
 uint32_t sys_gettimeofday()
@@ -248,7 +268,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
-	case SYSCALL_CLOSE:	return sys_close(a);
+    case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_SBRK:	return sys_sbrk(a);
 	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
 	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
 	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);

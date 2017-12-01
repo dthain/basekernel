@@ -18,6 +18,7 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+int sbrk( int a );
 int draw_color( int wd, int r, int g, int b );
 int draw_rect( int wd, int x, int y, int w, int h );
 int draw_clear( int wd, int x, int y, int w, int h );
