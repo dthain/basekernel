@@ -7,10 +7,10 @@ See the file LICENSE for details.
 #ifndef GRAPHICS_LIB_H
 #define GRAPHICS_LIB_H
 
-enum command_type {END=0, WINDOW, COLOR, LINE, RECT, CLEAR, TEXT};
+typedef enum {GRAPHICS_END=0, GRAPHICS_WINDOW, GRAPHICS_COLOR, GRAPHICS_LINE, GRAPHICS_RECT, GRAPHICS_CLEAR, GRAPHICS_TEXT} graphics_command_t;
 
-struct gfx_command {
-    enum command_type type;
+struct graphics_command {
+    graphics_command_t type;
     int args[4];
 };
 

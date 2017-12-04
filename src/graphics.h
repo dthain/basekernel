@@ -49,7 +49,7 @@ void graphics_clear( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_
 void graphics_line( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
 void graphics_char( struct graphics *g, int32_t x, int32_t y, char c );
 
-int graphics_write( struct gfx_command *command );
+int graphics_write( struct graphics_command *command );
 
 #endif
 

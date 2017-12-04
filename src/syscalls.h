@@ -20,7 +20,7 @@ int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
 int draw_create( int wd, int x, int y, int w, int h );
-void draw_write( struct gfx_command *s );
+void draw_write( struct graphics_command *s );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();
 int process_self();

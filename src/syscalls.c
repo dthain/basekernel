@@ -43,7 +43,7 @@ int draw_create( int wd, int x, int y, int w, int h ) {
 	return syscall( SYSCALL_DRAW_CREATE, wd, x, y, w, h );
 }
 
-void draw_write( struct gfx_command *s ) {
+void draw_write( struct graphics_command *s ) {
 	syscall( SYSCALL_DRAW_WRITE, (uint32_t) s, 0, 0, 0, 0 );
 }
 

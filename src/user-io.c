@@ -14,7 +14,7 @@ See the file LICENSE for details.
 static char stdio_buffer[PAGE_SIZE] = {0};
 static uint32_t stdio_buffer_index = 0;
 
-static struct gfx_command graphics_buffer[PAGE_SIZE] = {0};
+static struct graphics_command graphics_buffer[PAGE_SIZE] = {0};
 static uint32_t graphics_buffer_index = 0;
 
 static void flush()
@@ -52,37 +52,37 @@ void printf_putstring( char *s )
 }
 
 static void draw_set_buffer(int t, int a0, int a1, int a2, int a3) {
-    struct gfx_command c = {t, {a0, a1, a2, a3}};
+    struct graphics_command c = {t, {a0, a1, a2, a3}};
     graphics_buffer[graphics_buffer_index++] = c;
 }
 
 void draw_flush() {
-    draw_set_buffer(END, 0, 0, 0, 0);
+    draw_set_buffer(GRAPHICS_END, 0, 0, 0, 0);
     draw_write(graphics_buffer);
     graphics_buffer_index = 0;
 }
 
 void draw_window( int wd ) {
-    draw_set_buffer(WINDOW, wd, 0, 0, 0);
+    draw_set_buffer(GRAPHICS_WINDOW, wd, 0, 0, 0);
 }
 
 void draw_color( int r, int g, int b ) {
-    draw_set_buffer(COLOR, r, g, b, 0);
+    draw_set_buffer(GRAPHICS_COLOR, r, g, b, 0);
 }
 
 void draw_rect( int x, int y, int w, int h ) {
-    draw_set_buffer(RECT, x, y, w, h);
+    draw_set_buffer(GRAPHICS_RECT, x, y, w, h);
 }
 
 void draw_clear( int x, int y, int w, int h ) {
-    draw_set_buffer(CLEAR, x, y, w, h);
+    draw_set_buffer(GRAPHICS_CLEAR, x, y, w, h);
 }
 
 void draw_line( int x, int y, int w, int h ) {
-    draw_set_buffer(LINE, x, y, w, h);
+    draw_set_buffer(GRAPHICS_LINE, x, y, w, h);
 }
 
 void draw_string( int x, int y, char *s ) {
-    draw_set_buffer(TEXT, x, y, (int)s, 0);
+    draw_set_buffer(GRAPHICS_TEXT, x, y, (int)s, 0);
 }
 

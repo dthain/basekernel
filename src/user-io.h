@@ -10,8 +10,6 @@ See the file LICENSE for details.
 void printf_putchar( char c );
 void printf_putstring( char *s );
 
-void printf_graphics( const char *s, ... );
-
 void draw_window( int wd );
 void draw_color( int r, int g, int b );
 void draw_rect( int x, int y, int w, int h );
