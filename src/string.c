@@ -20,6 +20,14 @@ void strcpy( char *d, const char *s )
 	*d = 0;
 }
 
+void strncpy( char *d, const char *s, unsigned length)
+{
+	while(*s && length--) {
+		*d++ = *s++;
+	}
+	*d = 0;
+}
+
 int strcmp( const char *a, const char *b )
 {
 	while(1) {
@@ -62,6 +70,31 @@ unsigned strlen( const char *s )
 		s++;
 	}
 	return len;
+}
+
+char * strrev( char *s )
+{
+	unsigned start=0;
+	unsigned end=strlen(s)-1;
+	char swap;
+
+	while(start<end)
+	{
+		swap=s[start];
+		s[start]=s[end];
+		s[end] = swap;
+
+		start++;
+		end--;
+	}
+
+	return s;
+}
+
+char * strcat( char *d, const char *s )
+{
+	strcpy(d + strlen(d), s);
+	return d;
 }
 
 const char * strchr( const char *s, char ch )
@@ -133,16 +166,6 @@ void	memcpy( void *vd, const void *vs, unsigned length )
 		s++;
 		length--;
 	}
-}
-
-static void printf_putchar( char c )
-{
-	console_write(0,&c,1,0);
-}
-
-static void printf_putstring( char *s )
-{
-	console_write(0,s,strlen(s),0);
 }
 
 static void printf_puthexdigit( uint8_t i )

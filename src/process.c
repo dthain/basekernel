@@ -12,11 +12,16 @@ See the file LICENSE for details.
 #include "x86.h"
 #include "interrupt.h"
 #include "memorylayout.h"
+#include "kmalloc.h"
+#include "kerneltypes.h"
 #include "kernelcore.h"
+#include "main.h"
+#include "clock.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
-uint32_t current_pid = 1;
+struct list grave_list = {0,0};
+struct process *processes[MAX_PID] = {0};
 
 void process_init()
 {
@@ -24,6 +29,10 @@ void process_init()
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
+
+    current->windows[0] = &graphics_root;
+    current->window_count = 1;
+    graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
 
@@ -53,6 +62,19 @@ static void process_stack_init( struct process *p )
 	s->ss = X86_SEGMENT_USER_DATA;
 }
 
+static int process_allocate_pid() {
+    static int last = 0;
+    int i;
+    for (i = 0; i < MAX_PID; i++) {
+        int pid = 1 + ((last + i) % MAX_PID);
+        if (!processes[pid-1]) {
+            last = pid;
+            return pid;
+        }
+    }
+    return 0;
+}
+
 struct process * process_create( unsigned code_size, unsigned stack_size )
 {
 	struct process *p;
@@ -62,15 +84,35 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->pagetable = pagetable_create();
 	pagetable_init(p->pagetable);
 	pagetable_alloc(p->pagetable,PROCESS_ENTRY_POINT,code_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
-	pagetable_alloc(p->pagetable,PROCESS_STACK_INIT-stack_size,stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+	pagetable_alloc(p->pagetable,PROCESS_STACK_INIT+0xF-stack_size+1,stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
-	p->pid = current_pid++;
+    p->window_count = 0;
+	p->pid = process_allocate_pid();
+    if (p->pid) {
+        processes[p->pid-1] = p;
+    } else {
+        return 0;
+    }
 
 	process_stack_init(p);
 
 	return p;
+}
+
+void process_delete( struct process *p )
+{
+    int i;
+    for (i = 0; i < p->window_count; i++) {
+        if (!(--(p->windows[i]->count))) {
+            kfree(p->windows[i]);
+        }
+    }
+    pagetable_delete(p->pagetable);
+    processes[p->pid-1] = 0;
+	memory_free_page(p->kstack);
+	memory_free_page(p);
 }
 
 void process_launch( struct process *p )
@@ -97,6 +139,9 @@ static void process_switch( int newstate )
 		current->state = newstate;
 		if(newstate==PROCESS_STATE_READY) {
 			list_push_tail(&ready_list,&current->node);
+		}
+		if(newstate==PROCESS_STATE_GRAVE) {
+			list_push_tail(&grave_list,&current->node);
 		}
 	}
 
@@ -144,6 +189,7 @@ void process_exit( int code )
 {
 	console_printf("process exiting with status %d...\n",code);
 	current->exitcode = code;
+    current->exitreason = PROCESS_EXIT_NORMAL;
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -160,6 +206,14 @@ void process_wakeup( struct list *q )
 	if(p) {
 		p->state = PROCESS_STATE_READY;
 		list_push_tail(&ready_list,&p->node);
+	}
+}
+
+void process_reap_all()
+{
+	struct process *p;
+	while((p = (struct process*)list_pop_head(&grave_list))) {
+        process_delete(p);
 	}
 }
 
@@ -194,4 +248,98 @@ uint32_t process_getpid() {
 
 uint32_t process_getppid() {
     return current->ppid;
+}
+
+
+void process_make_dead( struct process *dead ) {
+    int i;
+    for (i = 0; i < MAX_PID; i++) {
+        if (processes[i] && processes[i]->ppid == dead->pid) {
+            process_make_dead(processes[i]);
+        }
+    }
+    dead->exitcode = 0;
+    dead->exitreason = PROCESS_EXIT_KILLED;
+    if (dead == current) {
+        process_switch(PROCESS_STATE_GRAVE);
+    } else {
+        list_remove(&dead->node);
+        list_push_tail(&grave_list,&dead->node);
+    }
+}
+
+int process_kill( uint32_t pid ) {
+    if (pid > 0 && pid <= MAX_PID) {
+        struct process *dead = processes[pid-1];
+        if (dead) {
+            console_printf("process killed\n");
+            process_make_dead(dead);
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        return 1;
+    }
+}
+
+int process_wait_child(struct process_info *info, int timeout) {
+	clock_t start, elapsed;
+	uint32_t total;
+	start = clock_read();
+	do {
+        struct process *p = (struct process*)(grave_list.head);
+        while (p) {
+            struct process* next = (struct process*)p->node.next;
+            if (p->ppid == current->pid) {
+                info->exitcode = p->exitcode;
+                info->exitreason = p->exitreason;
+                info->pid = p->pid;
+                return 0;
+            }
+            p = next;
+        }
+		process_wait(&ready_list);
+		elapsed = clock_diff(start,clock_read());
+		total = elapsed.millis + elapsed.seconds*1000;
+	} while(total<timeout);
+    return 1;
+}
+
+int process_reap( uint32_t pid ) {
+    struct process *p = (struct process*)(grave_list.head);
+    while (p) {
+        struct process* next = (struct process*)p->node.next;
+        if (p->pid == pid) {
+            list_remove(&p->node);
+            process_delete(p);
+            return 0;
+        }
+        p = next;
+    }
+    return 1;
+}
+
+void process_pass_arguments(struct process* p, const char** argv, int argc) {
+    /* Copy command line arguments */
+	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
+    unsigned paddr;
+    pagetable_getmap(p->pagetable,PROCESS_STACK_INIT-PAGE_SIZE+0x10,&paddr);
+    char* esp = (char*)paddr+PAGE_SIZE-0x10;
+    char* ebp = esp;
+    /* Copy each argument */
+    int i;
+    for (i = 0; i < argc; i++) {
+        ebp -= MAX_ARGV_LENGTH;
+        strncpy(ebp, argv[i], MAX_ARGV_LENGTH-1);
+    }
+    /* Set pointers to each argument (argv) */
+    for (i = argc; i > 0; --i) {
+        ebp -= 4;
+        *((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - MAX_ARGV_LENGTH*i));
+    }
+    /* Set argumetns for _start on the stack */
+    *((char**)(ebp-12)) = (char*)(PROCESS_STACK_INIT-MAX_ARGV_LENGTH*argc-4*argc);
+    *((int*)(ebp-8)) = argc;
+	s->esp -= (esp-ebp)+16;
 }

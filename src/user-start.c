@@ -14,10 +14,11 @@ must invoke the exit() system call to terminate the process.
 */
 
 #include "syscalls.h"
+#include "memorylayout.h"
 
 int main( const char *argv[], int argc );
 
-void _start() {
-	exit(main(0,0));
+void _start(const char** argv, int argc) {
+	exit(main(argv, argc));
 }
 

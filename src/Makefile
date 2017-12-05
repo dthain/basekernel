@@ -1,16 +1,16 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs/kevinfs.o hashtable.o kevinfs/kevinfs_test.o kevinfs/kevinfs_ata.o
 
-USER_OBJECTS=user-start.o test.o syscall.o syscalls.o
+USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 
-KERNEL_CCFLAGS=-Wall -c -ffreestanding -m32 -march=i386 -fno-pie
-KERNEL_LDFLAGS=-m elf_i386
-LD?=ld
+KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
+CC?=i386-elf-gcc
+LD?=i386-elf-ld
 ISOGEN?=genisoimage
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe
-	${ISOGEN} -J -R -o basekernel.iso -b basekernel.img basekernel.img test.exe
+basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe
+	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
 	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
@@ -28,7 +28,16 @@ kernel: ${KERNEL_OBJECTS}
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 test.exe: test.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+long.exe: long.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+saver.exe: saver.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+ball.exe: ball.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
 
 clean:
-	rm -rf basekernel.img bootblock kernel *.o kevinfs/*.o
+	rm -rf basekernel.img bootblock kernel *.o kevinfs/*.o test.exe saver.exe ball.exe long.exe

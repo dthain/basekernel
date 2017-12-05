@@ -10,17 +10,19 @@ This program requires that write() and exit() work correctly.
 */
 
 #include "syscalls.h"
+#include "string.h"
 
 int main( const char *argv[], int argc )
 {
-	int j;
+    printf("hello world, I am %d, and I have %d arguments!\n", process_self(), argc);
 
-	for(j=0;j<10;j++) {
-		debug("hello world!\n");
-		sleep(1000);
-	}
+    printf("They are: ");
 
-	exit(0);
+    int i;
+    for (i = 0; i < argc; ++i) {
+        printf("(%s) ", argv[i]);
+    }
+    printf("\n");
 
 	return 0;
 }
