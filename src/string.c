@@ -265,12 +265,6 @@ void printf( const char *s, ... )
 	va_end(args);
 }
 
-char *strcat(char *dest, const char *s)
-{
-	strcpy(dest + strlen(dest), s);
-	return dest;
-}
-
 char *uint_to_string(uint32_t u, char *s)
 {
 	uint32_t f, d, i;
