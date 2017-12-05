@@ -3,13 +3,13 @@ KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o
 USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
-CC=i686-elf-gcc
-LD=i686-elf-ld
+CC?=i686-elf-gcc
+LD?=i686-elf-ld
 ISOGEN?=genisoimage
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe
+basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe copy.exe
 	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
@@ -41,6 +41,9 @@ saver.exe: saver.o $(USER_OBJECTS)
 
 ball.exe: ball.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+
+copy.exe: copy.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o kevinfs/*.o test.exe saver.exe ball.exe long.exe

@@ -20,6 +20,8 @@ See the file LICENSE for details.
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_FILES   100
 
+struct volume;
+
 struct process {
 	struct list_node node;
 	int state;
@@ -31,6 +33,8 @@ struct process {
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
 	struct file *fdtable[PROCESS_MAX_FILES];
+	struct list mounts;
+	struct dirent *cwd;
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
@@ -54,6 +58,9 @@ uint32_t process_getpid();
 uint32_t process_getppid();
 
 int process_available_fd();
+int process_mount_as(struct volume *v, const char *ns);
+int process_unmount(const char *ns);
+int process_chdir(const char *ns, const char *path);
 
 extern struct process *current;
 

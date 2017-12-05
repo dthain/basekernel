@@ -21,6 +21,12 @@ struct process *current=0;
 struct list ready_list = {0,0};
 uint32_t current_pid = 1;
 
+struct mount {
+	struct list_node node;
+	char *name;
+	struct volume *v;
+};
+
 void process_init()
 {
 	current = process_create(0,0);
@@ -219,8 +225,58 @@ int process_available_fd()
 	for (int i = 0; i < PROCESS_MAX_FILES; i++)
 	{
 		if (fdtable[i] == 0)
-			fdtable[i] = kmalloc(sizeof(struct file));
-			return fdtable[i] ? i : -1;
+			return i;
 	}
 	return -1;
+}
+
+static int process_register_mount(struct mount *m) {
+	struct mount *m_final = kmalloc(sizeof(struct mount));
+	memcpy(m_final, m, sizeof(struct mount));
+	list_push_tail(&current->mounts, &m_final->node);
+	return 0;
+}
+
+struct mount *process_mount_get(const char *name) {
+	struct list_node *iter = current->mounts.head;
+	while (iter) {
+		struct mount *m = (struct mount *) iter;
+		if (!strcmp(name, m->name)) {
+			struct mount *ret = kmalloc(sizeof(struct mount));
+			memcpy(ret, m, sizeof(struct mount));
+			return ret;
+		}
+		iter = iter->next;
+	}
+	return 0;
+}
+
+int process_mount_as(struct volume *v, const char *ns)
+{
+	struct mount *m = kmalloc(sizeof(struct mount));
+	m->name = kmalloc(strlen(ns) + 1);
+	strcpy(m->name, ns);
+	m->v = v;
+	process_register_mount(m);
+	return 0;
+}
+
+static int process_chdir_with_cwd(const char *path)
+{
+	struct dirent *d;
+	if (!(d = fs_namei(current->cwd, path)))
+		return -1;
+	current->cwd = d;
+	return 0;
+}
+
+int process_chdir(const char *ns, const char *path)
+{
+	if (!ns && !current->cwd)
+		return -1;
+	if (ns) {
+		struct mount *m = process_mount_get(ns);
+		current->cwd = fs_root(m->v);
+	}
+	return process_chdir_with_cwd(path);
 }

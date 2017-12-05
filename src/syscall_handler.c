@@ -13,6 +13,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "clock.h"
 #include "rtc.h"
+#include "kmalloc.h"
 
 int sys_debug( const char *str )
 {
@@ -62,7 +63,7 @@ int sys_run( const char *path )
 	int i;
 	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
 
-	struct file *f = fs_open(d, 0);
+	struct file *f = fs_open(d, 1);
 
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
@@ -109,20 +110,31 @@ int sys_wait()
 	return ENOSYS;
 }
 
+int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
+{
+	struct fs *fs = fs_get(fs_name);
+	struct volume *v = fs_mount(fs, device_no);
+	int ret = process_mount_as(v, ns);
+	kfree(fs);
+	return ret;
+}
+
+int sys_chdir(const char *ns, const char *name)
+{
+	return process_chdir(ns, name);
+}
+
 int sys_open( const char *path, int mode, int flags )
 {
 	int fd = process_available_fd();
 	int ret = 0;
 	if (fd < 0)
 		return -1;
-	struct fs *f = fs_get("kevin");
-	struct volume *v = fs_mount(f, 0);
-	struct dirent *root = fs_root(v);
-
-	struct dirent *d = fs_namei(root, path);
+	struct dirent *cwd = current->cwd;
+	struct dirent *d = fs_namei(cwd, path);
 	if (!d) {
-		ret = fs_mkfile(root, path);
-		d = fs_namei(root, path);
+		ret = fs_mkfile(cwd, path);
+		d = fs_namei(cwd, path);
 	}
 	struct file *fp = fs_open(d, mode);
 	current->fdtable[fd] = fp;
@@ -269,6 +281,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_GETPID:	return sys_getpid();
 	case SYSCALL_GETPPID:	return sys_getppid();
+	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
+	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
 	default:		return -1;
 	}
 }

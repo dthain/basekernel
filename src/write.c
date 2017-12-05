@@ -16,6 +16,11 @@ This program requires that write() and exit() work correctly.
 int main( const char *argv[], int argc )
 {
 	uint32_t j = 0;
+	printf("mounting\n");
+	int res = mount(0, "kevin", "K");
+	printf("mounted successfully? %d\n", res);
+	chdir("K", "/");
+	printf("got root\n");
 	int fd = open("kevin", 2, 0);
 	printf("got fd %d\n", fd);
 	printf("writing to file...\n");
@@ -34,15 +39,14 @@ int main( const char *argv[], int argc )
 	}
 	close(fd);
 	fd = open("kevin", 1, 0);
-	char buffer[100];
+	char buffer[1000];
 	int n;
 	printf("reading file...\n");
-	while ((n = read(fd, buffer, 99)) > 0) {
+	while ((n = read(fd, buffer, 999)) > 0) {
 		buffer[n] = 0;
-		printf("%s", buffer);
+		printf("%s");
 		flush();
 	}
-  
 	close(fd);
 	exit(0);
   
