@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "../string.h"
 #include "../hashtable.h"
 #include "../fs.h"
+#include "../fs_ops.h"
 
 static uint32_t ceiling(double d)
 {
@@ -32,26 +33,11 @@ struct kevinfs_dirent {
        struct kevinfs_inode *node;
 };
 
-struct kevinfs_file {
-	struct kevinfs_dirent *kd;
-	uint32_t offset;
-	uint8_t mode;
-};
-
 static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *s, uint32_t unit);
-static struct volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
-static struct dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
-static struct file *kevinfs_file_as_file(struct kevinfs_file *kf);
+static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
+static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *v, struct kevinfs_inode *node);
 static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no);
-
-static struct kevinfs_file *kevinfs_file_create(struct kevinfs_dirent *kd, uint8_t mode){
-	struct kevinfs_file *res = kmalloc(sizeof(struct kevinfs_file));
-	res->offset = 0;
-	res->mode = mode;
-	res->kd = kd;
-	return res;
-}
 
 static void kevinfs_print_superblock(struct kevinfs_superblock *s)
 {
@@ -227,13 +213,15 @@ static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
        return 0;
 }
 
-static int kevinfs_write_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t *buffer)
+static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_no, uint8_t *buffer)
 {
+	struct kevinfs_volume *kv = kd->kv;
+	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_superblock *super = kv->super;
-	return kevinfs_ata_write_block(kv->unit, super->free_block_start + index, buffer);
+	return kevinfs_ata_write_block(kv->unit, super->free_block_start + node->direct_addresses[address_no], buffer);
 }
 
-static int kevinfs_read_data(struct kevinfs_volume *kv, uint32_t index, uint8_t *buffer)
+static int kevinfs_read_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t *buffer)
 {
 	bool is_active;
 	struct kevinfs_superblock *super = kv->super;
@@ -244,6 +232,20 @@ static int kevinfs_read_data(struct kevinfs_volume *kv, uint32_t index, uint8_t 
 		return -1;
 	}
 	return kevinfs_ata_read_block(kv->unit, super->free_block_start + index, buffer);
+}
+
+static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t address_no)
+{
+	struct kevinfs_dirent *kd = d->private_data;
+	struct kevinfs_volume *kv = kd->kv;
+	struct kevinfs_inode *node = kd->node;
+	return kevinfs_read_data_block(kv, node->direct_addresses[address_no], (uint8_t *) buffer);
+}
+
+static int kevinfs_write_block(struct fs_dirent *d, char *buffer, uint32_t address_no)
+{
+	struct kevinfs_dirent *kd = d->private_data;
+	return kevinfs_write_data_block(kd, address_no, (uint8_t *) buffer);
 }
 
 static struct kevinfs_dir_record_list *kevinfs_dir_alloc(uint32_t list_len)
@@ -285,7 +287,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 
 	uint32_t i;
 	for (i = 0; i < node->direct_addresses_len; i++) {
-		if (kevinfs_read_data(kv, node->direct_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
+		if (kevinfs_read_data_block(kv, node->direct_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
 			kevinfs_dir_dealloc(res);
 			return 0;
 		}
@@ -298,7 +300,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 	return res;
 }
 
-static int kevinfs_read_dir(struct dirent *d, char *buffer, int buffer_len)
+static int kevinfs_read_dir(struct fs_dirent *d, char *buffer, int buffer_len)
 {
 	struct kevinfs_dirent *kd = d->private_data;
 	struct kevinfs_dir_record_list *list = kevinfs_readdir(kd);
@@ -325,7 +327,7 @@ static int kevinfs_read_dir(struct dirent *d, char *buffer, int buffer_len)
 	return ret < 0 ? ret : total;
 }
 
-static int kevinfs_dirent_resize(struct kevinfs_dirent *kd, uint32_t num_blocks)
+static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t num_blocks)
 {
 	uint32_t i;
 	struct kevinfs_volume *kv = kd->kv;
@@ -346,6 +348,17 @@ static int kevinfs_dirent_resize(struct kevinfs_dirent *kd, uint32_t num_blocks)
 	node->direct_addresses_len = num_blocks;
 	return 0;
 }
+
+static int kevinfs_dirent_resize(struct fs_dirent *d, uint32_t size)
+{
+	struct kevinfs_dirent *kd = d->private_data;
+	uint32_t num_blocks = size / FS_BLOCKSIZE;
+	kevinfs_internal_dirent_resize(kd, num_blocks);
+	kd->node->sz = size;
+	d->sz = size;
+	return kevinfs_save_dirent(kd);
+}
+
 
 static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
@@ -516,7 +529,6 @@ static int kevinfs_dir_rm(struct kevinfs_dir_record_list *current_files,
 
 static int kevinfs_writedir(struct kevinfs_dirent *kd, struct kevinfs_dir_record_list *files)
 {
-	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
 	uint32_t new_len = files->list_len;
 	uint8_t *buffer = kmalloc(sizeof(struct kevinfs_dir_record) * new_len);
@@ -527,13 +539,13 @@ static int kevinfs_writedir(struct kevinfs_dirent *kd, struct kevinfs_dir_record
 	for (i = 0; i < new_len; i++) {
 		memcpy(buffer + sizeof(struct kevinfs_dir_record) * i, files->list + i, sizeof(struct kevinfs_dir_record));
 	}
-	if (kevinfs_dirent_resize(kd, ending_num_indices) < 0) {
+	if (kevinfs_internal_dirent_resize(kd, ending_num_indices) < 0) {
 		ret = -1;
 		goto cleanup;
 	}
 	for (i = 0; i <= ending_index; i++) {
 		if (hash_set_lookup(files->changed, i)) {
-			ret = kevinfs_write_data_block(kv, node->direct_addresses[i], buffer + FS_BLOCKSIZE * i);
+			ret = kevinfs_write_data_block(kd, i, buffer + FS_BLOCKSIZE * i);
 			if (ret < 0)
 				goto cleanup;
 		}
@@ -592,79 +604,16 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 	return record;
 }
 
-static int kevinfs_write_file_range(struct kevinfs_dirent *kd, uint8_t *buffer, uint32_t start, uint32_t n)
-{
-	struct kevinfs_inode *node = kd->node;
-	struct kevinfs_volume *kv = kd->kv;
-	uint32_t direct_addresses_start = start / FS_BLOCKSIZE, direct_addresses_end = (start + n - 1) / FS_BLOCKSIZE;
-	uint32_t start_offset = start % FS_BLOCKSIZE, end_offset = (start + n - 1) % FS_BLOCKSIZE;
-	uint32_t i, total_copy_length = 0;
-
-	if (kevinfs_dirent_resize(kd,  direct_addresses_end + 1) < 0) {
-		return -1;
-	}
-
-	for (i = direct_addresses_start; i <= direct_addresses_end; i++) {
-		uint8_t buffer_part[FS_BLOCKSIZE];
-		uint8_t *copy_start = buffer_part;
-		uint32_t buffer_part_len = FS_BLOCKSIZE;
-		memset(buffer_part, 0, sizeof(buffer_part));
-		if (i == direct_addresses_start) {
-			copy_start += start_offset;
-		}
-		if (i == direct_addresses_end) {
-			buffer_part_len -= FS_BLOCKSIZE - end_offset;
-		}
-		memcpy(copy_start, buffer + total_copy_length, buffer_part_len);
-		if (kevinfs_write_data_block(kv, node->direct_addresses[i], buffer_part) < 0)
-			return -1;
-		total_copy_length += buffer_part_len;
-	}
-	if (start + n > node->sz)
-		node->sz = start + n;
-	if (kevinfs_save_dirent(kd) < 0)
-		return -1;
-
-	return total_copy_length;
-}
-
-static int kevinfs_read_file_range(struct kevinfs_dirent *kd, uint8_t *buffer, uint32_t start, uint32_t n)
-{
-	struct kevinfs_inode *node = kd->node;
-	uint32_t direct_addresses_start = start / FS_BLOCKSIZE, direct_addresses_end = (start + n - 1) / FS_BLOCKSIZE;
-	uint32_t start_offset = start % FS_BLOCKSIZE, end_offset = (start + n) % FS_BLOCKSIZE;
-	uint32_t i, total_copy_length = 0;
-
-	for (i = direct_addresses_start; i <= direct_addresses_end; i++) {
-		uint8_t buffer_part[FS_BLOCKSIZE];
-		uint8_t *copy_start = buffer_part;
-		uint32_t buffer_part_len = FS_BLOCKSIZE;
-		memset(buffer_part, 0, sizeof(buffer_part));
-		if (i == direct_addresses_start) {
-			copy_start += start_offset;
-		}
-		if (i == direct_addresses_end) {
-			buffer_part_len -= FS_BLOCKSIZE - end_offset - 1;
-		}
-		if (kevinfs_read_data(kd->kv, node->direct_addresses[i], buffer_part) < 0)
-			return -1;
-		memcpy(buffer + total_copy_length, copy_start, buffer_part_len);
-		total_copy_length += buffer_part_len;
-	}
-
-	return total_copy_length;
-}
-
-static struct volume *kevinfs_mount(uint32_t unit_no)
+static struct fs_volume *kevinfs_mount(uint32_t unit_no)
 {
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(unit_no);
 	if (!super) return 0;
 	struct kevinfs_volume *kv = kevinfs_superblock_as_kevinfs_volume(super, unit_no);
-	struct volume *v = kevinfs_volume_as_volume(kv);
+	struct fs_volume *v = kevinfs_volume_as_volume(kv);
 	return v;
 }
 
-static int kevinfs_mkdir(struct dirent *d, const char *filename)
+static int kevinfs_mkdir(struct fs_dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *new_dir_record_list, *cwd_record_list;
 	struct kevinfs_dirent *kd = d->private_data;
@@ -711,7 +660,7 @@ cleanup:
 	return ret;
 }
 
-static int kevinfs_mkfile(struct dirent *d, const char *filename)
+static int kevinfs_mkfile(struct fs_dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *new_dir_record_list, *cwd_record_list;
 	struct kevinfs_dirent *kd = d->private_data;
@@ -756,7 +705,7 @@ cleanup:
 	return ret;
 }
 
-static int kevinfs_rmdir(struct dirent *d, const char *filename)
+static int kevinfs_rmdir(struct fs_dirent *d, const char *filename)
 {
 	struct kevinfs_dir_record_list *cwd_record_list;
 	struct kevinfs_dirent *kd = d->private_data;
@@ -775,62 +724,7 @@ static int kevinfs_rmdir(struct dirent *d, const char *filename)
 	return ret;
 }
 
-static struct file *kevinfs_open(struct dirent *d, int8_t mode)
-{
-	struct kevinfs_dirent *kd = d->private_data;
-	kevinfs_print_inode(kd->node);
-	struct kevinfs_file *kf = kevinfs_file_create(kd, mode);
-	return kevinfs_file_as_file(kf);
-}
-
-static int kevinfs_close(struct file *f)
-{
-	struct kevinfs_file *kf = f->private_data;
-	kfree(kf);
-	return 0;
-}
-
-static int kevinfs_write(struct file *f, char *buffer, uint32_t n)
-{
-	struct kevinfs_file *kf = f->private_data;
-	struct kevinfs_dirent *kd = kf->kd;
-	uint32_t original_offset = kf->offset, new_offset;
-
-	if (!kf || !(FILE_MODE_WRITE & kf->mode))
-		return -1;
-	kf->offset += n;
-	if (kf->offset >= FS_INODE_MAXBLOCKS * FS_BLOCKSIZE)
-		return -1;
-
-	new_offset = kf->offset;
-	if (kevinfs_write_file_range(kd, (uint8_t *) buffer, original_offset, new_offset - original_offset) < 0)
-		return -1;
-
-	return new_offset - original_offset;
-}
-
-static int kevinfs_read(struct file *f, char *buffer, uint32_t n)
-{
-	struct kevinfs_file *kf = f->private_data;
-	struct kevinfs_dirent *kd = kf->kd;
-	struct kevinfs_inode *inode = kd->node;
-	uint32_t original_offset = kf->offset, new_offset;
-
-	if (!kf || !(FILE_MODE_READ & kf->mode))
-		return -1;
-
-	kf->offset += n;
-	if (kf->offset >= inode->sz)
-		kf->offset = inode->sz;
-
-	new_offset = kf->offset;
-	if (new_offset == original_offset ||
-			kevinfs_read_file_range(kd, (uint8_t *) buffer, original_offset, new_offset - original_offset) < 0)
-		return -1;
-	return new_offset - original_offset;
-}
-
-static int kevinfs_unlink(struct dirent *d, const char *filename)
+static int kevinfs_unlink(struct fs_dirent *d, const char *filename)
 {
 	struct kevinfs_dirent *kd = d->private_data, *kd_to_rm;
 	struct kevinfs_volume *kv = kd->kv;
@@ -865,7 +759,7 @@ static int kevinfs_unlink(struct dirent *d, const char *filename)
 	return ret;
 }
 
-static int kevinfs_link(struct dirent *d, const char *filename, const char *new_filename)
+static int kevinfs_link(struct fs_dirent *d, const char *filename, const char *new_filename)
 {
 	struct kevinfs_dirent *kd = d->private_data, *kd_to_access = 0;
 	struct kevinfs_volume *kv = kd->kv;
@@ -905,7 +799,7 @@ cleanup:
 	return ret;
 }
 
-static struct dirent *kevinfs_dirent_lookup(struct dirent *d, const char *name)
+static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
 	struct kevinfs_dirent *kd = d->private_data, *res = 0;
 	struct kevinfs_volume *kv = kd->kv;
@@ -985,7 +879,7 @@ static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_vol
 	return kd;
 }
 
-static struct dirent *kevinfs_root(struct volume *v)
+static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
 	struct kevinfs_inode *node = kevinfs_get_inode(kv, kv->root_inode_num);
@@ -993,7 +887,7 @@ static struct dirent *kevinfs_root(struct volume *v)
 	return kd ? kevinfs_dirent_as_dirent(kd) : 0;
 }
 
-static int kevinfs_umount(struct volume *v)
+static int kevinfs_umount(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
 	struct kevinfs_inode *node = kevinfs_get_inode(kv, kv->root_inode_num);
@@ -1013,15 +907,11 @@ static struct fs_dirent_ops kevinfs_dirent_ops = {
 	.mkfile = kevinfs_mkfile,
 	.lookup = kevinfs_dirent_lookup,
 	.rmdir = kevinfs_rmdir,
-	.open = kevinfs_open,
 	.unlink = kevinfs_unlink,
-	.link = kevinfs_link
-};
-
-static struct fs_file_ops kevinfs_file_ops = {
-	.close = kevinfs_close,
-	.read = kevinfs_read,
-	.write = kevinfs_write
+	.link = kevinfs_link,
+	.read_block = kevinfs_read_block,
+	.write_block = kevinfs_write_block,
+	.resize = kevinfs_dirent_resize,
 };
 
 static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *super, uint32_t unit_no)
@@ -1040,28 +930,20 @@ static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no)
 	return kv;
 }
 
-static struct volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv)
+static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv)
 {
-	struct volume *v = kmalloc(sizeof(struct volume));
+	struct fs_volume *v = kmalloc(sizeof(struct fs_volume));
 	v->private_data = kv;
 	v->ops = &kevinfs_volume_ops;
+	v->block_size = FS_BLOCKSIZE;
 	return v;
 }
 
-static struct dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
+static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
 {
-	struct dirent *d = kmalloc(sizeof(struct dirent));
+	struct fs_dirent *d = kmalloc(sizeof(struct fs_dirent));
 	d->private_data = kd;
 	d->sz = kd->node->sz;
 	d->ops = &kevinfs_dirent_ops;
 	return d;
-}
-
-static struct file *kevinfs_file_as_file(struct kevinfs_file *kf)
-{
-	struct file *f = kmalloc(sizeof(struct file));
-	f->private_data = kf;
-	f->sz = f->sz;
-	f->ops = &kevinfs_file_ops;
-	return f;
 }
