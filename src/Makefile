@@ -46,4 +46,4 @@ copy.exe: copy.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 clean:
-	rm -rf basekernel.img bootblock kernel *.o kevinfs/*.o test.exe saver.exe ball.exe long.exe
+	rm -rf basekernel.img bootblock kernel *.o kevinfs/*.o test.exe saver.exe ball.exe long.exe write.exe copy.exe
