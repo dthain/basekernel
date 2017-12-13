@@ -37,7 +37,7 @@ saver.exe: saver.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 ball.exe: ball.o $(USER_OBJECTS)
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o user-io.o string.o -o $@
 
 clean:
 	rm -rf basekernel.img bootblock kernel *.o test.exe saver.exe ball.exe long.exe

@@ -9,6 +9,7 @@ See the file LICENSE for details.
 
 #include "kerneltypes.h"
 #include "bitmap.h"
+#include "graphics_lib.h"
 
 struct graphics_color {
 	uint8_t r;
@@ -47,6 +48,8 @@ void graphics_rect( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t
 void graphics_clear( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
 void graphics_line( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
 void graphics_char( struct graphics *g, int32_t x, int32_t y, char c );
+
+int graphics_write( struct graphics_command *command );
 
 #endif
 
