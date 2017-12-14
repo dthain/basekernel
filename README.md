@@ -19,7 +19,7 @@ If you are looking for a new OS to run on your laptop, then this is not what you
 This project is led by Prof. Douglas Thain at the University of Notre Dame,
 with contributions from students, particularly Jon Westhoff and Kevin Wern.
 
-To learn more, see the [Basekernel Wiki][https://github.com/dthain/basekernel/wiki].
+To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wiki).
 
 ## Quick Start Instructions
 
