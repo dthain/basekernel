@@ -264,7 +264,7 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "help"))
 	{
 		printf(
-			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 			"Commands:",
 			"echo <text>",
 			"run <path>",
@@ -277,7 +277,12 @@ static int process_command(char *line)
 			"time",
 			"help",
 			"exit",
-            "stress"
+            "stress",
+			"mount <unit_no> <fs_type>",
+			"format <unit_no> <fs_type>",
+			"mkdir <dir>",
+			"chdir <dir>",
+			"rmdir <dir>"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))
