@@ -100,26 +100,26 @@ memdone:
 jmp video1024
 	
 video1280:
- 	mov	$0x4f02, %ax
- 	mov	$0x411b, %bx
+	mov	$0x4f02, %ax
+	mov	$0x411b, %bx
 	int	$0x10
 	cmp	$0x004f, %ax
 	je	videodone
 video1024:
- 	mov	$0x4f02, %ax
- 	mov	$0x4118, %bx
+	mov	$0x4f02, %ax
+	mov	$0x4118, %bx
 	int	$0x10
 	cmp	$0x004f, %ax
 	je	videodone
 video800:
 	mov	$0x4f02, %ax
- 	mov	$0x4115, %bx
+	mov	$0x4115, %bx
 	int	$0x10
 	cmp	$0x004f, %ax
 	je	videodone
 video640:
 	mov	$0x4f02, %ax
- 	mov	$0x4112, %bx
+	mov	$0x4112, %bx
 	int	$0x10
 	cmp	$0x004f, %ax
 	je	videodone
@@ -195,11 +195,11 @@ bios_putstring:
 	mov	(%si), %al
 	cmp	$0, %al
 	jz	bios_putstring_done
-        call	bios_putchar
+	call	bios_putchar
 	inc	%si
 	jmp	bios_putstring
 bios_putstring_done:
-        ret
+	ret
 
 # bios_putchar invokes the bios to display
 # one character on the screen.
@@ -207,9 +207,9 @@ bios_putstring_done:
 bios_putchar:
 	push	%ax
 	push	%bx
-        mov	$14,%ah
-        mov	$1,%bl
-        int	$0x10
+	mov	$14,%ah
+	mov	$1,%bl
+	int	$0x10
 	pop	%bx
 	pop	%ax
 	ret

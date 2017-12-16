@@ -22,8 +22,8 @@ int main( const char *argv[], int argc )
 {
     int wd = draw_create(0, 600, 500, WIDTH, HEIGHT);
     if (wd < 0) {
-        debug("Window create failed!\n");
-        exit(1);
+	debug("Window create failed!\n");
+	exit(1);
     }
 
     int r = 255;
@@ -46,19 +46,19 @@ int main( const char *argv[], int argc )
     draw_flush();
 
     for (;;) {
-        move(&x1, &dx1, 0, WIDTH-1);
-        move(&y1, &dy1, 0, HEIGHT-1);
-        move(&x2, &dx2, 0, WIDTH-1);
-        move(&y2, &dy2, 0, HEIGHT-1);
-        move(&r, &dr, 0, 255);
-        move(&g, &dg, 0, 255);
-        move(&b, &db, 0, 255);
-        draw_window(wd);
-        draw_color(r, g, b);
+	move(&x1, &dx1, 0, WIDTH-1);
+	move(&y1, &dy1, 0, HEIGHT-1);
+	move(&x2, &dx2, 0, WIDTH-1);
+	move(&y2, &dy2, 0, HEIGHT-1);
+	move(&r, &dr, 0, 255);
+	move(&g, &dg, 0, 255);
+	move(&b, &db, 0, 255);
+	draw_window(wd);
+	draw_color(r, g, b);
 
-        draw_line(x1, y1, x2-x1, y2-y1);
-        draw_flush();
-        sleep(75);
+	draw_line(x1, y1, x2-x1, y2-y1);
+	draw_flush();
+	sleep(75);
     }
 
 	exit(0);
@@ -75,11 +75,11 @@ uint32_t randint(uint32_t min, uint32_t max) {
 void move(int *x, int *d, int min, int max) {
     *x += *d;
     if (*x < min) {
-        *x = min;
-        *d = randint(1, 10);
+	*x = min;
+	*d = randint(1, 10);
     }
     if (*x > max) {
-        *x = max;
-        *d = -randint(1, 10);
+	*x = max;
+	*d = -randint(1, 10);
     }
 }

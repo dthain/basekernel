@@ -13,7 +13,7 @@ void list_push_head( struct list *list, struct list_node *node )
 	node->priority = 0;
 
 	if(list->head) list->head->prev = node;
-       	list->head = node;
+	list->head = node;
 	if(!list->tail) list->tail = node;
 	node->list = list;
 }

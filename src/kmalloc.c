@@ -87,7 +87,7 @@ void * kmalloc( int length )
 
 	// split the chunk if the remainder is greater than two units
 	if(length-c->length > 2*KUNIT) {
-	       	ksplit(c,length);
+		ksplit(c,length);
 	}
 
 	c->state = KMALLOC_STATE_USED;

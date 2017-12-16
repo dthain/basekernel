@@ -35,7 +35,7 @@ void pic_init( int pic0base, int pic1base )
 
 void pic_enable( uint8_t irq )
 {
-      	uint8_t mask;
+	uint8_t mask;
 	if(irq<8) {
 		mask = inb(pic_data[0]);
 		mask = mask&~(1<<irq);

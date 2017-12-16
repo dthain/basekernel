@@ -86,7 +86,7 @@ int sys_process_run( const char *path, const char** argv, int argc )
     memcpy(p->windows, current->windows, sizeof(p->windows));
     p->window_count = current->window_count;
     for(i=0;i<p->window_count;i++) {
-        p->windows[i]->count++;
+	p->windows[i]->count++;
     }
     process_pass_arguments(p, argv, argc);
 
@@ -135,7 +135,7 @@ int sys_close( int fd )
 
 int sys_draw_color( int wd, int r, int g, int b ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     struct graphics_color c;
     c.r = r;
@@ -148,7 +148,7 @@ int sys_draw_color( int wd, int r, int g, int b ) {
 
 int sys_draw_rect( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     graphics_rect( current->windows[wd], x, y, w, h );
     return 0;
@@ -156,7 +156,7 @@ int sys_draw_rect( int wd, int x, int y, int w, int h ) {
 
 int sys_draw_clear( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     graphics_clear( current->windows[wd], x, y, w, h );
     return 0;
@@ -164,7 +164,7 @@ int sys_draw_clear( int wd, int x, int y, int w, int h ) {
 
 int sys_draw_line( int wd, int x, int y, int w, int h ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     graphics_line( current->windows[wd], x, y, w, h );
     return 0;
@@ -172,7 +172,7 @@ int sys_draw_line( int wd, int x, int y, int w, int h ) {
 
 int sys_draw_char( int wd, int x, int y, char c ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     graphics_char( current->windows[wd], x, y, c );
     return 0;
@@ -180,24 +180,24 @@ int sys_draw_char( int wd, int x, int y, char c ) {
 
 int sys_draw_string( int wd, int x, int y, char *s ) {
     if (wd < 0 || wd >= current->window_count) {
-        return ENOENT;
+	return ENOENT;
     }
     int i;
     for (i = 0; s[i]; i++) {
-        graphics_char( current->windows[wd], x+i*8, y, s[i] );
+	graphics_char( current->windows[wd], x+i*8, y, s[i] );
     }
     return 0;
 }
 
 int sys_draw_create( int wd, int x, int y, int w, int h ) {
     if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count || current->windows[wd]->clip.w < x + w || current->windows[wd]->clip.h < y + h) {
-        return ENOENT;
+	return ENOENT;
     }
 
     current->windows[current->window_count] = graphics_create(current->windows[wd]);
 
     if (!current->windows[current->window_count]) {
-        return ENOENT;
+	return ENOENT;
     }
 
     current->windows[current->window_count]->clip.x = x + current->windows[wd]->clip.x;

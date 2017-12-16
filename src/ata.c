@@ -374,7 +374,7 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 		*nblocks = buffer[1]*buffer[3]*buffer[6];
 		*blocksize = ATA_BLOCKSIZE;
 
- 	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
+	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
 
 		// XXX use SCSI sense to get media size
 		*nblocks = 337920;

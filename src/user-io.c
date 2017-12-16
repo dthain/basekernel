@@ -28,14 +28,14 @@ static void printf_buffer( char *s, unsigned len )
 {
     while (len)
     {
-        unsigned l = len % (PAGE_SIZE - 1);
-        if (l > PAGE_SIZE - stdio_buffer_index - 1)
-        {
-            flush();
-        }
-        memcpy(stdio_buffer + stdio_buffer_index, s, l);
-        stdio_buffer_index += l;
-        len -= l; 
+	unsigned l = len % (PAGE_SIZE - 1);
+	if (l > PAGE_SIZE - stdio_buffer_index - 1)
+	{
+	    flush();
+	}
+	memcpy(stdio_buffer + stdio_buffer_index, s, l);
+	stdio_buffer_index += l;
+	len -= l; 
     }
     stdio_buffer[stdio_buffer_index] = 0;
 }

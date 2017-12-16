@@ -29,16 +29,16 @@ static int mount_cd( int unit )
 	if(v) {
 		struct fs_dirent *d = fs_volume_root(v);
 		if(d) {
-            root_directory = d;
-            return 0;
+	    root_directory = d;
+	    return 0;
 		} else {
 			printf("couldn't access root dir!\n");
-            return 1;
+	    return 1;
 		}
 		fs_volume_umount(v);
 	} else {
 		printf("couldn't mount filesystem!\n");
-        return 2;
+	return 2;
 	}
 
 	return 3;
@@ -48,15 +48,15 @@ static int list_directory( const char *path )
 {
     struct fs_dirent *d = root_directory;
     if(d) {
-        int buffer_length = 1024;
-        char *buffer = kmalloc(buffer_length);
-        if(buffer) {
-            int length = fs_dirent_readdir(d,buffer,buffer_length);
-            print_directory(buffer,length);
-            kfree(buffer);
-        }
+	int buffer_length = 1024;
+	char *buffer = kmalloc(buffer_length);
+	if(buffer) {
+	    int length = fs_dirent_readdir(d,buffer,buffer_length);
+	    print_directory(buffer,length);
+	    kfree(buffer);
+	}
     } else {
-        printf("couldn't access root dir!\n");
+	printf("couldn't access root dir!\n");
     }
 
 	return 0;
@@ -75,9 +75,9 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-            const char* argv[] = {pch, "start"};
+	    const char* argv[] = {pch, "start"};
 			int pid = sys_process_run(pch, argv, 2);
-            printf("started process %d\n", pid);
+	    printf("started process %d\n", pid);
 			process_yield();
 		}
 		else
@@ -87,17 +87,17 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-            const char* argv[] = {pch, "run"};
+	    const char* argv[] = {pch, "run"};
 			int pid = sys_process_run(pch, argv, 2);
-            printf("started process %d\n", pid);
-            struct process_info info;
-            if (!process_wait_child(&info, 5000)) {
-                printf("process %d exited with status %d\n", info.pid, info.exitcode);
-                process_reap(info.pid);
+	    printf("started process %d\n", pid);
+	    struct process_info info;
+	    if (!process_wait_child(&info, 5000)) {
+		printf("process %d exited with status %d\n", info.pid, info.exitcode);
+		process_reap(info.pid);
 
-            } else {
-                printf("run: timeout\n");
-            }
+	    } else {
+		printf("run: timeout\n");
+	    }
 		}
 		else
 			list_directory("run: missing argument");
@@ -105,10 +105,10 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "mount"))
 	{
 		pch = strtok(0, " ");
-        int unit;
+	int unit;
 		if (pch && str2int(pch, &unit)) {
 		    mount_cd(unit);	
-        }
+	}
 		else
 			printf("mount: expected unit number but got %s\n", pch);
 
@@ -116,14 +116,14 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "reap"))
 	{
 		pch = strtok(0, " ");
-        int pid;
+	int pid;
 		if (pch && str2int(pch, &pid)) {
 		    if (process_reap(pid)) {
-                printf("reap failed!\n");
-            } else {
-                printf("processed reaped!\n");
-            }
-        }
+		printf("reap failed!\n");
+	    } else {
+		printf("processed reaped!\n");
+	    }
+	}
 		else
 			printf("reap: expected process id number but got %s\n", pch);
 
@@ -131,10 +131,10 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "kill"))
 	{
 		pch = strtok(0, " ");
-        int pid;
+	int pid;
 		if (pch && str2int(pch, &pid)) {
 		    process_kill(pid);	
-        }
+	}
 		else
 			printf("kill: expected process id number but got %s\n", pch);
 
@@ -145,14 +145,14 @@ static int process_command(char *line)
 		if (pch)
 			printf("%s: unexpected argument\n", pch);
 		else {
-            struct process_info info;
-            if (!process_wait_child(&info, 5000)) {
-                printf("process %d exited with status %d\n", info.pid, info.exitcode);
+	    struct process_info info;
+	    if (!process_wait_child(&info, 5000)) {
+		printf("process %d exited with status %d\n", info.pid, info.exitcode);
 
-            } else {
-                printf("wait: timeout\n");
-            }
-        }
+	    } else {
+		printf("wait: timeout\n");
+	    }
+	}
 
 	}
 	else if (pch && !strcmp(pch, "list"))
@@ -170,15 +170,15 @@ static int process_command(char *line)
 		if (pch)
 			printf("%s: unexpected argument\n", pch);
 		else {
-            while (1) {
-                sys_process_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
-                struct process_info info;
-                if (process_wait_child(&info, 5000)) {
-                    printf("process %d exited with status %d\n", info.pid, info.exitcode);
-                    if (info.exitcode != 0) return 1;
-                }
-            }
-        }
+	    while (1) {
+		sys_process_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
+		struct process_info info;
+		if (process_wait_child(&info, 5000)) {
+		    printf("process %d exited with status %d\n", info.pid, info.exitcode);
+		    if (info.exitcode != 0) return 1;
+		}
+	    }
+	}
 
 	}
 	else if (pch && !strcmp(pch, "test"))
@@ -220,15 +220,15 @@ static int process_command(char *line)
 			"echo <text>",
 			"run <path>",
 			"start <path>",
-            "kill <pid>",
-            "reap <pid>",
-            "wait",
+	    "kill <pid>",
+	    "reap <pid>",
+	    "wait",
 			"test <function>",
 			"list",
 			"time",
 			"help",
 			"exit",
-            "stress"
+	    "stress"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))
