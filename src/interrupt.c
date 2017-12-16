@@ -16,22 +16,22 @@ static uint8_t interrupt_spurious[48];
 
 static const char * exception_names[] = {
 	"division by zero",
-        "debug exception",
-        "nonmaskable interrupt",
-        "breakpoint",
-        "overflow",
-        "bounds check",
-        "invalid instruction",
-        "coprocessor error",
-        "double fault",
-        "copressor overrun",
-        "invalid task",
-        "segment not present",
-        "stack exception",
-        "general protection fault",
-        "page fault",
-        "unknown",
-        "coprocessor error"
+	"debug exception",
+	"nonmaskable interrupt",
+	"breakpoint",
+	"overflow",
+	"bounds check",
+	"invalid instruction",
+	"coprocessor error",
+	"double fault",
+	"copressor overrun",
+	"invalid task",
+	"segment not present",
+	"stack exception",
+	"general protection fault",
+	"page fault",
+	"unknown",
+	"coprocessor error"
 };
 
 static void unknown_exception( int i, int code )

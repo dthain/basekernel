@@ -46,7 +46,7 @@ _start2:
 	rep	movsb
 		
 	mov	$(loadmsg),%si		# print initial message
-        call	bios_putstring
+	call	bios_putstring
 
 	mov	$0,%ah			# reset the disk system
 	int	$0x13
@@ -120,7 +120,7 @@ loaddone:
 	int	$0x13
 	
 	mov	$(bootmsg),%si		# print boot message
-        call	bios_putstring
+	call	bios_putstring
 	
 	mov	$KERNEL_SEGMENT, %ax    # jump to the kernel code
 	mov	%ax, %ds
@@ -130,24 +130,24 @@ bios_putstring:				# routine to print an entire string
 	mov	(%si), %al
 	cmp	$0, %al
 	jz	bios_putstring_done
-        call	bios_putchar
+	call	bios_putchar
 	inc	%si
 	jmp	bios_putstring
 bios_putstring_done:
-        ret
+	ret
 
 bios_putchar:				# routine to print a single char
 	push	%ax
 	push	%bx
-        mov	$14,%ah
-        mov	$1,%bl
-        int	$0x10
+	mov	$14,%ah
+	mov	$1,%bl
+	int	$0x10
 	pop	%bx
 	pop	%ax
 	ret
 
 loadmsg:
-        .asciz "bootblock: loading kernel...\r\n"
+	.asciz "bootblock: loading kernel...\r\n"
 bootmsg:
 	.asciz "\r\nbootblock: booting kernel...\r\n"
 

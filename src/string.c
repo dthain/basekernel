@@ -136,11 +136,11 @@ char * strtok ( char *s, const char *delim)
 int str2int( const char *s, int *d ) {
     int val = 0;
     for (;*s;++s) {
-        val *= 10;
-        if (*s > ASCII_9 || *s < ASCII_0) {
-            return 0;
-        }
-        val += (*s - '0');
+	val *= 10;
+	if (*s > ASCII_9 || *s < ASCII_0) {
+	    return 0;
+	}
+	val += (*s - '0');
     }
     *d = val;
     return 1;

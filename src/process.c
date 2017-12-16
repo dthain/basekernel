@@ -66,11 +66,11 @@ static int process_allocate_pid() {
     static int last = 0;
     int i;
     for (i = 0; i < MAX_PID; i++) {
-        int pid = 1 + ((last + i) % MAX_PID);
-        if (!processes[pid-1]) {
-            last = pid;
-            return pid;
-        }
+	int pid = 1 + ((last + i) % MAX_PID);
+	if (!processes[pid-1]) {
+	    last = pid;
+	    return pid;
+	}
     }
     return 0;
 }
@@ -91,9 +91,9 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
     p->window_count = 0;
 	p->pid = process_allocate_pid();
     if (p->pid) {
-        processes[p->pid-1] = p;
+	processes[p->pid-1] = p;
     } else {
-        return 0;
+	return 0;
     }
 
 	process_stack_init(p);
@@ -105,9 +105,9 @@ void process_delete( struct process *p )
 {
     int i;
     for (i = 0; i < p->window_count; i++) {
-        if (!(--(p->windows[i]->count))) {
-            kfree(p->windows[i]);
-        }
+	if (!(--(p->windows[i]->count))) {
+	    kfree(p->windows[i]);
+	}
     }
     pagetable_delete(p->pagetable);
     processes[p->pid-1] = 0;
@@ -213,7 +213,7 @@ void process_reap_all()
 {
 	struct process *p;
 	while((p = (struct process*)list_pop_head(&grave_list))) {
-        process_delete(p);
+	process_delete(p);
 	}
 }
 
@@ -254,32 +254,32 @@ uint32_t process_getppid() {
 void process_make_dead( struct process *dead ) {
     int i;
     for (i = 0; i < MAX_PID; i++) {
-        if (processes[i] && processes[i]->ppid == dead->pid) {
-            process_make_dead(processes[i]);
-        }
+	if (processes[i] && processes[i]->ppid == dead->pid) {
+	    process_make_dead(processes[i]);
+	}
     }
     dead->exitcode = 0;
     dead->exitreason = PROCESS_EXIT_KILLED;
     if (dead == current) {
-        process_switch(PROCESS_STATE_GRAVE);
+	process_switch(PROCESS_STATE_GRAVE);
     } else {
-        list_remove(&dead->node);
-        list_push_tail(&grave_list,&dead->node);
+	list_remove(&dead->node);
+	list_push_tail(&grave_list,&dead->node);
     }
 }
 
 int process_kill( uint32_t pid ) {
     if (pid > 0 && pid <= MAX_PID) {
-        struct process *dead = processes[pid-1];
-        if (dead) {
-            console_printf("process killed\n");
-            process_make_dead(dead);
-            return 0;
-        } else {
-            return 1;
-        }
+	struct process *dead = processes[pid-1];
+	if (dead) {
+	    console_printf("process killed\n");
+	    process_make_dead(dead);
+	    return 0;
+	} else {
+	    return 1;
+	}
     } else {
-        return 1;
+	return 1;
     }
 }
 
@@ -288,17 +288,17 @@ int process_wait_child(struct process_info *info, int timeout) {
 	uint32_t total;
 	start = clock_read();
 	do {
-        struct process *p = (struct process*)(grave_list.head);
-        while (p) {
-            struct process* next = (struct process*)p->node.next;
-            if (p->ppid == current->pid) {
-                info->exitcode = p->exitcode;
-                info->exitreason = p->exitreason;
-                info->pid = p->pid;
-                return 0;
-            }
-            p = next;
-        }
+	struct process *p = (struct process*)(grave_list.head);
+	while (p) {
+	    struct process* next = (struct process*)p->node.next;
+	    if (p->ppid == current->pid) {
+		info->exitcode = p->exitcode;
+		info->exitreason = p->exitreason;
+		info->pid = p->pid;
+		return 0;
+	    }
+	    p = next;
+	}
 		process_wait(&ready_list);
 		elapsed = clock_diff(start,clock_read());
 		total = elapsed.millis + elapsed.seconds*1000;
@@ -309,13 +309,13 @@ int process_wait_child(struct process_info *info, int timeout) {
 int process_reap( uint32_t pid ) {
     struct process *p = (struct process*)(grave_list.head);
     while (p) {
-        struct process* next = (struct process*)p->node.next;
-        if (p->pid == pid) {
-            list_remove(&p->node);
-            process_delete(p);
-            return 0;
-        }
-        p = next;
+	struct process* next = (struct process*)p->node.next;
+	if (p->pid == pid) {
+	    list_remove(&p->node);
+	    process_delete(p);
+	    return 0;
+	}
+	p = next;
     }
     return 1;
 }
@@ -330,13 +330,13 @@ void process_pass_arguments(struct process* p, const char** argv, int argc) {
     /* Copy each argument */
     int i;
     for (i = 0; i < argc; i++) {
-        ebp -= MAX_ARGV_LENGTH;
-        strncpy(ebp, argv[i], MAX_ARGV_LENGTH-1);
+	ebp -= MAX_ARGV_LENGTH;
+	strncpy(ebp, argv[i], MAX_ARGV_LENGTH-1);
     }
     /* Set pointers to each argument (argv) */
     for (i = argc; i > 0; --i) {
-        ebp -= 4;
-        *((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - MAX_ARGV_LENGTH*i));
+	ebp -= 4;
+	*((char**)(ebp)) = ((char*)(PROCESS_STACK_INIT - MAX_ARGV_LENGTH*i));
     }
     /* Set argumetns for _start on the stack */
     *((char**)(ebp-12)) = (char*)(PROCESS_STACK_INIT-MAX_ARGV_LENGTH*argc-4*argc);

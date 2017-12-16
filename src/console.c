@@ -105,7 +105,7 @@ int console_write( int unit, const void *buffer, int length, int offset )
 void console_init( struct graphics *g )
 {
 	gx = g;
-       	console_reset();
+	console_reset();
 	console_putstring("\nconsole: initialized\n");
 }
 
