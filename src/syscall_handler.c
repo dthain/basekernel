@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "console.h"
 #include "process.h"
+#include "kmalloc.h"
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "main.h"
@@ -64,6 +65,18 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
 
 	struct fs_file *f = fs_file_open(d, 0);
+    /*experimental ELF code*/
+    char* fc = kmalloc(PAGE_SIZE);
+    fs_file_read(f, fc, PAGE_SIZE);
+    printf("%c%c%c\n", fc[1], fc[2], fc[3]);
+    printf("Program Header is at %d\n", ((int*)fc)[7]);
+    printf("This header is %d bytes big\n", ((short*)fc)[14]);
+
+    kfree(fc);
+	fs_dirent_close(d);
+	fs_file_close(f);
+    return 0;
+
 
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */

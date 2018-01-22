@@ -28,7 +28,7 @@ kernel: ${KERNEL_OBJECTS}
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
 
 test.exe: test.o $(USER_OBJECTS)
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s  user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 long.exe: long.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
