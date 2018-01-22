@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2016 The University of Notre Dame
+opyright (C) 2016 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "bitmap.h"
 #include "string.h"
+#include "process.h"
 
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y) )
@@ -46,6 +47,50 @@ struct graphics * graphics_create( struct graphics *parent )
     memcpy(g, parent, sizeof(*g));
 
 	return g;
+}
+
+int graphics_write( struct graphics_command *command ) {
+    int window = -1;
+    char* str;
+    struct graphics_color c;
+
+    while (command && command->type) {
+        switch (command->type) {
+            case GRAPHICS_WINDOW:
+                window = command->args[0];
+                if (window < 0 || window >= current->window_count) {
+                    return -1;
+                }
+                break;
+            case GRAPHICS_COLOR:
+                c.r = command->args[0];
+                c.g = command->args[1];
+                c.b = command->args[2];
+                c.a = 0;
+                graphics_fgcolor(current->windows[window], c);
+                break;
+            case GRAPHICS_RECT:
+                graphics_rect(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case GRAPHICS_CLEAR:
+                graphics_clear(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case GRAPHICS_LINE:
+                graphics_line(current->windows[window], command->args[0], command->args[1], command->args[2], command->args[3]);
+                break;
+            case GRAPHICS_TEXT:
+                str = (char*)command->args[2];
+                int i;
+                for (i = 0; str[i]; i++) {
+                    graphics_char(current->windows[window],	command->args[0]+i*8, command->args[1], str[i]);
+                }
+                break;
+            default:
+                break;
+        }
+        command++;
+    }
+    return 0;
 }
 
 int32_t graphics_width( struct graphics *g )
