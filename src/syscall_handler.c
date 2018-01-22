@@ -54,11 +54,6 @@ int sys_process_run( const char *path, const char** argv, int argc )
 
 	int length = d->sz;
 
-	/* Create a new process with enough pages for the executable and one page for the stack */
-
-	struct process *p = process_create(length,PAGE_SIZE*2);
-	if(!p) return ENOENT;
-
 	/* Round up length of the executable to an even pages */
 
 	int i;
@@ -66,15 +61,39 @@ int sys_process_run( const char *path, const char** argv, int argc )
 
 	struct fs_file *f = fs_file_open(d, 0);
     /*experimental ELF code*/
-    char* fc = kmalloc(PAGE_SIZE);
-    fs_file_read(f, fc, PAGE_SIZE);
-    printf("%c%c%c\n", fc[1], fc[2], fc[3]);
-    printf("Program Header is at %d\n", ((int*)fc)[7]);
-    printf("This header is %d bytes big\n", ((short*)fc)[14]);
-
-    kfree(fc);
+    char* image = kmalloc(length);
+    fs_file_read(f, image, length);
 	fs_dirent_close(d);
 	fs_file_close(f);
+    int section_header = *(int*)(image+0x20);
+    int section_count = *(short*)(image+0x30);
+    int section_size = *(short*)(image+0x2E);
+    printf("%c%c%c\n", image[1], image[2], image[3]);
+    printf("Section Header is at %d\n", section_header);
+    printf("There are %d sections\n", section_count);
+    printf("Which are each %d bytes in size\n", section_size);
+    
+    uint32_t max_mem = 0;
+    int index = section_header;
+    for (i = 0; i < section_count; ++i) {
+        uint32_t vadr = *(int*)(image+index+0x0C);
+        uint32_t offs = *(int*)(image+index+0x10);
+        uint32_t size = *(int*)(image+index+0x14);
+        if (max_mem < vadr + size) {
+            max_mem = vadr + size;
+        }
+        printf("%x %x %x\n", vadr, offs, size);
+        index += section_size;    
+    }
+    printf("%d\n", max_mem - PROCESS_ENTRY_POINT);
+        
+	/* Create a new process with enough pages for the executable and one page for the stack */
+
+	struct process *p = process_create(length,PAGE_SIZE*2);
+
+	if(!p) return ENOENT;
+
+    kfree(image);
     return 0;
 
 
@@ -89,10 +108,6 @@ int sys_process_run( const char *path, const char** argv, int argc )
 		fs_file_read(f,(void*)paddr, PAGE_SIZE);
 	}
 
-	/* Close everything up */
-	
-	fs_dirent_close(d);
-	fs_file_close(f);
 
     /* Copy open windows */
     memcpy(p->windows, current->windows, sizeof(p->windows));
