@@ -178,7 +178,8 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
             while (1) {
-                sys_process_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
+                const char *argv[] = {"TEXT.EXE","arg1","arg2","arg3","arg4","arg5",0};
+                sys_process_run("TEST.EXE", argv, 6);
                 struct process_info info;
                 if (process_wait_child(&info, 5000)) {
                     printf("process %d exited with status %d\n", info.pid, info.exitcode);
