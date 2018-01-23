@@ -62,7 +62,8 @@ static int kevinfs_ata_write_superblock(int unit)
 
 	memcpy(wbuffer, &super, sizeof(super));
 
-	for (uint32_t i = super.inode_bitmap_start; i < super.free_block_start; i++) {
+	uint32_t i;
+	for (i = super.inode_bitmap_start; i < super.free_block_start; i++) {
 		if(!ata_write(unit, zeros, 1, i))
 			return -1;
 	}
