@@ -255,7 +255,7 @@ static int kevinfs_write_block(struct fs_dirent *d, char *buffer, uint32_t addre
 static struct kevinfs_dir_record_list *kevinfs_dir_alloc(uint32_t list_len)
 {
 	struct kevinfs_dir_record_list *ret = kmalloc(sizeof(struct kevinfs_dir_record_list));
-	if (ret)
+	if (ret) {
 		ret->changed = hash_set_init(19);
 		ret->list_len = list_len;
 		ret->list = kmalloc(sizeof(struct kevinfs_dir_record) * list_len);
@@ -267,6 +267,7 @@ static struct kevinfs_dir_record_list *kevinfs_dir_alloc(uint32_t list_len)
 			kfree(ret);
 			ret = 0;
 		}
+	}
 	return ret;
 }
 
