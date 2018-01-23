@@ -9,6 +9,8 @@ A fun graphics demo that features a line segment bouncing around the screen.
 */
 
 #include "syscalls.h"
+#include "user-io.h"
+
 #define WIDTH    (200)
 #define HEIGHT   (200)
 typedef unsigned int uint32_t;
@@ -39,7 +41,9 @@ int main( const char *argv[], int argc )
     int dg = 2;
     int db = 3;
     
-    draw_clear(wd, 0, 0, WIDTH, HEIGHT);
+    draw_window(wd);
+    draw_clear(0, 0, WIDTH, HEIGHT);
+    draw_flush();
 
     for (;;) {
         move(&x1, &dx1, 0, WIDTH-1);
@@ -49,13 +53,14 @@ int main( const char *argv[], int argc )
         move(&r, &dr, 0, 255);
         move(&g, &dg, 0, 255);
         move(&b, &db, 0, 255);
-        draw_color(wd, r, g, b);
+        draw_window(wd);
+        draw_color(r, g, b);
 
-        draw_line(wd, x1, y1, x2-x1, y2-y1);
+        draw_line(x1, y1, x2-x1, y2-y1);
+        draw_flush();
         sleep(75);
     }
 
-    draw_clear(wd, 0, 0, WIDTH+1, HEIGHT+1);
 	exit(0);
 
 	return 0;
