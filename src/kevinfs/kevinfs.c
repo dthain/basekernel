@@ -39,6 +39,8 @@ static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *v, struct kevinfs_inode *node);
 static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no);
 
+#ifdef DEBUG
+
 static void kevinfs_print_superblock(struct kevinfs_superblock *s)
 {
 	printf("fs: magic: %u, blocksize: %u, free_blocks: %u, inode_count: %u, inode_bitmap_start: %u, inode_start: %u, block_bitmap_start: %u, free_block_start: %u \n",
@@ -80,6 +82,8 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 		kevinfs_print_dir_record(l->list + i);
 	}
 }
+
+#endif
 
 static int kevinfs_get_available_block(struct kevinfs_volume *kv, uint32_t *index)
 {
