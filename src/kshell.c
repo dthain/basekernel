@@ -11,6 +11,7 @@
 #include "ascii.h"
 #include "fs.h"
 #include "kevinfs/kevinfs_test.h"
+#include "syscall_handler.h"
 
 static int print_directory( char *d, int length )
 {
@@ -67,7 +68,6 @@ static int list_directory( const char *path )
 
 	return 0;
 }
-
 
 static int process_command(char *line)
 {
