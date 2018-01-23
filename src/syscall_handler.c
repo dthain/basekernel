@@ -60,51 +60,64 @@ int sys_process_run( const char *path, const char** argv, int argc )
     fs_file_read(f, image, length);
 	fs_dirent_close(d);
 	fs_file_close(f);
-    int section_header = *(int*)(image+0x20);
-    int section_count = *(short*)(image+0x30);
-    int section_size = *(short*)(image+0x2E);
 
+    int ei_mag = *(int*)(image);
+    if (ei_mag != 0x464c457f) {
+        printf("Error loading program %s, unexpected magic number 0x%x - expected 0x464c457f\n", path, ei_mag); 
+        return 0;
+    }
+
+    int e_entry = *(int*)(image+0x18);
+    int e_phoff = *(int*)(image+0x1C);
+    int e_phentsize = *(short*)(image+0x2A);
+    int e_phnum = *(short*)(image+0x2C);
+
+    /* Calculate the process brk point */
     uint32_t max_mem = 0;
-    int index = section_header;
-    for (i = 0; i < section_count; ++i) {
-        uint32_t vadr = *(int*)(image+index+0x0C);
-        uint32_t size = *(int*)(image+index+0x14);
+    for (i = 0; i < e_phnum; ++i) {
+        char* index = image + e_phoff + e_phentsize*i;
+        uint32_t vadr = *(int*)(index+0x08);
+        uint32_t size = *(int*)(index+0x14);
         if (max_mem < vadr + size) {
             max_mem = vadr + size;
         }
-        index += section_size;    
+        uint32_t type = *(int*)(index);
+        if (type != 0x00000001) {
+            printf("Error loading program %s, unexpected program header type 0x%x - expected 0x00000001\n", path, type); 
+            return 0;
+        }
     }
 
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
 	struct process *p = process_create(length,PAGE_SIZE + max_mem - PROCESS_ENTRY_POINT);
 
+    /* Set process entry point based off ELF data */
+    ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
+
 	if(!p) return ENOENT;
 
-    index = section_header;
-    for (i = 0; i < section_count; ++i) {
-        uint32_t vadr = *(int*)(image+index+0x0C);
-        uint32_t offs = *(int*)(image+index+0x10);
-        uint32_t size = *(int*)(image+index+0x14);
-        if (vadr >= PROCESS_ENTRY_POINT) {
-            int copied = 0;
-            while (copied < size) {
-                unsigned paddr;
-                unsigned vaddr = vadr + copied;
-                pagetable_getmap(p->pagetable,vaddr,&paddr);
-                paddr += (vaddr % PAGE_SIZE);
-                int amount = PAGE_SIZE;
-                if (copied + amount > size) {
-                    amount = size - copied;
-                }
-                if (paddr/PAGE_SIZE < (paddr+amount)/PAGE_SIZE) {
-                    amount = ((paddr+amount)/PAGE_SIZE)*PAGE_SIZE - paddr;
-                }
-                memcpy((void*)paddr,image+offs+copied,amount);
-                copied += amount;
+    for (i = 0; i < e_phnum; ++i) {
+        char* index = image + e_phoff + e_phentsize*i;
+        uint32_t offs = *(int*)(index+0x04);
+        uint32_t vadr = *(int*)(index+0x08);
+        uint32_t size = *(int*)(index+0x10);
+        int copied = 0;
+        while (copied < size) {
+            unsigned paddr;
+            unsigned vaddr = vadr + copied;
+            pagetable_getmap(p->pagetable,vaddr,&paddr);
+            paddr += (vaddr % PAGE_SIZE);
+            int amount = PAGE_SIZE;
+            if (copied + amount > size) {
+                amount = size - copied;
             }
+            if (paddr/PAGE_SIZE < (paddr+amount)/PAGE_SIZE) {
+                amount = ((paddr+amount)/PAGE_SIZE)*PAGE_SIZE - paddr;
+            }
+            memcpy((void*)paddr,image+offs+copied,amount);
+            copied += amount;
         }
-        index += section_size; 
     }
 
     kfree(image);
