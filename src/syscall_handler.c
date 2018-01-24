@@ -57,7 +57,7 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	int length = d->sz;
 
 	int i;
-	struct fs_file *f = fs_file_open(d, 0);
+	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
     char* image = kmalloc(length);
     fs_file_read(f, image, length);
 	fs_dirent_close(d);
