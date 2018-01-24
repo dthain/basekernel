@@ -23,8 +23,11 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 #include "cdromfs.h"
+#include "kevinfs/kevinfs_test.h"
+#include "kevinfs/kevinfs.h"
 
 struct dirent *root_directory = 0;
+struct dirent *current_directory = 0;
 
 /*
 This is the C initialization point of the kernel.
@@ -52,6 +55,7 @@ int kernel_main()
 	process_init();
 	ata_init();
 	cdrom_init();
+	kevinfs_init();
 
 	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();

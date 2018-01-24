@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "syscall.h"
+#include "syscall_handler.h"
 #include "console.h"
 #include "process.h"
 #include "cdromfs.h"
@@ -64,7 +65,7 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	int i;
 	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
 
-	struct fs_file *f = fs_file_open(d, 0);
+	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
 
 	/* For each page, load one page from the file.  */
 	/* Notice that the cdrom block size (2048) is half the page size (4096) */
