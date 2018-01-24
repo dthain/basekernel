@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "syscall.h"
+#include "syscall_handler.h"
 #include "console.h"
 #include "process.h"
 #include "kmalloc.h"

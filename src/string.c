@@ -240,13 +240,13 @@ void printf( const char *s, ... )
 					i = va_arg(args,int32_t);
 					printf_putint(i);
 					break;
-				case 'x':
-					u = va_arg(args,uint32_t);
-					printf_puthex(u);
-					break;
 				case 'u':
 					u = va_arg(args,uint32_t);
 					printf_putuint(u);
+					break;
+				case 'x':
+					u = va_arg(args,uint32_t);
+					printf_puthex(u);
 					break;
 				case 's':
 					str = va_arg(args,char*);
@@ -268,3 +268,24 @@ void printf( const char *s, ... )
 	}
 	va_end(args);
 }
+
+char *uint_to_string(uint32_t u, char *s)
+{
+	uint32_t f, d, i;
+
+	f = 1;
+	i = 0;
+	while((u/(f * 10))>0) {
+		f*=10;
+	}
+	while(f>0) {
+		d = u/f;
+		s[i]='0'+d;
+		i = u-d*f;
+		f = f/10;
+		i++;
+	}
+	s[i] = 0;
+	return s;
+}
+
