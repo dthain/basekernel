@@ -27,6 +27,7 @@ To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wi
 git clone https://github.com/dthain/basekernel
 cd basekernel
 ./build-cross-compiler.sh
+export PATH=`pwd`/cross/bin:$PATH
 cd src
 make
 qemu-system-i386 -cdrom basekernel.iso
