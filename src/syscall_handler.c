@@ -36,7 +36,7 @@ int sys_yield()
 
 
 /*
-sys_run creates a new child process running the executable named by "path".
+sys_process_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
 (Instead, we should go through the abstract filesystem interface.)
 Takes in argv and argc for the new process' main
