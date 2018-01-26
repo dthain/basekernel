@@ -39,6 +39,10 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
+int keyboard_read_char() {
+	return syscall( SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0 );
+}
+
 int draw_create( int wd, int x, int y, int w, int h ) {
 	return syscall( SYSCALL_DRAW_CREATE, wd, x, y, w, h );
 }
