@@ -25,19 +25,18 @@ See the file LICENSE for details.
 #define ELF_PROGHEADER_FSIZE_OFFSET    0x00000010 /*Location of the file size of the program segment in the program header*/
 #define ELF_PROGHEADER_MSIZE_OFFSET    0x00000014 /*Location of the in memory size of the program segment in the program header*/
 
-struct process* elf_load(const char* path) {
+static char* elf_load_image(const char* path) {
 	/* Open and find the named path, if it exists. */
 
-	if(!root_directory) return 0;
+	if (!root_directory) return 0;
 
 	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
-	if(!d) {
+	if (!d) {
 		return 0;
 	}
 
 	int length = d->sz;
 
-	int i;
 	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
     char* image = kmalloc(length);
     fs_file_read(f, image, length);
@@ -47,16 +46,21 @@ struct process* elf_load(const char* path) {
     int ei_mag = *(int*)(image);
     if (ei_mag != ELF_MAGIC_NUMBER) {
         printf("Error loading program %s, unexpected magic number 0x%x - expected 0x%x\n", path, ei_mag, ELF_MAGIC_NUMBER); 
+        kfree(image);
         return 0;
     }
 
-    int e_entry = *(int*)(image+ELF_HEADER_ENTRY_OFFSET);
+    return image;
+}
+
+static uint32_t elf_get_brk(char* image, const char* path) {
     int e_phoff = *(int*)(image+ELF_HEADER_PROGHEAD_OFFSET);
     int e_phentsize = *(short*)(image+ELF_HEADER_PROGHEADSIZE_OFFSET);
     int e_phnum = *(short*)(image+ELF_HEADER_PROGHEADNUM_OFFSET);
 
     /* Calculate the process brk point */
     uint32_t max_mem = 0;
+	int i;
     for (i = 0; i < e_phnum; ++i) {
         char* index = image + e_phoff + e_phentsize*i;
         uint32_t vadr = *(int*)(index+ELF_PROGHEADER_VADR_OFFSET);
@@ -74,16 +78,32 @@ struct process* elf_load(const char* path) {
             return 0;
         }
     }
+    return max_mem;
+}
 
+static struct process* elf_load_process(char* image, const char* path) {
+
+    int e_entry = *(int*)(image+ELF_HEADER_ENTRY_OFFSET);
+    int e_phoff = *(int*)(image+ELF_HEADER_PROGHEAD_OFFSET);
+    int e_phentsize = *(short*)(image+ELF_HEADER_PROGHEADSIZE_OFFSET);
+    int e_phnum = *(short*)(image+ELF_HEADER_PROGHEADNUM_OFFSET);
+
+    uint32_t max_mem = elf_get_brk(image, path);
+    if (!max_mem) {
+        return 0;
+    }
 	/* Create a new process with enough pages for the executable and one page for the stack */
 
-	struct process *p = process_create(length,PAGE_SIZE + max_mem - PROCESS_ENTRY_POINT);
+	struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE);
 
     /* Set process entry point based off ELF data */
     ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
 
-	if(!p) return 0;
+	if (!p) {
+        return 0;
+    }
 
+	int i;
     for (i = 0; i < e_phnum; ++i) {
         char* index = image + e_phoff + e_phentsize*i;
         uint32_t offs = *(int*)(index+ELF_PROGHEADER_FOFF_OFFSET);
@@ -106,6 +126,16 @@ struct process* elf_load(const char* path) {
             copied += amount;
         }
     }
+    return p;
+}
+
+struct process* elf_load(const char* path) {
+    char* image = elf_load_image(path);
+    if (!image) {
+        return 0;
+    }
+
+    struct process* p = elf_load_process(image, path);
 
     kfree(image);
     return p;
