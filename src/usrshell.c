@@ -15,11 +15,12 @@ int main(char ** argv, int argc) {
   char c;
   printf("$ ");
   while (1) {
+    flush();
     c = keyboard_read_char();
     if (pos == line && c == ASCII_BS)
       continue;
     printf_putchar(c);
-    draw_flush();
+    flush();
     if (c == ASCII_CR) {
       int res = process_command(line);
       if (res < 0)
