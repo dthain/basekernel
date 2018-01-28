@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "syscall_handler.h"
 #include "console.h"
+#include "keyboard.h"
 #include "process.h"
 #include "kmalloc.h"
 #include "cdromfs.h"
@@ -38,7 +39,7 @@ int sys_yield()
 
 
 /*
-sys_run creates a new child process running the executable named by "path".
+sys_process_run creates a new child process running the executable named by "path".
 In this temporary implementation, we use the cdrom filesystem directly.
 (Instead, we should go through the abstract filesystem interface.)
 Takes in argv and argc for the new process' main
@@ -82,6 +83,11 @@ uint32_t sys_gettimeofday()
 int sys_open( const char *path, int mode, int flags )
 {
 	return ENOSYS;
+}
+
+int sys_keyboard_read_char()
+{
+	return keyboard_read();
 }
 
 int sys_read( int fd, void *data, int length )
@@ -225,6 +231,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
+	case SYSCALL_KEYBOARD_READ_CHAR:	return sys_keyboard_read_char();
 	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
 	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
 	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);

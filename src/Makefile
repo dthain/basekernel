@@ -5,7 +5,7 @@ USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
 CC=i686-elf-gcc
 LD=i686-elf-ld
-ISOGEN?=genisoimage
+ISOGEN=genisoimage
 
 all: basekernel.iso
 

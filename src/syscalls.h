@@ -19,6 +19,7 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+char keyboard_read_char();
 int draw_create( int wd, int x, int y, int w, int h );
 void draw_write( struct graphics_command *s );
 int sleep( unsigned int ms );
