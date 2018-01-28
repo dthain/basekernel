@@ -16,6 +16,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "clock.h"
 #include "rtc.h"
+#include "elf.h"
 
 int sys_debug( const char *str )
 {
@@ -45,88 +46,16 @@ Takes in argv and argc for the new process' main
 
 int sys_process_run( const char *path, const char** argv, int argc )
 {
-	/* Open and find the named path, if it exists. */
-
-	if(!root_directory) return ENOENT;
-
-	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
-	if(!d) {
-		return ENOENT;
-	}
-
-	int length = d->sz;
-
-	int i;
-	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
-    char* image = kmalloc(length);
-    fs_file_read(f, image, length);
-	fs_dirent_close(d);
-	fs_file_close(f);
-
-    int ei_mag = *(int*)(image);
-    if (ei_mag != 0x464c457f) {
-        printf("Error loading program %s, unexpected magic number 0x%x - expected 0x464c457f\n", path, ei_mag); 
-        return 0;
+	struct process *p = elf_load(path);
+    
+    if (!p) {
+        return ENOENT;
     }
-
-    int e_entry = *(int*)(image+0x18);
-    int e_phoff = *(int*)(image+0x1C);
-    int e_phentsize = *(short*)(image+0x2A);
-    int e_phnum = *(short*)(image+0x2C);
-
-    /* Calculate the process brk point */
-    uint32_t max_mem = 0;
-    for (i = 0; i < e_phnum; ++i) {
-        char* index = image + e_phoff + e_phentsize*i;
-        uint32_t vadr = *(int*)(index+0x08);
-        uint32_t size = *(int*)(index+0x14);
-        if (max_mem < vadr + size) {
-            max_mem = vadr + size;
-        }
-        uint32_t type = *(int*)(index);
-        if (type != 0x00000001) {
-            printf("Error loading program %s, unexpected program header type 0x%x - expected 0x00000001\n", path, type); 
-            return 0;
-        }
-    }
-
-	/* Create a new process with enough pages for the executable and one page for the stack */
-
-	struct process *p = process_create(length,PAGE_SIZE + max_mem - PROCESS_ENTRY_POINT);
-
-    /* Set process entry point based off ELF data */
-    ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
-
-	if(!p) return ENOENT;
-
-    for (i = 0; i < e_phnum; ++i) {
-        char* index = image + e_phoff + e_phentsize*i;
-        uint32_t offs = *(int*)(index+0x04);
-        uint32_t vadr = *(int*)(index+0x08);
-        uint32_t size = *(int*)(index+0x10);
-        int copied = 0;
-        while (copied < size) {
-            unsigned paddr;
-            unsigned vaddr = vadr + copied;
-            pagetable_getmap(p->pagetable,vaddr,&paddr);
-            paddr += (vaddr % PAGE_SIZE);
-            int amount = PAGE_SIZE;
-            if (copied + amount > size) {
-                amount = size - copied;
-            }
-            if (paddr/PAGE_SIZE < (paddr+amount)/PAGE_SIZE) {
-                amount = ((paddr+amount)/PAGE_SIZE)*PAGE_SIZE - paddr;
-            }
-            memcpy((void*)paddr,image+offs+copied,amount);
-            copied += amount;
-        }
-    }
-
-    kfree(image);
 
     /* Copy open windows */
     memcpy(p->windows, current->windows, sizeof(p->windows));
     p->window_count = current->window_count;
+    int i;
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
