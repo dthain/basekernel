@@ -1,5 +1,6 @@
 #include "string.h"
 #include "syscalls.h"
+#include "kerneltypes.h"
 #include "user-io.h"
 #include "rtc.h"
 #include "ascii.h"
@@ -23,7 +24,6 @@ int process_command(char * line) {
     else
       printf("run: missing argument\n");
   }
-  /*
   else if (pch && !strcmp(pch, "run"))
   {
     pch = strtok(0, " ");
@@ -32,7 +32,7 @@ int process_command(char * line) {
       int pid = process_run(pch, argv, 2);
             printf("started process %d\n", pid);
             struct process_info info;
-            if (!process_wait_child(&info, 5000)) {
+            if (!process_wait(&info, 5000)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
                 process_reap(info.pid);
 
@@ -41,34 +41,22 @@ int process_command(char * line) {
             }
     }
     else
-      list_directory("run: missing argument");
+      printf("run: missing argument");
   }
   else if (pch && !strcmp(pch, "passrun"))
   {
     pch = strtok(0, " ");
     if (pch) {
             const char* argv[] = {pch, "passrun"};
-      int pid = sys_process_run(pch, argv, 2);
+      int pid = process_run(pch, argv, 2);
             printf("started process %d\n", pid);
             struct process_info info;
-            while (process_wait_child(&info, 5000)) {}
+            while (process_wait(&info, 5000)) {}
             printf("process %d exited with status %d\n", info.pid, info.exitcode);
             process_reap(info.pid);
     }
     else
-      list_directory("run: missing argument");
-  }
-  else if (pch && !strcmp(pch, "mount"))
-  {
-    pch = strtok(0, " ");
-        int unit;
-    if (pch && str2int(pch, &unit)) {
-        char *fs_type = strtok(0, " ");
-        mount_cd(unit, fs_type);
-        }
-    else
-      printf("mount: expected unit number but got %s\n", pch);
-
+      printf("run: missing argument");
   }
   else if (pch && !strcmp(pch, "reap"))
   {
@@ -103,7 +91,7 @@ int process_command(char * line) {
       printf("%s: unexpected argument\n", pch);
     else {
             struct process_info info;
-            if (!process_wait_child(&info, 5000)) {
+            if (!process_wait(&info, 5000)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
 
             } else {
@@ -112,110 +100,10 @@ int process_command(char * line) {
         }
 
   }
-  else if (pch && !strcmp(pch, "list"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      printf("%s: unexpected argument\n", pch);
-    else
-      list_directory("/");
-
-  }
-  else if (pch && !strcmp(pch, "stress"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      printf("%s: unexpected argument\n", pch);
-    else {
-            while (1) {
-                const char *argv[] = {"TEXT.EXE","arg1","arg2","arg3","arg4","arg5",0};
-                sys_process_run("TEST.EXE", argv, 6);
-                struct process_info info;
-                if (process_wait_child(&info, 5000)) {
-                    printf("process %d exited with status %d\n", info.pid, info.exitcode);
-                    if (info.exitcode != 0) return 1;
-                }
-            }
-        }
-
-  }
-  else if (pch && !strcmp(pch, "test"))
-  {
-    pch = strtok(0, " ");
-    if (pch && !strcmp(pch, "kmalloc"))
-      kmalloc_test();
-    else if (pch && !strcmp(pch, "kevinfs"))
-      kevinfs_test();
-    else if (pch)
-      printf("test: test '%s' not found\n", pch);
-    else
-      printf("test: missing argument\n");
-  }
-  else if (pch && !strcmp(pch, "mkdir"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      fs_dirent_mkdir(current_directory, pch);
-    else
-      printf("mkdir: missing argument\n");
-  }
-  else if (pch && !strcmp(pch, "format"))
-  {
-    pch = strtok(0, " ");
-    int unit;
-    if (pch && str2int(pch, &unit)) {
-      char *fs_type = strtok(0, " ");
-      struct fs *f = fs_get(fs_type);
-      if (!f)
-        printf("invalid fs type: %s\n", fs_type);
-      else
-        fs_mkfs(f, unit);
-    }
-    else
-      printf("mount: expected unit number but got %s\n", pch);
-
-  }
-  else if (pch && !strcmp(pch, "rmdir"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      fs_dirent_rmdir(current_directory, pch);
-    else
-      printf("rmdir: missing argument\n");
-  }
-  else if (pch && !strcmp(pch, "chdir"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      current_directory = fs_dirent_namei(current_directory, pch);
-    else
-      printf("chdir: missing argument\n");
-  }
-  else if (pch && !strcmp(pch, "time"))
-  {
-    pch = strtok(0, " ");
-    if (pch)
-      printf("%s: unexpected argument\n", pch);
-    else
-    {
-      struct rtc_time time;
-      rtc_read(&time);
-      printf(
-        "%d-%d-%d %d:%d:%d\n",
-        time.year,
-        time.month,
-        time.day,
-        time.hour,
-        time.minute,
-        time.second
-      );
-    }
-
-  }
   else if (pch && !strcmp(pch, "help"))
   {
     printf(
-      "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+      "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
       "Commands:",
       "echo <text>",
       "run <path>",
@@ -224,17 +112,8 @@ int process_command(char * line) {
             "kill <pid>",
             "reap <pid>",
             "wait",
-      "test <function>",
-      "list",
-      "time",
       "help",
-      "exit",
-            "stress",
-      "mount <unit_no> <fs_type>",
-      "format <unit_no> <fs_type>",
-      "mkdir <dir>",
-      "chdir <dir>",
-      "rmdir <dir>"
+      "exit"
     );
   }
   else if (pch && !strcmp(pch, "exit"))
@@ -245,7 +124,6 @@ int process_command(char * line) {
   {
     printf("%s: command not found\n", pch);
   }
-  */
   return 0;
 }
 
@@ -264,8 +142,9 @@ int main(char ** argv, int argc) {
     flush();
     if (c == ASCII_CR) {
       int res = process_command(line);
-      if (res < 0)
+      if (res < 0) {
         break;
+      }
       pos = line;
       printf("$ ");
     }
