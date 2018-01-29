@@ -11,6 +11,7 @@ This program requires that write() and exit() work correctly.
 
 #include "syscalls.h"
 #include "string.h"
+#include "malloc.h"
 
 int main( const char *argv[], int argc )
 {
@@ -23,6 +24,19 @@ int main( const char *argv[], int argc )
         printf("(%s) ", argv[i]);
     }
     printf("\n");
+
+    int* big = malloc(4097*sizeof(int));
+    for (i = 0; i <= 100; ++i) {
+        big[i] = i;
+    }
+
+    int* sum = big+4097;
+    for (i = 0; i <= 100; ++i) {
+        *sum += big[i];
+    }
+    free(big);
+
+    printf("The sum of 0 to 100 is %d\n", *sum);
 
 	return 0;
 }
