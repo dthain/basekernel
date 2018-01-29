@@ -233,7 +233,7 @@ int fs_file_write(struct fs_file *f, char *buffer, uint32_t n)
 	const struct fs_dirent_ops *ops = d->ops;
 	uint32_t i, total_copy_length = 0;
 	uint32_t direct_addresses_start = bm->block, direct_addresses_end =  bm->block + (bm->offset + n) / bm->block_size;
-	uint32_t start_offset = bm->offset % bm->block_size, end_offset = (bm->offset + n - 1) % bm->block_size;
+	uint32_t start_offset = bm->offset, end_offset = (bm->offset + n) % bm->block_size;
 	uint32_t end_len = direct_addresses_end * bm->block_size + end_offset;
 
 	if (!(FS_FILE_WRITE & f->mode))
@@ -249,15 +249,21 @@ int fs_file_write(struct fs_file *f, char *buffer, uint32_t n)
 		memset(buffer_part, 0, sizeof(buffer_part));
 		if (i == direct_addresses_start) {
 			copy_start += start_offset;
+			buffer_part_len -= start_offset;
 		}
-		if (i == direct_addresses_end) {
+		if (i == direct_addresses_end)
 			buffer_part_len -= bm->block_size - end_offset;
-		}
+		if (!ops->read_block || ops->read_block(d, buffer_part, i) < 0)
+			return -1;
 		memcpy(copy_start, buffer + total_copy_length, buffer_part_len);
 		if (!ops->write_block || ops->write_block(d, buffer_part, i) < 0)
 			return -1;
 		total_copy_length += buffer_part_len;
 	}
+
+	bm->block = direct_addresses_end;
+	bm->offset = end_offset;
+
 	return total_copy_length;
 }
 
