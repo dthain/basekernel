@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "list.h"
 #include "pagetable.h"
 #include "x86.h"
+#include "fs.h"
 
 #define PROCESS_STATE_CRADLE  0
 #define PROCESS_STATE_READY   1
@@ -20,7 +21,6 @@ See the file LICENSE for details.
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_FILES   100
 
-struct volume;
 
 #define PROCESS_EXIT_NORMAL   0
 #define PROCESS_EXIT_KILLED   1
@@ -36,9 +36,9 @@ struct process {
 	char *stack_ptr;
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
-	struct file *fdtable[PROCESS_MAX_FILES];
+	struct fs_file *fdtable[PROCESS_MAX_FILES];
 	struct list mounts;
-	struct dirent *cwd;
+	struct fs_dirent *cwd;
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
@@ -74,7 +74,7 @@ uint32_t process_getpid();
 uint32_t process_getppid();
 
 int process_available_fd();
-int process_mount_as(struct volume *v, const char *ns);
+int process_mount_as(struct fs_volume *v, const char *ns);
 int process_unmount(const char *ns);
 int process_chdir(const char *ns, const char *path);
 
