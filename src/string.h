@@ -10,12 +10,13 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 
 void	 strcpy( char *d, const char *s );
+void	 strncpy( char *d, const char *s, unsigned length);
 int	 strcmp( const char *a, const char *b );
 int	 strncmp( const char *a, const char *b, unsigned length );
 unsigned strlen( const char *s );
+char *strcat (char *d, const char *s);
 char *uint_to_string(uint32_t u, char *str);
 char *	 strrev( char *s );
-char *	 strcat( char *d, const char *s );
 
 char * strtok( char *s, const char *delim );
 

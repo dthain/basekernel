@@ -20,6 +20,14 @@ void strcpy( char *d, const char *s )
 	*d = 0;
 }
 
+void strncpy( char *d, const char *s, unsigned length)
+{
+	while(*s && length--) {
+		*d++ = *s++;
+	}
+	*d = 0;
+}
+
 int strcmp( const char *a, const char *b )
 {
 	while(1) {
@@ -81,6 +89,12 @@ char * strrev( char *s )
 	}
 
 	return s;
+}
+
+char * strcat( char *d, const char *s )
+{
+	strcpy(d + strlen(d), s);
+	return d;
 }
 
 const char * strchr( const char *s, char ch )
@@ -249,12 +263,6 @@ void printf( const char *s, ... )
 		s++;
 	}
 	va_end(args);
-}
-
-char *strcat(char *dest, const char *s)
-{
-	strcpy(dest + strlen(dest), s);
-	return dest;
 }
 
 char *uint_to_string(uint32_t u, char *s)

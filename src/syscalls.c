@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "syscall.h"
+#include "graphics_lib.h"
 
 void debug( const char *str ) {
 	syscall( SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0 );
@@ -16,14 +17,6 @@ void exit( int status ) {
 
 int yield() {
 	return syscall( SYSCALL_YIELD, 0, 0, 0, 0, 0 );
-}
-
-int run( const char *cmd ) {
-	return syscall( SYSCALL_RUN, (uint32_t) cmd, 0, 0, 0, 0 );
-}
-
-int wait() {
-	return syscall( SYSCALL_WAIT, 0, 0, 0, 0, 0 );
 }
 
 int open( const char *path, int mode, int flags ) {
@@ -46,32 +39,16 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
-int draw_color( int wd, int r, int g, int b ) {
-	return syscall( SYSCALL_DRAW_COLOR, wd, r, g, b, 0 );
-}
-
-int draw_rect( int wd, int x, int y, int w, int h ) {
-	return syscall( SYSCALL_DRAW_RECT, wd, x, y, w, h );
-}
-
-int draw_clear( int wd, int x, int y, int w, int h ) {
-	return syscall( SYSCALL_DRAW_CLEAR, wd, x, y, w, h );
-}
-
-int draw_line( int wd, int x, int y, int w, int h ) {
-	return syscall( SYSCALL_DRAW_LINE, wd, x, y, w, h );
-}
-
-int draw_char( int wd, int x, int y, char c ) {
-	return syscall( SYSCALL_DRAW_CHAR, wd, x, y, c, 0 );
-}
-
-int draw_string( int wd, int x, int y, char *s ) {
-	return syscall( SYSCALL_DRAW_STRING, wd, x, y, (uint32_t)s, 0 );
+int keyboard_read_char() {
+	return syscall( SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0 );
 }
 
 int draw_create( int wd, int x, int y, int w, int h ) {
 	return syscall( SYSCALL_DRAW_CREATE, wd, x, y, w, h );
+}
+
+void draw_write( struct graphics_command *s ) {
+	syscall( SYSCALL_DRAW_WRITE, (uint32_t) s, 0, 0, 0, 0 );
 }
 
 int sleep( unsigned int ms ) {
@@ -80,6 +57,24 @@ int sleep( unsigned int ms ) {
 
 uint32_t gettimeofday() {
 	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
+}
+
+int process_self() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0 ));
+}
+
+int process_parent() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_PROCESS_PARENT, 0, 0, 0, 0, 0 ));
+}
+
+int process_run( const char *cmd, const char** argv, int argc ) {
+	return syscall( SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0 );
+}
+
+int process_kill( unsigned int pid ) {
+    return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }
 
 int mount(uint32_t device_no, const char *fs_name, const char *ns)
@@ -97,7 +92,10 @@ int getpid() {
     return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
 }
 
-int getppid() {
-    static int cache = 0;
-    return cache? (cache) : (cache=syscall( SYSCALL_GETPPID, 0, 0, 0, 0, 0 ));
+int process_reap( unsigned int pid ) {
+    return syscall( SYSCALL_PROCESS_REAP, pid, 0, 0, 0, 0 );
+}
+
+int process_wait( struct process_info* info, int timeout ) {
+    return syscall( SYSCALL_PROCESS_WAIT, (uint32_t)info, timeout, 0, 0, 0 );
 }

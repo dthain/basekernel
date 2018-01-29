@@ -3,9 +3,9 @@ KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o
 USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
-CC?=i686-elf-gcc
-LD?=i686-elf-ld
-ISOGEN?=genisoimage
+CC=i686-elf-gcc
+LD=i686-elf-ld
+ISOGEN=genisoimage
 
 all: basekernel.iso
 
@@ -37,10 +37,10 @@ write.exe: write.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 saver.exe: saver.o $(USER_OBJECTS)
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 ball.exe: ball.o $(USER_OBJECTS)
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o -o $@
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o user-io.o string.o -o $@
 
 copy.exe: copy.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 -s --oformat binary user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
