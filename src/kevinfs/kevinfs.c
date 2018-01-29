@@ -357,8 +357,8 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 static int kevinfs_dirent_resize(struct fs_dirent *d, uint32_t size)
 {
 	struct kevinfs_dirent *kd = d->private_data;
-	uint32_t num_blocks = size / FS_BLOCKSIZE;
-	kevinfs_internal_dirent_resize(kd, num_blocks);
+	uint32_t num_blocks = size / FS_BLOCKSIZE + 1;
+	if (kevinfs_internal_dirent_resize(kd, num_blocks) < 0) return -1;
 	kd->node->sz = size;
 	d->sz = size;
 	return kevinfs_save_dirent(kd);
@@ -678,7 +678,6 @@ static int kevinfs_mkfile(struct fs_dirent *d, const char *filename)
 
 	new_node = kevinfs_create_new_inode(kv, is_directory);
 	new_kd = kevinfs_inode_as_kevinfs_dirent(kv, new_node);
-
 	cwd_record_list = kevinfs_readdir(kd);
 	new_dir_record_list = kevinfs_create_empty_dir(new_node, kd->node);
 	new_cwd_record = kevinfs_init_record_by_filename(filename, new_kd);
