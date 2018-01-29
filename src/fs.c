@@ -27,12 +27,13 @@ static void delete_block_map(struct fs_block_map *bm) {
 	kfree(bm);
 }
 
-static struct fs_file *init_file(struct fs_dirent *d) {
+static struct fs_file *init_file(struct fs_dirent *d, uint32_t mode) {
 	struct fs_file *res = kmalloc(sizeof(struct fs_file));
 	struct fs_volume *v = d->v;
 	res->sz = d->sz;
 	res->d = d;
 	res->private_data = init_block_map(v->block_size);
+	res->mode = mode;
 	return res;
 }
 
@@ -43,7 +44,9 @@ static void delete_file(struct fs_file *f) {
 }
 
 int fs_register(struct fs *f) {
-	list_push_tail(&l, &f->node);
+	struct fs *f_final = kmalloc(sizeof(struct fs));
+	memcpy(f_final, f, sizeof(struct fs));
+	list_push_tail(&l, &f_final->node);
 	return 0;
 }
 
@@ -149,13 +152,17 @@ static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
-	return init_file(d);
+	return init_file(d, mode);
 }
 
 int fs_file_read(struct fs_file *f, char *buffer, uint32_t n)
 {
 	struct fs_block_map *bm = f->private_data;
 	uint32_t read = 0;
+
+	if (!(FS_FILE_READ & f->mode))
+		return -1;
+
 	while (read < n && bm->block * bm->block_size + (bm->offset % bm->block_size) < f->sz) {
 		uint32_t to_read = 0;
 		if (bm->offset == bm->read_length) {
@@ -177,4 +184,89 @@ int fs_file_read(struct fs_file *f, char *buffer, uint32_t n)
 		read += to_read;
 	}
 	return read;
+}
+
+int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->mkdir)
+	{
+		return ops->mkdir(d, name);
+	}
+	return 0;
+}
+
+int fs_dirent_mkfile(struct fs_dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->mkfile)
+	{
+		return ops->mkfile(d, name);
+	}
+	return 0;
+}
+
+int fs_dirent_rmdir(struct fs_dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->rmdir)
+	{
+		return ops->rmdir(d, name);
+	}
+	return 0;
+}
+
+int fs_dirent_unlink(struct fs_dirent *d, const char *name)
+{
+	const struct fs_dirent_ops *ops = d->ops;
+	if (ops->unlink)
+	{
+		return ops->unlink(d, name);
+	}
+	return 0;
+}
+
+int fs_file_write(struct fs_file *f, char *buffer, uint32_t n)
+{
+	struct fs_dirent *d = f->d;
+	struct fs_block_map *bm = f->private_data;
+	const struct fs_dirent_ops *ops = d->ops;
+	uint32_t i, total_copy_length = 0;
+	uint32_t direct_addresses_start = bm->block, direct_addresses_end =  bm->block + (bm->offset + n) / bm->block_size;
+	uint32_t start_offset = bm->offset % bm->block_size, end_offset = (bm->offset + n - 1) % bm->block_size;
+	uint32_t end_len = direct_addresses_end * bm->block_size + end_offset;
+
+	if (!(FS_FILE_WRITE & f->mode))
+		return -1;
+
+	if (end_len > d->sz && (!ops->resize || ops->resize(d, end_len) < 0))
+		return -1;
+
+	for (i = direct_addresses_start; i <= direct_addresses_end; i++) {
+		char buffer_part[bm->block_size];
+		char *copy_start = buffer_part;
+		uint32_t buffer_part_len = bm->block_size;
+		memset(buffer_part, 0, sizeof(buffer_part));
+		if (i == direct_addresses_start) {
+			copy_start += start_offset;
+		}
+		if (i == direct_addresses_end) {
+			buffer_part_len -= bm->block_size - end_offset;
+		}
+		memcpy(copy_start, buffer + total_copy_length, buffer_part_len);
+		if (!ops->write_block || ops->write_block(d, buffer_part, i) < 0)
+			return -1;
+		total_copy_length += buffer_part_len;
+	}
+	return total_copy_length;
+}
+
+
+int fs_mkfs(struct fs *f, uint32_t device_no)
+{
+	if (f->mkfs)
+	{
+		return f->mkfs(device_no);
+	}
+	return 0;
 }

@@ -24,7 +24,7 @@ fi
 
 # build and install libtools
 cd binutils-2.29.1
-./configure --prefix="$PREFIX" --target=i686-elf --disable-nls --disable-werror
+./configure --prefix="$PREFIX" --target=i686-elf --disable-nls --disable-werror --with-sysroot
 make && make install
 cd ..
 

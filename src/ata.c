@@ -190,7 +190,14 @@ static int ata_read_unlocked( int id, void *buffer, int nblocks, int offset )
 {
 	int i;
 	if(!ata_begin(id,ATA_COMMAND_READ,nblocks,offset)) return 0;
-	if(ata_interrupt_active) process_wait(&queue);
+
+	
+	// XXX On fast virtual hardware, waiting for the interrupt
+	// doesn't work b/c it has already arrived before we get here.
+	// For now, busy wait until a fix is in place.
+
+	// if(ata_interrupt_active) process_wait(&queue);
+
 	for(i=0;i<nblocks;i++) {
 		if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
 		ata_pio_read(id,buffer,ATA_BLOCKSIZE);
@@ -270,7 +277,11 @@ static int atapi_read_unlocked( int id, void *buffer, int nblocks, int offset )
 
 	if(!atapi_begin(id,packet,length)) return 0;
 
-	if(ata_interrupt_active) process_wait(&queue);
+	// XXX On fast virtual hardware, waiting for the interrupt
+	// doesn't work b/c it has already arrived before we get here.
+	// For now, busy wait until a fix is in place.
+
+	// if(ata_interrupt_active) process_wait(&queue);
 
 	for(i=0;i<nblocks;i++) {
 		if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
@@ -301,7 +312,12 @@ static int ata_write_unlocked( int id, const void *buffer, int nblocks, int offs
 		buffer = ((char*)buffer)+ATA_BLOCKSIZE;
 		offset++;
 	}
-	if(ata_interrupt_active) process_wait(&queue);
+	// XXX On fast virtual hardware, waiting for the interrupt
+	// doesn't work b/c it has already arrived before we get here.
+	// For now, busy wait until a fix is in place.
+
+	// if(ata_interrupt_active) process_wait(&queue);
+
 	if(!ata_wait(id,ATA_STATUS_BSY,0)) return 0;
 	return nblocks;
 }

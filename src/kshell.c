@@ -10,6 +10,8 @@
 #include "main.h"
 #include "ascii.h"
 #include "fs.h"
+#include "kevinfs/kevinfs_test.h"
+#include "syscall_handler.h"
 
 static int print_directory( char *d, int length )
 {
@@ -22,14 +24,19 @@ static int print_directory( char *d, int length )
 	return 0;
 }
 
-static int mount_cd( int unit )
+static int mount_cd( int unit , char *fs_type )
 {
-	struct fs *cdrom = fs_get("cdrom");
-	struct fs_volume *v = fs_volume_mount(cdrom, unit);
+	struct fs *fs = fs_get(fs_type);
+	if (!fs) {
+		printf("invalid fs type: %s\n", fs_type);
+		return -1;
+	}
+	struct fs_volume *v = fs_volume_mount(fs, unit);
 	if(v) {
 		struct fs_dirent *d = fs_volume_root(v);
 		if(d) {
             root_directory = d;
+	    current_directory = d;
             return 0;
 		} else {
 			printf("couldn't access root dir!\n");
@@ -46,7 +53,7 @@ static int mount_cd( int unit )
 
 static int list_directory( const char *path )
 {
-    struct fs_dirent *d = root_directory;
+    struct fs_dirent *d = current_directory;
     if(d) {
         int buffer_length = 1024;
         char *buffer = kmalloc(buffer_length);
@@ -61,7 +68,6 @@ static int list_directory( const char *path )
 
 	return 0;
 }
-
 
 static int process_command(char *line)
 {
@@ -107,7 +113,8 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
         int unit;
 		if (pch && str2int(pch, &unit)) {
-		    mount_cd(unit);	
+		    char *fs_type = strtok(0, " ");
+		    mount_cd(unit, fs_type);
         }
 		else
 			printf("mount: expected unit number but got %s\n", pch);
@@ -171,7 +178,8 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
             while (1) {
-                sys_process_run("TEST.EXE", "TEST.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0);
+                const char *argv[] = {"TEXT.EXE","arg1","arg2","arg3","arg4","arg5",0};
+                sys_process_run("TEST.EXE", argv, 6);
                 struct process_info info;
                 if (process_wait_child(&info, 5000)) {
                     printf("process %d exited with status %d\n", info.pid, info.exitcode);
@@ -186,10 +194,52 @@ static int process_command(char *line)
 		pch = strtok(0, " ");
 		if (pch && !strcmp(pch, "kmalloc"))
 			kmalloc_test();
+		else if (pch && !strcmp(pch, "kevinfs"))
+			kevinfs_test();
 		else if (pch)
 			printf("test: test '%s' not found\n", pch);
 		else
 			printf("test: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "mkdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			fs_dirent_mkdir(current_directory, pch);
+		else
+			printf("mkdir: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "format"))
+	{
+		pch = strtok(0, " ");
+		int unit;
+		if (pch && str2int(pch, &unit)) {
+			char *fs_type = strtok(0, " ");
+			struct fs *f = fs_get(fs_type);
+			if (!f)
+				printf("invalid fs type: %s\n", fs_type);
+			else
+				fs_mkfs(f, unit);
+		}
+		else
+			printf("mount: expected unit number but got %s\n", pch);
+
+	}
+	else if (pch && !strcmp(pch, "rmdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			fs_dirent_rmdir(current_directory, pch);
+		else
+			printf("rmdir: missing argument\n");
+	}
+	else if (pch && !strcmp(pch, "chdir"))
+	{
+		pch = strtok(0, " ");
+		if (pch)
+			current_directory = fs_dirent_namei(current_directory, pch);
+		else
+			printf("chdir: missing argument\n");
 	}
 	else if (pch && !strcmp(pch, "time"))
 	{
@@ -215,7 +265,7 @@ static int process_command(char *line)
 	else if (pch && !strcmp(pch, "help"))
 	{
 		printf(
-			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 			"Commands:",
 			"echo <text>",
 			"run <path>",
@@ -228,7 +278,12 @@ static int process_command(char *line)
 			"time",
 			"help",
 			"exit",
-            "stress"
+            "stress",
+			"mount <unit_no> <fs_type>",
+			"format <unit_no> <fs_type>",
+			"mkdir <dir>",
+			"chdir <dir>",
+			"rmdir <dir>"
 		);
 	}
 	else if (pch && !strcmp(pch, "exit"))
