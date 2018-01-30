@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "console.h"
+#include "com.h"
 #include "graphics.h"
 
 static int xsize=80;
@@ -46,6 +47,9 @@ void console_heartbeat()
 
 void console_putchar( char c )
 {
+#ifdef TEST
+	write_serial(c);
+#endif
 	console_writechar(xpos,ypos,' ');
 
 	switch(c) {
