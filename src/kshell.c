@@ -108,6 +108,21 @@ static int process_command(char *line)
 		else
 			list_directory("run: missing argument");
 	}
+	else if (pch && !strcmp(pch, "passrun"))
+	{
+		pch = strtok(0, " ");
+		if (pch) {
+            const char* argv[] = {pch, "passrun"};
+			int pid = sys_process_run(pch, argv, 2);
+            printf("started process %d\n", pid);
+            struct process_info info;
+            while (process_wait_child(&info, 5000)) {}
+            printf("process %d exited with status %d\n", info.pid, info.exitcode);
+            process_reap(info.pid);
+		}
+		else
+			list_directory("run: missing argument");
+	}
 	else if (pch && !strcmp(pch, "mount"))
 	{
 		pch = strtok(0, " ");
@@ -269,6 +284,7 @@ static int process_command(char *line)
 			"Commands:",
 			"echo <text>",
 			"run <path>",
+			"passrun <path>",
 			"start <path>",
             "kill <pid>",
             "reap <pid>",
