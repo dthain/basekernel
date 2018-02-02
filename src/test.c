@@ -15,14 +15,12 @@ This program requires that write() and exit() work correctly.
 int main( const char *argv[], int argc )
 {
     printf("hello world, I am %d, and I have %d arguments!\n", process_self(), argc);
-
     printf("They are: ");
 
-    int i;
-    for (i = 0; i < argc; ++i) {
+    for (int i = 0; i < argc; ++i)
         printf("(%s) ", argv[i]);
-    }
+
     printf("\n");
 
-	return 0;
+    return 0;
 }
