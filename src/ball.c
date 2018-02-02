@@ -25,16 +25,10 @@ int main( const char *argv[], int argc )
         exit(1);
     }
 
-    int r = 255;
-    int g = 0;
-    int b = 0;
-    int x1 = 12;
-    int y1 = 12;
-    int dx1 = 4;
-    int dy1 = 1;
-    int dr = -1;
-    int dg = 2;
-    int db = 3;
+    int r = 255, g = 0, b = 0;
+    int dr = -1, dg = 2, db = 3;
+    int x1 = 12, y1 = 12;
+    int dx1 = 4, dy1 = 1;
     
     draw_window(wd);
     draw_clear(0, 0, WIDTH, HEIGHT);
@@ -71,7 +65,7 @@ void move(int *x, int *d, int min, int max) {
         *x = min;
         *d = randint(1, 10);
     }
-    if (*x > max) {
+    else if (*x > max) {
         *x = max;
         *d = -randint(1, 10);
     }
