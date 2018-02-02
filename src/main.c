@@ -25,7 +25,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "kevinfs/kevinfs_test.h"
 #include "kevinfs/kevinfs.h"
-#include "com.h"
+#include "serial.h"
 
 struct dirent *root_directory = 0;
 struct dirent *current_directory = 0;
@@ -43,7 +43,7 @@ int kernel_main()
 
 	console_init(g);
 #ifdef TEST
-	init_serial();
+	serial_init();
 #endif
 
 	console_printf("video: %d x %d\n",video_xres,video_yres,video_xbytes);
