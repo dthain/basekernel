@@ -32,17 +32,16 @@
 #define SERIAL_DLAB_ENABLE (0x01 << 3)
 
 #define SERIAL_MCR 4
-#define SERIAL_DATA_TERMINA
+#define SERIAL_DATA_TERMINAL_READY (0x01 << 0)
+#define SERIAL_REQUEST_TO_SEND (0x01 << 1)
+#define SERIAL_AUX_OUT1 (0x01 << 2)
+#define SERIAL_AUX_OUT2 (0x01 << 3)
 
 #define SERIAL_LSR 5
 #define SERIAL_DATA_AVAILABLE (0x01 << 0)
 #define SERIAL_TRANSMIT_EMPTY (0x01 << 1)
 
 #define SERIAL_MSR 6
-#define SERIAL_DATA_TERMINAL_READY (0x01 << 0)
-#define SERIAL_REQUEST_TO_SEND (0x01 << 1)
-#define SERIAL_AUX_OUT1 (0x01 << 2)
-#define SERIAL_AUX_OUT2 (0x01 << 3)
 
 #define SERIAL_SCRATCH 7
 
