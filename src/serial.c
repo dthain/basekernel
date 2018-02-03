@@ -117,7 +117,7 @@ int serial_write_string(int port_no, char *s)
 		return -1;
 
 	while (*s) {
-		serial_write(port, *s++);
+		serial_write(serial_ports[port_no], *s++);
 	}
 	return 0;
 }
