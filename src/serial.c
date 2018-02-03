@@ -111,13 +111,13 @@ int serial_write(uint8_t port_no, char a)
 	return 0;
 }
 
-int serial_write_string(int port_no, char *s)
+int serial_write_string(uint8_t port_no, char *s)
 {
-	if (!is_valid_port(serial_ports[port_no]))
+	if (!is_valid_port(port_no))
 		return -1;
 
 	while (*s) {
-		serial_write(serial_ports[port_no], *s++);
+		serial_write(port_no, *s++);
 	}
 	return 0;
 }
