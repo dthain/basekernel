@@ -39,7 +39,7 @@
 
 #define SERIAL_LSR 5
 #define SERIAL_DATA_AVAILABLE (0x01 << 0)
-#define SERIAL_TRANSMIT_EMPTY (0x01 << 1)
+#define SERIAL_TRANSMIT_EMPTY (0x01 << 5)
 
 #define SERIAL_MSR 6
 
