@@ -1,3 +1,8 @@
+// Derived from: https://wiki.osdev.org/Serial_Ports#Example_Code
+// For more info:
+//     https://wiki.osdev.org/Serial_Ports
+//     http://www.webcitation.org/5ugQv5JOw
+
 #include "kerneltypes.h"
 #include "ioports.h"
 
