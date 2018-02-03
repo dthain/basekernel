@@ -48,7 +48,7 @@ void console_heartbeat()
 void console_putchar( char c )
 {
 #ifdef TEST
-	serial_write(c);
+	serial_write(0, c);
 #endif
 	console_writechar(xpos,ypos,' ');
 
