@@ -115,19 +115,19 @@ int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
 {
 	struct fs *fs = fs_get(fs_name);
 	struct fs_volume *v = fs_volume_mount(fs, device_no);
-	int ret = process_mount_as(v, ns);
+	int ret = process_mount_as(current, v, ns);
 	kfree(fs);
 	return ret;
 }
 
 int sys_chdir(const char *ns, const char *name)
 {
-	return process_chdir(ns, name);
+	return process_chdir(current, ns, name);
 }
 
 int sys_open( const char *path, int mode, int flags )
 {
-	int fd = process_available_fd();
+	int fd = process_available_fd(current);
 	int ret = 0;
 	if (fd < 0)
 		return -1;

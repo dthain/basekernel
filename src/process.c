@@ -257,7 +257,7 @@ uint32_t process_getppid() {
     return current->ppid;
 }
 
-int process_available_fd()
+int process_available_fd(struct process *p)
 {
 	struct fs_file **fdtable = current->fdtable;
 	for (int i = 0; i < PROCESS_MAX_FILES; i++)
@@ -268,14 +268,14 @@ int process_available_fd()
 	return -1;
 }
 
-static int process_register_mount(struct mount *m) {
+static int process_register_mount(struct process *p, struct mount *m) {
 	struct mount *m_final = kmalloc(sizeof(struct mount));
 	memcpy(m_final, m, sizeof(struct mount));
 	list_push_tail(&current->mounts, &m_final->node);
 	return 0;
 }
 
-struct mount *process_mount_get(const char *name) {
+struct mount *process_mount_get(struct process *p, const char *name) {
 	struct list_node *iter = current->mounts.head;
 	while (iter) {
 		struct mount *m = (struct mount *) iter;
@@ -289,17 +289,17 @@ struct mount *process_mount_get(const char *name) {
 	return 0;
 }
 
-int process_mount_as(struct fs_volume *v, const char *ns)
+int process_mount_as(struct process *p, struct fs_volume *v, const char *ns)
 {
 	struct mount *m = kmalloc(sizeof(struct mount));
 	m->name = kmalloc(strlen(ns) + 1);
 	strcpy(m->name, ns);
 	m->v = v;
-	process_register_mount(m);
+	process_register_mount(p, m);
 	return 0;
 }
 
-static int process_chdir_with_cwd(const char *path)
+static int process_chdir_with_cwd(struct process *p, const char *path)
 {
 	struct fs_dirent *d;
 	if (!(d = fs_dirent_namei(current->cwd, path)))
@@ -308,15 +308,15 @@ static int process_chdir_with_cwd(const char *path)
 	return 0;
 }
 
-int process_chdir(const char *ns, const char *path)
+int process_chdir(struct process *p, const char *ns, const char *path)
 {
 	if (!ns && !current->cwd)
 		return -1;
 	if (ns) {
-		struct mount *m = process_mount_get(ns);
+		struct mount *m = process_mount_get(p, ns);
 		current->cwd = fs_volume_root(m->v);
 	}
-	return process_chdir_with_cwd(path);
+	return process_chdir_with_cwd(p, path);
 }
 
 void process_make_dead( struct process *dead ) {

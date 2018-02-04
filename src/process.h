@@ -73,10 +73,10 @@ int process_reap( uint32_t pid );
 uint32_t process_getpid();
 uint32_t process_getppid();
 
-int process_available_fd();
-int process_mount_as(struct fs_volume *v, const char *ns);
-int process_unmount(const char *ns);
-int process_chdir(const char *ns, const char *path);
+int process_available_fd(struct process *p);
+int process_mount_as(struct process *p, struct fs_volume *v, const char *ns);
+int process_unmount(struct process *p, const char *ns);
+int process_chdir(struct process *p, const char *ns, const char *path);
 
 extern struct process *current;
 
