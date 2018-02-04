@@ -277,7 +277,7 @@ char *uint_to_string(uint32_t u, char *s)
 	while(f>0) {
 		d = u/f;
 		s[i]='0'+d;
-		i = u-d*f;
+		u = u % f;
 		f = f/10;
 		i++;
 	}
