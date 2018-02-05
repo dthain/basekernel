@@ -105,7 +105,7 @@ int sys_process_run( const char *path, const char** argv, int argc )
 
 /*
 sys_process_run_subset nearly identically to sys_process_run,
-but only the wd window is copied
+but only the wd window is copied.
 */
 
 int sys_process_run_subset( const char *path, const char** argv, int argc, int wd )
@@ -153,11 +153,10 @@ int sys_process_run_subset( const char *path, const char** argv, int argc, int w
 	fs_file_close(f);
 
   /* Copy wd */
-  memcpy(p->windows[0], current->windows[wd], sizeof(p->windows[0]));
+  p->windows[0] = current->windows[wd];
   p->windows[0]->count++;
   p->window_count = 1;
   process_pass_arguments(p, argv, argc);
-
 
   /* Set the parent of the new process to the calling process */
   p->ppid = process_getpid();
