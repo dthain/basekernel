@@ -31,6 +31,7 @@ int main( const char *argv[], int argc )
     }
 
     int* sum = big+4097;
+    *sum = 0;
     for (i = 0; i <= 100; ++i) {
         *sum += big[i];
     }
