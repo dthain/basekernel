@@ -47,6 +47,7 @@ struct process_pointer {
 void process_init();
 
 struct process * process_create( unsigned code_size, unsigned stack_size );
+void process_inherit( struct process *p, const char** argv, int argc );
 void process_delete( struct process *p );
 void process_launch( struct process *p );
 void process_pass_arguments(struct process* p, const char** argv, int argc);
