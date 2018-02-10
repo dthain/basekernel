@@ -31,8 +31,8 @@ struct cdrom_dirent {
 
 static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
 static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
-void make_lower(char * name);
-void make_upper(char * name);
+void strtoupper(char * name);
+void strtolower(char * name);
 
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {
@@ -122,7 +122,7 @@ static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char
 	char *upper_name = kmalloc(strlen(name));
   if (!upper_name) return 0;
   strcpy(upper_name, name);
-  make_upper(upper_name);
+  strtoupper(upper_name);
 
 	while(data_length>0 && d->descriptor_length>0 ) {
 		fix_filename(d->ident,d->ident_length);
@@ -176,7 +176,7 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 		} else {
 			strcpy(buffer,d->ident);
 			int len = strlen(d->ident) + 1;
-      make_lower(buffer);
+      strtolower(buffer);
 			buffer += len;
 			buffer_length -= len;
 			total += len;
@@ -190,7 +190,7 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 	return total;
 }
 
-void make_upper(char * name) {
+void strtoupper(char * name) {
   while (*name) {
     if (*name >= 'a' && *name <= 'z') {
       *name -= 'a' - 'A';
@@ -199,7 +199,7 @@ void make_upper(char * name) {
   }
 }
 
-void make_lower(char * name) {
+void strtolower(char * name) {
   while (*name) {
     if (*name >= 'A' && *name <= 'Z') {
       *name += 'a' - 'A';
