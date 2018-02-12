@@ -14,34 +14,41 @@ struct device *device_open()
     struct device *d = kmalloc(sizeof(*d));
     d->read = 0;
     d->write = 0;
+    d->subset = 0;
+    d->data = 0;
     return d;
 }
 
-int device_close(struct device *toclose)
+int device_close(struct device *d)
 {
-    kfree(toclose);
+    kfree(d);
     return 1;
 }
 
-int device_read(struct device *toread, void *buffer, int size)
+int device_read(struct device *d, void *buffer, int size)
 {
-    if (toread->read) {
-	return toread->read(toread, buffer, size);
+    if (d->read) {
+	return d->read(d, buffer, size);
     } else {
 	return -1;
     }
 }
 
-int device_write(struct device *towrite, void *buffer, int size)
+int device_write(struct device *d, void *buffer, int size)
 {
-    if (towrite->read) {
-	return towrite->read(towrite, buffer, size);
+    if (d->write) {
+	return d->write(d, buffer, size);
     } else {
 	return -1;
     }
 }
 
-int device_ignore(struct device *towrite, void *buffer, int size)
+struct device *device_subset(struct device *d, void *args)
 {
-    return -1;
+    if (d->subset) {
+	return d->subset(d, args);
+    } else {
+	return 0;
+    }
 }
+

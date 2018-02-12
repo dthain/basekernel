@@ -10,15 +10,18 @@
 #include "kerneltypes.h"
 
 struct device {
-    int (*read) (struct device* d, void *buffer, int size);
-    int (*write) (struct device* d, void *buffer, int size);
+    int (*read) (struct device *d, void *buffer, int size);
+    int (*write) (struct device *d, void *buffer, int size);
+    struct device *(*subset) (struct device* d, void *args);
+
+    void* data;
 };
 
 struct device *device_open();
-int device_close(struct device *toclose);
-int device_read(struct device *toread, void *buffer, int size);
-int device_write(struct device *towrite, void *buffer, int size);
+struct device *device_subset(struct device *d, void *args);
 
-int device_ignore(struct device *towrite, void *buffer, int size);
+int device_close(struct device *d);
+int device_read(struct device *d, void *buffer, int size);
+int device_write(struct device *d, void *buffer, int size);
 
 #endif
