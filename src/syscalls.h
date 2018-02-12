@@ -14,6 +14,7 @@ void debug( const char *str );
 void exit( int status );
 int yield();
 int process_run( const char *cmd, const char** argv, int argc );
+int process_run_subset( const char *cmd, const char** argv, int argc, int wd );
 int open( const char *path, int mode, int flags );
 int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );

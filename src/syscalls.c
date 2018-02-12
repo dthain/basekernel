@@ -73,6 +73,10 @@ int process_run( const char *cmd, const char** argv, int argc ) {
 	return syscall( SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0 );
 }
 
+int process_run_subset( const char *cmd, const char** argv, int argc, int wd) {
+	return syscall( SYSCALL_PROCESS_RUN_SUBSET, (uint32_t) cmd, (uint32_t) argv, argc, wd, 0 );
+}
+
 int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }

@@ -103,6 +103,71 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	return p->pid;
 }
 
+/*
+sys_process_run_subset nearly identically to sys_process_run,
+but only the wd window is copied.
+*/
+
+int sys_process_run_subset( const char *path, const char** argv, int argc, int wd )
+{
+
+  if (wd < 0 || wd >= current->window_count) return EINVAL;
+
+	/* Open and find the named path, if it exists. */
+
+	if(!root_directory) return ENOENT;
+
+	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
+	if(!d) {
+		return ENOENT;
+	}
+
+	int length = d->sz;
+
+	/* Create a new process with enough pages for the executable and one page for the stack */
+
+	struct process *p = process_create(length,PAGE_SIZE*2);
+	if(!p) return ENOENT;
+
+	/* Round up length of the executable to an even pages */
+
+	int i;
+	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
+
+	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
+
+	/* For each page, load one page from the file.  */
+	/* Notice that the cdrom block size (2048) is half the page size (4096) */
+
+	for(i=0;i<npages;i++) {
+		unsigned vaddr = PROCESS_ENTRY_POINT + i * PAGE_SIZE;
+		unsigned paddr;
+
+		pagetable_getmap(p->pagetable,vaddr,&paddr);
+		fs_file_read(f,(void*)paddr, PAGE_SIZE);
+	}
+
+	/* Close everything up */
+
+	fs_dirent_close(d);
+	fs_file_close(f);
+
+  /* Copy wd */
+  p->windows[0] = current->windows[wd];
+  p->windows[0]->count++;
+  p->window_count = 1;
+  process_pass_arguments(p, argv, argc);
+
+  /* Set the parent of the new process to the calling process */
+  p->ppid = process_getpid();
+
+	/* Put the new process into the ready list */
+
+	process_launch(p);
+
+	return p->pid;
+}
+
 uint32_t sys_gettimeofday()
 {
 	struct rtc_time t;
@@ -275,6 +340,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_PROCESS_RUN_SUBSET:	return sys_process_run_subset((const char *)a, (const char**)b, c, d);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
