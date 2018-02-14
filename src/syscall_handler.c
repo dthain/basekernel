@@ -16,6 +16,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "clock.h"
 #include "rtc.h"
+#include "kmalloc.h"
 
 int sys_debug( const char *str )
 {
@@ -110,9 +111,35 @@ uint32_t sys_gettimeofday()
 	return rtc_time_to_timestamp(&t);
 }
 
+int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
+{
+	struct fs *fs = fs_get(fs_name);
+	struct fs_volume *v = fs_volume_mount(fs, device_no);
+	int ret = process_mount_as(current, v, ns);
+	kfree(fs);
+	return ret;
+}
+
+int sys_chdir(const char *ns, const char *name)
+{
+	return process_chdir(current, ns, name);
+}
+
 int sys_open( const char *path, int mode, int flags )
 {
-	return ENOSYS;
+	int fd = process_available_fd(current);
+	int ret = 0;
+	if (fd < 0)
+		return -1;
+	struct fs_dirent *cwd = current->cwd;
+	struct fs_dirent *d = fs_dirent_namei(cwd, path);
+	if (!d) {
+		ret = fs_dirent_mkfile(cwd, path);
+		d = fs_dirent_namei(cwd, path);
+	}
+	struct fs_file *fp = fs_file_open(d, mode);
+	current->fdtable[fd] = fp;
+	return fd;
 }
 
 int sys_keyboard_read_char()
@@ -122,12 +149,14 @@ int sys_keyboard_read_char()
 
 int sys_read( int fd, void *data, int length )
 {
-	return ENOSYS;
+	struct fs_file *fp = current->fdtable[fd];
+	return fs_file_read(fp, data, length);
 }
 
 int sys_write( int fd, void *data, int length )
 {
-	return ENOSYS;
+	struct fs_file *fp = current->fdtable[fd];
+	return fs_file_write(fp, data, length);
 }
 
 int sys_lseek( int fd, int offset, int whence )
@@ -137,7 +166,10 @@ int sys_lseek( int fd, int offset, int whence )
 
 int sys_close( int fd )
 {
-	return ENOSYS;
+	struct fs_file *fp = current->fdtable[fd];
+	fs_file_close(fp);
+	current->fdtable[fd] = 0;
+	return 0;
 }
 
 int sys_draw_color( int wd, int r, int g, int b ) {
@@ -272,6 +304,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DRAW_WRITE:	return sys_draw_write((struct graphics_command*)a);
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
+	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
+	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);

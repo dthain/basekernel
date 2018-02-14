@@ -13,7 +13,6 @@ See the file LICENSE for details.
 
 static char stdio_buffer[PAGE_SIZE] = {0};
 static uint32_t stdio_buffer_index = 0;
-
 static struct graphics_command graphics_buffer[PAGE_SIZE] = {{0}};
 static uint32_t graphics_buffer_index = 0;
 
