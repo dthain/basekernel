@@ -9,6 +9,7 @@ See the file LICENSE for details.
 
 void printf_putchar( char c );
 void printf_putstring( char *s );
+void flush();
 
 void draw_window( int wd );
 void draw_color( int r, int g, int b );

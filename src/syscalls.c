@@ -39,7 +39,7 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
-int keyboard_read_char() {
+char keyboard_read_char() {
 	return syscall( SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0 );
 }
 
@@ -75,6 +75,21 @@ int process_run( const char *cmd, const char** argv, int argc ) {
 
 int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
+}
+
+int mount(uint32_t device_no, const char *fs_name, const char *ns)
+{
+	return syscall(SYSCALL_MOUNT, device_no, (uint32_t) fs_name, (uint32_t) ns, 0, 0);
+}
+
+int chdir(const char *ns, const char *path)
+{
+	return syscall(SYSCALL_CHDIR, (uint32_t) ns, (uint32_t) path, 0, 0, 0);
+}
+
+int getpid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
 }
 
 int process_reap( unsigned int pid ) {
