@@ -31,6 +31,7 @@ struct cdrom_dirent {
 
 static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
 static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
+char * strdup(const char * s);
 void strtoupper(char * name);
 void strtolower(char * name);
 
@@ -119,9 +120,8 @@ static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char
 	int data_length = cddir->length;
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
-	char *upper_name = kmalloc(strlen(name));
+	char *upper_name = strdup(name);
   if (!upper_name) return 0;
-  strcpy(upper_name, name);
   strtoupper(upper_name);
 
 	while(data_length>0 && d->descriptor_length>0 ) {
@@ -188,6 +188,13 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 	kfree(data);
 
 	return total;
+}
+
+char * strdup(const char * s) {
+  char * new = kmalloc(strlen(s));
+  if (new)
+    strcpy(new, s);
+  return new;
 }
 
 void strtoupper(char * name) {
