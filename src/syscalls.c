@@ -39,8 +39,8 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
-int sbrk( int a ) {
-	return syscall( SYSCALL_SBRK, a, 0, 0, 0, 0 );
+extern void* sbrk( int a ) {
+	return (void*) syscall( SYSCALL_SBRK, a, 0, 0, 0, 0 );
 }
 
 int keyboard_read_char() {

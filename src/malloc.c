@@ -1,3 +1,25 @@
+#define ENOMEM 0
+#define EINVAL 0
+#define LACKS_TIME_H
+#define LACKS_SYS_TYPES_H
+#define MALLOC_FAILURE_ACTION
+#define LACKS_ERRNO_H
+#define LACKS_STDLIB_H
+#define LACKS_STRING_H
+#define LACKS_UNISTD_H
+#define LACKS_SYS_PARAM_H
+#define NO_MALLOC_STATS 1
+#define HAVE_MMAP 0
+#define HAVE_MMAP 0
+#define size_t unsigned int
+#define ptrdiff_t int
+#define ABORT
+#define fprintf
+#define HAVE_MMAP 0
+#define MMAP_CLEARS 0
+#define HAVE_MREMAP 0
+#include "string.h"      /* for memset etc */
+#include "syscalls.h"     /* for sbrk, sysconf */
 /*
   This is a version (aka dlmalloc) of malloc/free/realloc written by
   Doug Lea and released to the public domain, as explained at
@@ -520,10 +542,6 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
   disable, set to MAX_SIZE_T. This may lead to a very slight speed
   improvement at the expense of carrying around more memory.
 */
-#define ENOMEM 0
-#define EINVAL 0
-#define LACKS_TIME_H
-int errno = 0;
 
 /* Version identifier to allow people to support multiple versions */
 #ifndef DLMALLOC_VERSION
@@ -547,7 +565,7 @@ int errno = 0;
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <tchar.h>
-#define HAVE_MMAP 0
+#define HAVE_MMAP 1
 #define HAVE_MORECORE 0
 #define LACKS_UNISTD_H
 #define LACKS_SYS_PARAM_H
@@ -573,7 +591,7 @@ int errno = 0;
 /* Mac OSX docs advise not to use sbrk; it seems better to use mmap */
 #ifndef HAVE_MORECORE
 #define HAVE_MORECORE 0
-#define HAVE_MMAP 0
+#define HAVE_MMAP 1
 /* OSX allocators provide 16 byte alignment */
 #ifndef MALLOC_ALIGNMENT
 #define MALLOC_ALIGNMENT ((size_t)16U)
@@ -582,7 +600,7 @@ int errno = 0;
 #endif  /* DARWIN */
 
 #ifndef LACKS_SYS_TYPES_H
-#define size_t unsigned int
+#include <sys/types.h>  /* For size_t */
 #endif  /* LACKS_SYS_TYPES_H */
 
 /* The maximum possible size_t value has all bits set */
@@ -625,7 +643,7 @@ int errno = 0;
 #define FOOTERS 0
 #endif  /* FOOTERS */
 #ifndef ABORT
-#define ABORT
+#define ABORT  abort()
 #endif  /* ABORT */
 #ifndef ABORT_ON_ASSERT_FAILURE
 #define ABORT_ON_ASSERT_FAILURE 1
@@ -641,14 +659,14 @@ int errno = 0;
 #define MALLOC_INSPECT_ALL 0
 #endif  /* MALLOC_INSPECT_ALL */
 #ifndef HAVE_MMAP
-#define HAVE_MMAP 0
+#define HAVE_MMAP 1
 #endif  /* HAVE_MMAP */
 #ifndef MMAP_CLEARS
-#define MMAP_CLEARS 0
+#define MMAP_CLEARS 1
 #endif  /* MMAP_CLEARS */
 #ifndef HAVE_MREMAP
 #ifdef linux
-#define HAVE_MREMAP 0
+#define HAVE_MREMAP 1
 #define _GNU_SOURCE /* Turns on mremap() definition */
 #else   /* linux */
 #define HAVE_MREMAP 0
@@ -1437,8 +1455,10 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 #pragma warning( disable : 4146 ) /* no "unsigned" warnings */
 #endif /* _MSC_VER */
 #if !NO_MALLOC_STATS
+#include <stdio.h>       /* for printing in malloc_stats */
 #endif /* NO_MALLOC_STATS */
 #ifndef LACKS_ERRNO_H
+#include <errno.h>       /* for MALLOC_FAILURE_ACTION */
 #endif /* LACKS_ERRNO_H */
 #ifdef DEBUG
 #if ABORT_ON_ASSERT_FAILURE
@@ -1454,11 +1474,13 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 #define DEBUG 0
 #endif /* DEBUG */
 #if !defined(WIN32) && !defined(LACKS_TIME_H)
+#include <time.h>        /* for magic initialization */
 #endif /* WIN32 */
 #ifndef LACKS_STDLIB_H
+#include <stdlib.h>      /* for abort() */
 #endif /* LACKS_STDLIB_H */
 #ifndef LACKS_STRING_H
-#include "string.h"      /* for memset etc */
+#include <string.h>      /* for memset etc */
 #endif  /* LACKS_STRING_H */
 #if USE_BUILTIN_FFS
 #ifndef LACKS_STRINGS_H
@@ -1470,15 +1492,18 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 /* On some versions of linux, mremap decl in mman.h needs __USE_GNU set */
 #if (defined(linux) && !defined(__USE_GNU))
 #define __USE_GNU 1
+#include <sys/mman.h>    /* for mmap */
 #undef __USE_GNU
 #else
+#include <sys/mman.h>    /* for mmap */
 #endif /* linux */
 #endif /* LACKS_SYS_MMAN_H */
 #ifndef LACKS_FCNTL_H
+#include <fcntl.h>
 #endif /* LACKS_FCNTL_H */
 #endif /* HAVE_MMAP */
 #ifndef LACKS_UNISTD_H
-#include "syscalls.h"     /* for sbrk, sysconf */
+#include <unistd.h>     /* for sbrk, sysconf */
 #else /* LACKS_UNISTD_H */
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 extern void*     sbrk(ptrdiff_t);
@@ -1560,6 +1585,7 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 #        define malloc_getpagesize getpagesize()
 #      else
 #        ifndef LACKS_SYS_PARAM_H
+#          include <sys/param.h>
 #        endif
 #        ifdef EXEC_PAGESIZE
 #          define malloc_getpagesize EXEC_PAGESIZE
@@ -3519,13 +3545,13 @@ static struct mallinfo internal_mallinfo(mstate m) {
 static void internal_malloc_stats(mstate m) {
   ensure_initialization();
   if (!PREACTION(m)) {
-    //size_t maxfp = 0;
+    size_t maxfp = 0;
     size_t fp = 0;
     size_t used = 0;
     check_malloc_state(m);
     if (is_initialized(m)) {
       msegmentptr s = &m->seg;
-     // maxfp = m->max_footprint;
+      maxfp = m->max_footprint;
       fp = m->footprint;
       used = fp - (m->topsize + TOP_FOOT_SIZE);
 
@@ -3541,9 +3567,9 @@ static void internal_malloc_stats(mstate m) {
       }
     }
     POSTACTION(m); /* drop lock */
-    //fprintf(stderr, "max system bytes = %10lu\n", (unsigned long)(maxfp));
-    //fprintf(stderr, "system bytes     = %10lu\n", (unsigned long)(fp));
-    //fprintf(stderr, "in use bytes     = %10lu\n", (unsigned long)(used));
+    fprintf(stderr, "max system bytes = %10lu\n", (unsigned long)(maxfp));
+    fprintf(stderr, "system bytes     = %10lu\n", (unsigned long)(fp));
+    fprintf(stderr, "in use bytes     = %10lu\n", (unsigned long)(used));
   }
 }
 #endif /* NO_MALLOC_STATS */
