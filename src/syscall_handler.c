@@ -54,18 +54,9 @@ int sys_process_run( const char *path, const char** argv, int argc )
         return ENOENT;
     }
 
-    /* Copy open windows */
-    memcpy(p->windows, current->windows, sizeof(p->windows));
-    p->window_count = current->window_count;
-    int i;
-    for(i=0;i<p->window_count;i++) {
-        p->windows[i]->count++;
-    }
+    process_inherit(p);
     process_pass_arguments(p, argv, argc);
 
-  
-    /* Set the parent of the new process to the calling process */
-    p->ppid = process_getpid();
 
 	/* Put the new process into the ready list */
 
