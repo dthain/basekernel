@@ -191,7 +191,7 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 }
 
 char * strdup(const char * s) {
-  char * new = kmalloc(strlen(s));
+  char * new = kmalloc(strlen(s) + 1);
   if (new)
     strcpy(new, s);
   return new;
