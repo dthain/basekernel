@@ -13,7 +13,7 @@ See the file LICENSE for details.
 void debug( const char *str );
 void exit( int status );
 int yield();
-int run( const char *cmd, const char** argv, int argc );
+int process_run( const char *cmd, const char** argv, int argc );
 int open( const char *path, int mode, int flags );
 int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
@@ -22,6 +22,8 @@ int close( int fd );
 extern void* sbrk( int a );
 char keyboard_read_char();
 int draw_create( int wd, int x, int y, int w, int h );
+int mount(uint32_t device_no, const char *fs_name, const char *ns);
+int chdir(const char *ns, const char *path);
 void draw_write( struct graphics_command *s );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();
