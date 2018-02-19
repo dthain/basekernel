@@ -26,22 +26,22 @@ See the file LICENSE for details.
 #define ELF_PROGHEADER_MSIZE_OFFSET    0x00000014 /*Location of the in memory size of the program segment in the program header*/
 
 static char* elf_load_image(const char* path) {
-	/* Open and find the named path, if it exists. */
+    /* Open and find the named path, if it exists. */
 
-	if (!root_directory) return 0;
+    if (!root_directory) return 0;
 
-	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
-	if (!d) {
-		return 0;
-	}
+    struct fs_dirent *d = fs_dirent_namei(root_directory,path);
+    if (!d) {
+        return 0;
+    }
 
-	int length = d->sz;
+    int length = d->sz;
 
-	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
+    struct fs_file *f = fs_file_open(d, FS_FILE_READ);
     char* image = kmalloc(length);
     fs_file_read(f, image, length);
-	fs_dirent_close(d);
-	fs_file_close(f);
+    fs_dirent_close(d);
+    fs_file_close(f);
 
     int ei_mag = *(int*)(image);
     if (ei_mag != ELF_MAGIC_NUMBER) {
@@ -60,7 +60,7 @@ static uint32_t elf_get_brk(char* image, const char* path) {
 
     /* Calculate the process brk point */
     uint32_t max_mem = 0;
-	int i;
+    int i;
     for (i = 0; i < e_phnum; ++i) {
         char* index = image + e_phoff + e_phentsize*i;
         uint32_t vadr = *(int*)(index+ELF_PROGHEADER_VADR_OFFSET);
@@ -92,18 +92,18 @@ static struct process* elf_load_process(char* image, const char* path) {
     if (!max_mem) {
         return 0;
     }
-	/* Create a new process with enough pages for the executable and one page for the stack */
+    /* Create a new process with enough pages for the executable and one page for the stack */
 
-	struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE);
+    struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE);
 
     /* Set process entry point based off ELF data */
     ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
 
-	if (!p) {
+    if (!p) {
         return 0;
     }
 
-	int i;
+    int i;
     for (i = 0; i < e_phnum; ++i) {
         char* index = image + e_phoff + e_phentsize*i;
         uint32_t offs = *(int*)(index+ELF_PROGHEADER_FOFF_OFFSET);
