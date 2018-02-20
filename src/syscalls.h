@@ -26,6 +26,7 @@ int chdir(const char *ns, const char *path);
 int mkdir(const char *path);
 int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
+int pwd(char *buffer);
 void draw_write( struct graphics_command *s );
 int sleep( unsigned int ms );
 uint32_t gettimeofday();

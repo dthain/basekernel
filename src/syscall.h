@@ -42,6 +42,7 @@ typedef enum {
 	SYSCALL_MKDIR,
 	SYSCALL_RMDIR,
 	SYSCALL_READDIR,
+	SYSCALL_PWD,
 } syscall_t;
 
 typedef enum {
