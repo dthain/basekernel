@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "process.h"
+#include "fs.h"
 #include "console.h"
 #include "memory.h"
 #include "string.h"
@@ -22,6 +23,12 @@ struct process *current=0;
 struct list ready_list = {0,0};
 struct list grave_list = {0,0};
 struct process *processes[MAX_PID] = {0};
+
+struct mount {
+	struct list_node node;
+	char *name;
+	struct fs_volume *v;
+};
 
 void process_init()
 {
@@ -73,6 +80,19 @@ static int process_allocate_pid() {
         }
     }
     return 0;
+}
+
+void process_inherit( struct process * p )
+{
+    /* Copy open windows */
+    memcpy(p->windows, current->windows, sizeof(p->windows));
+    p->window_count = current->window_count;
+    int i;
+    for(i=0;i<p->window_count;i++) {
+        p->windows[i]->count++;
+    }
+    /* Set the parent of the new process to the calling process */
+    p->ppid = process_getpid();
 }
 
 struct process * process_create( unsigned code_size, unsigned stack_size )
@@ -250,6 +270,67 @@ uint32_t process_getppid() {
     return current->ppid;
 }
 
+int process_available_fd(struct process *p)
+{
+	struct fs_file **fdtable = current->fdtable;
+	for (int i = 0; i < PROCESS_MAX_FILES; i++)
+	{
+		if (fdtable[i] == 0)
+			return i;
+	}
+	return -1;
+}
+
+static int process_register_mount(struct process *p, struct mount *m) {
+	struct mount *m_final = kmalloc(sizeof(struct mount));
+	memcpy(m_final, m, sizeof(struct mount));
+	list_push_tail(&current->mounts, &m_final->node);
+	return 0;
+}
+
+struct mount *process_mount_get(struct process *p, const char *name) {
+	struct list_node *iter = current->mounts.head;
+	while (iter) {
+		struct mount *m = (struct mount *) iter;
+		if (!strcmp(name, m->name)) {
+			struct mount *ret = kmalloc(sizeof(struct mount));
+			memcpy(ret, m, sizeof(struct mount));
+			return ret;
+		}
+		iter = iter->next;
+	}
+	return 0;
+}
+
+int process_mount_as(struct process *p, struct fs_volume *v, const char *ns)
+{
+	struct mount *m = kmalloc(sizeof(struct mount));
+	m->name = kmalloc(strlen(ns) + 1);
+	strcpy(m->name, ns);
+	m->v = v;
+	process_register_mount(p, m);
+	return 0;
+}
+
+static int process_chdir_with_cwd(struct process *p, const char *path)
+{
+	struct fs_dirent *d;
+	if (!(d = fs_dirent_namei(current->cwd, path)))
+		return -1;
+	current->cwd = d;
+	return 0;
+}
+
+int process_chdir(struct process *p, const char *ns, const char *path)
+{
+	if (!ns && !current->cwd)
+		return -1;
+	if (ns) {
+		struct mount *m = process_mount_get(p, ns);
+		current->cwd = fs_volume_root(m->v);
+	}
+	return process_chdir_with_cwd(p, path);
+}
 
 void process_make_dead( struct process *dead ) {
     int i;

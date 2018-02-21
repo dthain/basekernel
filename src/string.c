@@ -252,6 +252,10 @@ void printf( const char *s, ... )
 					str = va_arg(args,char*);
 					printf_putstring(str);
 					break;
+				case 'c':
+					u = va_arg(args,int32_t);
+					printf_putchar(u);
+					break;
 				case 0:
 					return;
 					break;
@@ -277,7 +281,7 @@ char *uint_to_string(uint32_t u, char *s)
 	while(f>0) {
 		d = u/f;
 		s[i]='0'+d;
-		i = u-d*f;
+		u = u % f;
 		f = f/10;
 		i++;
 	}
