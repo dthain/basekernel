@@ -42,7 +42,7 @@ struct graphics * graphics_create_root()
 	g->clip.w = g->bitmap->width;
 	g->clip.h = g->bitmap->height;
 
-    frame_buffer = device_open();
+    frame_buffer = device_create();
     frame_buffer->data = g;
     frame_buffer->subset = graphics_device_subset;
 
@@ -375,7 +375,7 @@ struct device *graphics_device_subset( struct device *d, void *args ) {
         g->clip.w = arguments[2];
         g->clip.h = arguments[3];
 
-        struct device *child = device_open();
+        struct device *child = device_create();
         child->data = g;
         child->subset = graphics_device_subset;
 

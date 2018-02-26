@@ -9,7 +9,7 @@
 #include "device.h"
 #include "kmalloc.h"
 
-struct device *device_open()
+struct device *device_create()
 {
     struct device *d = kmalloc(sizeof(*d));
     d->read = 0;

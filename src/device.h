@@ -17,7 +17,7 @@ struct device {
     void* data;
 };
 
-struct device *device_open();
+struct device *device_create();
 struct device *device_subset(struct device *d, void *args);
 
 int device_close(struct device *d);
