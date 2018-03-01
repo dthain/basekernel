@@ -1,3 +1,4 @@
+/* The next parts are all for configuring dlmalloc to work with basekernel */
 #define ENOMEM 0
 #define EINVAL 0
 #define LACKS_TIME_H
@@ -20,6 +21,8 @@
 #define HAVE_MREMAP 0
 #include "string.h"      /* for memset etc */
 #include "syscalls.h"     /* for sbrk, sysconf */
+/* END CUSTOM SETTINGS */
+/* Below is the unedited dlmalloc code */
 /*
   This is a version (aka dlmalloc) of malloc/free/realloc written by
   Doug Lea and released to the public domain, as explained at
