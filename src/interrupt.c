@@ -42,6 +42,8 @@ static void unknown_exception( int i, int code )
 		asm("mov %%cr2, %0" : "=r" (vaddr) );
         int data = vaddr < (int)current->brk;
         int stack = vaddr > (int)current->brk && pagetable_getmap(current->pagetable,vaddr+PAGE_SIZE,&paddr);
+		//Check for a valid mapping (which will result from violating the permissions on page), or that
+		//we are either accessing neither the stack nor the heap, or somehow both, and error if so
 		if (pagetable_getmap(current->pagetable,vaddr,&paddr) || !(data ^ stack)) {
 			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
