@@ -31,6 +31,7 @@ struct cdrom_dirent {
 
 static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
 static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
+int strcmp_cdrom_ident(const char * ident, const char * s);
 char * strdup(const char * s);
 void strtoupper(char * name);
 void strtolower(char * name);
@@ -127,7 +128,7 @@ static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char
 	while(data_length>0 && d->descriptor_length>0 ) {
 		fix_filename(d->ident,d->ident_length);
 
-		if(!strcmp(upper_name,d->ident)) {
+		if(!strcmp_cdrom_ident(d->ident,upper_name)) {
 			struct cdrom_dirent *r = cdrom_dirent_create(
 				cddir->volume,
 				d->first_sector_little,
@@ -188,6 +189,16 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 	kfree(data);
 
 	return total;
+}
+
+int strcmp_cdrom_ident(const char * ident, const char * s) {
+    if (ident[0] == 0 && (strcmp(s, ".") == 0)) {
+        return 0;
+    }
+    if (ident[0] == 1 && (strcmp(s, "..") == 0)) {
+        return 0;
+    }
+    return strcmp(ident, s);
 }
 
 char * strdup(const char * s) {
