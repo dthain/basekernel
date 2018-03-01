@@ -57,6 +57,7 @@ void process_inherit( struct process *p );
 void process_delete( struct process *p );
 void process_launch( struct process *p );
 void process_pass_arguments(struct process* p, const char** argv, int argc);
+void process_inherit( struct process * p );
 
 void process_yield();
 void process_preempt();
