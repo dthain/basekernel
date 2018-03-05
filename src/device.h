@@ -14,6 +14,7 @@ struct device {
     int (*write) (struct device *d, void *buffer, int size, int offset);
     struct device *(*subset) (struct device* d, int dx0, int dy0, int dx1, int dy1);
 
+    int unit;
     int block_size;
     int sx0;
     int sy0;

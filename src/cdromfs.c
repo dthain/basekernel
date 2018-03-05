@@ -12,11 +12,12 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "memory.h"
 #include "fs.h"
+#include "device.h"
 #include "fs_ops.h"
 #include "cdromfs.h"
 
 struct cdrom_volume {
-	int unit;
+    struct device* device;
 	int root_sector;
 	int root_length;
 	int total_sectors;
@@ -51,7 +52,8 @@ static char * cdrom_dirent_load( struct fs_dirent *d )
 	char *data = kmalloc(nsectors*ATAPI_BLOCKSIZE);
 	if(!data) return 0;
 
-	atapi_read(cdd->volume->unit,data,nsectors,cdd->sector);
+    device_read(cdd->volume->device, data, nsectors, cdd->sector);
+	//atapi_read(cdd->volume->unit,data,nsectors,cdd->sector);
 	// XXX check result
 
 	return data;
@@ -78,7 +80,8 @@ Read an entire cdrom file into the target address.
 static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	return atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
+	return device_read( cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum );
+        //atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
 }
 
 #if 0
@@ -210,10 +213,16 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 	printf("cdromfs: scanning atapi unit %d...\n",unit);
 
 	int j;
+    struct device *device = device_create();
+    device->read = atapi_device_read;
+    device->unit = unit;
+    device->block_size = CDROM_BLOCK_SIZE;
+
 	for(j=0;j<16;j++) {
 		printf("cdromfs: checking volume %d\n",j);
-
-		atapi_read(unit,d,1,j+16);
+       
+        device_read(device, d, 1, j+16); 
+		//atapi_read(unit,d,1,j+16);
 		// XXX check reuslt
 
 		if(strncmp(d->magic,"CD001",5)) continue;
@@ -222,9 +231,9 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 			cdv->root_sector = d->root.first_sector_little;
 			cdv->root_length = d->root.length_little;
 			cdv->total_sectors = d->nsectors_little;
-			cdv->unit = unit;
+			cdv->device = device;
 
-			printf("cdromfs: mounted filesystem on unit %d\n",cdv->unit);
+			printf("cdromfs: mounted filesystem on unit %d\n",cdv->device->unit);
 
 			memory_free_page(d);
 
@@ -237,6 +246,7 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 		}
 	}
 
+    kfree(device);
 	console_printf("cdromfs: no filesystem found\n");
 	return 0;		
 }
@@ -244,7 +254,7 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 static int cdrom_volume_close( struct fs_volume *v )
 {
 	struct cdrom_volume *cdv = v->private_data;
-	console_printf("cdromfs: umounted filesystem from unit %d\n",cdv->unit);
+	console_printf("cdromfs: umounted filesystem from unit %d\n",cdv->device->unit);
 	kfree(v);
 	return 0;
 }

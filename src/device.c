@@ -14,6 +14,7 @@ struct device *device_create()
     struct device *d = kmalloc(sizeof(*d));
     d->read = 0;
     d->write = 0;
+    d->unit = 0;
     d->subset = 0;
     d->block_size = 0;
     d->sx0 = 0;
