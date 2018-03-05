@@ -201,5 +201,47 @@ void pagetable_enable()
 	asm("movl %eax, %cr0");
 }
 
+#if 0
+struct pagetable * pagetable_duplicate( struct pagetable *sp )
+{
+  unsigned i,j;
+
+  struct pageentry *e;
+  struct pagetable *q;
+
+  struct pageentry *newe;
+  struct pagetable *newq;
+  struct pagetable *newp = pagetable_create();
+  if(!newp)
+    goto cleanup;
+
+  for(i=0;i<ENTRIES_PER_TABLE;i++) {
+    e = &sp->entry[i];
+    newe = &newp->entry[i];
+    if(e->present) {
+      memcpy(newe, e, sizeof(struct pageentry));
+      q = (struct pagetable *) (e->addr<<12);
+      newq = pagetable_create();
+      if(!newq)
+        goto cleanup;
+      newe->addr = (((unsigned) newq) >> 12);
+      for(j=0;j<ENTRIES_PER_TABLE;j++) {
+        e = &q->entry[i];
+        if(e->present && e->avail) {
+          void *paddr;
+          paddr = (void *) (e->addr<<12);
+          memory_free_page(paddr);
+        }
+      }
+      memory_free_page(q);
+    }
+  }
+cleanup:
+  if(newp)
+    pagetable_delete(newp);
+  return 0;
+}
+#endif
+
 void pagetable_copy( struct pagetable *sp, unsigned saddr, struct pagetable *tp, unsigned taddr, unsigned length );
 
