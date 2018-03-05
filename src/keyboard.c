@@ -102,7 +102,7 @@ static void keyboard_interrupt( int i, int code)
 	process_wakeup(&queue);
 }
 
-int keyboard_device_read(struct device* d, void* dest, int size)
+int keyboard_device_read(struct device* d, void* dest, int size, int offset)
 {
     int i;
     for (i = 0; i < size; i++) {
@@ -118,13 +118,14 @@ int keyboard_device_read(struct device* d, void* dest, int size)
 char keyboard_read()
 {
     char toRet = 0;
-    device_read(keyboard, &toRet, 1);
+    device_read(keyboard, &toRet, 1, 0);
     return toRet;
 }
 
 void keyboard_init()
 {
     keyboard = device_create();
+    keyboard->block_size = 1;
     keyboard->read = keyboard_device_read;
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);
