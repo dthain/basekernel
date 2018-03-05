@@ -91,7 +91,15 @@ static char keyboard_map( int code )
 
 static void keyboard_interrupt( int i, int code)
 {
-	char c = keyboard_map(inb(KEYBOARD_PORT));
+    static char mod = 0x00;
+    char c = inb(KEYBOARD_PORT);
+    if (c == -32) {
+        mod = 0x80;
+        return;
+    } else {
+        c = keyboard_map(c) | mod;
+        mod = 0x00;
+    }
 	if(c==KEY_INVALID) return;
 	if((buffer_write+1) == (buffer_read%BUFFER_SIZE)) return;
 	buffer[buffer_write] = c;

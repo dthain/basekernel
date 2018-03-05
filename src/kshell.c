@@ -13,6 +13,8 @@
 #include "kevinfs/kevinfs_test.h"
 #include "syscall_handler.h"
 
+#define HISTORY 10
+
 static int print_directory( char *d, int length )
 {
 	while(length>0) {
@@ -299,33 +301,70 @@ static int process_command(char *line)
 
 int kshell_launch()
 {
-	char line[1024];
-	char *pos = line;
+	char line[1024][HISTORY];
+    char cmd[1024] = {0};
+    int y = 0;
+    int x = 0;
 	printf ("$ ");
 	while(1)
 	{
 		char c = keyboard_read();
-		if (pos == line && c == ASCII_BS)
+		if (x == 0 && c == ASCII_BS)
 			continue;
-		console_putchar(c);
 		if (c == ASCII_CR)
 		{
-			int res = process_command(line);
+            strcpy(cmd, line[y]);
+			int res = process_command(cmd);
 			if (res < 0)
 				break;
-			pos = line;
-			printf("$ ");
+			x = 0;
+			printf("\n$ ");
+            int i;
+            for (i = HISTORY-1; i > 0; i--) {
+                strcpy(line[i], line[i-1]);
+            }
 		}
 		else if (c == ASCII_BS)
 		{
-			pos--;
+            console_putchar(c);
+			x--;
 		}
-		else
-		{
-			*pos = c;
-			pos++;
+		else if (c >= 0x20 && c <= 0x7E) 
+        {
+            console_putchar(c);
+			line[y][x]= c;
+			x++;
 		}
-		*pos = 0;
+        else
+        {
+            if (c == (char)0xb2) //down
+            {
+                if (y > 0) {
+                    y--;
+                    while (x > 0) {
+                        console_putchar('\b');
+                        x--;
+                    }
+                    printf ("\b\b$ ");
+                    console_putstring(line[y]);
+                    x = strlen(line[y]);
+                }
+            }
+            else if (c == (char)0xB8) //up
+            {
+                if (y < HISTORY-1) {
+                    y++;
+                    while (x > 0) {
+                        console_putchar('\b');
+                        x--;
+                    }
+                    printf ("\b\b$ ");
+                    console_putstring(line[y]);
+                    x = strlen(line[y]);
+                }
+            }
+        }
+		line[y][x] = 0;
 	}
 	return 0;
 }
