@@ -328,6 +328,7 @@ static int kevinfs_read_dir(struct fs_dirent *d, char *buffer, int buffer_len)
 			r += r->offset_to_next;
 		}
 		kevinfs_dir_dealloc(list);
+		*buffer = 0;
 	}
 	return ret < 0 ? ret : total;
 }

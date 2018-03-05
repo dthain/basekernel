@@ -106,6 +106,25 @@ int sys_chdir(const char *ns, const char *name)
 	return process_chdir(current, ns, name);
 }
 
+int sys_mkdir(const char *name){
+	struct fs_dirent *cwd = current->cwd;
+	return fs_dirent_mkdir(cwd, name);
+}
+
+int sys_readdir(const char *name, char *buffer, int len){
+	struct fs_dirent *cwd = current->cwd;
+	struct fs_dirent *d = fs_dirent_namei(cwd, name);
+	if (!d) return -1;
+	return fs_dirent_readdir(d, buffer, len);
+}
+
+int sys_rmdir(const char *name){
+	struct fs_dirent *cwd = current->cwd;
+	struct fs_dirent *d = fs_dirent_namei(cwd, name);
+	if (!d) return -1;
+	return fs_dirent_rmdir(cwd, name);
+}
+
 int sys_open( const char *path, int mode, int flags )
 {
 	int fd = process_available_fd(current);
@@ -294,6 +313,9 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
+	case SYSCALL_MKDIR:	return sys_mkdir((const char *)a);
+	case SYSCALL_READDIR:	return sys_readdir((const char *)a, (char *) b, (int) c);
+	case SYSCALL_RMDIR:	return sys_rmdir((const char *)a);
 	default:		return -1;
 	}
 }
