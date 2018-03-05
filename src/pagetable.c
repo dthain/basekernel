@@ -150,7 +150,7 @@ void pagetable_delete( struct pagetable *p )
 		if(e->present) {
 			q = (struct pagetable *) (e->addr<<12);
 			for(j=0;j<ENTRIES_PER_TABLE;j++) {
-				e = &q->entry[i];
+				e = &q->entry[j];
 				if(e->present && e->avail) {
 					void *paddr;
 					paddr = (void *) (e->addr<<12);

@@ -82,6 +82,19 @@ static int process_allocate_pid() {
     return 0;
 }
 
+void process_inherit( struct process * p )
+{
+    /* Copy open windows */
+    memcpy(p->windows, current->windows, sizeof(p->windows));
+    p->window_count = current->window_count;
+    int i;
+    for(i=0;i<p->window_count;i++) {
+        p->windows[i]->count++;
+    }
+    /* Set the parent of the new process to the calling process */
+    p->ppid = process_getpid();
+}
+
 struct process * process_create( unsigned code_size, unsigned stack_size )
 {
 	struct process *p;
@@ -96,6 +109,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
+    p->brk = 0;
 	p->pid = process_allocate_pid();
     if (p->pid) {
         processes[p->pid-1] = p;
