@@ -301,7 +301,7 @@ static int process_command(char *line)
 
 int kshell_launch()
 {
-	char line[1024][HISTORY];
+	char line[HISTORY][1024];
     char cmd[1024] = {0};
     int y = 0;
     int x = 0;
