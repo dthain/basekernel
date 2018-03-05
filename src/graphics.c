@@ -13,7 +13,6 @@ See the file LICENSE for details.
 #include "bitmap.h"
 #include "string.h"
 #include "process.h"
-#include "device.h"
 
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y) )
@@ -21,14 +20,10 @@ See the file LICENSE for details.
 
 #define FACTOR 256
 
-struct device *graphics_device_subset( struct device *d, void *args );
-
 static struct graphics_color color_black = {0,0,0,0};
 static struct graphics_color color_white = {255,255,255,0};
 
 struct graphics graphics_root;
-
-struct device *frame_buffer;
 
 struct graphics * graphics_create_root()
 {
@@ -41,11 +36,6 @@ struct graphics * graphics_create_root()
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
 	g->clip.h = g->bitmap->height;
-
-    frame_buffer = device_create();
-    frame_buffer->data = g;
-    frame_buffer->subset = graphics_device_subset;
-
 	return g;
 }
 
@@ -362,23 +352,3 @@ void graphics_scrollup( struct graphics *g, int32_t x, int32_t y, int32_t w, int
 }
 
 
-struct device *graphics_device_subset( struct device *d, void *args ) {
-    int* arguments = (int*)args;
-    struct graphics *p = (struct graphics*)d->data;
-
-    if (p->clip.w < arguments[0] + arguments[2] || p->clip.h < arguments[1] + arguments[3]) {
-        return 0;
-    } else {
-        struct graphics *g = graphics_create(p);
-        g->clip.x = arguments[0] + p->clip.x;
-        g->clip.y = arguments[1] + p->clip.y;
-        g->clip.w = arguments[2];
-        g->clip.h = arguments[3];
-
-        struct device *child = device_create();
-        child->data = g;
-        child->subset = graphics_device_subset;
-
-        return child;
-    }
-}
