@@ -208,7 +208,7 @@ int sys_pwd(char *result)
 			kfree(parent);
 			break;
 		}
-		fs_dirent_readdir(parent, dir_list, LSDIR_TEMP_BUFFER_SIZE);
+		if (fs_dirent_readdir(parent, dir_list, LSDIR_TEMP_BUFFER_SIZE) < 0) return -1;
 		char *dir = strtok(dir_list, " ");
 		while (dir) {
 			struct fs_dirent *child = fs_dirent_namei(parent, dir);
@@ -219,6 +219,7 @@ int sys_pwd(char *result)
 				strcat(result_next, "/");
 				strcat(result_next, dir);
 				strcat(result_next, result);
+				if (strlen(result) + strlen(result_next) + 1 > LSDIR_TEMP_BUFFER_SIZE) return -1;
 				strcpy(result, result_next);
 				break;
 			}
