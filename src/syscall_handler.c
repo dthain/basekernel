@@ -38,6 +38,26 @@ int sys_yield()
 	return 0;
 }
 
+int sys_sbrk (int a)
+{
+    unsigned int vaddr = (unsigned int) current->brk;
+    unsigned int paddr;
+    unsigned int i;
+    for (i = 0; i < (unsigned int) a; i += PAGE_SIZE){
+        if (!pagetable_getmap(current->pagetable, vaddr, &paddr))
+        {
+            pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+        }
+        vaddr += PAGE_SIZE;
+    }
+    if (!pagetable_getmap(current->pagetable, vaddr, &paddr))
+    {
+        pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+    }
+    vaddr = (unsigned int) current->brk;
+    current->brk += a;
+    return vaddr;
+}
 
 /*
 sys_process_run creates a new child process running the executable named by "path".
@@ -267,6 +287,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
 	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
+	case SYSCALL_SBRK: return sys_sbrk (a);
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);

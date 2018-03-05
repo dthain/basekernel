@@ -109,6 +109,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
+    p->brk = 0;
 	p->pid = process_allocate_pid();
     if (p->pid) {
         processes[p->pid-1] = p;

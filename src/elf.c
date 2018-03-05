@@ -98,6 +98,7 @@ static struct process* elf_load_process(char* image, const char* path) {
 
     /* Set process entry point based off ELF data */
     ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
+    p->brk = (void *) max_mem;
 
     if (!p) {
         return 0;

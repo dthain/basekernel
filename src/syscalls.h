@@ -19,6 +19,7 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+extern void* sbrk( int a );
 char keyboard_read_char();
 int draw_create( int wd, int x, int y, int w, int h );
 int mount(uint32_t device_no, const char *fs_name, const char *ns);
