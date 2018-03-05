@@ -87,7 +87,7 @@ static int process_command(char *line)
 			process_yield();
 		}
 		else
-			list_directory("run: missing argument");
+			printf("start: missing argument\n");
 	}
 	else if (pch && !strcmp(pch, "run"))
 	{
@@ -106,7 +106,7 @@ static int process_command(char *line)
             }
 		}
 		else
-			list_directory("run: missing argument");
+			printf("run: missing argument\n");
 	}
 	else if (pch && !strcmp(pch, "mount"))
 	{
