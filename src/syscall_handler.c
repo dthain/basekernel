@@ -15,6 +15,7 @@ See the file LICENSE for details.
 #include "graphics_lib.h"
 #include "main.h"
 #include "fs.h"
+#include "pagetable.h"
 #include "clock.h"
 #include "rtc.h"
 #include "elf.h"
@@ -63,6 +64,26 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	process_launch(p);
 
 	return p->pid;
+}
+
+int sys_fork()
+{
+  //We remove the old page table.  Is there a better way than just passing garbage values?
+  struct process *p = process_create(PAGE_SIZE, PAGE_SIZE);
+  char *new_kstack = p->kstack;
+  p->kstack = new_kstack;
+  p->kstack_top = p->kstack+PAGE_SIZE-sizeof(*p);
+  p->stack_ptr = current->stack_ptr;
+  memcpy((void *)(p->kstack), (void *)(current->kstack), PAGE_SIZE);
+  p->state = PROCESS_STATE_READY;
+  pagetable_delete(p->pagetable);
+  p->pagetable = pagetable_duplicate(current->pagetable);
+  process_inherit(p);
+  process_dump(current);
+  process_dump(p);
+	clock_wait(10000);
+  process_launch(p);
+  return p->pid;
 }
 
 uint32_t sys_gettimeofday()
@@ -270,6 +291,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_FORK:	return sys_fork();
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);

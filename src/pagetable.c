@@ -201,7 +201,6 @@ void pagetable_enable()
 	asm("movl %eax, %cr0");
 }
 
-#if 0
 struct pagetable * pagetable_duplicate( struct pagetable *sp )
 {
   unsigned i,j;
@@ -219,29 +218,42 @@ struct pagetable * pagetable_duplicate( struct pagetable *sp )
     e = &sp->entry[i];
     newe = &newp->entry[i];
     if(e->present) {
-      memcpy(newe, e, sizeof(struct pageentry));
       q = (struct pagetable *) (e->addr<<12);
       newq = pagetable_create();
       if(!newq)
         goto cleanup;
+      memcpy(newe, e, sizeof(struct pageentry));
       newe->addr = (((unsigned) newq) >> 12);
       for(j=0;j<ENTRIES_PER_TABLE;j++) {
-        e = &q->entry[i];
-        if(e->present && e->avail) {
+        e = &q->entry[j];
+        newe = &newq->entry[j];
+        memcpy(newe, e, sizeof(struct pageentry));
+        if(e->present) {
           void *paddr;
           paddr = (void *) (e->addr<<12);
-          memory_free_page(paddr);
+          void *new_paddr = 0;
+          if(e->avail) {
+            new_paddr = memory_alloc_page(0);
+            memcpy(new_paddr, paddr, PAGE_SIZE);
+            if (!new_paddr)
+              goto cleanup;
+          }
+          else {
+            new_paddr = paddr;
+          }
+          newe->addr = (((unsigned)new_paddr)>>12);
         }
       }
-      memory_free_page(q);
     }
   }
+  return newp;
 cleanup:
-  if(newp)
+  printf("Pagetable duplicate errors\n");
+  if(newp) {
     pagetable_delete(newp);
+  }
   return 0;
 }
-#endif
 
 void pagetable_copy( struct pagetable *sp, unsigned saddr, struct pagetable *tp, unsigned taddr, unsigned length );
 
