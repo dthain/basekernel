@@ -81,7 +81,6 @@ int sys_fork()
   process_inherit(p);
   process_dump(current);
   process_dump(p);
-	clock_wait(10000);
   process_launch(p);
   return p->pid;
 }
