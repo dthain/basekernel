@@ -32,7 +32,7 @@ struct mount {
 
 void process_init()
 {
-	current = process_create(0,0);
+	current = process_create(0,0,0);
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
@@ -95,7 +95,7 @@ void process_inherit( struct process * p )
     p->ppid = process_getpid();
 }
 
-struct process * process_create( unsigned code_size, unsigned stack_size )
+struct process * process_create( unsigned code_size, unsigned stack_size, int pid)
 {
 	struct process *p;
 
@@ -109,15 +109,27 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
-	p->pid = process_allocate_pid();
-    if (p->pid) {
-        processes[p->pid-1] = p;
+    if (pid == 0) {
+    p->pid = process_allocate_pid();
+      if (p->pid) {
+          processes[p->pid-1] = p;
+      } else {
+          return 0;
+      }
     } else {
+      if (processes[pid - 1]) {
+        process_delete(processes[pid - 1]);
+        processes[pid - 1] = p;
+        p->pid = pid;
+      } else {
         return 0;
+      }
     }
 
 	process_stack_init(p);
 
+	console_printf("process->stack_ptr %x\n", p->stack_ptr);
+	console_printf("process->kstack_top %x\n", p->kstack_top);
 	return p;
 }
 
