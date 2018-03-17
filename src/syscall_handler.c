@@ -49,7 +49,7 @@ Takes in argv and argc for the new process' main
 
 int sys_process_run( const char *path, const char** argv, int argc )
 {
-	struct process *p = elf_load(path);
+	struct process *p = elf_load(path, 0);
     
     if (!p) {
         return ENOENT;
@@ -66,10 +66,23 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	return p->pid;
 }
 
+void sys_exec(const char * path, const char ** argv, int argc) {
+	struct process *p = elf_load(path, current->pid);
+
+  if (!p) {
+      return;
+  }
+
+  process_inherit(p);
+  process_pass_arguments(p, argv, argc);
+	process_launch(p);
+  current = p;
+	process_yield(); // Otherwise we will jump back into the old process
+}
+
 int sys_fork()
 {
-  //We remove the old page table.  Is there a better way than just passing garbage values?
-  struct process *p = process_create(PAGE_SIZE, PAGE_SIZE);
+  struct process *p = process_create(0, 0, 0);
   char *new_kstack = p->kstack;
   p->kstack = new_kstack;
   p->kstack_top = p->kstack+PAGE_SIZE-sizeof(*p);
@@ -291,6 +304,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
 	case SYSCALL_FORK:	return sys_fork();
+	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
