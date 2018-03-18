@@ -25,6 +25,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "kevinfs/kevinfs_test.h"
 #include "kevinfs/kevinfs.h"
+#include "serial.h"
 
 struct dirent *root_directory = 0;
 struct dirent *current_directory = 0;
@@ -41,6 +42,9 @@ int kernel_main()
 	struct graphics *g = graphics_create_root();
 
 	console_init(g);
+#ifdef TEST
+	serial_init();
+#endif
 
 	console_printf("video: %d x %d\n",video_xres,video_yres,video_xbytes);
 	console_printf("kernel: %d bytes\n",kernel_size);

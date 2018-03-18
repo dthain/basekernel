@@ -39,7 +39,11 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
-char keyboard_read_char() {
+extern void* sbrk( int a ) {
+	return (void*) syscall( SYSCALL_SBRK, a, 0, 0, 0, 0 );
+}
+
+int keyboard_read_char() {
 	return syscall( SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0 );
 }
 
@@ -75,6 +79,36 @@ int process_run( const char *cmd, const char** argv, int argc ) {
 
 int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
+}
+
+int mount(uint32_t device_no, const char *fs_name, const char *ns)
+{
+	return syscall(SYSCALL_MOUNT, device_no, (uint32_t) fs_name, (uint32_t) ns, 0, 0);
+}
+
+int chdir(const char *ns, const char *path)
+{
+	return syscall(SYSCALL_CHDIR, (uint32_t) ns, (uint32_t) path, 0, 0, 0);
+}
+
+int mkdir(const char *name)
+{
+	return syscall(SYSCALL_MKDIR, (uint32_t) name, 0, 0, 0, 0);
+}
+
+int rmdir(const char *name)
+{
+	return syscall(SYSCALL_RMDIR, (uint32_t) name, 0, 0, 0, 0);
+}
+
+int readdir(const char *name, char *buffer, int n)
+{
+	return syscall(SYSCALL_READDIR, (uint32_t) name, (uint32_t) buffer, (uint32_t) n, 0, 0);
+}
+
+int getpid() {
+    static int cache = 0;
+    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
 }
 
 int process_reap( unsigned int pid ) {

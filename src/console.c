@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "console.h"
+#include "serial.h"
 #include "graphics.h"
 #include "device.h"
 #include "kmalloc.h"
@@ -52,6 +53,9 @@ int console_device_write( struct device *device, void *buffer, int size, int off
     int i;
     for (i = 0; i < size; i++) {
         char c = ((char*)buffer)[i];
+        #ifdef TEST
+            serial_write(0, c);
+        #endif
         switch(c) {
             case 13:
             case 10:

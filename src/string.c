@@ -252,6 +252,10 @@ void printf( const char *s, ... )
 					str = va_arg(args,char*);
 					printf_putstring(str);
 					break;
+				case 'c':
+					u = va_arg(args,int32_t);
+					printf_putchar(u);
+					break;
 				case 0:
 					return;
 					break;

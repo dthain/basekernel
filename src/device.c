@@ -9,25 +9,11 @@
 #include "device.h"
 #include "kmalloc.h"
 
-struct device *device_create()
-{
-    struct device *d = kmalloc(sizeof(*d));
-    d->read = 0;
-    d->write = 0;
-    d->unit = 0;
-    d->subset = 0;
-    d->block_size = 0;
-    d->sx0 = 0;
-    d->sy0 = 0;
-    d->sx1 = 0;
-    d->sy1 = 0;
-    return d;
-}
+static struct device devices[5] = {0};
 
-int device_close(struct device *d)
+struct device *device_open()
 {
-    kfree(d);
-    return 1;
+    return &devices[0];
 }
 
 int device_read(struct device *d, void *buffer, int size, int offset)
