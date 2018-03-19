@@ -23,7 +23,7 @@ static uint32_t ceiling(double d)
 }
 
 struct kevinfs_volume {
-       uint32_t unit;
+       struct device *device;
        int root_inode_num;
        struct kevinfs_superblock *super;
 };
@@ -33,7 +33,7 @@ struct kevinfs_dirent {
        struct kevinfs_inode *node;
 };
 
-static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *s, uint32_t unit);
+static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *s, struct device *device);
 static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
 static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *v, struct kevinfs_inode *node);
@@ -88,18 +88,18 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 static int kevinfs_get_available_block(struct kevinfs_volume *kv, uint32_t *index)
 {
 	struct kevinfs_superblock *super = kv->super;
-	int res = kevinfs_ata_ffs_range(kv->unit, super->block_bitmap_start, super->free_block_start, index);
+	int res = kevinfs_ata_ffs_range(kv->device, super->block_bitmap_start, super->free_block_start, index);
 	if (res < 0) return res;
-	return kevinfs_ata_set_bit(kv->unit, *index, super->block_bitmap_start, super->free_block_start);
+	return kevinfs_ata_set_bit(kv->device, *index, super->block_bitmap_start, super->free_block_start);
 }
 
 static int kevinfs_get_available_inode(struct kevinfs_volume *kv, uint32_t *index)
 {
 	struct kevinfs_superblock *super = kv->super;
-	int res = kevinfs_ata_ffs_range(kv->unit, super->inode_bitmap_start, super->inode_start, index);
+	int res = kevinfs_ata_ffs_range(kv->device, super->inode_bitmap_start, super->inode_start, index);
 	if (res < 0) return res;
 	*index += 1;
-	return kevinfs_ata_set_bit(kv->unit, *index-1 , super->inode_bitmap_start, super->inode_start);
+	return kevinfs_ata_set_bit(kv->device, *index-1 , super->inode_bitmap_start, super->inode_start);
 }
 
 static int kevinfs_delete_dirent(struct kevinfs_dirent *kd)
@@ -109,7 +109,7 @@ static int kevinfs_delete_dirent(struct kevinfs_dirent *kd)
 	struct kevinfs_superblock *super = kv->super;
 	uint32_t index = node->inode_number - 1;
 
-	if (kevinfs_ata_unset_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start) < 0)
+	if (kevinfs_ata_unset_bit(kv->device, index, super->inode_bitmap_start, super->inode_start) < 0)
 		return -1;
 
 	return 0;
@@ -118,7 +118,7 @@ static int kevinfs_delete_dirent(struct kevinfs_dirent *kd)
 static int kevinfs_delete_data(struct kevinfs_volume *kv, uint32_t index)
 {
 	struct kevinfs_superblock *super = kv->super;
-	if (kevinfs_ata_unset_bit(kv->unit, index, super->block_bitmap_start, super->free_block_start) < 0) {
+	if (kevinfs_ata_unset_bit(kv->device, index, super->block_bitmap_start, super->free_block_start) < 0) {
 		return -1;
 	}
 	return 0;
@@ -155,14 +155,14 @@ static struct kevinfs_inode *kevinfs_get_inode(struct kevinfs_volume *kv, uint32
 	bool is_active;
 	struct kevinfs_inode current_nodes[inodes_per_block + 1];
 
-	if (kevinfs_ata_check_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start, &is_active) < 0)
+	if (kevinfs_ata_check_bit(kv->device, index, super->inode_bitmap_start, super->inode_start, &is_active) < 0)
 		return 0;
 	if (is_active == 0)
 		return 0;
 
 	node = kmalloc(sizeof(struct kevinfs_inode));
 	if (node) {
-		if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
+		if (kevinfs_ata_read_block(kv->device, super->inode_start + block, current_nodes) < 0) {
 			kfree(node);
 			node = 0;
 		}
@@ -186,14 +186,14 @@ static int kevinfs_save_dirent(struct kevinfs_dirent *kd)
 	struct kevinfs_inode current_nodes[inodes_per_block + 1];
 	bool is_valid;
 
-	if (kevinfs_ata_check_bit(kv->unit, index, super->inode_bitmap_start, super->inode_start, &is_valid) < 0 || !is_valid) {
+	if (kevinfs_ata_check_bit(kv->device, index, super->inode_bitmap_start, super->inode_start, &is_valid) < 0 || !is_valid) {
 		return -1;
 	}
-	if (kevinfs_ata_read_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
+	if (kevinfs_ata_read_block(kv->device, super->inode_start + block, current_nodes) < 0) {
 		return -1;
 	}
 	memcpy(current_nodes + offset, node, sizeof(struct kevinfs_inode));
-	if (kevinfs_ata_write_block(kv->unit, super->inode_start + block, current_nodes) < 0) {
+	if (kevinfs_ata_write_block(kv->device, super->inode_start + block, current_nodes) < 0) {
 		return -1;
 	}
 	return 0;
@@ -222,20 +222,20 @@ static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_superblock *super = kv->super;
-	return kevinfs_ata_write_block(kv->unit, super->free_block_start + node->direct_addresses[address_no], buffer);
+	return kevinfs_ata_write_block(kv->device, super->free_block_start + node->direct_addresses[address_no], buffer);
 }
 
 static int kevinfs_read_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t *buffer)
 {
 	bool is_active;
 	struct kevinfs_superblock *super = kv->super;
-	if (kevinfs_ata_check_bit(kv->unit, index, super->block_bitmap_start, super->free_block_start, &is_active) < 0) {
+	if (kevinfs_ata_check_bit(kv->device, index, super->block_bitmap_start, super->free_block_start, &is_active) < 0) {
 		return -1;
 	}
 	if (is_active == 0) {
 		return -1;
 	}
-	return kevinfs_ata_read_block(kv->unit, super->free_block_start + index, buffer);
+	return kevinfs_ata_read_block(kv->device, super->free_block_start + index, buffer);
 }
 
 static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t address_no)
@@ -612,9 +612,10 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 
 static struct fs_volume *kevinfs_mount(uint32_t unit_no)
 {
-	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(unit_no);
+    struct device* device = device_open("ATA", unit_no);
+	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
 	if (!super) return 0;
-	struct kevinfs_volume *kv = kevinfs_superblock_as_kevinfs_volume(super, unit_no);
+	struct kevinfs_volume *kv = kevinfs_superblock_as_kevinfs_volume(super, device);
 	struct fs_volume *v = kevinfs_volume_as_volume(kv);
 	return v;
 }
@@ -828,9 +829,9 @@ static int kevinfs_mkfs(uint32_t unit_no)
 	bool is_directory = 1;
 	int ret = -1;
 
-	if (kevinfs_ata_format(unit_no) < 0) return -1;
+	if (kevinfs_ata_format(kv->device) < 0) return -1;
 	kv->root_inode_num = 1;
-	kv->super = kevinfs_ata_read_superblock(unit_no);
+	kv->super = kevinfs_ata_read_superblock(kv->device);
 
 	first_node = kevinfs_create_new_inode(kv, is_directory);
 	top_dir = kevinfs_create_empty_dir(first_node, first_node);
@@ -914,11 +915,11 @@ static struct fs_dirent_ops kevinfs_dirent_ops = {
 	.resize = kevinfs_dirent_resize,
 };
 
-static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *super, uint32_t unit_no)
+static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *super, struct device *device)
 {
 	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
 	kv->root_inode_num = 1;
-	kv->unit = unit_no;
+	kv->device = device;
 	kv->super = super;
 	return kv;
 }
@@ -926,7 +927,8 @@ static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinf
 static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no)
 {
 	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
-	kv->unit = unit_no;
+    struct device* device = device_open("ATA", unit_no);
+	kv->device = device;
 	return kv;
 }
 
