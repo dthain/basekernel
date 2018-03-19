@@ -8,12 +8,81 @@
 #include "kerneltypes.h"
 #include "device.h"
 #include "kmalloc.h"
+#include "string.h"
+#include "ata.h"
+#include "cdromfs.h"
+#include "keyboard.h"
 
-static struct device devices[5] = {0};
+#define ATA_DEVICE_COUNT   4
+#define ATAPI_DEVICE_COUNT 4
 
-struct device *device_open()
+static struct device ata_devices[ATA_DEVICE_COUNT] = {0};
+static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {0};
+static struct device keyboard = {0};
+struct console_device console = {0};
+
+int ata_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
-    return &devices[0];
+	return ata_read(d->unit, buffer, nblocks, offset);
+}
+
+int ata_device_write( struct device *d, void *buffer, int nblocks, int offset )
+{
+	return ata_write(d->unit, buffer, nblocks, offset);
+}
+
+int atapi_device_read( struct device *d, void *buffer, int nblocks, int offset )
+{
+	return atapi_read(d->unit, buffer, nblocks, offset);
+}
+
+void device_init()
+{
+    int i;
+    for (i = 0; i < ATAPI_DEVICE_COUNT; i++)  {
+        atapi_devices[i].read = atapi_device_read;
+        atapi_devices[i].unit = i;
+        atapi_devices[i].block_size = CDROM_BLOCK_SIZE;
+    }
+    for (i = 0; i < ATA_DEVICE_COUNT; i++)  {
+        ata_devices[i].read = ata_device_read;
+        ata_devices[i].write = ata_device_write;
+        ata_devices[i].unit = i;
+        ata_devices[i].block_size = CDROM_BLOCK_SIZE;
+    }
+    keyboard.block_size = 1;
+    keyboard.read = keyboard_device_read;
+}
+
+struct device *device_open(char *name, int unit)
+{
+    if (!strcmp("ATA", name)) {
+        if (unit >= 0 && unit < ATA_DEVICE_COUNT) {
+            return &ata_devices[unit];
+        } else {
+            return 0;
+        }
+    } else if (!strcmp("ATAPI", name)) {
+        if (unit >= 0 && unit < ATAPI_DEVICE_COUNT) {
+            return &atapi_devices[unit];
+        } else {
+            return 0;
+        }
+    } else if (!strcmp("KEYBOARD", name)) {
+        if (unit == 0) {
+            return &keyboard;
+        } else {
+            return 0;
+        }
+    } else if (!strcmp("CONSOLE", name)) {
+        if (unit == 0) {
+            return (struct device*)&console;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
 }
 
 int device_read(struct device *d, void *buffer, int size, int offset)

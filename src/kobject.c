@@ -9,18 +9,6 @@
 #include "fs.h"
 #include "device.h"
 
-struct kobject {
-    union {
-        struct device *device;
-        struct fs_file *file;
-    } data;
-    enum {
-        FILE,
-        DEVICE
-    } type;
-    int rc;
-};
-
 struct kobject *kobject_create_file(struct fs_file *f) {
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = FILE;
@@ -54,7 +42,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size) {
 }
 
 int kobject_close(struct kobject *kobject) {
-    if (--kobject->rc) {
+    if (--kobject->rc <= 0) {
         switch (kobject->type) {
             case FILE:
                 return fs_file_close(kobject->data.file);

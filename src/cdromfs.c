@@ -258,10 +258,7 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 	printf("cdromfs: scanning atapi unit %d...\n",unit);
 
 	int j;
-    struct device *device = device_create();
-    device->read = atapi_device_read;
-    device->unit = unit;
-    device->block_size = CDROM_BLOCK_SIZE;
+    struct device *device = device_open("ATAPI", unit);
 
 	for(j=0;j<16;j++) {
 		printf("cdromfs: checking volume %d\n",j);

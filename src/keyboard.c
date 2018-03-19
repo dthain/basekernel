@@ -124,9 +124,7 @@ char keyboard_read()
 
 void keyboard_init()
 {
-    keyboard = device_create();
-    keyboard->block_size = 1;
-    keyboard->read = keyboard_device_read;
+    keyboard = device_open("KEYBOARD", 0);
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");

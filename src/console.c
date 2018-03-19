@@ -10,19 +10,10 @@ See the file LICENSE for details.
 #include "device.h"
 #include "kmalloc.h"
 
-struct console_device{
-    struct device device;
-    int xsize;
-    int ysize;
-    int xpos;
-    int ypos;
-    struct graphics *gx;
-};
-
 struct graphics_color bgcolor = {0,0,0};
 struct graphics_color fgcolor = {255,0,0};
 
-static struct console_device console = {0};
+extern struct console_device console;
 
 static void console_reset()
 {
@@ -124,8 +115,8 @@ int console_write( int unit, const void *buffer, int length, int offset )
 
 void console_init( struct graphics *g )
 {
-    console.device.write = console_device_write;
 	console.gx = g;
+    console.device.write = console_device_write;
     console_reset();
 	console_putstring("\nconsole: initialized\n");
 }

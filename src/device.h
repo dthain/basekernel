@@ -8,6 +8,7 @@
 #define DEVICE_H
 
 #include "kerneltypes.h"
+#include "graphics.h"
 
 struct device {
     int (*read) (struct device *d, void *buffer, int size, int offset);
@@ -22,7 +23,17 @@ struct device {
     int sy1;
 };
 
-struct device *device_open();
+struct console_device{
+    struct device device;
+    int xsize;
+    int ysize;
+    int xpos;
+    int ypos;
+    struct graphics *gx;
+};
+
+void device_init();
+struct device *device_open(char *type, int unit);
 struct device *device_subset(struct device *d, int dx0, int dy0, int dx1, int dy1);
 
 int device_read(struct device *d, void *buffer, int size, int offset);

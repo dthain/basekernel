@@ -294,11 +294,6 @@ static int atapi_read_unlocked( int id, void *buffer, int nblocks, int offset )
 	return 1;
 }
 
-int atapi_device_read( struct device *d, void *buffer, int nblocks, int offset )
-{
-	return atapi_read(d->unit, buffer, nblocks, offset);
-}
-
 int atapi_read( int id, void *buffer, int nblocks, int offset )
 {
 	int result;
