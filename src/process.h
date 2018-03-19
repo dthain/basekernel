@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 #include "list.h"
 #include "pagetable.h"
+#include "kobject.h"
 #include "x86.h"
 #include "fs.h"
 
@@ -19,7 +20,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
 #define PROCESS_MAX_WINDOWS   5
-#define PROCESS_MAX_FILES   100
+#define PROCESS_MAX_OBJECTS   100
 
 
 #define PROCESS_EXIT_NORMAL   0
@@ -36,7 +37,7 @@ struct process {
 	char *stack_ptr;
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
-	struct fs_file *fdtable[PROCESS_MAX_FILES];
+	struct kobject *ktable[PROCESS_MAX_OBJECTS];
 	struct list mounts;
 	struct fs_dirent *cwd;
 	uint32_t entry;
