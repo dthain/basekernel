@@ -91,6 +91,12 @@ void process_inherit( struct process * p )
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
     }
+    /* Copy fs_spaces */
+    memcpy(p->spaces, current->spaces, sizeof(p->spaces));
+    p->space_count = current->space_count;
+    for(i=0;i<p->space_count;i++) {
+        p->spaces[i]->count++;
+    }
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
 }
