@@ -89,8 +89,8 @@ int console_device_write( struct device *device, void *buffer, int size, int off
             graphics_clear(d->gx,0,0,graphics_width(d->gx),graphics_height(d->gx));
         }
 
-        graphics_char(d->gx,d->xpos*8,d->ypos*8,'_');
     }
+    graphics_char(d->gx,d->xpos*8,d->ypos*8,'_');
     return i;
 }
 
