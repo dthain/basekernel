@@ -86,11 +86,13 @@ int sys_fork()
   char *new_kstack = p->kstack;
   p->kstack = new_kstack;
   p->kstack_top = p->kstack+PAGE_SIZE-sizeof(*p);
-  p->stack_ptr = current->stack_ptr;
   memcpy((void *)(p->kstack), (void *)(current->kstack), PAGE_SIZE);
   p->state = PROCESS_STATE_READY;
   pagetable_delete(p->pagetable);
   p->pagetable = pagetable_duplicate(current->pagetable);
+  pagetable_getmap(p->pagetable, ((struct x86_stack *)current->stack_ptr)->esp, &p->stack_ptr);
+  printf("old stack_ptr: %x, old esp: %x\n", current->stack_ptr, ((struct x86_stack *)current->stack_ptr)->esp);
+  printf("new stack_ptr: %x, new esp: %x\n", p->stack_ptr, ((struct x86_stack *)p->stack_ptr)->esp);
   process_inherit(p);
   process_dump(current);
   process_dump(p);
