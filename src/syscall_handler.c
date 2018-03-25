@@ -90,12 +90,13 @@ int sys_fork()
   p->state = PROCESS_STATE_READY;
   pagetable_delete(p->pagetable);
   p->pagetable = pagetable_duplicate(current->pagetable);
-  pagetable_getmap(p->pagetable, ((struct x86_stack *)current->stack_ptr)->esp, &p->stack_ptr);
+  int rc = pagetable_getmap(p->pagetable, ((struct x86_stack *)current->stack_ptr)->esp, (unsigned *)&(p->stack_ptr));
+  printf("this is the rc on getmap: %d\n", rc);
   printf("old stack_ptr: %x, old esp: %x\n", current->stack_ptr, ((struct x86_stack *)current->stack_ptr)->esp);
   printf("new stack_ptr: %x, new esp: %x\n", p->stack_ptr, ((struct x86_stack *)p->stack_ptr)->esp);
   process_inherit(p);
-  process_dump(current);
-  process_dump(p);
+  //process_dump(current);
+  //process_dump(p);
   process_launch(p);
   return p->pid;
 }

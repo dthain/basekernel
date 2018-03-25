@@ -234,9 +234,9 @@ struct pagetable * pagetable_duplicate( struct pagetable *sp )
           void *new_paddr = 0;
           if(e->avail) {
             new_paddr = memory_alloc_page(0);
-            memcpy(new_paddr, paddr, PAGE_SIZE);
             if (!new_paddr)
               goto cleanup;
+            memcpy(new_paddr, paddr, PAGE_SIZE);
           }
           else {
             new_paddr = paddr;
