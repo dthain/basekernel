@@ -10,7 +10,6 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 
 typedef enum {
-<<<<<<< cc9426394cee4b45707a838827acda8aa90f0b96
     SYSCALL_DEBUG,
     SYSCALL_YIELD,
     SYSCALL_EXIT,

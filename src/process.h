@@ -45,8 +45,9 @@ struct process {
     struct fs_space_ref spaces[PROCESS_MAX_FS_SPACES];
     int space_count;
     int cws;
-	struct list mounts;
 	struct fs_dirent *cwd;
+  int cwd_depth;
+	struct list mounts;
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
@@ -87,7 +88,7 @@ uint32_t process_getppid();
 int process_available_fd(struct process *p);
 int process_mount_as(struct process *p, struct fs_volume *v, const char *ns);
 int process_unmount(struct process *p, const char *ns);
-int process_chdir(struct process *p, const char *ns, const char *path);
+int process_chdir(struct process *p, const char *path);
 
 extern struct process *current;
 
