@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "pagetable.h"
 #include "kobject.h"
 #include "x86.h"
+#include "subset.h"
 #include "fs.h"
 
 #define PROCESS_STATE_CRADLE  0
@@ -23,7 +24,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_FORK_PARENT  6
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_OBJECTS   100
-#define PROCESS_MAX_ROOTS     5
+#define PROCESS_MAX_FS_SPACES 5
 
 
 #define PROCESS_EXIT_NORMAL   0
@@ -41,7 +42,7 @@ struct process {
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
-    struct fs_space* spaces[PROCESS_MAX_ROOTS];
+    struct fs_space_ref spaces[PROCESS_MAX_FS_SPACES];
     int space_count;
     int cws;
 	struct list mounts;

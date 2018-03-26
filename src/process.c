@@ -18,6 +18,7 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "main.h"
 #include "clock.h"
+#include "subset.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
@@ -32,6 +33,9 @@ struct mount {
 
 void process_init()
 {
+  spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
+  memset(spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
+  used_fs_spaces = 0;
 	current = process_create(0,0,0);
 
 	pagetable_load(current->pagetable);
@@ -92,10 +96,14 @@ void process_inherit( struct process * p )
         p->windows[i]->count++;
     }
     /* Copy fs_spaces */
-    memcpy(p->spaces, current->spaces, sizeof(p->spaces));
     p->space_count = current->space_count;
+    p->cws = current->cws;
     for(i=0;i<p->space_count;i++) {
-        p->spaces[i]->count++;
+        p->spaces[i].name = kmalloc(strlen(current->spaces[i].name) + 1);
+        strcpy(p->spaces[i].name, current->spaces[i].name);
+        p->spaces[i].perms = current->spaces[i].perms;
+        p->spaces[i].gindex = current->spaces[i].gindex;
+        spaces[p->spaces[i].gindex].count++;
     }
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
