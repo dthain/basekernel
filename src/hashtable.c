@@ -73,6 +73,15 @@ static int hash_set_list_delete(struct hash_set_node **head, uint32_t key)
 	return -1;
 }
 
+bool hash_set_lookup_info(struct hash_set *set, uint32_t key, void **data)
+{
+	uint32_t hash_key = hash_uint(key, set->total_buckets);
+	struct hash_set_node *result = hash_set_list_lookup(set->head[hash_key], key);
+	if (result != 0)
+		*data = result->info;
+	return result != 0;
+}
+
 struct hash_set *hash_set_init(uint32_t buckets)
 {
 	struct hash_set_node **set_nodes = kmalloc(sizeof(struct hash_set_node *) * buckets);
@@ -114,13 +123,15 @@ int hash_set_dealloc(struct hash_set *set)
 	return 0;
 }
 
-int hash_set_add(struct hash_set *set, uint32_t key)
+int hash_set_add(struct hash_set *set, uint32_t key, void *info)
 {
 	uint32_t hash_key = hash_uint(key, set->total_buckets);
 	struct hash_set_node *node = kmalloc(sizeof(struct hash_set_node));
 	node->data = key;
+	node->info = info;
 	node->next = 0;
 	int ret = hash_set_list_add(&(set->head[hash_key]), node);
+        if (ret == 0) set->num_entries++;
 	return ret;
 }
 
@@ -135,6 +146,7 @@ int hash_set_delete(struct hash_set *set, uint32_t key)
 {
 	uint32_t hash_key = hash_uint(key, set->total_buckets);
 	int result = hash_set_list_delete(&(set->head[hash_key]), key);
+        if (result == 0) set->num_entries--;
 	return result;
 }
 
