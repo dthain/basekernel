@@ -67,7 +67,9 @@ int ata_buffer_read(int id, int block, void *buffer) {
 		memcpy(buffer, cache_entry.data, ATA_BLOCKSIZE);
 	}
 	else { 
-		ata_read(id, buffer, 1, block);
+		if (!ata_read(id, buffer, 1, block)) {
+			return -1;
+		}
 		memcpy(cache_entry.data, buffer, ATA_BLOCKSIZE);
 		cache_entry.block_no = block;
 		ata_cache_add(id, block, &cache_entry);
@@ -77,6 +79,5 @@ int ata_buffer_read(int id, int block, void *buffer) {
 
 int ata_buffer_write(int id, int block, void *buffer) {
 	ata_cache_delete(id, block);
-	ata_write(id, buffer, 1, block);
-	return 0;
+	return ata_write(id, buffer, 1, block) ? 0 : -1;
 }
