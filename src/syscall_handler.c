@@ -129,9 +129,6 @@ int sys_copy_ns(const char *old_ns, const char * new_ns) {
   if (current->space_count >= PROCESS_MAX_FS_SPACES) {
     return EINVAL;
   }
-  if (!strcmp(old_ns, new_ns)) {
-    return EINVAL;
-  }
   for (i = 0; i < current->space_count; i++) {
     if (!strcmp(new_ns, current->spaces[i].name)) {
       //Can't have duplicate names
