@@ -219,13 +219,14 @@ int sys_lower_ns_root(const char *ns, const char * path) {
       }
       //We start here just because it's more likely to be open.  It is not a guarantee.
       //Additionally, there is an issue of possible 2 entries pointing to same dirent.
-      int i = used_fs_spaces;
-      while (spaces[i].present) {
-        i = (i + 1) % MAX_FS_SPACES;
+      int j = used_fs_spaces;
+      while (spaces[j].present) {
+        j = (j + 1) % MAX_FS_SPACES;
       }
-      spaces[i].present = 1;
-      spaces[i].d = new;
-      spaces[i].count = 1;
+      spaces[j].present = 1;
+      spaces[j].d = new;
+      spaces[j].count = 1;
+      current->spaces[i].gindex = j;
       used_fs_spaces++;
       return 0;
     }
