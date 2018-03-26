@@ -2,9 +2,10 @@
 #include "kevinfs.h"
 #include "../kmalloc.h"
 
-#include "../ata.h"
 #include "../hashtable.h"
 #include "../string.h"
+#include "../ata_buffer.h"
+#include "../ata.h"
 #define RESERVED_BIT_TABLE_LEN 1031
 #define CONTAINERS(total, container_size) \
 	(total / container_size + (total % container_size == 0 ? 0 : 1))
@@ -64,7 +65,7 @@ static int kevinfs_ata_write_superblock(int unit)
 
 	uint32_t i;
 	for (i = super.inode_bitmap_start; i < super.free_block_start; i++) {
-		if(!ata_write(unit, zeros, 1, i))
+		if(ata_buffer_write(unit, i, zeros) < 0)
 			return -1;
 	}
 	return kevinfs_ata_write_block(unit, 0, wbuffer);
@@ -101,14 +102,14 @@ static int kevinfs_ata_get_available_bit(int unit, uint32_t index, uint32_t *res
 
 int kevinfs_ata_read_block(int unit, uint32_t index, void *buffer)
 {
-	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return ata_read(unit, buffer, num_blocks, index) ? 0 : -1;
+	//uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
+	return ata_buffer_read(unit, index, buffer);
 }
 
 int kevinfs_ata_write_block(int unit, uint32_t index, void *buffer)
 {
-	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return ata_write(unit, buffer, num_blocks, index) ? 0 : -1;
+	//uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
+	return ata_buffer_write(unit, index, buffer);
 }
 
 int kevinfs_ata_set_bit(int unit, uint32_t index, uint32_t begin, uint32_t end)
