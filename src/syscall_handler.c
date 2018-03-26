@@ -133,6 +133,12 @@ int sys_copy_ns(const char *old_ns, const char * new_ns) {
     return EINVAL;
   }
   for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(new_ns, current->spaces[i].name)) {
+      //Can't have duplicate names
+      return EINVAL;
+    }
+  }
+  for (i = 0; i < current->space_count; i++) {
     if (!strcmp(old_ns, current->spaces[i].name)) {
       current->spaces[current->space_count].name = kmalloc(strlen(current->spaces[i].name) + 1);
       strcpy(current->spaces[current->space_count].name, new_ns);
