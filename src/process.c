@@ -351,20 +351,27 @@ int process_mount_as(struct process *p, struct fs_volume *v, const char *ns)
 static int process_chdir_with_cwd(struct process *p, const char *path)
 {
 	struct fs_dirent *d;
-	if (!(d = fs_dirent_namei(current->cwd, path)))
+	if (!(d = fs_dirent_namei(p->cwd, path)))
 		return -1;
-	current->cwd = d;
+	p->cwd = d;
 	return 0;
 }
 
-int process_chdir(struct process *p, const char *ns, const char *path)
+int process_chdir(struct process *p, const char *path)
 {
-	if (!ns && !current->cwd)
-		return -1;
-	if (ns) {
-		struct mount *m = process_mount_get(p, ns);
-		current->cwd = fs_volume_root(m->v);
-	}
+  if (path[0] == '/') {
+    path += 1;
+    p->cwd = 0;
+  }
+  if (!current->cwd) {
+		p->cwd = spaces[p->spaces[p->cws].gindex].d;
+    p->cwd_depth = 0;
+  }
+  int newdepth = depth_check(path, p->cwd_depth);
+  if (newdepth == -1) {
+    return -1;
+  }
+  p->cwd_depth = newdepth;
 	return process_chdir_with_cwd(p, path);
 }
 
