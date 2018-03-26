@@ -236,6 +236,9 @@ int sys_change_ns(const char *ns) {
   for (i = 0; i < current->space_count; i++) {
     if (!strcmp(ns, current->spaces[i].name)) {
       current->cws = i;
+      //Reset to root
+      current->cwd = spaces[current->spaces[current->cws].gindex].d;
+      current->cwd_depth = 0;
       return 0;
     }
   }
@@ -287,9 +290,15 @@ int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
 	return 0;
 }
 
-int sys_chdir(const char *ns, const char *name)
+int sys_chdir(const char *path)
 {
-	return process_chdir(current, ns, name);
+  if (!current->cws) {
+    return EINVAL;
+  }
+  if (process_chdir(current, path) == -1) {
+    return EINVAL;
+  }
+  return 0;
 }
 
 int sys_mkdir(const char *name){
@@ -317,6 +326,8 @@ int sys_open( const char *path, int mode, int flags )
 	int ret = 0;
 	if (fd < 0)
 		return -1;
+  if (depth_check(path, current->cwd_depth) == -1)
+    return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, path);
 	if (!d) {
@@ -528,8 +539,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
-	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
 	case SYSCALL_SBRK: return sys_sbrk (a);
+	case SYSCALL_CHDIR:	return sys_chdir((const char *)a);
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
