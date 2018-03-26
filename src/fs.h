@@ -21,12 +21,6 @@ struct fs_file {
 	int8_t mode;
 };
 
-struct fs_space {
-  char *name;
-	struct fs_dirent *d;
-	uint32_t count;
-};
-
 struct fs_volume {
 	void *private_data;
 	const struct fs_volume_ops *ops;
