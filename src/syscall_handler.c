@@ -11,6 +11,8 @@ See the file LICENSE for details.
 #include "process.h"
 #include "kmalloc.h"
 #include "cdromfs.h"
+#include "string.h"
+#include "subset.h"
 #include "memorylayout.h"
 #include "graphics_lib.h"
 #include "main.h"
@@ -120,6 +122,120 @@ int sys_fork()
   process_launch(p);
   process_fork_freeze();
   return p->pid;
+}
+
+int sys_copy_ns(const char *old_ns, const char * new_ns) {
+  int i;
+  if (current->space_count >= PROCESS_MAX_FS_SPACES) {
+    return EINVAL;
+  }
+  if (!strcmp(old_ns, new_ns)) {
+    return EINVAL;
+  }
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(old_ns, current->spaces[i].name)) {
+      current->spaces[current->space_count].name = kmalloc(strlen(current->spaces[i].name) + 1);
+      strcpy(current->spaces[current->space_count].name, new_ns);
+      current->spaces[current->space_count].perms = current->spaces[i].perms;
+      current->spaces[current->space_count].gindex = current->spaces[i].gindex;
+      current->space_count++;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_delete_ns(const char *ns) {
+  int i;
+  bool found = 0;
+  int old_count = current->space_count;
+  for (i = 0; i < old_count; i++) {
+    if (found) {
+      memcpy(&current->spaces[i - 1], &current->spaces[i], sizeof(struct fs_space_ref));
+    } else if (!strcmp(ns, current->spaces[i].name)) {
+      found = 1;
+      kfree(current->spaces[i].name);
+      current->space_count--;
+      int gindex = current->spaces[i].gindex;
+      if(--spaces[gindex].count == 0) {
+        spaces[gindex].present = 0;
+        kfree(spaces[gindex].d);
+        used_fs_spaces--;
+      }
+    }
+  }
+  if (found) {
+    return 0;
+  }
+  return EINVAL;
+}
+
+int sys_get_ns_perms(const char *ns) {
+  int i;
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(ns, current->spaces[i].name)) {
+      return current->spaces[i].perms;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_remove_ns_perms(const char *ns, int mask) {
+  int i;
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(ns, current->spaces[i].name)) {
+      current->spaces[i].perms &= ~(mask);
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_lower_ns_root(const char *ns, const char * path) {
+  struct fs_dirent *d;
+  struct fs_dirent *new;
+  int i;
+  if (used_fs_spaces == MAX_FS_SPACES) {
+    return EINVAL;
+  }
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(ns, current->spaces[i].name)) {
+      int gindex = current->spaces[i].gindex;
+      d = spaces[gindex].d;
+      new = fs_dirent_namei(d, path);
+      if (!new) {
+        return EINVAL;
+      }
+      if(--spaces[gindex].count == 0) {
+        spaces[gindex].present = 0;
+        kfree(spaces[gindex].d);
+        used_fs_spaces--;
+      }
+      //We start here just because it's more likely to be open.  It is not a guarantee.
+      //Additionally, there is an issue of possible 2 entries pointing to same dirent.
+      int i = used_fs_spaces;
+      while (spaces[i].present) {
+        i = (i + 1) % MAX_FS_SPACES;
+      }
+      spaces[i].present = 1;
+      spaces[i].d = new;
+      spaces[i].count = 1;
+      used_fs_spaces++;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_change_ns(const char *ns) {
+  int i;
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(ns, current->spaces[i].name)) {
+      current->cws = i;
+      return 0;
+    }
+  }
+  return EINVAL;
 }
 
 uint32_t sys_gettimeofday()
@@ -386,6 +502,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
 	case SYSCALL_FORK:	return sys_fork();
 	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
+  case SYSCALL_COPY_NS: return sys_copy_ns((const char *)a, (const char *)b);
+  case SYSCALL_DELETE_NS: return sys_delete_ns((const char *)a);
+  case SYSCALL_GET_NS_PERMS: return sys_get_ns_perms((const char *)a);
+  case SYSCALL_REMOVE_NS_PERMS:return sys_remove_ns_perms((const char *)a, b);
+  case SYSCALL_LOWER_NS_ROOT: return sys_lower_ns_root((const char *)a, (const char *)b);
+  case SYSCALL_CHANGE_NS: return sys_change_ns((const char *)a);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);

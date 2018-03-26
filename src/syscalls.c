@@ -87,6 +87,30 @@ void exec(const char * path, const char ** argv, int argc) {
 	syscall( SYSCALL_EXEC, (uint32_t)path, (uint32_t)argv, (uint32_t)argc, 0, 0 );
 }
 
+int copy_ns(const char *old_ns, const char * new_ns) {
+	return syscall( SYSCALL_COPY_NS, (uint32_t)old_ns, (uint32_t)new_ns, 0, 0, 0 );
+}
+
+int delete_ns(const char *ns) {
+	return syscall( SYSCALL_DELETE_NS, (uint32_t)ns, 0, 0, 0, 0 );
+}
+
+int get_ns_perms(const char *ns) {
+	return syscall( SYSCALL_GET_NS_PERMS, (uint32_t)ns, 0, 0, 0, 0 );
+}
+
+int remove_ns_perms(const char *ns, int mask) {
+	return syscall( SYSCALL_GET_NS_PERMS, (uint32_t)ns, mask, 0, 0, 0 );
+}
+
+int lower_ns_root(const char *ns, const char * path) {
+	return syscall( SYSCALL_GET_NS_PERMS, (uint32_t)ns, (uint32_t)path, 0, 0, 0 );
+}
+
+int change_ns(const char *ns) {
+	return syscall( SYSCALL_CHANGE_NS, (uint32_t)ns, 0, 0, 0, 0 );
+}
+
 int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }
