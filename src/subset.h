@@ -22,6 +22,8 @@ struct fs_space_ref {
   uint32_t gindex;
 };
 
+int depth_check(const char *path, int cdepth);
+
 extern struct fs_space * spaces;
 extern int used_fs_spaces;
 
