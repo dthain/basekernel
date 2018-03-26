@@ -254,11 +254,40 @@ uint32_t sys_gettimeofday()
 
 int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
 {
+  if ((used_fs_spaces == MAX_FS_SPACES) || (current->space_count >= PROCESS_MAX_FS_SPACES)) {
+    return EINVAL;
+  }
+  int i;
+  for (i = 0; i < current->space_count; i++) {
+    if (!strcmp(ns, current->spaces[i].name)) {
+      //Can't have duplicate names
+      return EINVAL;
+    }
+  }
 	struct fs *fs = fs_get(fs_name);
 	struct fs_volume *v = fs_volume_mount(fs, device_no);
-	int ret = process_mount_as(current, v, ns);
+  struct fs_dirent *root = fs_volume_root(v);
 	kfree(fs);
-	return ret;
+  if (!root) {
+    return EINVAL;
+  }
+
+  int j = used_fs_spaces;
+  while (spaces[j].present) {
+    j = (j + 1) % MAX_FS_SPACES;
+  }
+  spaces[j].present = 1;
+  spaces[j].d = root;
+  spaces[j].count = 1;
+  used_fs_spaces++;
+
+  char * name = kmalloc(strlen(ns) + 1);
+  strcpy(name, ns);
+  current->spaces[current->space_count].name = name;
+  current->spaces[current->space_count].gindex = j;
+  current->spaces[current->space_count].perms = -1; //All permissions
+  current->space_count++;
+	return 0;
 }
 
 int sys_chdir(const char *ns, const char *name)
