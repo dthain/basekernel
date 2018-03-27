@@ -97,7 +97,7 @@ static struct process* elf_load_process(char* image, const char* path, int pid) 
     struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE, pid);
 
     /* Set process entry point based off ELF data */
-    ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
+    ((struct x86_stack *)p->kstack_ptr)->eip = e_entry;
 
     if (!p) {
         return 0;

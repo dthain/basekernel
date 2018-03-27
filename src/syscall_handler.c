@@ -83,20 +83,16 @@ void sys_exec(const char * path, const char ** argv, int argc) {
 int sys_fork()
 {
   struct process *p = process_create(0, 0, 0);
-  char *new_kstack = p->kstack;
-  p->kstack = new_kstack;
-  p->kstack_top = p->kstack+PAGE_SIZE-sizeof(*p);
-  memcpy((void *)(p->kstack), (void *)(current->kstack), PAGE_SIZE);
-  p->state = PROCESS_STATE_READY;
+  //memcpy((void *)(p->kstack), (void *)(current->kstack), PAGE_SIZE);
+  //p->stack_ptr = p->kstack - (current->kstack - current->stack_ptr);
+  //p->stack_ptr = ((unsigned)current->stack_ptr + (unsigned)current->kstack) - (unsigned)current->kstack;
+  p->state = PROCESS_STATE_FORK;
+  p->ppid = current->pid;
   pagetable_delete(p->pagetable);
   p->pagetable = pagetable_duplicate(current->pagetable);
-  int rc = pagetable_getmap(p->pagetable, ((struct x86_stack *)current->stack_ptr)->esp, (unsigned *)&(p->stack_ptr));
-  printf("this is the rc on getmap: %d\n", rc);
-  printf("old stack_ptr: %x, old esp: %x\n", current->stack_ptr, ((struct x86_stack *)current->stack_ptr)->esp);
-  printf("new stack_ptr: %x, new esp: %x\n", p->stack_ptr, ((struct x86_stack *)p->stack_ptr)->esp);
   process_inherit(p);
-  //process_dump(current);
-  //process_dump(p);
+  process_dump(current);
+  process_dump(p);
   process_launch(p);
   return p->pid;
 }

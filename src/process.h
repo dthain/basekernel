@@ -18,6 +18,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_RUNNING 2
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
+#define PROCESS_STATE_FORK    5
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_FILES   100
 
@@ -33,7 +34,7 @@ struct process {
 	struct pagetable *pagetable;
 	char *kstack;
 	char *kstack_top;
-	char *stack_ptr;
+	char *kstack_ptr;
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
 	struct fs_file *fdtable[PROCESS_MAX_FILES];
