@@ -20,6 +20,9 @@ See the file LICENSE for details.
 #include "elf.h"
 #include "kmalloc.h"
 
+// Get rid of this once we have a proper dirlist stream
+#define LSDIR_TEMP_BUFFER_SIZE 250
+
 int sys_debug( const char *str )
 {
 	console_printf("%s",str);
@@ -172,6 +175,42 @@ int sys_close( int fd )
 	return 0;
 }
 
+int sys_pwd(char *result)
+{
+	struct fs_dirent *d = current->cwd;
+	char dir_list[LSDIR_TEMP_BUFFER_SIZE];
+	memset(dir_list, 0, LSDIR_TEMP_BUFFER_SIZE);
+	result[0] = 0;
+	while (1) {
+		struct fs_dirent *parent = fs_dirent_namei(d, "..");
+		int hit_root, found_child;
+		fs_dirent_compare(parent, d, &hit_root);
+		if (hit_root) {
+			kfree(parent);
+			break;
+		}
+		if (fs_dirent_readdir(parent, dir_list, LSDIR_TEMP_BUFFER_SIZE) < 0) return -1;
+		char *dir = strtok(dir_list, " ");
+		while (dir) {
+			struct fs_dirent *child = fs_dirent_namei(parent, dir);
+			fs_dirent_compare(child, d, &found_child);
+			if (found_child) {
+				char result_next[LSDIR_TEMP_BUFFER_SIZE];
+				memset(result_next, 0, LSDIR_TEMP_BUFFER_SIZE);
+				strcat(result_next, "/");
+				strcat(result_next, dir);
+				strcat(result_next, result);
+				if (strlen(result) + strlen(result_next) + 1 > LSDIR_TEMP_BUFFER_SIZE) return -1;
+				strcpy(result, result_next);
+				break;
+			}
+			dir = strtok(dir + strlen(dir) + 1, " ");
+		}
+		d = parent;
+	}
+	return 0;
+}
+
 int sys_draw_color( int wd, int r, int g, int b ) {
     if (wd < 0 || wd >= current->window_count) {
         return ENOENT;
@@ -316,6 +355,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_MKDIR:	return sys_mkdir((const char *)a);
 	case SYSCALL_READDIR:	return sys_readdir((const char *)a, (char *) b, (int) c);
 	case SYSCALL_RMDIR:	return sys_rmdir((const char *)a);
+	case SYSCALL_PWD:	return sys_pwd((char *)a);
 	default:		return -1;
 	}
 }

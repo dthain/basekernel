@@ -54,5 +54,6 @@ int fs_dirent_link(struct fs_dirent *d, const char *oldpath, const char *newpath
 int fs_dirent_unlink(struct fs_dirent *d, const char *name);
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
+int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 
 #endif

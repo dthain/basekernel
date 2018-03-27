@@ -22,6 +22,7 @@ struct fs_dirent_ops {
 	int (*read_block)(struct fs_dirent *d, char *buffer, uint32_t blocknum);
 	int (*write_block)(struct fs_dirent *d, char *buffer, uint32_t blocknum);
 	int (*resize)(struct fs_dirent *d, uint32_t blocks);
+	int (*compare)(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 };
 
 #endif

@@ -109,6 +109,17 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 	return 0;
 }
 
+int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
+{
+	const struct fs_dirent_ops *ops = d1->ops;
+	if (ops->compare) {
+		int ret = ops->compare(d1, d2, result);
+		return ret;
+	}
+	return -1;
+}
+
+
 struct fs_dirent *fs_dirent_namei( struct fs_dirent *d, const char *path )
 {
 	char *lpath = kmalloc(strlen(path)+1);
