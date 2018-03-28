@@ -17,7 +17,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 
 struct cdrom_volume {
-    struct device* device;
+	struct device* device;
 	int root_sector;
 	int root_length;
 	int total_sectors;
@@ -56,7 +56,7 @@ static char * cdrom_dirent_load( struct fs_dirent *d )
 	char *data = kmalloc(nsectors*ATAPI_BLOCKSIZE);
 	if(!data) return 0;
 
-    device_read(cdd->volume->device, data, nsectors, cdd->sector);
+	device_read(cdd->volume->device, data, nsectors, cdd->sector);
 	//atapi_read(cdd->volume->unit,data,nsectors,cdd->sector);
 	// XXX check result
 
@@ -78,20 +78,20 @@ static void fix_filename( char *name, int length )
 }
 
 /*
-Read an entire cdrom file into the target address.
-*/
+   Read an entire cdrom file into the target address.
+   */
 
 static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
 {
 	struct cdrom_dirent *cdd = d->private_data;
 	return device_read( cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum );
-        //atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
+	//atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
 }
 
 #if 0
 /*
-Read an entire cdrom file into the target address.
-*/
+   Read an entire cdrom file into the target address.
+   */
 
 int cdrom_dirent_readfile( struct cdrom_dirent *d, char *data, int length )
 {
@@ -125,21 +125,21 @@ static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
 	char *upper_name = strdup(name);
-  if (!upper_name) return 0;
-  strtoupper(upper_name);
+	if (!upper_name) return 0;
+	strtoupper(upper_name);
 
 	while(data_length>0 && d->descriptor_length>0 ) {
 		fix_filename(d->ident,d->ident_length);
 
 		if(!strcmp_cdrom_ident(d->ident,upper_name)) {
 			struct cdrom_dirent *r = cdrom_dirent_create(
-				cddir->volume,
-				d->first_sector_little,
-				d->length_little,
-				d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY );
+					cddir->volume,
+					d->first_sector_little,
+					d->length_little,
+					d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY );
 
 			kfree(data);
-      kfree(upper_name);
+			kfree(upper_name);
 			return cdrom_dirent_as_dirent(r);
 		}
 
@@ -180,7 +180,7 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 		} else {
 			strcpy(buffer,d->ident);
 			int len = strlen(d->ident) + 1;
-      strtolower(buffer);
+			strtolower(buffer);
 			buffer += len;
 			buffer_length -= len;
 			total += len;
@@ -195,38 +195,38 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 }
 
 int strcmp_cdrom_ident(const char * ident, const char * s) {
-    if (ident[0] == 0 && (strcmp(s, ".") == 0)) {
-        return 0;
-    }
-    if (ident[0] == 1 && (strcmp(s, "..") == 0)) {
-        return 0;
-    }
-    return strcmp(ident, s);
+	if (ident[0] == 0 && (strcmp(s, ".") == 0)) {
+		return 0;
+	}
+	if (ident[0] == 1 && (strcmp(s, "..") == 0)) {
+		return 0;
+	}
+	return strcmp(ident, s);
 }
 
 char * strdup(const char * s) {
-  char * new = kmalloc(strlen(s) + 1);
-  if (new)
-    strcpy(new, s);
-  return new;
+	char * new = kmalloc(strlen(s) + 1);
+	if (new)
+		strcpy(new, s);
+	return new;
 }
 
 void strtoupper(char * name) {
-  while (*name) {
-    if (*name >= 'a' && *name <= 'z') {
-      *name -= 'a' - 'A';
-    }
-    name++;
-  }
+	while (*name) {
+		if (*name >= 'a' && *name <= 'z') {
+			*name -= 'a' - 'A';
+		}
+		name++;
+	}
 }
 
 void strtolower(char * name) {
-  while (*name) {
-    if (*name >= 'A' && *name <= 'Z') {
-      *name += 'a' - 'A';
-    }
-    name++;
-  }
+	while (*name) {
+		if (*name >= 'A' && *name <= 'Z') {
+			*name += 'a' - 'A';
+		}
+		name++;
+	}
 }
 
 static int cdrom_dirent_close( struct fs_dirent *d )
@@ -258,12 +258,12 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 	printf("cdromfs: scanning atapi unit %d...\n",unit);
 
 	int j;
-    struct device *device = device_open("ATAPI", unit);
+	struct device *device = device_open("ATAPI", unit);
 
 	for(j=0;j<16;j++) {
 		printf("cdromfs: checking volume %d\n",j);
-       
-        device_read(device, d, 1, j+16); 
+
+		device_read(device, d, 1, j+16); 
 		//atapi_read(unit,d,1,j+16);
 		// XXX check reuslt
 
@@ -288,7 +288,7 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 		}
 	}
 
-    kfree(device);
+	kfree(device);
 	console_printf("cdromfs: no filesystem found\n");
 	return 0;		
 }

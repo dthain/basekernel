@@ -612,7 +612,7 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 
 static struct fs_volume *kevinfs_mount(uint32_t unit_no)
 {
-    struct device* device = device_open("ATA", unit_no);
+	struct device* device = device_open("ATA", unit_no);
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
 	if (!super) return 0;
 	struct kevinfs_volume *kv = kevinfs_superblock_as_kevinfs_volume(super, device);

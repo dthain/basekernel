@@ -158,7 +158,7 @@ int sys_read( int fd, void *data, int length )
 int sys_write( int fd, void *data, int length )
 {
 	struct kobject *p = current->ktable[fd];
-    return kobject_write(p, data, length);
+	return kobject_write(p, data, length);
 }
 
 int sys_lseek( int fd, int offset, int whence )

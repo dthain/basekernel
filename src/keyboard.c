@@ -31,7 +31,7 @@ struct keymap {
 };
 
 static struct keymap keymap[] = {
-	#include "keymap.us.c"
+#include "keymap.us.c"
 };
 
 static char buffer[BUFFER_SIZE];
@@ -104,27 +104,27 @@ static void keyboard_interrupt( int i, int code)
 
 int keyboard_device_read(struct device* d, void* dest, int size, int offset)
 {
-    int i;
-    for (i = 0; i < size; i++) {
-        while(buffer_read==buffer_write) {
-            process_wait(&queue);
-        }
-        ((char*)dest)[i] = buffer[buffer_read];
-        buffer_read = (buffer_read+1)%BUFFER_SIZE;
-    }
+	int i;
+	for (i = 0; i < size; i++) {
+		while(buffer_read==buffer_write) {
+			process_wait(&queue);
+		}
+		((char*)dest)[i] = buffer[buffer_read];
+		buffer_read = (buffer_read+1)%BUFFER_SIZE;
+	}
 	return size;
 }
 
 char keyboard_read()
 {
-    char toRet = 0;
-    device_read(keyboard, &toRet, 1, 0);
-    return toRet;
+	char toRet = 0;
+	device_read(keyboard, &toRet, 1, 0);
+	return toRet;
 }
 
 void keyboard_init()
 {
-    keyboard = device_open("KEYBOARD", 0);
+	keyboard = device_open("KEYBOARD", 0);
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");

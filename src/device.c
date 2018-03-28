@@ -23,17 +23,17 @@ struct console_device console = {0};
 
 int ata_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
-	return ata_read(d->unit, buffer, nblocks, offset);
+    return ata_read(d->unit, buffer, nblocks, offset);
 }
 
 int ata_device_write( struct device *d, void *buffer, int nblocks, int offset )
 {
-	return ata_write(d->unit, buffer, nblocks, offset);
+    return ata_write(d->unit, buffer, nblocks, offset);
 }
 
 int atapi_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
-	return atapi_read(d->unit, buffer, nblocks, offset);
+    return atapi_read(d->unit, buffer, nblocks, offset);
 }
 
 void device_init()
