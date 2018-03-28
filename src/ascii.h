@@ -130,4 +130,9 @@
 #define ASCII_TILDE	126
 #define ASCII_DEL	127
 
+#define KEY_UP	0xB8
+#define KEY_DOWN	0xB2
+#define KEY_LEFT	0xBB
+#define KEY_RIGHT	0xBD
+
 #endif

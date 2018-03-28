@@ -14,6 +14,7 @@ See the file LICENSE for details.
 #define KEYBOARD_PORT 0x60
 
 #define KEY_INVALID 127
+#define KEY_EXTRA   -32 /*sent before certain keys such as up, down, left, or right(*/
 
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
@@ -93,7 +94,7 @@ static void keyboard_interrupt( int i, int code)
 {
     static char mod = 0x00;
     char c = inb(KEYBOARD_PORT);
-    if (c == -32) {
+    if (c == KEY_EXTRA) {
         mod = 0x80;
         return;
     } else {
