@@ -273,8 +273,8 @@ uint32_t process_getppid() {
 
 int process_available_fd(struct process *p)
 {
-	struct fs_file **fdtable = current->fdtable;
-	for (int i = 0; i < PROCESS_MAX_FILES; i++)
+	struct kobject **fdtable = current->ktable;
+	for (int i = 0; i < PROCESS_MAX_OBJECTS; i++)
 	{
 		if (fdtable[i] == 0)
 			return i;

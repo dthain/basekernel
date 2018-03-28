@@ -15,6 +15,7 @@ See the file LICENSE for details.
 #include "graphics_lib.h"
 #include "main.h"
 #include "fs.h"
+#include "kobject.h"
 #include "clock.h"
 #include "rtc.h"
 #include "elf.h"
@@ -141,7 +142,7 @@ int sys_open( const char *path, int mode, int flags )
 		d = fs_dirent_namei(cwd, path);
 	}
 	struct fs_file *fp = fs_file_open(d, mode);
-	current->fdtable[fd] = fp;
+	current->ktable[fd] = kobject_create_file(fp);
 	return fd;
 }
 
@@ -152,14 +153,15 @@ int sys_keyboard_read_char()
 
 int sys_read( int fd, void *data, int length )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	return fs_file_read(fp, data, length);
+	struct kobject *p = current->ktable[fd];
+    return kobject_read(p, data, length);
+
 }
 
 int sys_write( int fd, void *data, int length )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	return fs_file_write(fp, data, length);
+	struct kobject *p = current->ktable[fd];
+	return kobject_write(p, data, length);
 }
 
 int sys_lseek( int fd, int offset, int whence )
@@ -169,9 +171,9 @@ int sys_lseek( int fd, int offset, int whence )
 
 int sys_close( int fd )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	fs_file_close(fp);
-	current->fdtable[fd] = 0;
+	struct kobject *p = current->ktable[fd];
+	kobject_close(p);
+	current->ktable[fd] = 0;
 	return 0;
 }
 

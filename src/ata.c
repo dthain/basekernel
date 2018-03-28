@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "clock.h"
 #include "string.h"
 #include "ata.h"
+#include "device.h"
 #include "process.h"
 #include "mutex.h"
 

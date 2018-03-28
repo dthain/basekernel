@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "ascii.h"
 #include "process.h"
 #include "kernelcore.h"
+#include "device.h"
 
 #define KEYBOARD_PORT 0x60
 
@@ -30,7 +31,7 @@ struct keymap {
 };
 
 static struct keymap keymap[] = {
-	#include "keymap.us.c"
+#include "keymap.us.c"
 };
 
 static char buffer[BUFFER_SIZE];
@@ -43,6 +44,8 @@ static int shift_mode = 0;
 static int alt_mode = 0;
 static int ctrl_mode = 0;
 static int shiftlock_mode = 0;
+
+struct device* keyboard = 0;
 
 static char keyboard_map( int code )
 {
@@ -99,19 +102,29 @@ static void keyboard_interrupt( int i, int code)
 	process_wakeup(&queue);
 }
 
+int keyboard_device_read(struct device* d, void* dest, int size, int offset)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		while(buffer_read==buffer_write) {
+			process_wait(&queue);
+		}
+		((char*)dest)[i] = buffer[buffer_read];
+		buffer_read = (buffer_read+1)%BUFFER_SIZE;
+	}
+	return size;
+}
+
 char keyboard_read()
 {
-	int result;
-	while(buffer_read==buffer_write) {
-		process_wait(&queue);
-	}
-	result = buffer[buffer_read];
-	buffer_read = (buffer_read+1)%BUFFER_SIZE;
-	return result;
+	char toRet = 0;
+	device_read(keyboard, &toRet, 1, 0);
+	return toRet;
 }
 
 void keyboard_init()
 {
+	keyboard = device_open("KEYBOARD", 0);
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");

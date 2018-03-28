@@ -7,7 +7,10 @@ See the file LICENSE for details.
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
+#include "device.h"
+
 char keyboard_read();
 void keyboard_init();
+int keyboard_device_read(struct device* d, void* dest, int size, int offset);
 
 #endif
