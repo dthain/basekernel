@@ -337,7 +337,7 @@ int kshell_launch()
 		}
         else
         {
-            if (c == (char)0xb2) //down
+            if (c == KEY_DOWN) //down
             {
                 if (y > 0) {
                     y--;
@@ -350,7 +350,7 @@ int kshell_launch()
                     x = strlen(line[y]);
                 }
             }
-            else if (c == (char)0xB8) //up
+            else if (c == KEY_UP) //up
             {
                 if (y < HISTORY-1) {
                     y++;
