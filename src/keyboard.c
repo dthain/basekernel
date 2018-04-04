@@ -15,6 +15,7 @@ See the file LICENSE for details.
 #define KEYBOARD_PORT 0x60
 
 #define KEY_INVALID 127
+#define KEY_EXTRA   -32 /*sent before certain keys such as up, down, left, or right(*/
 
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
@@ -94,7 +95,15 @@ static char keyboard_map( int code )
 
 static void keyboard_interrupt( int i, int code)
 {
-	char c = keyboard_map(inb(KEYBOARD_PORT));
+    static char mod = 0x00;
+    char c = inb(KEYBOARD_PORT);
+    if (c == KEY_EXTRA) {
+        mod = 0x80;
+        return;
+    } else {
+        c = keyboard_map(c) | mod;
+        mod = 0x00;
+    }
 	if(c==KEY_INVALID) return;
 	if((buffer_write+1) == (buffer_read%BUFFER_SIZE)) return;
 	buffer[buffer_write] = c;
