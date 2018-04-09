@@ -82,6 +82,15 @@ int ata_buffer_read(int id, int block, void *buffer) {
 }
 
 int ata_buffer_write(int id, int block, void *buffer) {
+	int ret;
+	struct ata_cache_entry cache_entry;
 	ata_cache_delete(id, block);
-	return ata_write(id, buffer, 1, block) ? 0 : -1;
+	ret = ata_write(id, buffer, 1, block) ? 0 : -1;
+	if (ret == 0) {
+		cache_entry.block_no = block;
+		cache_entry.data = memory_alloc_page(1);
+		memcpy(cache_entry.data, buffer, ATA_BLOCKSIZE);
+		ata_cache_add(id,block, &cache_entry);
+	}
+	return ret;
 }
