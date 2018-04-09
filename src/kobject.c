@@ -4,6 +4,7 @@
  * for details. 
  */
 
+#include "console.h"
 #include "kobject.h"
 #include "kmalloc.h"
 #include "fs.h"

@@ -22,6 +22,7 @@ int close( int fd );
 extern void* sbrk( int a );
 char keyboard_read_char();
 int draw_create( int wd, int x, int y, int w, int h );
+int console_open( int wd );
 int mount(uint32_t device_no, const char *fs_name, const char *ns);
 int chdir(const char *ns, const char *path);
 int mkdir(const char *path);

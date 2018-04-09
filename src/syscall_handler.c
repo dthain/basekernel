@@ -214,6 +214,20 @@ int sys_pwd(char *result)
 	return 0;
 }
 
+int sys_open_console( int wd )
+{
+	int fd = process_available_fd(current);
+    if (wd < 0 || fd < 0) {
+        return ENOENT;
+    }
+    struct console_device *d = console_create(current->ktable[wd]->data.graphics);
+    if (!d) {
+        return ENOENT;
+    }
+	current->ktable[fd] = kobject_create_device((struct device*)d);
+	return fd;
+}
+
 int sys_draw_color( int wd, int r, int g, int b ) {
     if (wd < 0) {
         return ENOENT;
@@ -337,6 +351,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
 	case SYSCALL_KEYBOARD_READ_CHAR:	return sys_keyboard_read_char();
+	case SYSCALL_OPEN_CONSOLE:	return sys_open_console(a);
 	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
 	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
 	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);

@@ -81,6 +81,10 @@ int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }
 
+int console_open( int wd ) {
+	return syscall( SYSCALL_OPEN_CONSOLE, wd, 0, 0, 0, 0 );
+}
+
 int mount(uint32_t device_no, const char *fs_name, const char *ns)
 {
 	return syscall(SYSCALL_MOUNT, device_no, (uint32_t) fs_name, (uint32_t) ns, 0, 0);
