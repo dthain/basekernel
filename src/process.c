@@ -32,7 +32,7 @@ struct mount {
 
 void process_init()
 {
-	current = process_create(0,0);
+	current = process_create(0,0,0);
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
@@ -53,12 +53,12 @@ static void process_stack_init( struct process *p )
 	p->state = PROCESS_STATE_CRADLE;
 
 	p->kstack_top = p->kstack+PAGE_SIZE-sizeof(*s);
-	p->stack_ptr = p->kstack_top;
+	p->kstack_ptr = p->kstack_top;
 
-	s = (struct x86_stack *) p->stack_ptr;
+	s = (struct x86_stack *) p->kstack_ptr;
 
-	s->regs2.ebp = (uint32_t) (p->stack_ptr + 28);
-	s->old_ebp = (uint32_t) (p->stack_ptr + 32);
+	s->regs2.ebp = (uint32_t) (p->kstack_ptr + 28);
+	s->old_ebp = (uint32_t) (p->kstack_ptr + 32);
 	s->old_addr = (unsigned) intr_return;
 	s->ds = X86_SEGMENT_USER_DATA;
 	s->cs = X86_SEGMENT_USER_CODE;
@@ -95,7 +95,7 @@ void process_inherit( struct process * p )
     p->ppid = process_getpid();
 }
 
-struct process * process_create( unsigned code_size, unsigned stack_size )
+struct process * process_create( unsigned code_size, unsigned stack_size, int pid)
 {
 	struct process *p;
 
@@ -110,11 +110,21 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 	p->entry = PROCESS_ENTRY_POINT;
     p->window_count = 0;
     p->brk = 0;
-	p->pid = process_allocate_pid();
-    if (p->pid) {
-        processes[p->pid-1] = p;
+    if (pid == 0) {
+    p->pid = process_allocate_pid();
+      if (p->pid) {
+          processes[p->pid-1] = p;
+      } else {
+          return 0;
+      }
     } else {
+      if (processes[pid - 1]) {
+        process_delete(processes[pid - 1]);
+        processes[pid - 1] = p;
+        p->pid = pid;
+      } else {
         return 0;
+      }
     }
 
 	process_stack_init(p);
@@ -154,7 +164,7 @@ static void process_switch( int newstate )
 			asm("pushl %ecx");
 			asm("pushl %ebx");
 			asm("pushl %eax");
-			asm("movl %%esp, %0" : "=r" (current->stack_ptr));
+			asm("movl %%esp, %0" : "=r" (current->kstack_ptr));
 		}
 		interrupt_stack_pointer = (void*)INTERRUPT_STACK_TOP;
 		current->state = newstate;
@@ -176,10 +186,16 @@ static void process_switch( int newstate )
 		interrupt_block();
 	}
 
+  if (current->state == PROCESS_STATE_FORK_C) {
+    current->kstack_ptr = current->kstack - (processes[current->ppid - 1]->kstack - processes[current->ppid - 1]->kstack_ptr);
+    memcpy((void *)(current->kstack), (void *)(processes[current->ppid - 1]->kstack), PAGE_SIZE);
+    processes[current->ppid - 1]->state = PROCESS_STATE_READY;
+    list_push_tail(&ready_list,&processes[current->ppid - 1]->node);
+  }
 	current->state = PROCESS_STATE_RUNNING;
 	interrupt_stack_pointer = current->kstack_top;
 	asm("movl %0, %%cr3" :: "r" (current->pagetable));
-	asm("movl %0, %%esp" :: "r" (current->stack_ptr));
+	asm("movl %0, %%esp" :: "r" (current->kstack_ptr));
 
 	asm("popl %eax");
 	asm("popl %ebx");
@@ -199,6 +215,11 @@ void process_preempt()
 	if(allow_preempt && current && ready_list.head) {
 		process_switch(PROCESS_STATE_READY);
 	}
+}
+
+void process_fork_freeze()
+{
+	process_switch(PROCESS_STATE_FORK_P);
 }
 
 void process_yield()
@@ -251,7 +272,7 @@ void process_dump( struct process *p)
 {
 	struct x86_stack *s = (struct x86_stack*)(p->kstack+PAGE_SIZE-sizeof(*s));
 	console_printf("kstack: %x\n",p->kstack);
-	console_printf("stackp: %x\n",p->stack_ptr);
+	console_printf("stackp: %x\n",p->kstack_ptr);
 	console_printf("eax: %x     cs: %x\n",s->regs1.eax,s->cs);
 	console_printf("ebx: %x     ds: %x\n",s->regs1.ebx,s->ds);
 	console_printf("ecx: %x     ss: %x\n",s->regs1.ecx,s->ss);
@@ -404,7 +425,7 @@ int process_reap( uint32_t pid ) {
 
 void process_pass_arguments(struct process* p, const char** argv, int argc) {
     /* Copy command line arguments */
-	struct x86_stack *s = (struct x86_stack *) p->stack_ptr;
+	struct x86_stack *s = (struct x86_stack *) p->kstack_ptr;
     unsigned paddr;
     pagetable_getmap(p->pagetable,PROCESS_STACK_INIT-PAGE_SIZE+0x10,&paddr);
     char* esp = (char*)paddr+PAGE_SIZE-0x10;

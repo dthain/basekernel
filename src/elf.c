@@ -81,7 +81,7 @@ static uint32_t elf_get_brk(char* image, const char* path) {
     return max_mem;
 }
 
-static struct process* elf_load_process(char* image, const char* path) {
+static struct process* elf_load_process(char* image, const char* path, int pid) {
 
     int e_entry = *(int*)(image+ELF_HEADER_ENTRY_OFFSET);
     int e_phoff = *(int*)(image+ELF_HEADER_PROGHEAD_OFFSET);
@@ -94,10 +94,10 @@ static struct process* elf_load_process(char* image, const char* path) {
     }
     /* Create a new process with enough pages for the executable and one page for the stack */
 
-    struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE);
+    struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE, pid);
 
     /* Set process entry point based off ELF data */
-    ((struct x86_stack *)p->stack_ptr)->eip = e_entry;
+    ((struct x86_stack *)p->kstack_ptr)->eip = e_entry;
     p->brk = (void *) max_mem;
 
     if (!p) {
@@ -130,13 +130,13 @@ static struct process* elf_load_process(char* image, const char* path) {
     return p;
 }
 
-struct process* elf_load(const char* path) {
+struct process* elf_load(const char* path, int pid) {
     char* image = elf_load_image(path);
     if (!image) {
         return 0;
     }
 
-    struct process* p = elf_load_process(image, path);
+    struct process* p = elf_load_process(image, path, pid);
 
     kfree(image);
     return p;
