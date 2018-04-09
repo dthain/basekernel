@@ -185,10 +185,11 @@ static void process_switch( int newstate )
 		interrupt_block();
 	}
 
-  if (current->state == PROCESS_STATE_FORK) {
+  if (current->state == PROCESS_STATE_FORK_C) {
     current->kstack_ptr = current->kstack - (processes[current->ppid - 1]->kstack - processes[current->ppid - 1]->kstack_ptr);
     memcpy((void *)(current->kstack), (void *)(processes[current->ppid - 1]->kstack), PAGE_SIZE);
-    process_dump(current);
+    processes[current->ppid - 1]->state = PROCESS_STATE_READY;
+    list_push_tail(&ready_list,&processes[current->ppid - 1]->node);
   }
 	current->state = PROCESS_STATE_RUNNING;
 	interrupt_stack_pointer = current->kstack_top;
@@ -213,6 +214,11 @@ void process_preempt()
 	if(allow_preempt && current && ready_list.head) {
 		process_switch(PROCESS_STATE_READY);
 	}
+}
+
+void process_fork_freeze()
+{
+	process_switch(PROCESS_STATE_FORK_P);
 }
 
 void process_yield()

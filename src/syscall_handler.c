@@ -83,17 +83,13 @@ void sys_exec(const char * path, const char ** argv, int argc) {
 int sys_fork()
 {
   struct process *p = process_create(0, 0, 0);
-  //memcpy((void *)(p->kstack), (void *)(current->kstack), PAGE_SIZE);
-  //p->stack_ptr = p->kstack - (current->kstack - current->stack_ptr);
-  //p->stack_ptr = ((unsigned)current->stack_ptr + (unsigned)current->kstack) - (unsigned)current->kstack;
-  p->state = PROCESS_STATE_FORK;
+  p->state = PROCESS_STATE_FORK_C;
   p->ppid = current->pid;
   pagetable_delete(p->pagetable);
   p->pagetable = pagetable_duplicate(current->pagetable);
   process_inherit(p);
-  process_dump(current);
-  process_dump(p);
   process_launch(p);
+  process_fork_freeze();
   return p->pid;
 }
 

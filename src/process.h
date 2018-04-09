@@ -18,7 +18,8 @@ See the file LICENSE for details.
 #define PROCESS_STATE_RUNNING 2
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
-#define PROCESS_STATE_FORK    5
+#define PROCESS_STATE_FORK_C  5
+#define PROCESS_STATE_FORK_P  6
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_FILES   100
 
@@ -58,6 +59,7 @@ void process_launch( struct process *p );
 void process_pass_arguments(struct process* p, const char** argv, int argc);
 void process_inherit( struct process * p );
 
+void process_fork_freeze();
 void process_yield();
 void process_preempt();
 void process_exit( int code );
