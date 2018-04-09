@@ -25,8 +25,18 @@ struct kobject *kobject_create_device(struct device *d){
     return k;
 }
 
+struct kobject *kobject_create_graphics(struct graphics *g){ 
+    struct kobject *k = kmalloc(sizeof(*k));
+    k->type = GRAPHICS;
+    k->rc = 0;
+    k->data.graphics = g;
+    return k;
+}
+
 int kobject_read(struct kobject *kobject, void *buffer, int size) {
     switch (kobject->type) {
+        case INVALID: return 0;
+        case GRAPHICS: return 0;
         case FILE:
             return fs_file_read(kobject->data.file, (char*)buffer, (uint32_t)size);
         case DEVICE:
@@ -37,6 +47,9 @@ int kobject_read(struct kobject *kobject, void *buffer, int size) {
 
 int kobject_write(struct kobject *kobject, void *buffer, int size) {
     switch (kobject->type) {
+        case INVALID: return 0;
+        case GRAPHICS:
+            return graphics_object_write((struct graphics_command*)buffer, kobject->data.graphics);
         case FILE:
             return fs_file_write(kobject->data.file, (char*)buffer, (uint32_t)size);
         case DEVICE:
@@ -49,6 +62,8 @@ int kobject_close(struct kobject *kobject) {
     int ret;
     if (--kobject->rc <= 0) {
         switch (kobject->type) {
+        case INVALID: return 0;
+        case GRAPHICS: return 0;
             case FILE:
                 ret = fs_file_close(kobject->data.file);
                 kfree(kobject);

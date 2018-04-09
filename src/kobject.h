@@ -9,21 +9,26 @@
 
 #include "fs.h"
 #include "device.h"
+#include "graphics.h"
 
 struct kobject {
     union {
         struct device *device;
         struct fs_file *file;
+        struct graphics *graphics;
     } data;
     enum {
+        INVALID=0,
         FILE,
-        DEVICE
+        DEVICE,
+        GRAPHICS
     } type;
     int rc;
 };
 
 struct kobject *kobject_create_file(struct fs_file *f);
 struct kobject *kobject_create_device(struct device *d);
+struct kobject *kobject_create_graphics(struct graphics *g);
 
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);

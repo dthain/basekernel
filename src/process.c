@@ -37,8 +37,7 @@ void process_init()
 	pagetable_load(current->pagetable);
 	pagetable_enable();
 
-    current->windows[0] = &graphics_root;
-    current->window_count = 1;
+    current->ktable[0] = kobject_create_graphics(&graphics_root);
     graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
@@ -84,12 +83,13 @@ static int process_allocate_pid() {
 
 void process_inherit( struct process * p )
 {
-    /* Copy open windows */
-    memcpy(p->windows, current->windows, sizeof(p->windows));
-    p->window_count = current->window_count;
+    /* Copy kernel objects */
+    memcpy(p->ktable, current->ktable, sizeof(current->ktable));
     int i;
-    for(i=0;i<p->window_count;i++) {
-        p->windows[i]->count++;
+    for(i=0;i<PROCESS_MAX_OBJECTS;i++) {
+        if (p->ktable[i]->type) {
+            p->ktable[i]->rc++;
+        }
     }
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
@@ -108,13 +108,16 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
-    p->window_count = 0;
     p->brk = 0;
 	p->pid = process_allocate_pid();
     if (p->pid) {
         processes[p->pid-1] = p;
     } else {
         return 0;
+    }
+    int i;
+    for (i = 0; i < 100; i++) {
+        p->ktable[i]->type = INVALID;
     }
 
 	process_stack_init(p);
@@ -125,9 +128,9 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
 void process_delete( struct process *p )
 {
     int i;
-    for (i = 0; i < p->window_count; i++) {
-        if (!(--(p->windows[i]->count))) {
-            kfree(p->windows[i]);
+    for (i = 0; i < 100; i++) {
+        if (p->ktable[i]->type) {
+            kobject_close(p->ktable[i]);
         }
     }
     pagetable_delete(p->pagetable);

@@ -35,8 +35,6 @@ struct process {
 	char *kstack;
 	char *kstack_top;
 	char *stack_ptr;
-    struct graphics* windows[PROCESS_MAX_WINDOWS];
-    int window_count;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
 	struct list mounts;
 	struct fs_dirent *cwd;
