@@ -3,6 +3,8 @@
 #include "kmalloc.h"
 #include "ata.h"
 #include "string.h"
+#include "pagetable.h"
+#include "memory.h"
 
 #define ATA_CACHE_SIZE 50
 
@@ -12,7 +14,7 @@ static struct hash_set *cache_map[4];
 struct ata_cache_entry {
 	struct list_node node;
 	uint32_t block_no;
-	unsigned char data[ATA_BLOCKSIZE];
+	unsigned char *data;
 };
 
 static int ata_cache_read(int id, int block, struct ata_cache_entry *data) {
@@ -33,6 +35,7 @@ static int ata_cache_delete (int id, int block){
 	if (!hash_set_lookup_info(cache_map[id], block, data)) {
 		return -1;
 	}
+	memory_free_page(current_cache_data->data);
 	list_remove((struct list_node*) current_cache_data);
 	if (hash_set_delete(cache_map[id], block) < 0) {
 		return -1;
@@ -70,6 +73,7 @@ int ata_buffer_read(int id, int block, void *buffer) {
 		if (!ata_read(id, buffer, 1, block)) {
 			return -1;
 		}
+		cache_entry.data = memory_alloc_page(1);
 		memcpy(cache_entry.data, buffer, ATA_BLOCKSIZE);
 		cache_entry.block_no = block;
 		ata_cache_add(id, block, &cache_entry);
