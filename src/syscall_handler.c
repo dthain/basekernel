@@ -107,7 +107,7 @@ void sys_exec(const char * path, const char ** argv, int argc) {
 int sys_fork()
 {
   struct process *p = process_create(0, 0, 0);
-  p->state = PROCESS_STATE_FORK_C;
+  p->state = PROCESS_STATE_FORK_CHILD;
   p->ppid = current->pid;
   pagetable_delete(p->pagetable);
   p->pagetable = pagetable_duplicate(current->pagetable);

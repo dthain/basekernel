@@ -186,7 +186,7 @@ static void process_switch( int newstate )
 		interrupt_block();
 	}
 
-  if (current->state == PROCESS_STATE_FORK_C) {
+  if (current->state == PROCESS_STATE_FORK_CHILD) {
     current->kstack_ptr = current->kstack - (processes[current->ppid - 1]->kstack - processes[current->ppid - 1]->kstack_ptr);
     memcpy((void *)(current->kstack), (void *)(processes[current->ppid - 1]->kstack), PAGE_SIZE);
     processes[current->ppid - 1]->state = PROCESS_STATE_READY;
@@ -219,7 +219,7 @@ void process_preempt()
 
 void process_fork_freeze()
 {
-	process_switch(PROCESS_STATE_FORK_P);
+	process_switch(PROCESS_STATE_FORK_PARENT);
 }
 
 void process_yield()
