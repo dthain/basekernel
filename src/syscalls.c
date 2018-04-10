@@ -78,7 +78,9 @@ int process_run( const char *cmd, const char** argv, int argc ) {
 }
 
 int fork() {
-	return syscall( SYSCALL_FORK, 0, 0, 0, 0, 0 );
+	int cpid = syscall( SYSCALL_FORK, 0, 0, 0, 0, 0 );
+	if (cpid == process_self()) return 0;
+	return cpid;
 }
 
 void exec(const char * path, const char ** argv, int argc) {
