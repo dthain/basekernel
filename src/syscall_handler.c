@@ -16,6 +16,7 @@ See the file LICENSE for details.
 #include "main.h"
 #include "fs.h"
 #include "kobject.h"
+#include "pagetable.h"
 #include "clock.h"
 #include "rtc.h"
 #include "elf.h"
@@ -72,7 +73,7 @@ Takes in argv and argc for the new process' main
 
 int sys_process_run( const char *path, const char** argv, int argc )
 {
-	struct process *p = elf_load(path);
+	struct process *p = elf_load(path, 0);
     
     if (!p) {
         return ENOENT;
@@ -87,6 +88,38 @@ int sys_process_run( const char *path, const char** argv, int argc )
 	process_launch(p);
 
 	return p->pid;
+}
+
+void sys_exec(const char * path, const char ** argv, int argc) {
+	struct process *p = elf_load(path, current->pid);
+
+  if (!p) {
+      return;
+  }
+
+  memcpy(p->windows, current->windows, sizeof(p->windows));
+  p->window_count = current->window_count;
+  memcpy(p->ktable, current->ktable, sizeof(p->ktable));
+  p->ppid = current->ppid;
+  p->mounts = current->mounts;
+  p->cwd = current->cwd;
+  pagetable_delete(current->pagetable);
+  process_pass_arguments(p, argv, argc);
+  current = p;
+	process_yield(); // Otherwise we will jump back into the old process
+}
+
+int sys_fork()
+{
+  struct process *p = process_create(0, 0, 0);
+  p->state = PROCESS_STATE_FORK_CHILD;
+  p->ppid = current->pid;
+  pagetable_delete(p->pagetable);
+  p->pagetable = pagetable_duplicate(current->pagetable);
+  process_inherit(p);
+  process_launch(p);
+  process_fork_freeze();
+  return p->pid;
 }
 
 uint32_t sys_gettimeofday()
@@ -351,6 +384,8 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_FORK:	return sys_fork();
+	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
