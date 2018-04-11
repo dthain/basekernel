@@ -97,9 +97,14 @@ void sys_exec(const char * path, const char ** argv, int argc) {
       return;
   }
 
-  process_inherit(p);
+  memcpy(p->windows, current->windows, sizeof(p->windows));
+  p->window_count = current->window_count;
+  memcpy(p->ktable, current->ktable, sizeof(p->ktable));
+  p->ppid = current->ppid;
+  p->mounts = current->mounts;
+  p->cwd = current->cwd;
+  pagetable_delete(current->pagetable);
   process_pass_arguments(p, argv, argc);
-	process_launch(p);
   current = p;
 	process_yield(); // Otherwise we will jump back into the old process
 }
