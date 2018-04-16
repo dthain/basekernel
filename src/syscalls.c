@@ -39,6 +39,10 @@ int close( int fd ) {
 	return syscall( SYSCALL_CLOSE, fd, 0, 0, 0, 0 );
 }
 
+extern void* sbrk( int a ) {
+	return (void*) syscall( SYSCALL_SBRK, a, 0, 0, 0, 0 );
+}
+
 int keyboard_read_char() {
 	return syscall( SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0 );
 }
@@ -71,6 +75,16 @@ int process_parent() {
 
 int process_run( const char *cmd, const char** argv, int argc ) {
 	return syscall( SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0 );
+}
+
+int fork() {
+	int cpid = syscall( SYSCALL_FORK, 0, 0, 0, 0, 0 );
+	if (cpid == process_self()) return 0;
+	return cpid;
+}
+
+void exec(const char * path, const char ** argv, int argc) {
+	syscall( SYSCALL_EXEC, (uint32_t)path, (uint32_t)argv, (uint32_t)argc, 0, 0 );
 }
 
 int process_kill( unsigned int pid ) {

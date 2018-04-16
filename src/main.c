@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "mouse.h"
 #include "clock.h"
 #include "ata.h"
+#include "device.h"
 #include "cdromfs.h"
 #include "string.h"
 #include "graphics.h"
@@ -25,6 +26,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "kevinfs/kevinfs_test.h"
 #include "kevinfs/kevinfs.h"
+#include "serial.h"
 
 struct dirent *root_directory = 0;
 struct dirent *current_directory = 0;
@@ -41,6 +43,9 @@ int kernel_main()
 	struct graphics *g = graphics_create_root();
 
 	console_init(g);
+#ifdef TEST
+	serial_init();
+#endif
 
 	console_printf("video: %d x %d\n",video_xres,video_yres,video_xbytes);
 	console_printf("kernel: %d bytes\n",kernel_size);
@@ -48,6 +53,7 @@ int kernel_main()
 	memory_init();
 	kmalloc_init((char*)KMALLOC_START,KMALLOC_LENGTH);
 	interrupt_init();
+	device_init();
 	rtc_init();
 	clock_init();
 	mouse_init();

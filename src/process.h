@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 #include "list.h"
 #include "pagetable.h"
+#include "kobject.h"
 #include "x86.h"
 #include "fs.h"
 
@@ -18,8 +19,10 @@ See the file LICENSE for details.
 #define PROCESS_STATE_RUNNING 2
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
+#define PROCESS_STATE_FORK_CHILD   5
+#define PROCESS_STATE_FORK_PARENT  6
 #define PROCESS_MAX_WINDOWS   5
-#define PROCESS_MAX_FILES   100
+#define PROCESS_MAX_OBJECTS   100
 
 
 #define PROCESS_EXIT_NORMAL   0
@@ -33,15 +36,16 @@ struct process {
 	struct pagetable *pagetable;
 	char *kstack;
 	char *kstack_top;
-	char *stack_ptr;
+	char *kstack_ptr;
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
-	struct fs_file *fdtable[PROCESS_MAX_FILES];
+	struct kobject *ktable[PROCESS_MAX_OBJECTS];
 	struct list mounts;
 	struct fs_dirent *cwd;
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
+    void* brk;
 };
 
 struct process_pointer {
@@ -51,11 +55,13 @@ struct process_pointer {
 
 void process_init();
 
-struct process * process_create( unsigned code_size, unsigned stack_size );
+struct process * process_create( unsigned code_size, unsigned stack_size, int pid);
 void process_delete( struct process *p );
 void process_launch( struct process *p );
 void process_pass_arguments(struct process* p, const char** argv, int argc);
+void process_inherit( struct process * p );
 
+void process_fork_freeze();
 void process_yield();
 void process_preempt();
 void process_exit( int code );

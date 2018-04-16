@@ -9,13 +9,17 @@ See the file LICENSE for details.
 #include "console.h"
 #include "keyboard.h"
 #include "process.h"
+#include "kmalloc.h"
 #include "cdromfs.h"
 #include "memorylayout.h"
 #include "graphics_lib.h"
 #include "main.h"
 #include "fs.h"
+#include "kobject.h"
+#include "pagetable.h"
 #include "clock.h"
 #include "rtc.h"
+#include "elf.h"
 #include "kmalloc.h"
 
 // Get rid of this once we have a proper dirlist stream
@@ -39,6 +43,26 @@ int sys_yield()
 	return 0;
 }
 
+int sys_sbrk (int a)
+{
+    unsigned int vaddr = (unsigned int) current->brk;
+    unsigned int paddr;
+    unsigned int i;
+    for (i = 0; i < (unsigned int) a; i += PAGE_SIZE){
+        if (!pagetable_getmap(current->pagetable, vaddr, &paddr))
+        {
+            pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+        }
+        vaddr += PAGE_SIZE;
+    }
+    if (!pagetable_getmap(current->pagetable, vaddr, &paddr))
+    {
+        pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+    }
+    vaddr = (unsigned int) current->brk;
+    current->brk += a;
+    return vaddr;
+}
 
 /*
 sys_process_run creates a new child process running the executable named by "path".
@@ -49,62 +73,53 @@ Takes in argv and argc for the new process' main
 
 int sys_process_run( const char *path, const char** argv, int argc )
 {
-	/* Open and find the named path, if it exists. */
-
-	if(!root_directory) return ENOENT;
-
-	struct fs_dirent *d = fs_dirent_namei(root_directory,path);
-	if(!d) {
-		return ENOENT;
-	}
-
-	int length = d->sz;
-
-	/* Create a new process with enough pages for the executable and one page for the stack */
-
-	struct process *p = process_create(length,PAGE_SIZE*2);
-	if(!p) return ENOENT;
-
-	/* Round up length of the executable to an even pages */
-
-	int i;
-	int npages = length/PAGE_SIZE + (length%PAGE_SIZE ? 1 : 0);
-
-	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
-
-	/* For each page, load one page from the file.  */
-	/* Notice that the cdrom block size (2048) is half the page size (4096) */
-
-	for(i=0;i<npages;i++) {
-		unsigned vaddr = PROCESS_ENTRY_POINT + i * PAGE_SIZE;
-		unsigned paddr;
-
-		pagetable_getmap(p->pagetable,vaddr,&paddr);
-		fs_file_read(f,(void*)paddr, PAGE_SIZE);
-	}
-
-	/* Close everything up */
-	
-	fs_dirent_close(d);
-	fs_file_close(f);
-
-    /* Copy open windows */
-    memcpy(p->windows, current->windows, sizeof(p->windows));
-    p->window_count = current->window_count;
-    for(i=0;i<p->window_count;i++) {
-        p->windows[i]->count++;
+	struct process *p = elf_load(path, 0);
+    
+    if (!p) {
+        return ENOENT;
     }
+
+    process_inherit(p);
     process_pass_arguments(p, argv, argc);
 
-  
-    /* Set the parent of the new process to the calling process */
-    p->ppid = process_getpid();
 
 	/* Put the new process into the ready list */
 
 	process_launch(p);
 
 	return p->pid;
+}
+
+void sys_exec(const char * path, const char ** argv, int argc) {
+	struct process *p = elf_load(path, current->pid);
+
+  if (!p) {
+      return;
+  }
+
+  memcpy(p->windows, current->windows, sizeof(p->windows));
+  p->window_count = current->window_count;
+  memcpy(p->ktable, current->ktable, sizeof(p->ktable));
+  p->ppid = current->ppid;
+  p->mounts = current->mounts;
+  p->cwd = current->cwd;
+  pagetable_delete(current->pagetable);
+  process_pass_arguments(p, argv, argc);
+  current = p;
+	process_yield(); // Otherwise we will jump back into the old process
+}
+
+int sys_fork()
+{
+  struct process *p = process_create(0, 0, 0);
+  p->state = PROCESS_STATE_FORK_CHILD;
+  p->ppid = current->pid;
+  pagetable_delete(p->pagetable);
+  p->pagetable = pagetable_duplicate(current->pagetable);
+  process_inherit(p);
+  process_launch(p);
+  process_fork_freeze();
+  return p->pid;
 }
 
 uint32_t sys_gettimeofday()
@@ -160,7 +175,7 @@ int sys_open( const char *path, int mode, int flags )
 		d = fs_dirent_namei(cwd, path);
 	}
 	struct fs_file *fp = fs_file_open(d, mode);
-	current->fdtable[fd] = fp;
+	current->ktable[fd] = kobject_create_file(fp);
 	return fd;
 }
 
@@ -171,14 +186,15 @@ int sys_keyboard_read_char()
 
 int sys_read( int fd, void *data, int length )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	return fs_file_read(fp, data, length);
+	struct kobject *p = current->ktable[fd];
+    return kobject_read(p, data, length);
+
 }
 
 int sys_write( int fd, void *data, int length )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	return fs_file_write(fp, data, length);
+	struct kobject *p = current->ktable[fd];
+	return kobject_write(p, data, length);
 }
 
 int sys_lseek( int fd, int offset, int whence )
@@ -188,9 +204,9 @@ int sys_lseek( int fd, int offset, int whence )
 
 int sys_close( int fd )
 {
-	struct fs_file *fp = current->fdtable[fd];
-	fs_file_close(fp);
-	current->fdtable[fd] = 0;
+	struct kobject *p = current->ktable[fd];
+	kobject_close(p);
+	current->ktable[fd] = 0;
 	return 0;
 }
 
@@ -364,9 +380,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
 	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
+	case SYSCALL_SBRK: return sys_sbrk (a);
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
+	case SYSCALL_FORK:	return sys_fork();
+	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
