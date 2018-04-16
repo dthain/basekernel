@@ -23,6 +23,7 @@ See the file LICENSE for details.
 #include "rtc.h"
 #include "elf.h"
 #include "kmalloc.h"
+#include "memory.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -137,8 +138,8 @@ int sys_copy_ns(const char *old_ns, const char * new_ns) {
   }
   for (i = 0; i < current->space_count; i++) {
     if (!strcmp(old_ns, current->spaces[i].name)) {
-      current->spaces[current->space_count].name = kmalloc(strlen(current->spaces[i].name) + 1);
-      strcpy(current->spaces[current->space_count].name, new_ns);
+      current->spaces[current->space_count].name = memory_alloc_page(0);
+      strncpy(current->spaces[current->space_count].name, new_ns, PAGE_SIZE);
       current->spaces[current->space_count].perms = current->spaces[i].perms;
       current->spaces[current->space_count].gindex = current->spaces[i].gindex;
       current->space_count++;
@@ -281,8 +282,8 @@ int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
   spaces[j].count = 1;
   used_fs_spaces++;
 
-  char * name = kmalloc(strlen(ns) + 1);
-  strcpy(name, ns);
+  char * name = memory_alloc_page(0);
+  strncpy(name, ns, PAGE_SIZE);
   current->spaces[current->space_count].name = name;
   current->spaces[current->space_count].gindex = j;
   current->spaces[current->space_count].perms = -1; //All permissions
