@@ -15,7 +15,8 @@ int main( const char *argv[], int argc )
 	char buffer[200];
 	uint32_t i = 0;
 	mount(0, "kevin", "K");
-	chdir("K","/");
+	change_ns("K");
+	chdir("/");
 	char filename[5] = "ex";
 	char id[4];
 	for (i = 0; i < 5; i++) {
@@ -24,7 +25,7 @@ int main( const char *argv[], int argc )
 		printf("writing %s\n", filename);
 		mkdir(filename);
 		readdir(".", buffer, 200);
-		chdir(0, filename);
+		chdir(filename);
 		printf("%s\n", buffer);
 	}
 	printf("final directory:\n");
