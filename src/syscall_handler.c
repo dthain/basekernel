@@ -106,6 +106,9 @@ void sys_exec(const char * path, const char ** argv, int argc) {
   p->ppid = current->ppid;
   p->mounts = current->mounts;
   p->cwd = current->cwd;
+  p->cws = current->cws;
+  memcpy(p->spaces, current->spaces, sizeof(p->spaces));
+  p->space_count = current->space_count;
   pagetable_delete(current->pagetable);
   process_pass_arguments(p, argv, argc);
   current = p;
@@ -158,7 +161,7 @@ int sys_delete_ns(const char *ns) {
       memcpy(&current->spaces[i - 1], &current->spaces[i], sizeof(struct fs_space_ref));
     } else if (!strcmp(ns, current->spaces[i].name)) {
       found = 1;
-      kfree(current->spaces[i].name);
+      memory_free_page(current->spaces[i].name);
       current->space_count--;
       int gindex = current->spaces[i].gindex;
       if(--spaces[gindex].count == 0) {
