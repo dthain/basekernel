@@ -22,19 +22,19 @@ int main( const char *argv[], int argc )
         debug("Window create failed!\n");
         exit(1);
     }
-    int cd = console_open(wd);
-    if (cd < 0) {
-        debug("Console open failed!\n");
-        exit(2);
-    }
-    printf("wd: %d\ncd: %d\n", wd, cd);
-
     draw_window(wd);
     draw_color(0, 0, 255);
     draw_clear(0, 0, WIDTH, HEIGHT);
     draw_flush();
 
-    write(cd, "hello\nworld", 12);
+    int cd = console_open(wd);
+    if (cd < 0) {
+        debug("Console open failed!\n");
+        exit(2);
+    }
+    dup(cd, KNO_STDOUT);
+
+    printf("hello world!\n");
 
 	return 0;
 }

@@ -21,6 +21,7 @@ struct device {
     int sy0;
     int sx1;
     int sy1;
+    int alloced;
 };
 
 void device_init();

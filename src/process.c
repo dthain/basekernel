@@ -93,7 +93,7 @@ void process_inherit( struct process * p )
     memcpy(p->ktable, current->ktable, sizeof(current->ktable));
     int i;
     for(i=0;i<PROCESS_MAX_OBJECTS;i++) {
-        if (p->ktable[i]->type) {
+        if (p->ktable[i]) {
             p->ktable[i]->rc++;
         }
     }
@@ -145,7 +145,7 @@ void process_delete( struct process *p )
 {
     int i;
     for (i = 0; i < 100; i++) {
-        if (p->ktable[i]->type) {
+        if (p->ktable[i]) {
             kobject_close(p->ktable[i]);
         }
     }

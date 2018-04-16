@@ -13,7 +13,7 @@
 struct kobject *kobject_create_file(struct fs_file *f) {
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_FILE;
-    k->rc = 0;
+    k->rc = 1;
     k->data.file = f;
     return k;
 }
@@ -21,7 +21,7 @@ struct kobject *kobject_create_file(struct fs_file *f) {
 struct kobject *kobject_create_device(struct device *d){ 
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_DEVICE;
-    k->rc = 0;
+    k->rc = 1;
     k->data.device = d;
     return k;
 }
@@ -29,7 +29,7 @@ struct kobject *kobject_create_device(struct device *d){
 struct kobject *kobject_create_graphics(struct graphics *g){ 
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_GRAPHICS;
-    k->rc = 0;
+    k->rc = 1;
     k->data.graphics = g;
     return k;
 }
@@ -63,15 +63,13 @@ int kobject_close(struct kobject *kobject) {
     int ret;
     if (--kobject->rc <= 0) {
         switch (kobject->type) {
-        case KOBJECT_INVALID: return 0;
-        case KOBJECT_GRAPHICS: return 0;
-        case KOBJECT_FILE:
-            ret = fs_file_close(kobject->data.file);
-            kfree(kobject);
-            return ret;
-        case KOBJECT_DEVICE:
-            kfree(kobject);
-            return 0;
+            case KOBJECT_INVALID: return 0;
+            case KOBJECT_GRAPHICS: return 0;
+            case KOBJECT_FILE:
+                ret = fs_file_close(kobject->data.file);
+                kfree(kobject);
+                return ret;
+            case KOBJECT_DEVICE: return 0;
         }
     }
     return 0;

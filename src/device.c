@@ -7,7 +7,6 @@
 
 #include "kerneltypes.h"
 #include "device.h"
-#include "kmalloc.h"
 #include "string.h"
 #include "ata.h"
 #include "cdromfs.h"
