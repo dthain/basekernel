@@ -12,6 +12,7 @@
 #include "ata.h"
 #include "cdromfs.h"
 #include "keyboard.h"
+#include "ata_buffer.h"
 
 #define ATA_DEVICE_COUNT   4
 #define ATAPI_DEVICE_COUNT 4
@@ -43,15 +44,18 @@ void device_init()
         atapi_devices[i].read = atapi_device_read;
         atapi_devices[i].unit = i;
         atapi_devices[i].block_size = CDROM_BLOCK_SIZE;
+	atapi_devices[i].buffer = 0;
     }
     for (i = 0; i < ATA_DEVICE_COUNT; i++)  {
         ata_devices[i].read = ata_device_read;
         ata_devices[i].write = ata_device_write;
         ata_devices[i].unit = i;
-        ata_devices[i].block_size = CDROM_BLOCK_SIZE;
+        ata_devices[i].block_size = ATA_BLOCKSIZE;
+	ata_devices[i].buffer = ata_cache_init(ATA_BLOCKSIZE);
     }
     keyboard.block_size = 1;
     keyboard.read = keyboard_device_read;
+    keyboard.buffer = 0;
 }
 
 struct device *device_open(char *name, int unit)
@@ -88,7 +92,15 @@ struct device *device_open(char *name, int unit)
 int device_read(struct device *d, void *buffer, int size, int offset)
 {
     if (d->read) {
-        return d->read(d, buffer, size, offset);
+        if (!d->buffer || ata_cache_read(d->buffer, offset, buffer) < 0) {
+		int ret = d->read(d, buffer, size, offset);
+		if (ret == 1 && d->buffer)
+			ata_cache_add(d->buffer, offset, buffer);
+		return ret;
+	}
+	else {
+		return 1;
+	}
     } else {
         return -1;
     }
@@ -97,7 +109,14 @@ int device_read(struct device *d, void *buffer, int size, int offset)
 int device_write(struct device *d, void *buffer, int size, int offset)
 {
     if (d->write) {
-        return d->write(d, buffer, size, offset);
+	if (d->buffer) {
+		ata_cache_delete(d->buffer, offset);
+	}
+        int ret = d->write(d, buffer, size, offset);
+	if (ret == 1 && d->buffer) {
+		ata_cache_add(d->buffer, offset, buffer);
+	}
+	return ret;
     } else {
         return -1;
     }

@@ -9,6 +9,8 @@
 
 #include "kerneltypes.h"
 #include "graphics.h"
+#include "device.h"
+#include "ata_buffer.h"
 
 struct device {
     int (*read) (struct device *d, void *buffer, int size, int offset);
@@ -21,6 +23,8 @@ struct device {
     int sy0;
     int sx1;
     int sy1;
+
+    struct ata_buffer *buffer;
 };
 
 struct console_device{
