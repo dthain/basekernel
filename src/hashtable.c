@@ -90,6 +90,7 @@ struct hash_set *hash_set_init(uint32_t buckets)
 
 	set->total_buckets = buckets;
 	set->head = set_nodes;
+	set->num_entries = 0;
 
 	if (!set || !set_nodes) {
 		hash_set_dealloc(set);
