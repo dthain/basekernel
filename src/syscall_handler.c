@@ -306,11 +306,15 @@ int sys_chdir(const char *path)
 }
 
 int sys_mkdir(const char *name){
+	if (depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	return fs_dirent_mkdir(cwd, name);
 }
 
 int sys_readdir(const char *name, char *buffer, int len){
+	if (depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, name);
 	if (!d) return -1;
@@ -319,6 +323,8 @@ int sys_readdir(const char *name, char *buffer, int len){
 
 int sys_rmdir(const char *name){
 	struct fs_dirent *cwd = current->cwd;
+	if (depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *d = fs_dirent_namei(cwd, name);
 	if (!d) return -1;
 	return fs_dirent_rmdir(cwd, name);
