@@ -94,7 +94,11 @@ int sys_process_run( const char *path, const char** argv, int argc )
 }
 
 void sys_exec(const char * path, const char ** argv, int argc) {
-	struct process *p = elf_load(path, current->pid);
+  if (!spaces[current->spaces[current->cws].gindex].present ||
+      depth_check(path, current->cwd_depth) == -1) {
+    return;
+  }
+  struct process *p = elf_load(path, current->pid);
 
   if (!p) {
       return;
@@ -239,6 +243,9 @@ int sys_change_ns(const char *ns) {
   int i;
   for (i = 0; i < current->space_count; i++) {
     if (!strcmp(ns, current->spaces[i].name)) {
+      if (!spaces[current->spaces[i].gindex].present) {
+        return EACCES;
+      }
       current->cws = i;
       //Reset to root
       current->cwd = spaces[current->spaces[current->cws].gindex].d;
@@ -306,6 +313,9 @@ int sys_chdir(const char *path)
 }
 
 int sys_mkdir(const char *name){
+  if (!spaces[current->spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
 	if (depth_check(name, current->cwd_depth) == -1)
 		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
@@ -313,6 +323,9 @@ int sys_mkdir(const char *name){
 }
 
 int sys_readdir(const char *name, char *buffer, int len){
+  if (!spaces[current->spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
 	if (depth_check(name, current->cwd_depth) == -1)
 		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
@@ -322,12 +335,25 @@ int sys_readdir(const char *name, char *buffer, int len){
 }
 
 int sys_rmdir(const char *name){
+  if (!spaces[current->spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
 	struct fs_dirent *cwd = current->cwd;
 	if (depth_check(name, current->cwd_depth) == -1)
 		return EINVAL;
 	struct fs_dirent *d = fs_dirent_namei(cwd, name);
 	if (!d) return -1;
-	return fs_dirent_rmdir(cwd, name);
+	int ret = fs_dirent_rmdir(cwd, name);
+  if (!ret) {
+    for (int i=0;i<used_fs_spaces;i++) {
+      int same;
+      fs_dirent_compare(spaces[i].d, d, &same);
+      if (same) {
+        spaces[i].present = 0;
+      }
+    }
+  }
+  return ret;
 }
 
 int sys_open( const char *path, int mode, int flags )
@@ -336,6 +362,9 @@ int sys_open( const char *path, int mode, int flags )
 	int ret = 0;
 	if (fd < 0)
 		return -1;
+  if (!spaces[current->spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
   if (depth_check(path, current->cwd_depth) == -1)
     return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
@@ -382,6 +411,9 @@ int sys_close( int fd )
 
 int sys_pwd(char *result)
 {
+	if (!spaces[current->spaces[current->cws].gindex].present) {
+		return EACCES;
+	}
 	struct fs_dirent *d = current->cwd;
 	char dir_list[LSDIR_TEMP_BUFFER_SIZE];
 	memset(dir_list, 0, LSDIR_TEMP_BUFFER_SIZE);
