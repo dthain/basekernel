@@ -1,6 +1,6 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs/kevinfs.o hashtable.o kevinfs/kevinfs_test.o kevinfs/kevinfs_ata.o serial.o elf.o device.o kobject.o
 
-USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o printer.o
+USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o frktst.o exctst.o printer.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
 CC=i686-elf-gcc
@@ -10,7 +10,7 @@ OBJCOPY=i686-elf-objcopy
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe copy.exe pwd.exe printer.exe
+basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe copy.exe pwd.exe frktst.exe exctst.exe printer.exe
 	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
@@ -24,6 +24,9 @@ kernel: kernel.elf
 
 bootblock: bootblock.elf
 	${OBJCOPY} -O binary $< $@
+
+%.exe: %.elf
+	cp $< $@
 
 kernel.elf: ${KERNEL_OBJECTS}
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 ${KERNEL_OBJECTS} -o $@
@@ -43,7 +46,13 @@ long.exe: long.o $(USER_OBJECTS)
 printer.exe: printer.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
-saver.exe: saver.o $(USER_OBJECTS)
+frktst.elf: frktst.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+exctst.elf: exctst.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
+
+saver.elf: saver.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o -o $@
 
 ball.exe: ball.o $(USER_OBJECTS)
