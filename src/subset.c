@@ -4,6 +4,10 @@
 
 int depth_check(const char *path, int cdepth) {
   //Returns new depth, or -1 on depth going negative.
+  if (path[0] == '/') {
+    cdepth = 0;
+    path += 1;
+  }
   char *lpath = kmalloc(strlen(path)+1);
   strcpy(lpath, path);
   char *part = strtok(lpath,"/");
