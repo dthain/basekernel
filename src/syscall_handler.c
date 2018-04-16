@@ -184,6 +184,28 @@ int sys_keyboard_read_char()
 	return keyboard_read();
 }
 
+int sys_dup( int fd1, int fd2 )
+{
+    if ( fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS ) {
+        return ENOENT;
+    }
+    if ( fd2 > 0) {
+        if (!current->ktable[fd2]) {
+            return ENOENT;
+        } else {
+            kobject_close(current->ktable[fd2]);
+            current->ktable[fd2] = current->ktable[fd1];
+        }
+    } else {
+        if (current->ktable[fd2]) {
+            return ENOENT;
+        } else {
+            kobject_close(current->ktable[fd2]);
+            current->ktable[fd2] = current->ktable[fd1];
+        }
+    }
+}
+
 int sys_read( int fd, void *data, int length )
 {
 	struct kobject *p = current->ktable[fd];
@@ -363,6 +385,7 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
+	case SYSCALL_DUP:	return sys_dup(a,b);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);

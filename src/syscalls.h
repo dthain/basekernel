@@ -17,6 +17,7 @@ int process_run( const char *cmd, const char** argv, int argc );
 int fork();
 void exec( const char *path, const char ** argv, int argc);
 int open( const char *path, int mode, int flags );
+int dup( int fd1, int fd2 );
 int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
