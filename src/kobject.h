@@ -18,10 +18,10 @@ struct kobject {
         struct graphics *graphics;
     } data;
     enum {
-        INVALID=0,
-        FILE,
-        DEVICE,
-        GRAPHICS
+        KOBJECT_INVALID=0,
+        KOBJECT_FILE,
+        KOBJECT_DEVICE,
+        KOBJECT_GRAPHICS
     } type;
     int rc;
 };

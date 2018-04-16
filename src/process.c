@@ -117,7 +117,7 @@ struct process * process_create( unsigned code_size, unsigned stack_size )
     }
     int i;
     for (i = 0; i < 100; i++) {
-        p->ktable[i]->type = INVALID;
+        p->ktable[i] = 0;
     }
 
 	process_stack_init(p);

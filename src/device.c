@@ -19,7 +19,6 @@
 static struct device ata_devices[ATA_DEVICE_COUNT] = {0};
 static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {0};
 static struct device keyboard = {0};
-struct console_device console = {0};
 
 int ata_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
@@ -71,12 +70,6 @@ struct device *device_open(char *name, int unit)
     } else if (!strcmp("KEYBOARD", name)) {
         if (unit == 0) {
             return &keyboard;
-        } else {
-            return 0;
-        }
-    } else if (!strcmp("CONSOLE", name)) {
-        if (unit == 0) {
-            return (struct device*)&console;
         } else {
             return 0;
         }

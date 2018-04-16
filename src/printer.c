@@ -35,7 +35,6 @@ int main( const char *argv[], int argc )
     draw_flush();
 
     write(cd, "hello\nworld", 12);
-	exit(0);
 
 	return 0;
 }
