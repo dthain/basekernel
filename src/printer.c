@@ -17,7 +17,7 @@ A fun graphics demo that features a line segment bouncing around the screen.
 
 int main( const char *argv[], int argc )
 {
-    int wd = draw_create(0, 600, 300, WIDTH, HEIGHT);
+    int wd = draw_create(KNO_STDWIN, 600, 300, WIDTH, HEIGHT);
     if (wd < 0) {
         debug("Window create failed!\n");
         exit(1);

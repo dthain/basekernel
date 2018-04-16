@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "fs.h"
 #include "console.h"
+#include "kobject.h"
 #include "memory.h"
 #include "string.h"
 #include "list.h"
@@ -17,6 +18,7 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 #include "kernelcore.h"
 #include "main.h"
+#include "keyboard.h"
 #include "clock.h"
 
 struct process *current=0;
@@ -37,7 +39,11 @@ void process_init()
 	pagetable_load(current->pagetable);
 	pagetable_enable();
 
-    current->ktable[0] = kobject_create_graphics(&graphics_root);
+    //set up initial kobject descriptors
+    current->ktable[0] = kobject_create_device(keyboard_get());
+    current->ktable[1] = kobject_create_device(console_get());
+    current->ktable[2] = current->ktable[1];
+    current->ktable[3] = kobject_create_graphics(&graphics_root);
     graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;

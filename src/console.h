@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "graphics.h"
 #include "device.h"
 
+struct device * console_get();
 struct device * console_init( struct graphics *g );
 struct device * console_create( struct graphics *g );
 void console_putchar( char c );

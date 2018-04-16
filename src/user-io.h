@@ -7,6 +7,11 @@ See the file LICENSE for details.
 #ifndef USERIO_H
 #define USERIO_H
 
+#define KNO_STDIN  0
+#define KNO_STDOUT 1
+#define KNO_STDERR 2
+#define KNO_STDWIN 3
+
 void printf_putchar( char c );
 void printf_putstring( char *s );
 void flush();

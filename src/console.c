@@ -122,6 +122,11 @@ int console_write( int unit, const void *buffer, int length, int offset )
 	return 1;
 }
 
+struct device * console_get()
+{
+    return (struct device*)&console;
+}
+
 struct device * console_init( struct graphics *g )
 {
 	console.gx = g;

@@ -18,7 +18,6 @@
 
 static struct device ata_devices[ATA_DEVICE_COUNT] = {0};
 static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {0};
-static struct device keyboard = {0};
 
 int ata_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
@@ -49,8 +48,6 @@ void device_init()
         ata_devices[i].unit = i;
         ata_devices[i].block_size = CDROM_BLOCK_SIZE;
     }
-    keyboard.block_size = 1;
-    keyboard.read = keyboard_device_read;
 }
 
 struct device *device_open(char *name, int unit)
@@ -64,12 +61,6 @@ struct device *device_open(char *name, int unit)
     } else if (!strcmp("ATAPI", name)) {
         if (unit >= 0 && unit < ATAPI_DEVICE_COUNT) {
             return &atapi_devices[unit];
-        } else {
-            return 0;
-        }
-    } else if (!strcmp("KEYBOARD", name)) {
-        if (unit == 0) {
-            return &keyboard;
         } else {
             return 0;
         }

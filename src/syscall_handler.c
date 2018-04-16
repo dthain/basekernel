@@ -220,11 +220,11 @@ int sys_open_console( int wd )
     if (wd < 0 || fd < 0) {
         return ENOENT;
     }
-    struct console_device *d = console_create(current->ktable[wd]->data.graphics);
+    struct device *d = console_create(current->ktable[wd]->data.graphics);
     if (!d) {
         return ENOENT;
     }
-	current->ktable[fd] = kobject_create_device((struct device*)d);
+	current->ktable[fd] = kobject_create_device(d);
 	return fd;
 }
 
@@ -286,7 +286,8 @@ int sys_draw_string( int wd, int x, int y, char *s ) {
 
 int sys_draw_create( int wd, int x, int y, int w, int h ) {
 	int fd = process_available_fd(current);
-    if (fd == -1 || wd < 0 || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
+    if (fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS ||
+        current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
         return ENOENT;
     }
 
