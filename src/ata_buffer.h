@@ -1,4 +1,10 @@
 #include "kerneltypes.h"
+#include "device.h"
 
-int ata_buffer_read(uint32_t device_no, uint32_t block_no, void *buffer);
-int ata_buffer_write(uint32_t device_no, uint32_t block_no, void *buffer);
+struct ata_buffer;
+
+int ata_cache_read(struct ata_buffer *buf, int block, void *data);
+int ata_cache_delete (struct ata_buffer *buf, int block);
+int ata_cache_drop_lru(struct ata_buffer *buf);
+int ata_cache_add(struct ata_buffer *buf, int block, void *data);
+struct ata_buffer *ata_cache_init(int block_size);

@@ -5,11 +5,9 @@
 #include "string.h"
 #include "pagetable.h"
 #include "memory.h"
+#include "device.h"
 
-#define ATA_CACHE_SIZE 50
-
-static struct list caches[4];
-static struct hash_set *cache_map[4];
+#define CACHE_SIZE 51
 
 struct ata_cache_entry {
 	struct list_node node;
@@ -17,80 +15,65 @@ struct ata_cache_entry {
 	unsigned char *data;
 };
 
-static int ata_cache_read(int id, int block, struct ata_cache_entry *data) {
+struct ata_buffer {
+	struct list cache;
+	struct hash_set *cache_map;
+	int block_size;
+};
+
+struct ata_buffer *ata_cache_init(int block_size) {
+	struct ata_buffer *ret = kmalloc(sizeof(struct ata_buffer));
+	ret->block_size = block_size;
+	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
+	return ret;
+}
+
+int ata_cache_read(struct ata_buffer *buf, int block, void *data) {
 	void *read;
 	struct ata_cache_entry *cache_entry = 0;
-	int exists = hash_set_lookup_info(cache_map[id], block, &read);
+	int exists = hash_set_lookup_info(buf->cache_map, block, &read);
 	if (exists) {
 		cache_entry = read;
-		memcpy(data, cache_entry, sizeof(struct ata_cache_entry));
+		memcpy(data, cache_entry->data, buf->block_size);
 		return 0;
 	}
 	return -1;
 }
 
-static int ata_cache_delete (int id, int block){
+int ata_cache_delete (struct ata_buffer *buf, int block){
 	void **data = 0;
 	struct ata_cache_entry *current_cache_data = 0;
-	if (!hash_set_lookup_info(cache_map[id], block, data)) {
+	if (!hash_set_lookup_info(buf->cache_map, block, data)) {
 		return -1;
 	}
+	current_cache_data = *data;
 	memory_free_page(current_cache_data->data);
 	list_remove((struct list_node*) current_cache_data);
-	if (hash_set_delete(cache_map[id], block) < 0) {
+	if (hash_set_delete(buf->cache_map, block) < 0) {
 		return -1;
 	}
 	return 0;
 }
 
-static int ata_cache_drop_lru(int id) {
-	struct ata_cache_entry *current_cache_data = (struct ata_cache_entry *) list_pop_tail(&caches[id]);
-	hash_set_delete(cache_map[id], current_cache_data->block_no);
+int ata_cache_drop_lru(struct ata_buffer *buf) {
+	struct ata_cache_entry *current_cache_data = (struct ata_cache_entry *) list_pop_tail(&buf->cache);
+	hash_set_delete(buf->cache_map, current_cache_data->block_no);
 	return 0;
 }
 
-static int ata_cache_add(int id, int block, struct ata_cache_entry *data) {
+int ata_cache_add(struct ata_buffer *buf, int block, void *data) {
 	struct ata_cache_entry *write = 0;
-	if (cache_map[id]->num_entries == ATA_CACHE_SIZE) ata_cache_drop_lru(id);
-	int exists = hash_set_lookup(cache_map[id], block);
-	if (exists) ata_cache_delete(id, block);
+	if (buf->cache_map->num_entries == CACHE_SIZE) ata_cache_drop_lru(buf);
+	int exists = hash_set_lookup(buf->cache_map, block);
+	if (exists) ata_cache_delete(buf, block);
 	write = kmalloc(sizeof(struct ata_cache_entry));
-	memcpy(write, data, sizeof(struct ata_cache_entry));
-	if (hash_set_add(cache_map[id], block, write) < 0) {
+	write->block_no = block;
+	write->data = memory_alloc_page(1);
+	memcpy(write->data, data, buf->block_size);
+	if (hash_set_add(buf->cache_map, block, write) < 0) {
 		kfree(write);
 		return -1;
 	}
-	list_push_head(&caches[id], (struct list_node *) write);
+	list_push_head(&buf->cache, (struct list_node *) write);
 	return 0;
-}
-
-int ata_buffer_read(int id, int block, void *buffer) {
-	struct ata_cache_entry cache_entry;
-	if (ata_cache_read(id, block, &cache_entry) == 0) {
-		memcpy(buffer, cache_entry.data, ATA_BLOCKSIZE);
-	}
-	else { 
-		if (!ata_read(id, buffer, 1, block)) {
-			return -1;
-		}
-		cache_entry.data = memory_alloc_page(1);
-		memcpy(cache_entry.data, buffer, ATA_BLOCKSIZE);
-		cache_entry.block_no = block;
-		ata_cache_add(id, block, &cache_entry);
-	}
-	return 0;
-}
-
-int ata_buffer_write(int id, int block, void *buffer) {
-	int ret;
-	struct ata_cache_entry cache_entry;
-	ata_cache_delete(id, block);
-	ret = ata_write(id, buffer, 1, block) ? 0 : -1;
-	if (ret == 0) {
-		cache_entry.block_no = block;
-		cache_entry.data = memory_alloc_page(1);
-		memcpy(cache_entry.data, buffer, ATA_BLOCKSIZE);
-		ata_cache_add(id,block, &cache_entry);
-	}
-	return ret;
 }
