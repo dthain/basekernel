@@ -3,7 +3,7 @@
 
 #include "fs.h"
 
-#define MAX_FS_SPACES 1048
+#define MAX_FS_SPACES 512
 
 #define NS_READ 1
 #define NS_WRITE 2
