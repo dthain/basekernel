@@ -15,20 +15,20 @@ struct ata_cache_entry {
 	unsigned char *data;
 };
 
-struct ata_buffer {
+struct buffer {
 	struct list cache;
 	struct hash_set *cache_map;
 	int block_size;
 };
 
-struct ata_buffer *ata_cache_init(int block_size) {
-	struct ata_buffer *ret = kmalloc(sizeof(struct ata_buffer));
+struct buffer *ata_cache_init(int block_size) {
+	struct buffer *ret = kmalloc(sizeof(struct ata_buffer));
 	ret->block_size = block_size;
 	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
 	return ret;
 }
 
-int ata_cache_read(struct ata_buffer *buf, int block, void *data) {
+int ata_cache_read(struct buffer *buf, int block, void *data) {
 	void *read;
 	struct ata_cache_entry *cache_entry = 0;
 	int exists = hash_set_lookup_info(buf->cache_map, block, &read);
@@ -40,7 +40,7 @@ int ata_cache_read(struct ata_buffer *buf, int block, void *data) {
 	return -1;
 }
 
-int ata_cache_delete (struct ata_buffer *buf, int block){
+int ata_cache_delete (struct buffer *buf, int block){
 	void **data = 0;
 	struct ata_cache_entry *current_cache_data = 0;
 	if (!hash_set_lookup_info(buf->cache_map, block, data)) {
@@ -55,13 +55,13 @@ int ata_cache_delete (struct ata_buffer *buf, int block){
 	return 0;
 }
 
-int ata_cache_drop_lru(struct ata_buffer *buf) {
+int ata_cache_drop_lru(struct buffer *buf) {
 	struct ata_cache_entry *current_cache_data = (struct ata_cache_entry *) list_pop_tail(&buf->cache);
 	hash_set_delete(buf->cache_map, current_cache_data->block_no);
 	return 0;
 }
 
-int ata_cache_add(struct ata_buffer *buf, int block, void *data) {
+int ata_cache_add(struct buffer *buf, int block, void *data) {
 	struct ata_cache_entry *write = 0;
 	if (buf->cache_map->num_entries == CACHE_SIZE) ata_cache_drop_lru(buf);
 	int exists = hash_set_lookup(buf->cache_map, block);

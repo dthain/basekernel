@@ -12,7 +12,7 @@
 #include "ata.h"
 #include "cdromfs.h"
 #include "keyboard.h"
-#include "ata_buffer.h"
+#include "buffer.h"
 
 #define ATA_DEVICE_COUNT   4
 #define ATAPI_DEVICE_COUNT 4

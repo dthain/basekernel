@@ -1,12 +1,12 @@
-KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs/kevinfs.o hashtable.o kevinfs/kevinfs_test.o kevinfs/kevinfs_ata.o serial.o elf.o device.o kobject.o ata_buffer.o
+KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs/kevinfs.o hashtable.o kevinfs/kevinfs_test.o kevinfs/kevinfs_ata.o serial.o elf.o device.o kobject.o buffer.o
 
 USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o frktst.o exctst.o
 
-KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie
+KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie -g
 CC=i386-elf-gcc
 LD=i386-elf-ld
 ISOGEN=genisoimage
-OBJCOPY=i686-elf-objcopy
+OBJCOPY=i386-elf-objcopy
 
 all: basekernel.iso
 
