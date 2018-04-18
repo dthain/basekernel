@@ -117,6 +117,7 @@ void console_init( struct graphics *g )
 {
 	console.gx = g;
 	console.device.write = console_device_write;
+	console.device.buffer = 0;
 	console_reset();
 	console_putstring("\nconsole: initialized\n");
 }

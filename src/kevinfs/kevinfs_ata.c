@@ -3,9 +3,9 @@
 #include "../device.h"
 #include "../kmalloc.h"
 
-#include "../ata.h"
 #include "../hashtable.h"
 #include "../string.h"
+#include "../ata.h"
 #define RESERVED_BIT_TABLE_LEN 1031
 #define CONTAINERS(total, container_size) \
 	(total / container_size + (total % container_size == 0 ? 0 : 1))

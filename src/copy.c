@@ -18,8 +18,8 @@ int main( const char *argv[], int argc )
 {
 	int n;
 	char buffer[1000];
-	mount(2, "cdrom", "CD");
 	mount(0, "kevin", "K");
+	mount(2, "cdrom", "CD");
 	chdir("CD","/");
 	int fd1 = open("TEST.EXE", 1, 0);
 	printf("got fd %d for cdrom\n", fd1);

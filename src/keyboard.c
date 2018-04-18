@@ -36,8 +36,8 @@ static struct keymap keymap[] = {
 };
 
 static char buffer[BUFFER_SIZE];
-static int buffer_read = 0;
-static int buffer_write = 0;
+static int keyboard_buffer_read = 0;
+static int keyboard_buffer_write = 0;
 
 static struct list queue = {0,0};
 
@@ -105,9 +105,9 @@ static void keyboard_interrupt( int i, int code)
         mod = 0x00;
     }
 	if(c==KEY_INVALID) return;
-	if((buffer_write+1) == (buffer_read%BUFFER_SIZE)) return;
-	buffer[buffer_write] = c;
-	buffer_write = (buffer_write+1)%BUFFER_SIZE;
+	if((keyboard_buffer_write+1) == (keyboard_buffer_read%BUFFER_SIZE)) return;
+	buffer[keyboard_buffer_write] = c;
+	keyboard_buffer_write = (keyboard_buffer_write+1)%BUFFER_SIZE;
 	process_wakeup(&queue);
 }
 
@@ -115,11 +115,11 @@ int keyboard_device_read(struct device* d, void* dest, int size, int offset)
 {
 	int i;
 	for (i = 0; i < size; i++) {
-		while(buffer_read==buffer_write) {
+		while(keyboard_buffer_read==keyboard_buffer_write) {
 			process_wait(&queue);
 		}
-		((char*)dest)[i] = buffer[buffer_read];
-		buffer_read = (buffer_read+1)%BUFFER_SIZE;
+		((char*)dest)[i] = buffer[keyboard_buffer_read];
+		keyboard_buffer_read = (keyboard_buffer_read+1)%BUFFER_SIZE;
 	}
 	return size;
 }
