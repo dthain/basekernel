@@ -3,10 +3,10 @@ KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o
 USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o frktst.o exctst.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie -g
-CC=i386-elf-gcc
-LD=i386-elf-ld
+CC=i686-elf-gcc
+LD=i686-elf-ld
 ISOGEN=genisoimage
-OBJCOPY=i386-elf-objcopy
+OBJCOPY=i686-elf-objcopy
 
 all: basekernel.iso
 
