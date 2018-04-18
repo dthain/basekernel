@@ -22,7 +22,7 @@ struct buffer {
 };
 
 struct buffer *buffer_init(int block_size) {
-	struct buffer *ret = kmalloc(sizeof(struct ata_buffer));
+	struct buffer *ret = kmalloc(sizeof(struct buffer));
 	ret->block_size = block_size;
 	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
 	return ret;
