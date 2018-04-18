@@ -19,7 +19,7 @@ int main( const char *argv[], int argc )
 	printf("mounting\n");
 	int res = mount(0, "kevin", "K");
 	printf("mounted successfully? %d\n", res);
-	change_ns("K");
+	ns_change("K");
 	chdir("/");
 	printf("got root\n");
 	int fd = open("kevin", 2, 0);

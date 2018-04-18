@@ -15,7 +15,7 @@ int main( const char *argv[], int argc )
 	char buffer[200];
 	uint32_t i = 0;
 	mount(0, "kevin", "K");
-	change_ns("K");
+	ns_change("K");
 	chdir("/");
 	char filename[5] = "ex";
 	char id[4];

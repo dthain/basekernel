@@ -132,7 +132,7 @@ int sys_fork()
   return p->pid;
 }
 
-int sys_copy_ns(const char *old_ns, const char * new_ns) {
+int sys_ns_copy(const char *old_ns, const char * new_ns) {
   int i;
   if (current->fs_space_count >= PROCESS_MAX_FS_SPACES) {
     return EINVAL;
@@ -156,7 +156,7 @@ int sys_copy_ns(const char *old_ns, const char * new_ns) {
   return EINVAL;
 }
 
-int sys_delete_ns(const char *ns) {
+int sys_ns_delete(const char *ns) {
   int i;
   bool found = 0;
   int old_count = current->fs_space_count;
@@ -181,7 +181,7 @@ int sys_delete_ns(const char *ns) {
   return EINVAL;
 }
 
-int sys_get_ns_perms(const char *ns) {
+int sys_ns_get_perms(const char *ns) {
   int i;
   for (i = 0; i < current->fs_space_count; i++) {
     if (!strcmp(ns, current->fs_spaces[i].name)) {
@@ -191,7 +191,7 @@ int sys_get_ns_perms(const char *ns) {
   return EINVAL;
 }
 
-int sys_remove_ns_perms(const char *ns, int mask) {
+int sys_ns_remove_perms(const char *ns, int mask) {
   int i;
   for (i = 0; i < current->fs_space_count; i++) {
     if (!strcmp(ns, current->fs_spaces[i].name)) {
@@ -202,7 +202,7 @@ int sys_remove_ns_perms(const char *ns, int mask) {
   return EINVAL;
 }
 
-int sys_lower_ns_root(const char *ns, const char * path) {
+int sys_ns_lower_root(const char *ns, const char * path) {
   struct fs_dirent *d;
   struct fs_dirent *new;
   int i;
@@ -239,7 +239,7 @@ int sys_lower_ns_root(const char *ns, const char * path) {
   return EINVAL;
 }
 
-int sys_change_ns(const char *ns) {
+int sys_ns_change(const char *ns) {
   int i;
   for (i = 0; i < current->fs_space_count; i++) {
     if (!strcmp(ns, current->fs_spaces[i].name)) {
@@ -303,9 +303,6 @@ int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
 
 int sys_chdir(const char *path)
 {
-  if (!current->cws) {
-    return EINVAL;
-  }
   if (process_chdir(current, path) == -1) {
     return EINVAL;
   }
@@ -588,12 +585,12 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
 	case SYSCALL_FORK:	return sys_fork();
 	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
-  case SYSCALL_COPY_NS: return sys_copy_ns((const char *)a, (const char *)b);
-  case SYSCALL_DELETE_NS: return sys_delete_ns((const char *)a);
-  case SYSCALL_GET_NS_PERMS: return sys_get_ns_perms((const char *)a);
-  case SYSCALL_REMOVE_NS_PERMS:return sys_remove_ns_perms((const char *)a, b);
-  case SYSCALL_LOWER_NS_ROOT: return sys_lower_ns_root((const char *)a, (const char *)b);
-  case SYSCALL_CHANGE_NS: return sys_change_ns((const char *)a);
+  case SYSCALL_NS_COPY: return sys_ns_copy((const char *)a, (const char *)b);
+  case SYSCALL_NS_DELETE: return sys_ns_delete((const char *)a);
+  case SYSCALL_NS_GET_PERMS: return sys_ns_get_perms((const char *)a);
+  case SYSCALL_NS_REMOVE_PERMS:return sys_ns_remove_perms((const char *)a, b);
+  case SYSCALL_NS_LOWER_ROOT: return sys_ns_lower_root((const char *)a, (const char *)b);
+  case SYSCALL_NS_CHANGE: return sys_ns_change((const char *)a);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
