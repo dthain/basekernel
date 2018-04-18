@@ -18,7 +18,6 @@ See the file LICENSE for details.
 #include "kernelcore.h"
 #include "main.h"
 #include "clock.h"
-#include "subset.h"
 
 struct process *current=0;
 struct list ready_list = {0,0};
@@ -33,9 +32,9 @@ struct mount {
 
 void process_init()
 {
-  spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
-  memset(spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
-  used_fs_spaces = 0;
+  fs_spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
+  memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
+  fs_spaces_used = 0;
 	current = process_create(0,0,0);
 
 	pagetable_load(current->pagetable);
@@ -96,14 +95,14 @@ void process_inherit( struct process * p )
         p->windows[i]->count++;
     }
     /* Copy fs_spaces */
-    p->space_count = current->space_count;
+    p->fs_space_count = current->fs_space_count;
     p->cws = current->cws;
-    for(i=0;i<p->space_count;i++) {
-        p->spaces[i].name = kmalloc(strlen(current->spaces[i].name) + 1);
-        strcpy(p->spaces[i].name, current->spaces[i].name);
-        p->spaces[i].perms = current->spaces[i].perms;
-        p->spaces[i].gindex = current->spaces[i].gindex;
-        spaces[p->spaces[i].gindex].count++;
+    for(i=0;i<p->fs_space_count;i++) {
+        p->fs_spaces[i].name = kmalloc(strlen(current->fs_spaces[i].name) + 1);
+        strcpy(p->fs_spaces[i].name, current->fs_spaces[i].name);
+        p->fs_spaces[i].perms = current->fs_spaces[i].perms;
+        p->fs_spaces[i].gindex = current->fs_spaces[i].gindex;
+        fs_spaces[p->fs_spaces[i].gindex].count++;
     }
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
@@ -364,10 +363,10 @@ int process_chdir(struct process *p, const char *path)
     p->cwd = 0;
   }
   if (!current->cwd) {
-		p->cwd = spaces[p->spaces[p->cws].gindex].d;
+		p->cwd = fs_spaces[p->fs_spaces[p->cws].gindex].d;
     p->cwd_depth = 0;
   }
-  int newdepth = depth_check(path, p->cwd_depth);
+  int newdepth = fs_space_depth_check(path, p->cwd_depth);
   if (newdepth == -1) {
     return -1;
   }

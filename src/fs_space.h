@@ -1,5 +1,5 @@
-#ifndef SUBSET_H
-#define SUBSET_H
+#ifndef FS_SPACE_H
+#define FS_SPACE_H
 
 #include "fs.h"
 
@@ -13,7 +13,6 @@ struct fs_space {
   bool present;
 	struct fs_dirent *d;
 	uint32_t count;
-  //May later need to implement a "valid" to tell if deleted
 };
 
 struct fs_space_ref {
@@ -22,9 +21,9 @@ struct fs_space_ref {
   uint32_t gindex;
 };
 
-int depth_check(const char *path, int cdepth);
+int fs_space_depth_check(const char *path, int cdepth);
 
-extern struct fs_space * spaces;
-extern int used_fs_spaces;
+extern struct fs_space * fs_spaces;
+extern int fs_spaces_used;
 
 #endif

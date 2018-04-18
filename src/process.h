@@ -12,7 +12,7 @@ See the file LICENSE for details.
 #include "pagetable.h"
 #include "kobject.h"
 #include "x86.h"
-#include "subset.h"
+#include "fs_space.h"
 #include "fs.h"
 
 #define PROCESS_STATE_CRADLE  0
@@ -42,8 +42,8 @@ struct process {
     struct graphics* windows[PROCESS_MAX_WINDOWS];
     int window_count;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
-    struct fs_space_ref spaces[PROCESS_MAX_FS_SPACES];
-    int space_count;
+    struct fs_space_ref fs_spaces[PROCESS_MAX_FS_SPACES];
+    int fs_space_count;
     int cws;
 	struct fs_dirent *cwd;
   int cwd_depth;

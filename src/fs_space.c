@@ -1,8 +1,8 @@
-#include "subset.h"
+#include "fs_space.h"
 #include "string.h"
 #include "kmalloc.h"
 
-int depth_check(const char *path, int cdepth) {
+int fs_space_depth_check(const char *path, int cdepth) {
   //Returns new depth, or -1 on depth going negative.
   if (path[0] == '/') {
     cdepth = 0;
@@ -28,5 +28,5 @@ int depth_check(const char *path, int cdepth) {
   return cdepth;
 }
 
-struct fs_space * spaces = 0;
-int used_fs_spaces = 0;
+struct fs_space * fs_spaces = 0;
+int fs_spaces_used = 0;
