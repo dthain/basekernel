@@ -51,7 +51,7 @@ void device_init()
         ata_devices[i].write = ata_device_write;
         ata_devices[i].unit = i;
         ata_devices[i].block_size = ATA_BLOCKSIZE;
-	ata_devices[i].buffer = ata_cache_init(ATA_BLOCKSIZE);
+	ata_devices[i].buffer = buffer_init(ATA_BLOCKSIZE);
     }
     keyboard.block_size = 1;
     keyboard.read = keyboard_device_read;
@@ -92,10 +92,10 @@ struct device *device_open(char *name, int unit)
 int device_read(struct device *d, void *buffer, int size, int offset)
 {
     if (d->read) {
-        if (!d->buffer || ata_cache_read(d->buffer, offset, buffer) < 0) {
+        if (!d->buffer || buffer_read(d->buffer, offset, buffer) < 0) {
 		int ret = d->read(d, buffer, size, offset);
 		if (ret == 1 && d->buffer)
-			ata_cache_add(d->buffer, offset, buffer);
+			buffer_add(d->buffer, offset, buffer);
 		return ret;
 	}
 	else {
@@ -110,11 +110,11 @@ int device_write(struct device *d, void *buffer, int size, int offset)
 {
     if (d->write) {
 	if (d->buffer) {
-		ata_cache_delete(d->buffer, offset);
+		buffer_delete(d->buffer, offset);
 	}
         int ret = d->write(d, buffer, size, offset);
 	if (ret == 1 && d->buffer) {
-		ata_cache_add(d->buffer, offset, buffer);
+		buffer_add(d->buffer, offset, buffer);
 	}
 	return ret;
     } else {

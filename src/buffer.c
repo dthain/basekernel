@@ -9,7 +9,7 @@
 
 #define CACHE_SIZE 51
 
-struct ata_cache_entry {
+struct buffer_entry {
 	struct list_node node;
 	uint32_t block_no;
 	unsigned char *data;
@@ -21,16 +21,16 @@ struct buffer {
 	int block_size;
 };
 
-struct buffer *ata_cache_init(int block_size) {
+struct buffer *buffer_init(int block_size) {
 	struct buffer *ret = kmalloc(sizeof(struct ata_buffer));
 	ret->block_size = block_size;
 	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
 	return ret;
 }
 
-int ata_cache_read(struct buffer *buf, int block, void *data) {
+int buffer_read(struct buffer *buf, int block, void *data) {
 	void *read;
-	struct ata_cache_entry *cache_entry = 0;
+	struct buffer_entry *cache_entry = 0;
 	int exists = hash_set_lookup_info(buf->cache_map, block, &read);
 	if (exists) {
 		cache_entry = read;
@@ -40,9 +40,9 @@ int ata_cache_read(struct buffer *buf, int block, void *data) {
 	return -1;
 }
 
-int ata_cache_delete (struct buffer *buf, int block){
+int buffer_delete (struct buffer *buf, int block){
 	void **data = 0;
-	struct ata_cache_entry *current_cache_data = 0;
+	struct buffer_entry *current_cache_data = 0;
 	if (!hash_set_lookup_info(buf->cache_map, block, data)) {
 		return -1;
 	}
@@ -55,18 +55,18 @@ int ata_cache_delete (struct buffer *buf, int block){
 	return 0;
 }
 
-int ata_cache_drop_lru(struct buffer *buf) {
-	struct ata_cache_entry *current_cache_data = (struct ata_cache_entry *) list_pop_tail(&buf->cache);
+int buffer_drop_lru(struct buffer *buf) {
+	struct buffer_entry *current_cache_data = (struct buffer_entry *) list_pop_tail(&buf->cache);
 	hash_set_delete(buf->cache_map, current_cache_data->block_no);
 	return 0;
 }
 
-int ata_cache_add(struct buffer *buf, int block, void *data) {
-	struct ata_cache_entry *write = 0;
-	if (buf->cache_map->num_entries == CACHE_SIZE) ata_cache_drop_lru(buf);
+int buffer_add(struct buffer *buf, int block, void *data) {
+	struct buffer_entry *write = 0;
+	if (buf->cache_map->num_entries == CACHE_SIZE) buffer_drop_lru(buf);
 	int exists = hash_set_lookup(buf->cache_map, block);
-	if (exists) ata_cache_delete(buf, block);
-	write = kmalloc(sizeof(struct ata_cache_entry));
+	if (exists) buffer_delete(buf, block);
+	write = kmalloc(sizeof(struct buffer_entry));
 	write->block_no = block;
 	write->data = memory_alloc_page(1);
 	memcpy(write->data, data, buf->block_size);
