@@ -32,6 +32,9 @@ struct mount {
 
 void process_init()
 {
+  fs_spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
+  memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
+  fs_spaces_used = 0;
 	current = process_create(0,0,0);
 
 	pagetable_load(current->pagetable);
@@ -90,6 +93,16 @@ void process_inherit( struct process * p )
     int i;
     for(i=0;i<p->window_count;i++) {
         p->windows[i]->count++;
+    }
+    /* Copy fs_spaces */
+    p->fs_space_count = current->fs_space_count;
+    p->cws = current->cws;
+    for(i=0;i<p->fs_space_count;i++) {
+        p->fs_spaces[i].name = kmalloc(strlen(current->fs_spaces[i].name) + 1);
+        strcpy(p->fs_spaces[i].name, current->fs_spaces[i].name);
+        p->fs_spaces[i].perms = current->fs_spaces[i].perms;
+        p->fs_spaces[i].gindex = current->fs_spaces[i].gindex;
+        fs_spaces[p->fs_spaces[i].gindex].count++;
     }
     /* Set the parent of the new process to the calling process */
     p->ppid = process_getpid();
@@ -337,20 +350,27 @@ int process_mount_as(struct process *p, struct fs_volume *v, const char *ns)
 static int process_chdir_with_cwd(struct process *p, const char *path)
 {
 	struct fs_dirent *d;
-	if (!(d = fs_dirent_namei(current->cwd, path)))
+	if (!(d = fs_dirent_namei(p->cwd, path)))
 		return -1;
-	current->cwd = d;
+	p->cwd = d;
 	return 0;
 }
 
-int process_chdir(struct process *p, const char *ns, const char *path)
+int process_chdir(struct process *p, const char *path)
 {
-	if (!ns && !current->cwd)
-		return -1;
-	if (ns) {
-		struct mount *m = process_mount_get(p, ns);
-		current->cwd = fs_volume_root(m->v);
-	}
+  if (path[0] == '/') {
+    path += 1;
+    p->cwd = 0;
+  }
+  if (!current->cwd) {
+		p->cwd = fs_spaces[p->fs_spaces[p->cws].gindex].d;
+    p->cwd_depth = 0;
+  }
+  int newdepth = fs_space_depth_check(path, p->cwd_depth);
+  if (newdepth == -1) {
+    return -1;
+  }
+  p->cwd_depth = newdepth;
 	return process_chdir_with_cwd(p, path);
 }
 

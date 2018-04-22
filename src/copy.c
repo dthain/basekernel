@@ -20,10 +20,12 @@ int main( const char *argv[], int argc )
 	char buffer[1000];
 	mount(0, "kevin", "K");
 	mount(2, "cdrom", "CD");
-	chdir("CD","/");
+  ns_change("CD");
+	chdir("/");
 	int fd1 = open("TEST.EXE", 1, 0);
 	printf("got fd %d for cdrom\n", fd1);
-	chdir("K","/");
+  ns_change("K");
+	chdir("/");
 	int fd2 = open("testcopy", 2, 0);
 	printf("got fd %d for kevinfs\n", fd2);
 	printf("copying...\n");

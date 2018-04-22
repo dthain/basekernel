@@ -11,6 +11,8 @@ See the file LICENSE for details.
 #include "process.h"
 #include "kmalloc.h"
 #include "cdromfs.h"
+#include "string.h"
+#include "fs_space.h"
 #include "memorylayout.h"
 #include "graphics_lib.h"
 #include "main.h"
@@ -21,6 +23,7 @@ See the file LICENSE for details.
 #include "rtc.h"
 #include "elf.h"
 #include "kmalloc.h"
+#include "memory.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -91,7 +94,11 @@ int sys_process_run( const char *path, const char** argv, int argc )
 }
 
 void sys_exec(const char * path, const char ** argv, int argc) {
-	struct process *p = elf_load(path, current->pid);
+  if (!fs_spaces[current->fs_spaces[current->cws].gindex].present ||
+      fs_space_depth_check(path, current->cwd_depth) == -1) {
+    return;
+  }
+  struct process *p = elf_load(path, current->pid);
 
   if (!p) {
       return;
@@ -103,6 +110,9 @@ void sys_exec(const char * path, const char ** argv, int argc) {
   p->ppid = current->ppid;
   p->mounts = current->mounts;
   p->cwd = current->cwd;
+  p->cws = current->cws;
+  memcpy(p->fs_spaces, current->fs_spaces, sizeof(p->fs_spaces));
+  p->fs_space_count = current->fs_space_count;
   pagetable_delete(current->pagetable);
   process_pass_arguments(p, argv, argc);
   current = p;
@@ -122,6 +132,130 @@ int sys_fork()
   return p->pid;
 }
 
+int sys_ns_copy(const char *old_ns, const char * new_ns) {
+  int i;
+  if (current->fs_space_count >= PROCESS_MAX_FS_SPACES) {
+    return EINVAL;
+  }
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(new_ns, current->fs_spaces[i].name)) {
+      //Can't have duplicate names
+      return EINVAL;
+    }
+  }
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(old_ns, current->fs_spaces[i].name)) {
+      current->fs_spaces[current->fs_space_count].name = memory_alloc_page(0);
+      strncpy(current->fs_spaces[current->fs_space_count].name, new_ns, PAGE_SIZE);
+      current->fs_spaces[current->fs_space_count].perms = current->fs_spaces[i].perms;
+      current->fs_spaces[current->fs_space_count].gindex = current->fs_spaces[i].gindex;
+      current->fs_space_count++;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_ns_delete(const char *ns) {
+  int i;
+  bool found = 0;
+  int old_count = current->fs_space_count;
+  for (i = 0; i < old_count; i++) {
+    if (found) {
+      memcpy(&current->fs_spaces[i - 1], &current->fs_spaces[i], sizeof(struct fs_space_ref));
+    } else if (!strcmp(ns, current->fs_spaces[i].name)) {
+      found = 1;
+      memory_free_page(current->fs_spaces[i].name);
+      current->fs_space_count--;
+      int gindex = current->fs_spaces[i].gindex;
+      if(--fs_spaces[gindex].count == 0) {
+        fs_spaces[gindex].present = 0;
+        kfree(fs_spaces[gindex].d);
+        fs_spaces_used--;
+      }
+    }
+  }
+  if (found) {
+    return 0;
+  }
+  return EINVAL;
+}
+
+int sys_ns_get_perms(const char *ns) {
+  int i;
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(ns, current->fs_spaces[i].name)) {
+      return current->fs_spaces[i].perms;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_ns_remove_perms(const char *ns, int mask) {
+  int i;
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(ns, current->fs_spaces[i].name)) {
+      current->fs_spaces[i].perms &= ~(mask);
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_ns_lower_root(const char *ns, const char * path) {
+  struct fs_dirent *d;
+  struct fs_dirent *new;
+  int i;
+  if (fs_spaces_used == MAX_FS_SPACES) {
+    return EINVAL;
+  }
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(ns, current->fs_spaces[i].name)) {
+      int gindex = current->fs_spaces[i].gindex;
+      d = fs_spaces[gindex].d;
+      new = fs_dirent_namei(d, path);
+      if (!new) {
+        return EINVAL;
+      }
+      if(--fs_spaces[gindex].count == 0) {
+        fs_spaces[gindex].present = 0;
+        kfree(fs_spaces[gindex].d);
+        fs_spaces_used--;
+      }
+      //We start here just because it's more likely to be open.  It is not a guarantee.
+      //Additionally, there is an issue of possible 2 entries pointing to same dirent.
+      int j = fs_spaces_used;
+      while (fs_spaces[j].present) {
+        j = (j + 1) % MAX_FS_SPACES;
+      }
+      fs_spaces[j].present = 1;
+      fs_spaces[j].d = new;
+      fs_spaces[j].count = 1;
+      current->fs_spaces[i].gindex = j;
+      fs_spaces_used++;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
+int sys_ns_change(const char *ns) {
+  int i;
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(ns, current->fs_spaces[i].name)) {
+      if (!fs_spaces[current->fs_spaces[i].gindex].present) {
+        return EACCES;
+      }
+      current->cws = i;
+      //Reset to root
+      current->cwd = fs_spaces[current->fs_spaces[current->cws].gindex].d;
+      current->cwd_depth = 0;
+      return 0;
+    }
+  }
+  return EINVAL;
+}
+
 uint32_t sys_gettimeofday()
 {
 	struct rtc_time t;
@@ -131,24 +265,66 @@ uint32_t sys_gettimeofday()
 
 int sys_mount(uint32_t device_no, const char *fs_name, const char *ns)
 {
+  if ((fs_spaces_used == MAX_FS_SPACES) || (current->fs_space_count >= PROCESS_MAX_FS_SPACES)) {
+    return EINVAL;
+  }
+  int i;
+  for (i = 0; i < current->fs_space_count; i++) {
+    if (!strcmp(ns, current->fs_spaces[i].name)) {
+      //Can't have duplicate names
+      return EINVAL;
+    }
+  }
 	struct fs *fs = fs_get(fs_name);
 	struct fs_volume *v = fs_volume_mount(fs, device_no);
-	int ret = process_mount_as(current, v, ns);
+  struct fs_dirent *root = fs_volume_root(v);
 	kfree(fs);
-	return ret;
+  if (!root) {
+    return EINVAL;
+  }
+
+  int j = fs_spaces_used;
+  while (fs_spaces[j].present) {
+    j = (j + 1) % MAX_FS_SPACES;
+  }
+  fs_spaces[j].present = 1;
+  fs_spaces[j].d = root;
+  fs_spaces[j].count = 1;
+  fs_spaces_used++;
+
+  char * name = memory_alloc_page(0);
+  strncpy(name, ns, PAGE_SIZE);
+  current->fs_spaces[current->fs_space_count].name = name;
+  current->fs_spaces[current->fs_space_count].gindex = j;
+  current->fs_spaces[current->fs_space_count].perms = -1; //All permissions
+  current->fs_space_count++;
+	return 0;
 }
 
-int sys_chdir(const char *ns, const char *name)
+int sys_chdir(const char *path)
 {
-	return process_chdir(current, ns, name);
+  if (process_chdir(current, path) == -1) {
+    return EINVAL;
+  }
+  return 0;
 }
 
 int sys_mkdir(const char *name){
+  if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
+	if (fs_space_depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	return fs_dirent_mkdir(cwd, name);
 }
 
 int sys_readdir(const char *name, char *buffer, int len){
+  if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
+	if (fs_space_depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, name);
 	if (!d) return -1;
@@ -156,10 +332,25 @@ int sys_readdir(const char *name, char *buffer, int len){
 }
 
 int sys_rmdir(const char *name){
+  if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
 	struct fs_dirent *cwd = current->cwd;
+	if (fs_space_depth_check(name, current->cwd_depth) == -1)
+		return EINVAL;
 	struct fs_dirent *d = fs_dirent_namei(cwd, name);
 	if (!d) return -1;
-	return fs_dirent_rmdir(cwd, name);
+	int ret = fs_dirent_rmdir(cwd, name);
+  if (!ret) {
+    for (int i=0;i<fs_spaces_used;i++) {
+      int same;
+      fs_dirent_compare(fs_spaces[i].d, d, &same);
+      if (same) {
+        fs_spaces[i].present = 0;
+      }
+    }
+  }
+  return ret;
 }
 
 int sys_open( const char *path, int mode, int flags )
@@ -168,6 +359,11 @@ int sys_open( const char *path, int mode, int flags )
 	int ret = 0;
 	if (fd < 0)
 		return -1;
+  if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
+    return EACCES;
+  }
+  if (fs_space_depth_check(path, current->cwd_depth) == -1)
+    return EINVAL;
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, path);
 	if (!d) {
@@ -212,6 +408,9 @@ int sys_close( int fd )
 
 int sys_pwd(char *result)
 {
+	if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
+		return EACCES;
+	}
 	struct fs_dirent *d = current->cwd;
 	char dir_list[LSDIR_TEMP_BUFFER_SIZE];
 	memset(dir_list, 0, LSDIR_TEMP_BUFFER_SIZE);
@@ -379,13 +578,19 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_SLEEP:	return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:	return sys_gettimeofday();
 	case SYSCALL_MOUNT:	return sys_mount(a, (const char *) b, (const char *) c);
-	case SYSCALL_CHDIR:	return sys_chdir((const char *) a, (const char *) b);
 	case SYSCALL_SBRK: return sys_sbrk (a);
+	case SYSCALL_CHDIR:	return sys_chdir((const char *)a);
 	case SYSCALL_PROCESS_SELF:	return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:	return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:	return sys_process_run((const char *)a, (const char**)b, c);
 	case SYSCALL_FORK:	return sys_fork();
 	case SYSCALL_EXEC:	sys_exec((const char *)a, (const char **)b, c);
+  case SYSCALL_NS_COPY: return sys_ns_copy((const char *)a, (const char *)b);
+  case SYSCALL_NS_DELETE: return sys_ns_delete((const char *)a);
+  case SYSCALL_NS_GET_PERMS: return sys_ns_get_perms((const char *)a);
+  case SYSCALL_NS_REMOVE_PERMS:return sys_ns_remove_perms((const char *)a, b);
+  case SYSCALL_NS_LOWER_ROOT: return sys_ns_lower_root((const char *)a, (const char *)b);
+  case SYSCALL_NS_CHANGE: return sys_ns_change((const char *)a);
 	case SYSCALL_PROCESS_KILL:	return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:	return sys_process_wait((struct process_info*)a, b);
 	case SYSCALL_PROCESS_REAP:	return sys_process_reap(a);
