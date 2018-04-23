@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "graphics_lib.h"
 
+static int self_pid_cache = 0;
+
 void debug( const char *str ) {
 	syscall( SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0 );
 }
@@ -68,8 +70,7 @@ uint32_t gettimeofday() {
 }
 
 int process_self() {
-    static int cache = 0;
-    return cache? (cache) : (cache=syscall( SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0 ));
+    return self_pid_cache? (self_pid_cache) : (self_pid_cache=syscall( SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0 ));
 }
 
 int process_parent() {
@@ -82,6 +83,7 @@ int process_run( const char *cmd, const char** argv, int argc ) {
 }
 
 int fork() {
+    self_pid_cache = 0;
 	int cpid = syscall( SYSCALL_FORK, 0, 0, 0, 0, 0 );
 	if (cpid == process_self()) return 0;
 	return cpid;
@@ -123,6 +125,10 @@ int console_open( int wd ) {
 	return syscall( SYSCALL_OPEN_CONSOLE, wd, 0, 0, 0, 0 );
 }
 
+int pipe_open() {
+	return syscall( SYSCALL_OPEN_PIPE, 0, 0, 0, 0, 0 );
+}
+
 int mount(uint32_t device_no, const char *fs_name, const char *ns)
 {
 	return syscall(SYSCALL_MOUNT, device_no, (uint32_t) fs_name, (uint32_t) ns, 0, 0);
@@ -151,11 +157,6 @@ int readdir(const char *name, char *buffer, int n)
 int pwd(char *buffer)
 {
 	return syscall(SYSCALL_PWD, (uint32_t) buffer, 0, 0, 0, 0);
-}
-
-int getpid() {
-    static int cache = 0;
-    return cache? (cache) : (cache=syscall( SYSCALL_GETPID, 0, 0, 0, 0, 0 ));
 }
 
 int process_reap( unsigned int pid ) {

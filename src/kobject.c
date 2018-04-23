@@ -34,6 +34,14 @@ struct kobject *kobject_create_graphics(struct graphics *g){
     return k;
 }
 
+struct kobject *kobject_create_pipe(struct pipe *p){ 
+    struct kobject *k = kmalloc(sizeof(*k));
+    k->type = KOBJECT_PIPE;
+    k->rc = 1;
+    k->data.pipe = p;
+    return k;
+}
+
 int kobject_read(struct kobject *kobject, void *buffer, int size) {
     switch (kobject->type) {
         case KOBJECT_INVALID: return 0;
@@ -42,6 +50,8 @@ int kobject_read(struct kobject *kobject, void *buffer, int size) {
             return fs_file_read(kobject->data.file, (char*)buffer, (uint32_t)size);
         case KOBJECT_DEVICE:
             return device_read(kobject->data.device, buffer, size/kobject->data.device->block_size, 0);
+        case KOBJECT_PIPE:
+            return pipe_read(kobject->data.pipe, buffer, size);
     }
     return 0;
 }
@@ -55,6 +65,8 @@ int kobject_write(struct kobject *kobject, void *buffer, int size) {
             return fs_file_write(kobject->data.file, (char*)buffer, (uint32_t)size);
         case KOBJECT_DEVICE:
             return device_write(kobject->data.device, buffer, size/kobject->data.device->block_size, 0);
+        case KOBJECT_PIPE:
+            return pipe_write(kobject->data.pipe, buffer, size);
     }
     return 0;
 }
@@ -70,6 +82,9 @@ int kobject_close(struct kobject *kobject) {
                 kfree(kobject);
                 return ret;
             case KOBJECT_DEVICE: return 0;
+            case KOBJECT_PIPE:
+                pipe_close(kobject->data.pipe);
+                return 0;
         }
     }
     return 0;
