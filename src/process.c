@@ -419,6 +419,11 @@ int process_wait_child(struct process_info *info, int timeout) {
 	clock_t start, elapsed;
 	uint32_t total;
 	start = clock_read();
+
+    if (!info) {
+        return 1;
+    }
+
 	do {
         struct process *p = (struct process*)(grave_list.head);
         while (p) {
@@ -435,6 +440,7 @@ int process_wait_child(struct process_info *info, int timeout) {
 		elapsed = clock_diff(start,clock_read());
 		total = elapsed.millis + elapsed.seconds*1000;
 	} while(total<timeout);
+
     return 1;
 }
 
