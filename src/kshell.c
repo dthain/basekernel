@@ -99,7 +99,7 @@ static int process_command(char *line)
 			int pid = sys_process_run(pch, argv, 2);
             printf("started process %d\n", pid);
             struct process_info info;
-            if (!process_wait_child(&info, 5000)) {
+            if (!process_wait_child(&info, -1)) {
                 printf("process %d exited with status %d\n", info.pid, info.exitcode);
                 process_reap(info.pid);
 
