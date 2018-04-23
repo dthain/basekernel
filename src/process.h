@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #include "pagetable.h"
 #include "kobject.h"
 #include "x86.h"
+#include "fs_space.h"
 #include "fs.h"
 
 #define PROCESS_STATE_CRADLE  0
@@ -23,6 +24,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_FORK_PARENT  6
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_OBJECTS   100
+#define PROCESS_MAX_FS_SPACES 5
 
 
 #define PROCESS_EXIT_NORMAL   0
@@ -38,8 +40,12 @@ struct process {
 	char *kstack_top;
 	char *kstack_ptr;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
-	struct list mounts;
+    struct fs_space_ref fs_spaces[PROCESS_MAX_FS_SPACES];
+    int fs_space_count;
+    int cws;
 	struct fs_dirent *cwd;
+  int cwd_depth;
+	struct list mounts;
 	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
@@ -80,7 +86,7 @@ uint32_t process_getppid();
 int process_available_fd(struct process *p);
 int process_mount_as(struct process *p, struct fs_volume *v, const char *ns);
 int process_unmount(struct process *p, const char *ns);
-int process_chdir(struct process *p, const char *ns, const char *path);
+int process_chdir(struct process *p, const char *path);
 
 extern struct process *current;
 

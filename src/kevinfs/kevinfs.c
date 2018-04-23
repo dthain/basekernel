@@ -413,8 +413,8 @@ static int kevinfs_dir_record_insert_after(struct kevinfs_dir_record_list *dir_l
 			new_pos->offset_to_next = 0;
 
 		new_prev->offset_to_next = new_pos - new_prev;
-		hash_set_add(dir_list->changed, (new_prev - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-		hash_set_add(dir_list->changed, ((new_prev - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, (new_prev - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, ((new_prev - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 	}
 	else {
 		memcpy(new_pos, new_list, sizeof(struct kevinfs_dir_record));
@@ -422,11 +422,11 @@ static int kevinfs_dir_record_insert_after(struct kevinfs_dir_record_list *dir_l
 		memcpy(new_list, new, sizeof(struct kevinfs_dir_record));
 		new_list->offset_to_next = new_list - new_pos;
 
-		hash_set_add(dir_list->changed, 0);
-		hash_set_add(dir_list->changed, (sizeof(struct kevinfs_dir_record) - 1)/FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, 0, 0);
+		hash_set_add(dir_list->changed, (sizeof(struct kevinfs_dir_record) - 1)/FS_BLOCKSIZE, 0);
 	}
-	hash_set_add(dir_list->changed, (new_pos - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-	hash_set_add(dir_list->changed, ((new_pos - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+	hash_set_add(dir_list->changed, (new_pos - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, ((new_pos - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 
 	kfree (list);
 	dir_list->list = new_list;
@@ -460,11 +460,11 @@ static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
 		if (to_rm->offset_to_next != 0)
 			to_rm->offset_to_next = to_rm->offset_to_next + (last - to_rm);
 
-		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 
-		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 
 	}
 
@@ -475,11 +475,11 @@ static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
 
 	memset(last, 0, sizeof(struct kevinfs_dir_record));
 
-	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 
-	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE);
-	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE);
+	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
 
 	dir_list->list_len--;
 	return 0;
@@ -586,8 +586,8 @@ static struct kevinfs_dir_record_list *kevinfs_create_empty_dir(struct kevinfs_i
 	records[1].offset_to_next = 0;
 	records[1].is_directory = 1;
 
-	hash_set_add(dir->changed, 0);
-	hash_set_add(dir->changed, (sizeof(struct kevinfs_dir_record) * FS_EMPTY_DIR_SIZE - 1) / FS_BLOCKSIZE);
+	hash_set_add(dir->changed, 0, 0);
+	hash_set_add(dir->changed, (sizeof(struct kevinfs_dir_record) * FS_EMPTY_DIR_SIZE - 1) / FS_BLOCKSIZE, 0);
 
 	return dir;
 }

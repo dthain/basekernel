@@ -9,6 +9,8 @@
 
 #include "kerneltypes.h"
 #include "graphics.h"
+#include "device.h"
+#include "buffer.h"
 
 struct device {
     int (*read) (struct device *d, void *buffer, int size, int offset);
@@ -22,6 +24,7 @@ struct device {
     int sx1;
     int sy1;
     int alloced;
+    struct buffer *buffer;
 };
 
 void device_init();
