@@ -314,11 +314,12 @@ int kshell_launch()
 		if (c == ASCII_CR)
 		{
             strcpy(cmd, line[y]);
+			printf("\n");
 			int res = process_command(cmd);
 			if (res < 0)
 				break;
 			x = 0;
-			printf("\n$ ");
+			printf("$ ");
             int i;
             for (i = HISTORY-1; i > 0; i--) {
                 strcpy(line[i], line[i-1]);

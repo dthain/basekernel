@@ -23,6 +23,10 @@ int open( const char *path, int mode, int flags ) {
 	return syscall( SYSCALL_OPEN, (uint32_t) path, mode, flags, 0, 0 );
 }
 
+int dup( int fd1, int fd2 ) {
+	return syscall( SYSCALL_DUP, fd1, fd2, 0, 0, 0 );
+}
+
 int read( int fd, void *data, int length ) {
 	return syscall( SYSCALL_READ, fd, (uint32_t) data, length, 0, 0 );
 }
@@ -113,6 +117,10 @@ int ns_change(const char *ns) {
 
 int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
+}
+
+int console_open( int wd ) {
+	return syscall( SYSCALL_OPEN_CONSOLE, wd, 0, 0, 0, 0 );
 }
 
 int mount(uint32_t device_no, const char *fs_name, const char *ns)

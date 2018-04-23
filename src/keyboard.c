@@ -24,13 +24,14 @@ See the file LICENSE for details.
 
 #define BUFFER_SIZE 256
 
+struct device keyboard = {0};
+
 struct keymap {
 	char	normal;
 	char	shifted;
 	char	ctrled;
 	char	special;
 };
-
 static struct keymap keymap[] = {
 #include "keymap.us.c"
 };
@@ -45,8 +46,6 @@ static int shift_mode = 0;
 static int alt_mode = 0;
 static int ctrl_mode = 0;
 static int shiftlock_mode = 0;
-
-struct device* keyboard = 0;
 
 static char keyboard_map( int code )
 {
@@ -127,13 +126,19 @@ int keyboard_device_read(struct device* d, void* dest, int size, int offset)
 char keyboard_read()
 {
 	char toRet = 0;
-	device_read(keyboard, &toRet, 1, 0);
+	device_read(&keyboard, &toRet, 1, 0);
 	return toRet;
+}
+
+struct device* keyboard_get()
+{
+    return &keyboard;
 }
 
 void keyboard_init()
 {
-	keyboard = device_open("KEYBOARD", 0);
+    keyboard.block_size = 1;
+    keyboard.read = keyboard_device_read;
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");

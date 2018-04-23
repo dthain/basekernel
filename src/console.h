@@ -10,8 +10,11 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 #include "string.h"
 #include "graphics.h"
+#include "device.h"
 
-void console_init( struct graphics *g );
+struct device * console_get();
+struct device * console_init( struct graphics *g );
+struct device * console_create( struct graphics *g );
 void console_putchar( char c );
 void console_putstring( const char *c );
 int  console_write( int unit, const void *buffer, int nblocks, int offset );

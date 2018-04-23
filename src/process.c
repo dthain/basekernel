@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #include "process.h"
 #include "fs.h"
 #include "console.h"
+#include "kobject.h"
 #include "memory.h"
 #include "string.h"
 #include "list.h"
@@ -17,6 +18,7 @@ See the file LICENSE for details.
 #include "kerneltypes.h"
 #include "kernelcore.h"
 #include "main.h"
+#include "keyboard.h"
 #include "clock.h"
 
 struct process *current=0;
@@ -40,8 +42,11 @@ void process_init()
 	pagetable_load(current->pagetable);
 	pagetable_enable();
 
-    current->windows[0] = &graphics_root;
-    current->window_count = 1;
+    //set up initial kobject descriptors
+    current->ktable[0] = kobject_create_device(keyboard_get());
+    current->ktable[1] = kobject_create_device(console_get());
+    current->ktable[2] = current->ktable[1];
+    current->ktable[3] = kobject_create_graphics(&graphics_root);
     graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
@@ -87,12 +92,13 @@ static int process_allocate_pid() {
 
 void process_inherit( struct process * p )
 {
-    /* Copy open windows */
-    memcpy(p->windows, current->windows, sizeof(p->windows));
-    p->window_count = current->window_count;
+    /* Copy kernel objects */
+    memcpy(p->ktable, current->ktable, sizeof(current->ktable));
     int i;
-    for(i=0;i<p->window_count;i++) {
-        p->windows[i]->count++;
+    for(i=0;i<PROCESS_MAX_OBJECTS;i++) {
+        if (p->ktable[i]) {
+            p->ktable[i]->rc++;
+        }
     }
     /* Copy fs_spaces */
     p->fs_space_count = current->fs_space_count;
@@ -121,7 +127,6 @@ struct process * process_create( unsigned code_size, unsigned stack_size, int pi
 
 	p->kstack = memory_alloc_page(1);
 	p->entry = PROCESS_ENTRY_POINT;
-    p->window_count = 0;
     p->brk = 0;
     if (pid == 0) {
     p->pid = process_allocate_pid();
@@ -139,6 +144,10 @@ struct process * process_create( unsigned code_size, unsigned stack_size, int pi
         return 0;
       }
     }
+    int i;
+    for (i = 0; i < 100; i++) {
+        p->ktable[i] = 0;
+    }
 
 	process_stack_init(p);
 
@@ -148,9 +157,9 @@ struct process * process_create( unsigned code_size, unsigned stack_size, int pi
 void process_delete( struct process *p )
 {
     int i;
-    for (i = 0; i < p->window_count; i++) {
-        if (!(--(p->windows[i]->count))) {
-            kfree(p->windows[i]);
+    for (i = 0; i < 100; i++) {
+        if (p->ktable[i]) {
+            kobject_close(p->ktable[i]);
         }
     }
     pagetable_delete(p->pagetable);

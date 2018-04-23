@@ -39,8 +39,6 @@ struct process {
 	char *kstack;
 	char *kstack_top;
 	char *kstack_ptr;
-    struct graphics* windows[PROCESS_MAX_WINDOWS];
-    int window_count;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
     struct fs_space_ref fs_spaces[PROCESS_MAX_FS_SPACES];
     int fs_space_count;

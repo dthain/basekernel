@@ -7,7 +7,6 @@
 
 #include "kerneltypes.h"
 #include "device.h"
-#include "kmalloc.h"
 #include "string.h"
 #include "ata.h"
 #include "cdromfs.h"
@@ -19,8 +18,6 @@
 
 static struct device ata_devices[ATA_DEVICE_COUNT] = {0};
 static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {0};
-static struct device keyboard = {0};
-struct console_device console = {0};
 
 int ata_device_read( struct device *d, void *buffer, int nblocks, int offset )
 {
@@ -44,18 +41,15 @@ void device_init()
         atapi_devices[i].read = atapi_device_read;
         atapi_devices[i].unit = i;
         atapi_devices[i].block_size = CDROM_BLOCK_SIZE;
-	atapi_devices[i].buffer = 0;
+        atapi_devices[i].buffer = 0;
     }
     for (i = 0; i < ATA_DEVICE_COUNT; i++)  {
         ata_devices[i].read = ata_device_read;
         ata_devices[i].write = ata_device_write;
         ata_devices[i].unit = i;
         ata_devices[i].block_size = ATA_BLOCKSIZE;
-	ata_devices[i].buffer = buffer_init(ATA_BLOCKSIZE);
+        ata_devices[i].buffer = buffer_init(ATA_BLOCKSIZE);
     }
-    keyboard.block_size = 1;
-    keyboard.read = keyboard_device_read;
-    keyboard.buffer = 0;
 }
 
 struct device *device_open(char *name, int unit)
@@ -69,18 +63,6 @@ struct device *device_open(char *name, int unit)
     } else if (!strcmp("ATAPI", name)) {
         if (unit >= 0 && unit < ATAPI_DEVICE_COUNT) {
             return &atapi_devices[unit];
-        } else {
-            return 0;
-        }
-    } else if (!strcmp("KEYBOARD", name)) {
-        if (unit == 0) {
-            return &keyboard;
-        } else {
-            return 0;
-        }
-    } else if (!strcmp("CONSOLE", name)) {
-        if (unit == 0) {
-            return (struct device*)&console;
         } else {
             return 0;
         }

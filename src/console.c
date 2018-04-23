@@ -10,19 +10,28 @@ See the file LICENSE for details.
 #include "device.h"
 #include "kmalloc.h"
 
+struct console_device{
+    struct device device;
+    int xsize;
+    int ysize;
+    int xpos;
+    int ypos;
+    struct graphics *gx;
+};
+
+
 struct graphics_color bgcolor = {0,0,0};
 struct graphics_color fgcolor = {255,0,0};
+struct console_device console = {0};
 
-extern struct console_device console;
-
-static void console_reset()
+static void console_reset(struct console_device *d)
 {
-	console.xpos = console.ypos = 0;
-	console.xsize = graphics_width(console.gx)/8;
-	console.ysize = graphics_height(console.gx)/8;
-	graphics_fgcolor(console.gx,fgcolor);
-	graphics_bgcolor(console.gx,bgcolor);
-	graphics_clear(console.gx,0,0,graphics_width(console.gx),graphics_height(console.gx));
+	d->xpos = d->ypos = 0;
+	d->xsize = graphics_width(d->gx)/8;
+	d->ysize = graphics_height(d->gx)/8;
+	graphics_fgcolor(d->gx,fgcolor);
+	graphics_bgcolor(d->gx,bgcolor);
+	graphics_clear(d->gx,0,0,graphics_width(d->gx),graphics_height(d->gx));
 }
 
 void console_heartbeat()
@@ -113,13 +122,35 @@ int console_write( int unit, const void *buffer, int length, int offset )
 	return 1;
 }
 
-void console_init( struct graphics *g )
+struct device * console_get()
+{
+    return (struct device*)&console;
+}
+
+struct device * console_init( struct graphics *g )
 {
 	console.gx = g;
+    console.device.block_size = 1;
 	console.device.write = console_device_write;
+	console_reset(&console);
 	console.device.buffer = 0;
-	console_reset();
 	console_putstring("\nconsole: initialized\n");
+    return (struct device*)&console;
+}
+
+int console_device_write_debug( struct device *device, void *buffer, int size, int offset )
+{
+    return console_device_write(device, buffer, size, offset);
+}
+struct device * console_create( struct graphics *g )
+{
+    struct console_device *c = kmalloc(sizeof(*c));
+	c->gx = g;
+    c->device.block_size = 1;
+    c->device.buffer = 0;
+	c->device.write = console_device_write_debug;
+	console_reset(c);
+    return (struct device*)c;
 }
 
 void printf_putchar( char c )

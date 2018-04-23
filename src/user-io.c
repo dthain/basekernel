@@ -18,7 +18,7 @@ static uint32_t graphics_buffer_index = 0;
 
 void flush()
 {
-    debug(stdio_buffer);
+    write(KNO_STDOUT, stdio_buffer, stdio_buffer_index); 
     stdio_buffer_index = 0;
     stdio_buffer[0] = 0;
 }

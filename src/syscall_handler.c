@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "keyboard.h"
 #include "process.h"
 #include "kmalloc.h"
+#include "kobject.h"
 #include "cdromfs.h"
 #include "string.h"
 #include "fs_space.h"
@@ -104,8 +105,6 @@ void sys_exec(const char * path, const char ** argv, int argc) {
       return;
   }
 
-  memcpy(p->windows, current->windows, sizeof(p->windows));
-  p->window_count = current->window_count;
   memcpy(p->ktable, current->ktable, sizeof(p->ktable));
   p->ppid = current->ppid;
   p->mounts = current->mounts;
@@ -380,6 +379,25 @@ int sys_keyboard_read_char()
 	return keyboard_read();
 }
 
+int sys_dup( int fd1, int fd2 )
+{
+    if ( fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS ) {
+        return ENOENT;
+    }
+    if (fd2 < 0) {
+	    fd2 = process_available_fd(current);
+        if (!fd2) {
+            return ENOENT;
+        }
+    }
+    if (current->ktable[fd2]) {
+        kobject_close(current->ktable[fd2]);
+    }
+    current->ktable[fd2] = current->ktable[fd1];
+    current->ktable[fd2]->rc++;
+    return fd2;
+}
+
 int sys_read( int fd, void *data, int length )
 {
 	struct kobject *p = current->ktable[fd];
@@ -445,8 +463,22 @@ int sys_pwd(char *result)
 	return 0;
 }
 
+int sys_open_console( int wd )
+{
+	int fd = process_available_fd(current);
+    if (wd < 0 || fd < 0) {
+        return ENOENT;
+    }
+    struct device *d = console_create(current->ktable[wd]->data.graphics);
+    if (!d) {
+        return ENOENT;
+    }
+	current->ktable[fd] = kobject_create_device(d);
+	return fd;
+}
+
 int sys_draw_color( int wd, int r, int g, int b ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
     struct graphics_color c;
@@ -454,70 +486,72 @@ int sys_draw_color( int wd, int r, int g, int b ) {
     c.g = g;
     c.b = b;
     c.a = 0;
-    graphics_fgcolor( current->windows[wd], c );
+    graphics_fgcolor( current->ktable[wd]->data.graphics, c );
     return 0;
 }
 
 int sys_draw_rect( int wd, int x, int y, int w, int h ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
-    graphics_rect( current->windows[wd], x, y, w, h );
+    graphics_rect( current->ktable[wd]->data.graphics, x, y, w, h );
     return 0;
 }
 
 int sys_draw_clear( int wd, int x, int y, int w, int h ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
-    graphics_clear( current->windows[wd], x, y, w, h );
+    graphics_clear( current->ktable[wd]->data.graphics, x, y, w, h );
     return 0;
 }
 
 int sys_draw_line( int wd, int x, int y, int w, int h ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
-    graphics_line( current->windows[wd], x, y, w, h );
+    graphics_line( current->ktable[wd]->data.graphics, x, y, w, h );
     return 0;
 }
 
 int sys_draw_char( int wd, int x, int y, char c ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
-    graphics_char( current->windows[wd], x, y, c );
+    graphics_char( current->ktable[wd]->data.graphics, x, y, c );
     return 0;
 }
 
 int sys_draw_string( int wd, int x, int y, char *s ) {
-    if (wd < 0 || wd >= current->window_count) {
+    if (wd < 0) {
         return ENOENT;
     }
     int i;
     for (i = 0; s[i]; i++) {
-        graphics_char( current->windows[wd], x+i*8, y, s[i] );
+        graphics_char( current->ktable[wd]->data.graphics, x+i*8, y, s[i] );
     }
     return 0;
 }
 
 int sys_draw_create( int wd, int x, int y, int w, int h ) {
-    if (current->window_count >= PROCESS_MAX_WINDOWS || wd < 0 || wd >= current->window_count || current->windows[wd]->clip.w < x + w || current->windows[wd]->clip.h < y + h) {
+	int fd = process_available_fd(current);
+    if (fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS ||
+        current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
         return ENOENT;
     }
 
-    current->windows[current->window_count] = graphics_create(current->windows[wd]);
+    current->ktable[fd] = kobject_create_graphics(graphics_create(current->ktable[wd]->data.graphics));
 
-    if (!current->windows[current->window_count]) {
+    if (!current->ktable[fd]) {
         return ENOENT;
     }
 
-    current->windows[current->window_count]->clip.x = x + current->windows[wd]->clip.x;
-    current->windows[current->window_count]->clip.y = y + current->windows[wd]->clip.y;
-    current->windows[current->window_count]->clip.w = w;
-    current->windows[current->window_count]->clip.h = h;
+    current->ktable[fd]->data.graphics->clip.x = x + current->ktable[wd]->data.graphics->clip.x;
+    current->ktable[fd]->data.graphics->clip.y = y + current->ktable[wd]->data.graphics->clip.y;
+    current->ktable[fd]->data.graphics->clip.w = w;
+    current->ktable[fd]->data.graphics->clip.h = h;
 
-    return current->window_count++;
+    return fd;
 }
 
 int sys_draw_write( struct graphics_command *s ) {
@@ -562,11 +596,13 @@ int32_t syscall_handler( syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32
 	case SYSCALL_DEBUG:	return sys_debug((const char*)a);
 	case SYSCALL_YIELD:	return sys_yield();
 	case SYSCALL_OPEN:	return sys_open((const char *)a,b,c);
+	case SYSCALL_DUP:	return sys_dup(a,b);
 	case SYSCALL_READ:	return sys_read(a,(void*)b,c);
 	case SYSCALL_WRITE:	return sys_write(a,(void*)b,c);
 	case SYSCALL_LSEEK:	return sys_lseek(a,b,c);
 	case SYSCALL_CLOSE:	return sys_close(a);
 	case SYSCALL_KEYBOARD_READ_CHAR:	return sys_keyboard_read_char();
+	case SYSCALL_OPEN_CONSOLE:	return sys_open_console(a);
 	case SYSCALL_DRAW_COLOR:	return sys_draw_color(a, b, c, d);
 	case SYSCALL_DRAW_RECT:	return sys_draw_rect(a, b, c, d, e);
 	case SYSCALL_DRAW_LINE:	return sys_draw_line(a, b, c, d, e);

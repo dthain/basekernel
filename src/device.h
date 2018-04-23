@@ -23,17 +23,8 @@ struct device {
     int sy0;
     int sx1;
     int sy1;
-
+    int alloced;
     struct buffer *buffer;
-};
-
-struct console_device{
-    struct device device;
-    int xsize;
-    int ysize;
-    int xpos;
-    int ypos;
-    struct graphics *gx;
 };
 
 void device_init();
