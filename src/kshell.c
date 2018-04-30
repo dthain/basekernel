@@ -95,17 +95,13 @@ static int process_command(char *line)
 	{
 		pch = strtok(0, " ");
 		if (pch) {
-            const char* argv[] = {pch, "run"};
-			int pid = sys_process_run(pch, argv, 2);
-            printf("started process %d\n", pid);
-            struct process_info info;
-            if (!process_wait_child(&info, -1)) {
-                printf("process %d exited with status %d\n", info.pid, info.exitcode);
-                process_reap(info.pid);
-
-            } else {
-                printf("run: timeout\n");
-            }
+      const char* argv[] = {pch, "run"};
+      int pid = sys_process_run(pch, argv, 2);
+      printf("started process %d\n", pid);
+      struct process_info info;
+      process_wait_child(&info, -1);
+      printf("process %d exited with status %d\n", info.pid, info.exitcode);
+      process_reap(info.pid);
 		}
 		else
 			printf("run: missing argument\n");
