@@ -57,7 +57,8 @@ static void draw_set_buffer(int t, int a0, int a1, int a2, int a3) {
 
 void draw_flush() {
     draw_set_buffer(GRAPHICS_END, 0, 0, 0, 0);
-    draw_write(graphics_buffer);
+    write(KNO_STDWIN, graphics_buffer, graphics_buffer_index*sizeof(struct graphics_command));
+    //draw_write(graphics_buffer);
     graphics_buffer_index = 0;
 }
 

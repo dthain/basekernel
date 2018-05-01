@@ -439,8 +439,7 @@ int process_wait_child(struct process_info *info, int timeout) {
 		process_wait(&ready_list);
 		elapsed = clock_diff(start,clock_read());
 		total = elapsed.millis + elapsed.seconds*1000;
-	} while(total<timeout);
-
+	} while(total<timeout || timeout < 0);
     return 1;
 }
 

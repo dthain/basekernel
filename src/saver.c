@@ -11,21 +11,17 @@ A fun graphics demo that features a line segment bouncing around the screen.
 #include "syscalls.h"
 #include "user-io.h"
 
-#define WIDTH    (200)
-#define HEIGHT   (200)
 typedef unsigned int uint32_t;
 
 uint32_t randint(uint32_t min, uint32_t max);
 void move(int *x, int *d, int min, int max);
 
+int WIDTH = (200);
+int HEIGHT = (200);
+int buff = 0;
+
 int main( const char *argv[], int argc )
 {
-    int wd = draw_create(KNO_STDWIN, 600, 500, WIDTH, HEIGHT);
-    if (wd < 0) {
-        debug("Window create failed!\n");
-        exit(1);
-    }
-
     int r = 255;
     int g = 0;
     int b = 0;
@@ -40,8 +36,8 @@ int main( const char *argv[], int argc )
     int dr = -1;
     int dg = 2;
     int db = 3;
-    
-    draw_window(wd);
+
+    draw_window(KNO_STDWIN);
     draw_clear(0, 0, WIDTH, HEIGHT);
     draw_flush();
 
@@ -53,11 +49,34 @@ int main( const char *argv[], int argc )
         move(&r, &dr, 0, 255);
         move(&g, &dg, 0, 255);
         move(&b, &db, 0, 255);
-        draw_window(wd);
+        draw_window(KNO_STDWIN);
         draw_color(r, g, b);
 
         draw_line(x1, y1, x2-x1, y2-y1);
         draw_flush();
+        char s[12] = {0};
+        int r = read(4, s, 12);
+        int i = 0;
+        for (i = 0; i < r; i++) {
+            switch (s[i]) {
+                case ',':
+                    buff = 0;
+                    break;
+                case 'x':
+                    WIDTH = buff;
+                    buff = 0;
+                    break;
+                case 'y':
+                    HEIGHT = buff;
+                    buff = 0;
+                    break;
+                default:
+                    if (s[i] >= '0' && s[i] <= '9') {
+                        buff = buff*10 + (s[i] - '0');
+                    }
+                    break;
+            }
+        }
         sleep(75);
     }
 
