@@ -121,8 +121,12 @@ int process_kill( unsigned int pid ) {
     return syscall( SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0 );
 }
 
-int console_open( int wd ) {
-	return syscall( SYSCALL_OPEN_CONSOLE, wd, 0, 0, 0, 0 );
+int set_blocking( int fd, int b ) {
+	return syscall( SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0 );
+}
+
+int console_open( int fd ) {
+	return syscall( SYSCALL_OPEN_CONSOLE, fd, 0, 0, 0, 0 );
 }
 
 int pipe_open() {

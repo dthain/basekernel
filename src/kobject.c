@@ -84,8 +84,30 @@ int kobject_close(struct kobject *kobject) {
             case KOBJECT_DEVICE: return 0;
             case KOBJECT_PIPE:
                 pipe_close(kobject->data.pipe);
+                return 1;
+        }
+    } else if (kobject->rc == 1) {
+        switch (kobject->type) {
+            case KOBJECT_INVALID: return 0;
+            case KOBJECT_GRAPHICS: return 0;
+            case KOBJECT_FILE: return 0;
+            case KOBJECT_DEVICE: return 0;
+            case KOBJECT_PIPE:
+                pipe_flush(kobject->data.pipe);
                 return 0;
         }
+    }
+    return 0;
+}
+
+int kobject_set_blocking(struct kobject *kobject, int b) {
+    switch (kobject->type) {
+        case KOBJECT_INVALID: return 0;
+        case KOBJECT_GRAPHICS: return 0;
+        case KOBJECT_FILE: return 0;
+        case KOBJECT_DEVICE: return 0;
+        case KOBJECT_PIPE:
+            return pipe_set_blocking(kobject->data.pipe, b);
     }
     return 0;
 }
