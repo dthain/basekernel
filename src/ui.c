@@ -27,6 +27,11 @@ int main( const char *argv[], int argc )
         side_panels[i] = draw_create(KNO_STDWIN,500,200*i,100,100);
         set_blocking(cmd_pipes[i], 0);
         set_blocking(win_pipes[i], 0);
+        if (i == active) {
+            write(cmd_pipes[i], (void*)BIG, strlen(BIG));
+        } else {
+            write(cmd_pipes[i], (void*)SMALL, strlen(SMALL));
+        }
     }
     set_blocking(KNO_STDIN, 0);
     int x = fork();

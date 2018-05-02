@@ -100,7 +100,7 @@ int main( const char *argv[], int argc )
         draw_flush();
 
         event_handler();
-        sleep(75);
+        sleep(1000);
     }
 
 	exit(0);
