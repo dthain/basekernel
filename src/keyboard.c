@@ -115,7 +115,11 @@ int keyboard_device_read(struct device* d, void* dest, int size, int offset)
 	int i;
 	for (i = 0; i < size; i++) {
 		while(keyboard_buffer_read==keyboard_buffer_write) {
-			process_wait(&queue);
+            if (d->blocking) {
+                process_wait(&queue);
+            } else {
+                return i;
+            }
 		}
 		((char*)dest)[i] = buffer[keyboard_buffer_read];
 		keyboard_buffer_read = (keyboard_buffer_read+1)%BUFFER_SIZE;
@@ -138,6 +142,7 @@ struct device* keyboard_get()
 void keyboard_init()
 {
     keyboard.block_size = 1;
+    keyboard.blocking = 1;
     keyboard.read = keyboard_device_read;
 	interrupt_register(33,keyboard_interrupt);
 	interrupt_enable(33);

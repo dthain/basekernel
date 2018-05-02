@@ -105,7 +105,8 @@ int kobject_set_blocking(struct kobject *kobject, int b) {
         case KOBJECT_INVALID: return 0;
         case KOBJECT_GRAPHICS: return 0;
         case KOBJECT_FILE: return 0;
-        case KOBJECT_DEVICE: return 0;
+        case KOBJECT_DEVICE:
+            return device_set_blocking(kobject->data.device, b);
         case KOBJECT_PIPE:
             return pipe_set_blocking(kobject->data.pipe, b);
     }

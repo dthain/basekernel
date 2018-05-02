@@ -42,6 +42,7 @@ void device_init()
         atapi_devices[i].unit = i;
         atapi_devices[i].block_size = CDROM_BLOCK_SIZE;
         atapi_devices[i].buffer = 0;
+        atapi_devices[i].blocking = 0;
     }
     for (i = 0; i < ATA_DEVICE_COUNT; i++)  {
         ata_devices[i].read = ata_device_read;
@@ -49,6 +50,7 @@ void device_init()
         ata_devices[i].unit = i;
         ata_devices[i].block_size = ATA_BLOCKSIZE;
         ata_devices[i].buffer = buffer_init(ATA_BLOCKSIZE);
+        ata_devices[i].blocking = 0;
     }
 }
 
@@ -69,6 +71,15 @@ struct device *device_open(char *name, int unit)
     } else {
         return 0;
     }
+}
+
+int device_set_blocking(struct device *d, int b)
+{
+    if (d) {
+        d->blocking = b;
+        return 1;
+	}
+    return 0;
 }
 
 int device_read(struct device *d, void *buffer, int size, int offset)

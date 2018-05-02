@@ -10,7 +10,7 @@ OBJCOPY=i686-elf-objcopy
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img saver.exe ball.exe write.exe pwd.exe usrshell.exe frktst.exe exctst.exe printer.exe piptst.exe write.exe ui.exe
+basekernel.iso: basekernel.img saver.exe ball.exe write.exe pwd.exe usrshell.exe frktst.exe exctst.exe printer.exe piptst.exe write.exe ui.exe agclk.exe
 	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
@@ -36,6 +36,9 @@ kernel.elf: ${KERNEL_OBJECTS}
 
 %.o: %.S
 	${CC} ${KERNEL_CCFLAGS} $< -o $@
+
+agclk.elf: agclk.o $(USER_OBJECTS)
+	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o malloc.o -o $@
 
 ui.elf: ui.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o malloc.o -o $@

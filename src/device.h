@@ -24,6 +24,7 @@ struct device {
     int sx1;
     int sy1;
     int alloced;
+    int blocking;
     struct buffer *buffer;
 };
 
@@ -31,6 +32,7 @@ void device_init();
 struct device *device_open(char *type, int unit);
 struct device *device_subset(struct device *d, int dx0, int dy0, int dx1, int dy1);
 
+int device_set_blocking(struct device *d, int b);
 int device_read(struct device *d, void *buffer, int size, int offset);
 int device_write(struct device *d, void *buffer, int size, int offset);
 

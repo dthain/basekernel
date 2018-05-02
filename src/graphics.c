@@ -181,8 +181,6 @@ void graphics_rect( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t
 {
 	int i, j;
 
-	w = MIN(g->clip.w-x,w);
-	h = MIN(g->clip.h-y,h);
 	x += g->clip.x;
 	y += g->clip.y;
 
@@ -211,6 +209,8 @@ void graphics_clear( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_
 
 static inline void graphics_line_vert( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h )
 {
+	w = MIN(g->clip.w-x,w);
+	h = MIN(g->clip.h-y,h);
 	do {
 		plot_pixel(g->bitmap,x,y,g->fgcolor);
 		y++;
@@ -280,14 +280,14 @@ static inline void graphics_line_q4( struct graphics *g, int32_t x, int32_t y, i
 	do {
 		plot_pixel(g->bitmap,x,y,g->fgcolor);
 		y--;
-		h--;
+		h++;
 		counter += slope;
 		if(counter>FACTOR) {
 			counter = counter-FACTOR;
 			x++;
 			w--;
 		}
-	} while(h>0);
+	} while(h<0);
 }
 
 static inline void graphics_line_hozo( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h )
@@ -301,13 +301,16 @@ static inline void graphics_line_hozo( struct graphics *g, int32_t x, int32_t y,
 
 void graphics_line( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h )
 {
+    if (x < 0 || y < 0 || x + w > g->clip.w || y + w > g->clip.h || x + w < 0 || y + h < 0 || x > g->clip.w || y > g->clip.h) {
+        return;
+    }
+
 	if(w<0) {
 		x = x+w;
 		y = y+h;
 		w = -w;
 		h = -h;
 	}
-
 	x += g->clip.x;
 	y += g->clip.y;
 
