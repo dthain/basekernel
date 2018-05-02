@@ -5,6 +5,8 @@
 #include "rtc.h"
 #include "ascii.h"
 
+int has_ns = 0;
+
 void print_directory( char *d, int length )
 {
   while(length>0) {
@@ -24,9 +26,19 @@ int process_command(char * line) {
   }
   else if (pch && !strcmp(pch, "start"))
   {
+    if (!has_ns) {
+      printf("Error, no namespace.\n");
+      return 1;
+    }
     pch = strtok(0, " ");
     if (pch) {
-      const char* argv[] = {pch, "start"};
+      const char* argv[20];
+      argv[0] = pch;
+      int i = 1;
+      char * next;
+      while((next = strtok(0, " "))) {
+        argv[i++] = next;
+      }
       int pid = fork();
       if (pid != 0) {
         printf("started process %d\n", pid);
@@ -39,18 +51,28 @@ int process_command(char * line) {
   }
   else if (pch && !strcmp(pch, "run"))
   {
+    if (!has_ns) {
+      printf("Error, no namespace.\n");
+      return 1;
+    }
     pch = strtok(0, " ");
     if (pch) {
-      const char* argv[] = {pch, "run"};
+      const char* argv[20];
+      argv[0] = pch;
+      int i = 1;
+      char * next;
+      while((next = strtok(0, " "))) {
+        argv[i++] = next;
+      }
       int pid = fork();
       if (pid != 0) {
         printf("started process %d\n", pid);
         struct process_info info;
-        while (process_wait(&info, 5000)) {}
+        process_wait(&info, -1);
         printf("process %d exited with status %d\n", info.pid, info.exitcode);
         process_reap(info.pid);
       } else {
-        exec(pch, argv, 2);
+        exec(pch, argv, i);
       }
     }
     else
@@ -104,17 +126,35 @@ int process_command(char * line) {
       return 1;
     }
     char *fs_type = strtok(0, " ");
+    if (!fs_type) {
+      printf("Incorrect arguments, usage: mount <unit_no> <fs_type> <ns_name>\n");
+      return 1;
+    }
     char *ns_name = strtok(0, " ");
-    mount(unit, fs_type, ns_name);
+    if (!ns_name) {
+      printf("Incorrect arguments, usage: mount <unit_no> <fs_type> <ns_name>\n");
+      return 1;
+    }
+    if(mount(unit, fs_type, ns_name)) {
+      printf("Error mounting.\n");
+    }
   }
   else if (pch && !strcmp(pch, "list"))
   {
+    if (!has_ns) {
+      printf("Error, no namespace.\n");
+      return 1;
+    }
     char buffer[1024];
     int length = readdir(".", buffer, 1024);
     print_directory(buffer, length);
   }
   else if (pch && !strcmp(pch, "chdir"))
   {
+    if (!has_ns) {
+      printf("Error, no namespace.\n");
+      return 1;
+    }
     char *path = strtok(0, " ");
     if (!path) {
       printf("Incorrect arguments, usage: chdir <path>\n");
@@ -129,7 +169,11 @@ int process_command(char * line) {
       printf("Incorrect arguments, usage: chdir <path>\n");
       return 1;
     }
-    ns_change(ns);
+    if(ns_change(ns)) {
+      printf("Error changing namespace.\n");
+      return 1;
+    }
+    has_ns = 1;
   }
   else if (pch && !strcmp(pch, "help"))
   {
@@ -166,7 +210,7 @@ int main(char ** argv, int argc) {
   char line[1024];
   char * pos = line;
   char c;
-  printf("$ ");
+  printf("u$ ");
   while (1) {
     flush();
     c = keyboard_read_char();
@@ -180,7 +224,7 @@ int main(char ** argv, int argc) {
         break;
       }
       pos = line;
-      printf("$ ");
+      printf("u$ ");
     }
     else if (c == ASCII_BS) {
       pos--;
