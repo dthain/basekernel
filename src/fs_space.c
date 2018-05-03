@@ -16,6 +16,7 @@ int fs_space_depth_check(const char *path, int cdepth) {
       break;
     } else if (!strcmp(part, "..")) {
       cdepth--;
+    } else if (strcmp(part, ".")) {
     } else {
       cdepth++;
     }
