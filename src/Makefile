@@ -1,6 +1,6 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs/kevinfs.o hashtable.o kevinfs/kevinfs_test.o kevinfs/kevinfs_ata.o serial.o elf.o device.o kobject.o buffer.o fs_space.o pipe.o
 
-USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o frktst.o exctst.o printer.o usrshell.o piptst.o ui.o
+USER_OBJECTS=user-start.o test.o syscall.o syscalls.o string.o user-io.o malloc.o frktst.o exctst.o printer.o usrshell.o piptst.o winman.o
 
 KERNEL_CCFLAGS=-Wall -c -ffreestanding -fno-pie -g
 CC=i686-elf-gcc
@@ -10,7 +10,7 @@ OBJCOPY=i686-elf-objcopy
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img saver.exe ball.exe write.exe pwd.exe usrshell.exe frktst.exe exctst.exe printer.exe piptst.exe write.exe ui.exe agclk.exe
+basekernel.iso: basekernel.img saver.exe ball.exe write.exe pwd.exe usrshell.exe frktst.exe exctst.exe printer.exe piptst.exe write.exe winman.exe agclk.exe
 	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
@@ -40,7 +40,7 @@ kernel.elf: ${KERNEL_OBJECTS}
 agclk.elf: agclk.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o malloc.o -o $@
 
-ui.elf: ui.o $(USER_OBJECTS)
+winman.elf: winman.o $(USER_OBJECTS)
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 user-start.o $< syscall.o syscalls.o string.o user-io.o malloc.o -o $@
 
 test.elf: test.o $(USER_OBJECTS)
