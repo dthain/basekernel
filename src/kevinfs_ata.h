@@ -1,8 +1,8 @@
 #ifndef FS_ATA_H
 #define FS_ATA_H
 
-#include "../device.h"
-#include "../kerneltypes.h"
+#include "device.h"
+#include "kerneltypes.h"
 #include "kevinfs.h"
 
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *block);

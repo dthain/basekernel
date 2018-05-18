@@ -24,8 +24,8 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 #include "cdromfs.h"
-#include "kevinfs/kevinfs_test.h"
-#include "kevinfs/kevinfs.h"
+#include "kevinfs_test.h"
+#include "kevinfs.h"
 #include "serial.h"
 
 struct dirent *root_directory = 0;

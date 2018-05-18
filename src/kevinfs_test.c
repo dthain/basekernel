@@ -1,8 +1,8 @@
 #include "kevinfs.h"
-#include "../string.h"
-#include "../kmalloc.h"
-#include "../kerneltypes.h"
-#include "../fs.h"
+#include "string.h"
+#include "kmalloc.h"
+#include "kerneltypes.h"
+#include "fs.h"
 
 void test_mount() {
 	printf("test_mount\n");

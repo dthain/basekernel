@@ -10,7 +10,7 @@
 #include "main.h"
 #include "ascii.h"
 #include "fs.h"
-#include "kevinfs/kevinfs_test.h"
+#include "kevinfs_test.h"
 #include "syscall_handler.h"
 
 #define HISTORY 10

@@ -4,15 +4,15 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "../kerneltypes.h"
-#include "../ata.h"
-#include "../kmalloc.h"
+#include "kerneltypes.h"
+#include "ata.h"
+#include "kmalloc.h"
 #include "kevinfs.h"
 #include "kevinfs_ata.h"
-#include "../string.h"
-#include "../hashtable.h"
-#include "../fs.h"
-#include "../fs_ops.h"
+#include "string.h"
+#include "hashtable.h"
+#include "fs.h"
+#include "fs_ops.h"
 
 static uint32_t ceiling(double d)
 {
