@@ -11,7 +11,6 @@ See the file LICENSE for details.
 
 int main( const char *argv[], int argc )
 {
-	int n;
 	char buffer[200];
 	uint32_t i = 0;
 	mount(0, "kevin", "K");

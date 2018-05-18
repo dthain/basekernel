@@ -355,7 +355,6 @@ int sys_rmdir(const char *name){
 int sys_open( const char *path, int mode, int flags )
 {
 	int fd = process_available_fd(current);
-	int ret = 0;
 	if (fd < 0)
 		return -1;
   if (!fs_spaces[current->fs_spaces[current->cws].gindex].present) {
@@ -366,7 +365,8 @@ int sys_open( const char *path, int mode, int flags )
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, path);
 	if (!d) {
-		ret = fs_dirent_mkfile(cwd, path);
+		int ret = fs_dirent_mkfile(cwd, path);
+		// XXX return value not checked!
 		d = fs_dirent_namei(cwd, path);
 	}
 	struct fs_file *fp = fs_file_open(d, mode);
