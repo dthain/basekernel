@@ -12,7 +12,7 @@ OBJCOPY=i686-elf-objcopy
 
 all: basekernel.iso
 
-basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe copy.exe pwd.exe usrshell.exe frktst.exe exctst.exe printer.exe
+basekernel.iso: basekernel.img test.exe saver.exe ball.exe long.exe write.exe copy.exe pwd.exe shell.exe frktst.exe exctst.exe printer.exe
 	${ISOGEN} -J -R -o $@ -b $^ $<
 
 basekernel.img: bootblock kernel
