@@ -475,6 +475,26 @@ int sys_pwd(char *result)
 	return 0;
 }
 
+int sys_open_pipe()
+{
+	int fd = process_available_fd(current);
+	if(fd < 0) {
+		return ENOENT;
+	}
+	struct pipe *p = pipe_open();
+	if(!p) {
+		return ENOENT;
+	}
+	current->ktable[fd] = kobject_create_pipe(p);
+	return fd;
+}
+
+int sys_set_blocking(int fd, int b)
+{
+	struct kobject *p = current->ktable[fd];
+	return kobject_set_blocking(p, b);
+}
+
 int sys_open_console(int wd)
 {
 	int fd = process_available_fd(current);
@@ -631,6 +651,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_close(a);
 	case SYSCALL_KEYBOARD_READ_CHAR:
 		return sys_keyboard_read_char();
+	case SYSCALL_SET_BLOCKING:
+		return sys_set_blocking(a, b);
+	case SYSCALL_OPEN_PIPE:
+		return sys_open_pipe();
 	case SYSCALL_OPEN_CONSOLE:
 		return sys_open_console(a);
 	case SYSCALL_DRAW_COLOR:
