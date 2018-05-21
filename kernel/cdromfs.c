@@ -57,7 +57,6 @@ static char * cdrom_dirent_load( struct fs_dirent *d )
 	if(!data) return 0;
 
 	device_read(cdd->volume->device, data, nsectors, cdd->sector);
-	//atapi_read(cdd->volume->unit,data,nsectors,cdd->sector);
 	// XXX check result
 
 	return data;
@@ -79,15 +78,10 @@ static void fix_filename( char *name, int length )
 	name[length] = 0;
 }
 
-/*
-   Read an entire cdrom file into the target address.
-   */
-
 static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
 {
 	struct cdrom_dirent *cdd = d->private_data;
 	return device_read( cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum );
-	//atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
 }
 
 static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char *name )
@@ -239,7 +233,6 @@ static struct fs_volume * cdrom_volume_open( uint32_t unit )
 		printf("cdromfs: checking volume %d\n",j);
 
 		device_read(device, d, 1, j+16); 
-		//atapi_read(unit,d,1,j+16);
 		// XXX check reuslt
 
 		if(strncmp(d->magic,"CD001",5)) continue;
