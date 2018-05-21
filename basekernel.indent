@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Standard indenting options for baskernel.
+# Run "basekernel.indent filename" to properly indent a file.
+
+indent $@ -bap -br -brs -cdw -ce -cli0 -nfca -nhnl -nprs -nsaf -nsai -nsaw -nsob -npcs -npro -nss -l256 -nbfda -ut -i8 -npsl

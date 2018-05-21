@@ -13,8 +13,8 @@ the main function.  Note that this function cannot exit, but
 must invoke the exit() system call to terminate the process.
 */
 
-#include "syscalls.h"
-#include "memorylayout.h"
+#include "../kernel/syscalls.h"
+#include "../kernel/memorylayout.h"
 
 int main( const char *argv[], int argc );
 

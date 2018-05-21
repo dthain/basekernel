@@ -5,9 +5,9 @@ See the file LICENSE for details.
 */
 
 #include "user-io.h"
-#include "graphics_lib.h"
-#include "kerneltypes.h"
-#include "syscalls.h"
+#include "../kernel/graphics_lib.h"
+#include "../kernel/kerneltypes.h"
+#include "../kernel/syscalls.h"
 #include "string.h"
 #include "stdarg.h"
 
