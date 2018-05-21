@@ -88,33 +88,6 @@ static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t
 	//atapi_read( cdd->volume->unit, buffer, 1, (int) cdd->sector + blocknum );
 }
 
-#if 0
-/*
-   Read an entire cdrom file into the target address.
-   */
-
-int cdrom_dirent_readfile( struct cdrom_dirent *d, char *data, int length )
-{
-	int nsectors = d->length/ATAPI_BLOCKSIZE;
-	int remainder = d->length%ATAPI_BLOCKSIZE;
-
-	if(length<d->length) length = d->length;
-
-	atapi_read( d->volume->unit, data, nsectors, d->sector);
-	// check success here
-
-	if(remainder>0) {
-		char *page = memory_alloc_page(0);
-		// XXX check success here
-		atapi_read(d->volume->unit,page,1,d->sector+nsectors);
-		memcpy(data + ATAPI_BLOCKSIZE*nsectors,page,remainder);
-		memory_free_page(page);
-	}
-
-	return length;
-}
-#endif
-
 static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char *name )
 {
 	struct cdrom_dirent *cddir = dir->private_data;
