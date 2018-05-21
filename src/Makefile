@@ -1,6 +1,6 @@
 KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs.o hashtable.o kevinfs_test.o kevinfs_ata.o serial.o elf.o device.o kobject.o buffer.o fs_space.o
 
-USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe exctst.exe saver.exe ball.exe copy.exe write.exe pwd.exe
+USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe exctst.exe saver.exe ball.exe copy.exe write.exe pwd.exe shell.exe
 
 LIBRARY_OBJECTS=test.o syscall.o syscalls.o string.o user-io.o malloc.o
 
