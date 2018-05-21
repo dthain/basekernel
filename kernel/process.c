@@ -427,7 +427,10 @@ int process_wait_child(struct process_info *info, int timeout)
 {
 	clock_t start, elapsed;
 	uint32_t total;
+	if(!info) return 1;
+
 	start = clock_read();
+
 	do {
 		struct process *p = (struct process *) (grave_list.head);
 		while(p) {
