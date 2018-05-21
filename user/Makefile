@@ -5,7 +5,7 @@ USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe exctst.exe saver.exe ball
 all: $(USER_PROGRAMS)
 
 %.o: %.c
-	${CC} ${KERNEL_CCFLAGS} -I ../library -I ../kernel $< -o $@
+	${CC} ${KERNEL_CCFLAGS} -I ../library -I ../common $< -o $@
 
 %.exe: %.o ../library/user-start.o ../library/baselib.a
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 ../library/user-start.o $< ../library/baselib.a -o $@

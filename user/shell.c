@@ -2,7 +2,6 @@
 #include "syscalls.h"
 #include "kerneltypes.h"
 #include "user-io.h"
-#include "rtc.h"
 #include "ascii.h"
 
 int has_ns = 0;

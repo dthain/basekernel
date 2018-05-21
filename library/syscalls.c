@@ -4,8 +4,8 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "../kernel/syscall.h"
-#include "../kernel/graphics_lib.h"
+#include "syscall.h"
+#include "graphics_lib.h"
 
 static int self_pid_cache = 0;
 static int self_ppid_cache = 0;

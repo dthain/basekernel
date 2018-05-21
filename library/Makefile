@@ -5,7 +5,7 @@ LIBRARY_OBJECTS=syscall.o syscalls.o string.o user-io.o malloc.o
 all: user-start.o baselib.a
 
 %.o: %.c
-	${CC} ${KERNEL_CCFLAGS} $< -o $@
+	${CC} ${KERNEL_CCFLAGS} -I ../common $< -o $@
 
 baselib.a: ${LIBRARY_OBJECTS}
 	ar rv $@ ${LIBRARY_OBJECTS}
