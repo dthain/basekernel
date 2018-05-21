@@ -43,18 +43,18 @@ which ata unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
 to mount the cdrom filesystem on that unit:
 
 <pre>
-mount 2
+mount 2 cdrom
 </pre>
 
 Use the <tt>list</tt> command to examine the root directory:
 
 <pre>
-list /
+list
 </pre>
 
 And use the <tt>run</tt> command to run a program:
 
 <pre>
-run /SAVER.EXE
+run /bin/saver.exe
 </pre>
 
