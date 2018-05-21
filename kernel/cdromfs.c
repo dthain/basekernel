@@ -65,16 +65,18 @@ static char * cdrom_dirent_load( struct fs_dirent *d )
 
 static void fix_filename( char *name, int length )
 {
-	if(length>2) {
+	// Plain files typically end with a semicolon and version, remove it.
+  	if(length>2 && name[length-2]==';') {
 		length -= 2;
-		name[length] = 0;
 	}
 
+	// Files without a suffix end with a dot, remove it.
 	if(length>1 && name[length-1]=='.') {
 		length--;
-		name[length] = 0;
 	}
 
+	// In any case, null-terminate the string
+	name[length] = 0;
 }
 
 /*
