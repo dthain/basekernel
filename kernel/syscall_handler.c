@@ -341,7 +341,8 @@ int sys_rmdir(const char *name){
 	if (!d) return -1;
 	int ret = fs_dirent_rmdir(cwd, name);
   if (!ret) {
-    for (int i=0;i<fs_spaces_used;i++) {
+    int i;
+    for (i=0;i<fs_spaces_used;i++) {
       int same;
       fs_dirent_compare(fs_spaces[i].d, d, &same);
       if (same) {
