@@ -14,17 +14,17 @@ This program requires that write() and exit() work correctly.
 #include "string.h"
 #include "user-io.h"
 
-int main( const char *argv[], int argc )
+int main(const char *argv[], int argc)
 {
 	int n;
 	char buffer[1000];
 	mount(0, "kevin", "K");
 	mount(2, "cdrom", "CD");
-  ns_change("CD");
+	ns_change("CD");
 	chdir("/");
 	int fd1 = open("TEST.EXE", 1, 0);
 	printf("got fd %d for cdrom\n", fd1);
-  ns_change("K");
+	ns_change("K");
 	chdir("/");
 	int fd2 = open("testcopy", 2, 0);
 	printf("got fd %d for kevinfs\n", fd2);
@@ -36,6 +36,6 @@ int main( const char *argv[], int argc )
 	close(fd1);
 	close(fd2);
 	exit(0);
-  
+
 	return 0;
 }

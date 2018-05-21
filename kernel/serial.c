@@ -65,12 +65,9 @@ static void serial_init_port(int port)
 	//8 bits, no parity, one stop bit
 	outb(SERIAL_CHARLEN_START * 3, port + SERIAL_LCR);
 	//Enable FIFO, clear them, with 14 - byte threshold
-	outb(SERIAL_FIFO_ENABLE | SERIAL_FIFO_CLEAR_RECIEVER |
-	     SERIAL_FIFO_CLEAR_TRANSMITTER | SERIAL_TRIGGER_LEVEL0 |
-	     SERIAL_TRIGGER_LEVEL1, port + SERIAL_FCR);
+	outb(SERIAL_FIFO_ENABLE | SERIAL_FIFO_CLEAR_RECIEVER | SERIAL_FIFO_CLEAR_TRANSMITTER | SERIAL_TRIGGER_LEVEL0 | SERIAL_TRIGGER_LEVEL1, port + SERIAL_FCR);
 	//IRQs enabled, RTS / DSR set
-	outb(SERIAL_DATA_TERMINAL_READY | SERIAL_REQUEST_TO_SEND |
-	     SERIAL_AUX_OUT2, port + SERIAL_MCR);
+	outb(SERIAL_DATA_TERMINAL_READY | SERIAL_REQUEST_TO_SEND | SERIAL_AUX_OUT2, port + SERIAL_MCR);
 }
 
 static int serial_received(int port)
@@ -91,37 +88,37 @@ static int is_valid_port(uint8_t port_no)
 void serial_init()
 {
 	int i;
-	for (i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
+	for(i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
 		serial_init_port(serial_ports[i]);
 	}
 }
 
 char serial_read(uint8_t port_no)
 {
-	if (!is_valid_port(port_no))
+	if(!is_valid_port(port_no))
 		return -1;
 
-	while (serial_received(serial_ports[port_no]) == 0) ;
+	while(serial_received(serial_ports[port_no]) == 0);
 	inb(serial_ports[port_no]);
 	return 0;
 }
 
 int serial_write(uint8_t port_no, char a)
 {
-	if (!is_valid_port(port_no))
+	if(!is_valid_port(port_no))
 		return -1;
 
-	while (is_transmit_empty(serial_ports[port_no]) == 0) ;
+	while(is_transmit_empty(serial_ports[port_no]) == 0);
 	outb(a, serial_ports[port_no]);
 	return 0;
 }
 
 int serial_write_string(uint8_t port_no, char *s)
 {
-	if (!is_valid_port(port_no))
+	if(!is_valid_port(port_no))
 		return -1;
 
-	while (*s) {
+	while(*s) {
 		serial_write(port_no, *s++);
 	}
 	return 0;

@@ -9,7 +9,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "user-io.h"
 
-int main( const char *argv[], int argc )
+int main(const char *argv[], int argc)
 {
 	char buffer[200];
 	uint32_t i = 0;
@@ -18,7 +18,7 @@ int main( const char *argv[], int argc )
 	chdir("/");
 	char filename[5] = "ex";
 	char id[4];
-	for (i = 0; i < 5; i++) {
+	for(i = 0; i < 5; i++) {
 		filename[2] = 0;
 		strcat(filename, uint_to_string(i, id));
 		printf("writing %s\n", filename);
@@ -31,6 +31,6 @@ int main( const char *argv[], int argc )
 	pwd(buffer);
 	printf("%s\n", buffer);
 	exit(0);
-  
+
 	return 0;
 }

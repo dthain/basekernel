@@ -74,10 +74,10 @@ char *shakespeare[] = {
 	"Ordenance are shot off.",
 };
 
-int main( const char *argv[], int argc )
+int main(const char *argv[], int argc)
 {
 	int i;
-	for(i=0;i < sizeof(shakespeare)/sizeof(char*);i++) {
+	for(i = 0; i < sizeof(shakespeare) / sizeof(char *); i++) {
 		printf("%s\n", shakespeare[i]);
 		sleep(1000);
 	}

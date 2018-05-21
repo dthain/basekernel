@@ -13,7 +13,7 @@ This program requires that write() and exit() work correctly.
 #include "string.h"
 #include "user-io.h"
 
-int main( const char *argv[], int argc )
+int main(const char *argv[], int argc)
 {
 	uint32_t j = 0;
 	printf("mounting\n");
@@ -32,10 +32,11 @@ int main( const char *argv[], int argc )
 		char newline[2] = "\n";
 		int n;
 		uint_to_string(j, num);
-		strcat(buffer,num);
-		strcat(buffer,newline);
+		strcat(buffer, num);
+		strcat(buffer, newline);
 		n = write(fd, buffer, strlen(buffer));
-		if (n < 0) break;
+		if(n < 0)
+			break;
 		printf("wrote %d chars: %s\n", n, buffer);
 	}
 	close(fd);
@@ -43,13 +44,13 @@ int main( const char *argv[], int argc )
 	char buffer[1000];
 	int n;
 	printf("reading file...\n");
-	while ((n = read(fd, buffer, 999)) > 0) {
+	while((n = read(fd, buffer, 999)) > 0) {
 		buffer[n] = 0;
 		printf("%s");
 		flush();
 	}
 	close(fd);
 	exit(0);
-  
+
 	return 0;
 }

@@ -30,27 +30,26 @@ struct graphics {
 	struct graphics_color fgcolor;
 	struct graphics_color bgcolor;
 	struct clip clip;
-    uint32_t count;
+	uint32_t count;
 };
 
-struct graphics * graphics_create_root();
+struct graphics *graphics_create_root();
 
-struct graphics * graphics_create( struct graphics *parent );
-void  graphics_delete( struct graphics *g );
-int32_t graphics_width( struct graphics *g );
-int32_t graphics_height( struct graphics *g );
-void  graphics_fgcolor( struct graphics *g, struct graphics_color c );
-void  graphics_bgcolor( struct graphics *g, struct graphics_color c );
-void  graphics_clip( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
+struct graphics *graphics_create(struct graphics *parent);
+void graphics_delete(struct graphics *g);
+int32_t graphics_width(struct graphics *g);
+int32_t graphics_height(struct graphics *g);
+void graphics_fgcolor(struct graphics *g, struct graphics_color c);
+void graphics_bgcolor(struct graphics *g, struct graphics_color c);
+void graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
 
-void graphics_scrollup( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h, int32_t dy );
-void graphics_rect( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
-void graphics_clear( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
-void graphics_line( struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h );
-void graphics_char( struct graphics *g, int32_t x, int32_t y, char c );
+void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h, int32_t dy);
+void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
+void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
+void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
+void graphics_char(struct graphics *g, int32_t x, int32_t y, char c);
 
-int graphics_write( struct graphics_command *command );
-int graphics_object_write( struct graphics_command *command, struct graphics *g );
+int graphics_write(struct graphics_command *command);
+int graphics_object_write(struct graphics_command *command, struct graphics *g);
 
 #endif
-
