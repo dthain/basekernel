@@ -58,7 +58,7 @@ int main(const char *argv[], int argc)
 
 		draw_line(x1, y1, x2 - x1, y2 - y1);
 		draw_flush();
-		sleep(75);
+		sleep(25);
 	}
 
 	exit(0);
