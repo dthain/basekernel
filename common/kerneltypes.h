@@ -14,30 +14,30 @@
 #define MAX_ARGV_LENGTH 256
 #define MAX_PID 1024
 
-typedef int   int32_t;
+typedef int int32_t;
 typedef short int16_t;
-typedef char  int8_t;
+typedef char int8_t;
 
-typedef unsigned int   uint32_t;
+typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
-typedef unsigned char  uint8_t;
+typedef unsigned char uint8_t;
 
 typedef uint8_t bool;
 
-static inline uint16_t ntoh16( uint16_t x )
+static inline uint16_t ntoh16(uint16_t x)
 {
-	return (x&0xff)<<8 | (x>>8);
+	return (x & 0xff) << 8 | (x >> 8);
 }
 
-static inline uint16_t hton16( uint16_t x )
+static inline uint16_t hton16(uint16_t x)
 {
-	return (x&0xff)<<8 | (x>>8);
+	return (x & 0xff) << 8 | (x >> 8);
 }
 
 struct process_info {
-    int pid;
-    int exitcode;
-    int exitreason;
+	int pid;
+	int exitcode;
+	int exitreason;
 };
 
 #endif
