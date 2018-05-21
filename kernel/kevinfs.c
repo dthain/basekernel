@@ -12,7 +12,6 @@ See the file LICENSE for details.
 #include "string.h"
 #include "hashtable.h"
 #include "fs.h"
-#include "fs_ops.h"
 
 static uint32_t ceiling(double d)
 {

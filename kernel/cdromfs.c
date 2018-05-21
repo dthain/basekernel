@@ -13,7 +13,6 @@ See the file LICENSE for details.
 #include "memory.h"
 #include "fs.h"
 #include "device.h"
-#include "fs_ops.h"
 #include "cdromfs.h"
 
 struct cdrom_volume {
