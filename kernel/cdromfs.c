@@ -172,31 +172,6 @@ int strcmp_cdrom_ident(const char * ident, const char * s) {
 	return strcmp(ident, s);
 }
 
-char * strdup(const char * s) {
-	char * new = kmalloc(strlen(s) + 1);
-	if (new)
-		strcpy(new, s);
-	return new;
-}
-
-void strtoupper(char * name) {
-	while (*name) {
-		if (*name >= 'a' && *name <= 'z') {
-			*name -= 'a' - 'A';
-		}
-		name++;
-	}
-}
-
-void strtolower(char * name) {
-	while (*name) {
-		if (*name >= 'A' && *name <= 'Z') {
-			*name += 'a' - 'A';
-		}
-		name++;
-	}
-}
-
 static int cdrom_dirent_close( struct fs_dirent *d )
 {
 	struct cdrom_dirent *cdd = d->private_data;

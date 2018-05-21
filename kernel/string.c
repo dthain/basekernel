@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "console.h"
 #include "kerneltypes.h"
 #include "ascii.h"
+#include "kmalloc.h"
 
 #include "stdarg.h"
 
@@ -134,6 +135,31 @@ char *strtok(char *s, const char *delim)
 	}
 
 	return word;
+}
+
+char * strdup(const char * s) {
+	char * new = kmalloc(strlen(s) + 1);
+	if (new)
+		strcpy(new, s);
+	return new;
+}
+
+void strtoupper(char * name) {
+	while (*name) {
+		if (*name >= 'a' && *name <= 'z') {
+			*name -= 'a' - 'A';
+		}
+		name++;
+	}
+}
+
+void strtolower(char * name) {
+	while (*name) {
+		if (*name >= 'A' && *name <= 'Z') {
+			*name += 'a' - 'A';
+		}
+		name++;
+	}
 }
 
 int str2int(const char *s, int *d)

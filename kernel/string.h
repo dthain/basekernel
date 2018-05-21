@@ -19,6 +19,9 @@ char *uint_to_string(uint32_t u, char *str);
 char *	 strrev( char *s );
 
 char * strtok( char *s, const char *delim );
+char * strdup( const char *s );
+void strtoupper( char *s );
+void strtolower( char *s );
 
 int str2int( const char *s, int *d );
 
