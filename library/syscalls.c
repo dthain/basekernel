@@ -195,12 +195,6 @@ int pwd(char *buffer)
 	return syscall(SYSCALL_PWD, (uint32_t) buffer, 0, 0, 0, 0);
 }
 
-int getpid()
-{
-	static int cache = 0;
-	return cache ? (cache) : (cache = syscall(SYSCALL_GETPID, 0, 0, 0, 0, 0));
-}
-
 int process_reap(unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_REAP, pid, 0, 0, 0, 0);

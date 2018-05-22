@@ -35,13 +35,13 @@ int sys_debug(const char *str)
 	return 0;
 }
 
-int sys_exit(int status)
+int sys_process_exit(int status)
 {
 	process_exit(status);
 	return 0;
 }
 
-int sys_yield()
+int sys_process_yield()
 {
 	process_yield();
 	return 0;
@@ -92,7 +92,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	return p->pid;
 }
 
-void sys_exec(const char *path, const char **argv, int argc)
+void sys_process_exec(const char *path, const char **argv, int argc)
 {
 	if(!fs_spaces[current->fs_spaces[current->cws].gindex].present || fs_space_depth_check(path, current->cwd_depth) == -1) {
 		return;
@@ -116,7 +116,7 @@ void sys_exec(const char *path, const char **argv, int argc)
 	process_yield();	// Otherwise we will jump back into the old process
 }
 
-int sys_fork()
+int sys_process_fork()
 {
 	struct process *p = process_create(0, 0, 0);
 	p->state = PROCESS_STATE_FORK_CHILD;
@@ -597,7 +597,7 @@ int sys_draw_write(struct graphics_command *s)
 	return graphics_write(s);
 }
 
-int sys_sleep(unsigned int ms)
+int sys_process_sleep(unsigned int ms)
 {
 	clock_wait(ms);
 	return 0;
@@ -605,12 +605,12 @@ int sys_sleep(unsigned int ms)
 
 int sys_process_self()
 {
-	return process_getpid();
+	return process_self();
 }
 
 int sys_process_parent()
 {
-	return process_getppid();
+	return process_parent();
 }
 
 int sys_process_kill(int pid)
@@ -631,12 +631,30 @@ int sys_process_reap(int pid)
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	switch (n) {
-	case SYSCALL_PROCESS_EXIT:
-		return sys_exit(a);
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
+	case SYSCALL_PROCESS_EXIT:
+		return sys_process_exit(a);
 	case SYSCALL_PROCESS_YIELD:
-		return sys_yield();
+		return sys_process_yield();
+	case SYSCALL_PROCESS_SLEEP:
+		return sys_process_sleep(a);
+	case SYSCALL_PROCESS_SELF:
+		return sys_process_self();
+	case SYSCALL_PROCESS_PARENT:
+		return sys_process_parent();
+	case SYSCALL_PROCESS_RUN:
+		return sys_process_run((const char *) a, (const char **) b, c);
+	case SYSCALL_PROCESS_FORK:
+		return sys_process_fork();
+	case SYSCALL_PROCESS_EXEC:
+		sys_process_exec((const char *) a, (const char **) b, c);
+	case SYSCALL_PROCESS_KILL:
+		return sys_process_kill(a);
+	case SYSCALL_PROCESS_WAIT:
+		return sys_process_wait((struct process_info *) a, b);
+	case SYSCALL_PROCESS_REAP:
+		return sys_process_reap(a);
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
 	case SYSCALL_DUP:
@@ -673,8 +691,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_DRAW_WRITE:
 		return sys_draw_write((struct graphics_command *) a);
-	case SYSCALL_PROCESS_SLEEP:
-		return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_MOUNT:
@@ -683,16 +699,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_sbrk(a);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
-	case SYSCALL_PROCESS_SELF:
-		return sys_process_self();
-	case SYSCALL_PROCESS_PARENT:
-		return sys_process_parent();
-	case SYSCALL_PROCESS_RUN:
-		return sys_process_run((const char *) a, (const char **) b, c);
-	case SYSCALL_PROCESS_FORK:
-		return sys_fork();
-	case SYSCALL_PROCESS_EXEC:
-		sys_exec((const char *) a, (const char **) b, c);
 	case SYSCALL_NS_COPY:
 		return sys_ns_copy((const char *) a, (const char *) b);
 	case SYSCALL_NS_DELETE:
@@ -705,12 +711,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_ns_lower_root((const char *) a, (const char *) b);
 	case SYSCALL_NS_CHANGE:
 		return sys_ns_change((const char *) a);
-	case SYSCALL_PROCESS_KILL:
-		return sys_process_kill(a);
-	case SYSCALL_PROCESS_WAIT:
-		return sys_process_wait((struct process_info *) a, b);
-	case SYSCALL_PROCESS_REAP:
-		return sys_process_reap(a);
 	case SYSCALL_MKDIR:
 		return sys_mkdir((const char *) a);
 	case SYSCALL_READDIR:

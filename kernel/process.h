@@ -80,8 +80,8 @@ int process_kill(uint32_t pid);
 int process_wait_child(struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
 
-uint32_t process_getpid();
-uint32_t process_getppid();
+uint32_t process_self();
+uint32_t process_parent();
 
 int process_available_fd(struct process *p);
 int process_mount_as(struct process *p, struct fs_volume *v, const char *ns);
