@@ -509,6 +509,8 @@ int sys_open_console(int wd)
 	return fd;
 }
 
+/*
+
 int sys_draw_color(int wd, int r, int g, int b)
 {
 	if(wd < 0) {
@@ -570,6 +572,8 @@ int sys_draw_string(int wd, int x, int y, char *s)
 	}
 	return 0;
 }
+
+*/
 
 int sys_draw_create(int wd, int x, int y, int w, int h)
 {
@@ -675,18 +679,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_pipe();
 	case SYSCALL_OPEN_CONSOLE:
 		return sys_open_console(a);
-	case SYSCALL_DRAW_COLOR:
-		return sys_draw_color(a, b, c, d);
-	case SYSCALL_DRAW_RECT:
-		return sys_draw_rect(a, b, c, d, e);
-	case SYSCALL_DRAW_LINE:
-		return sys_draw_line(a, b, c, d, e);
-	case SYSCALL_DRAW_CLEAR:
-		return sys_draw_clear(a, b, c, d, e);
-	case SYSCALL_DRAW_CHAR:
-		return sys_draw_char(a, b, c, (char) d);
-	case SYSCALL_DRAW_STRING:
-		return sys_draw_string(a, b, c, (char *) d);
 	case SYSCALL_DRAW_CREATE:
 		return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_DRAW_WRITE:
