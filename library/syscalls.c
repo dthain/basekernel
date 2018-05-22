@@ -7,9 +7,6 @@ See the file LICENSE for details.
 #include "syscall.h"
 #include "graphics_lib.h"
 
-static int self_pid_cache = 0;
-static int self_ppid_cache = 0;
-
 void debug(const char *str)
 {
 	syscall(SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0);
@@ -97,12 +94,12 @@ uint32_t gettimeofday()
 
 int process_self()
 {
-	return self_pid_cache ? (self_pid_cache) : (self_pid_cache = syscall(SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0));
+	return syscall(SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0);
 }
 
 int process_parent()
 {
-	return self_ppid_cache ? (self_ppid_cache) : (self_ppid_cache = syscall(SYSCALL_PROCESS_PARENT, 0, 0, 0, 0, 0));
+	return syscall(SYSCALL_PROCESS_PARENT, 0, 0, 0, 0, 0);
 }
 
 int process_run(const char *cmd, const char **argv, int argc)
@@ -112,12 +109,7 @@ int process_run(const char *cmd, const char **argv, int argc)
 
 int process_fork()
 {
-	self_pid_cache = 0;
-	self_ppid_cache = 0;
-	int cpid = syscall(SYSCALL_PROCESS_FORK, 0, 0, 0, 0, 0);
-	if(cpid == process_self())
-		return 0;
-	return cpid;
+	return syscall(SYSCALL_PROCESS_FORK, 0, 0, 0, 0, 0);
 }
 
 void process_exec(const char *path, const char **argv, int argc)
