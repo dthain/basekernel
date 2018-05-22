@@ -118,20 +118,6 @@ void sys_process_exec(const char *path, const char **argv, int argc)
 
 int sys_process_fork()
 {
-  /*
-	int i=0;
-	int32_t *data = (int32_t*) &i;
-
-	console_printf("PARENT\n");
-	console_printf("kstack: %x kstack_ptr: %x kstack_top: %x\n",current->kstack,current->kstack_ptr,current->kstack_top);
-	for(i=0;i<26;i++) {
-		console_printf("%x %x\n",&data[i],data[i]);
-	}
-
-	process_dump(current);
-	while(1) {}
-  */
-
 	struct process *p = process_create(0, 0, 0);
 	p->state = PROCESS_STATE_CRADLE;
 	p->ppid = current->pid;
