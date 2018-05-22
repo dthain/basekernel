@@ -131,7 +131,7 @@ void process_inherit(struct process *p)
 		fs_spaces[p->fs_spaces[i].gindex].count++;
 	}
 	/* Set the parent of the new process to the calling process */
-	p->ppid = process_self();
+	p->ppid = current->pid;
 }
 
 struct process *process_create(unsigned code_size, unsigned stack_size, int pid)
@@ -316,16 +316,6 @@ void process_dump(struct process *p)
 	console_printf("ebp: %x\n", s->regs1.ebp);
 	console_printf("esp: %x\n", s->esp);
 	console_printf("eip: %x\n", s->eip);
-}
-
-uint32_t process_self()
-{
-	return current->pid;
-}
-
-uint32_t process_parent()
-{
-	return current->ppid;
 }
 
 int process_available_fd(struct process *p)

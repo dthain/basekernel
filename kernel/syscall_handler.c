@@ -609,12 +609,12 @@ int sys_process_sleep(unsigned int ms)
 
 int sys_process_self()
 {
-	return process_self();
+	return current->pid;
 }
 
 int sys_process_parent()
 {
-	return process_parent();
+	return current->ppid;
 }
 
 int sys_process_kill(int pid)
