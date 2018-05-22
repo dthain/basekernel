@@ -17,12 +17,12 @@ void debug(const char *str)
 
 void exit(int status)
 {
-	syscall(SYSCALL_EXIT, status, 0, 0, 0, 0);
+	syscall(SYSCALL_PROCESS_EXIT, status, 0, 0, 0, 0);
 }
 
 int yield()
 {
-	return syscall(SYSCALL_YIELD, 0, 0, 0, 0, 0);
+	return syscall(SYSCALL_PROCESS_YIELD, 0, 0, 0, 0, 0);
 }
 
 int open(const char *path, int mode, int flags)
@@ -87,7 +87,7 @@ void draw_write(struct graphics_command *s)
 
 int sleep(unsigned int ms)
 {
-	return syscall(SYSCALL_SLEEP, ms, 0, 0, 0, 0);
+	return syscall(SYSCALL_PROCESS_SLEEP, ms, 0, 0, 0, 0);
 }
 
 uint32_t gettimeofday()
@@ -114,7 +114,7 @@ int fork()
 {
 	self_pid_cache = 0;
 	self_ppid_cache = 0;
-	int cpid = syscall(SYSCALL_FORK, 0, 0, 0, 0, 0);
+	int cpid = syscall(SYSCALL_PROCESS_FORK, 0, 0, 0, 0, 0);
 	if(cpid == process_self())
 		return 0;
 	return cpid;
@@ -122,7 +122,7 @@ int fork()
 
 void exec(const char *path, const char **argv, int argc)
 {
-	syscall(SYSCALL_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
+	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
 }
 
 int ns_copy(const char *old_ns, const char *new_ns)

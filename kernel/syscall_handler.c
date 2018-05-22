@@ -631,11 +631,11 @@ int sys_process_reap(int pid)
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	switch (n) {
-	case SYSCALL_EXIT:
+	case SYSCALL_PROCESS_EXIT:
 		return sys_exit(a);
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
-	case SYSCALL_YIELD:
+	case SYSCALL_PROCESS_YIELD:
 		return sys_yield();
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
@@ -673,7 +673,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_draw_create(a, b, c, d, e);
 	case SYSCALL_DRAW_WRITE:
 		return sys_draw_write((struct graphics_command *) a);
-	case SYSCALL_SLEEP:
+	case SYSCALL_PROCESS_SLEEP:
 		return sys_sleep(a);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
@@ -689,9 +689,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:
 		return sys_process_run((const char *) a, (const char **) b, c);
-	case SYSCALL_FORK:
+	case SYSCALL_PROCESS_FORK:
 		return sys_fork();
-	case SYSCALL_EXEC:
+	case SYSCALL_PROCESS_EXEC:
 		sys_exec((const char *) a, (const char **) b, c);
 	case SYSCALL_NS_COPY:
 		return sys_ns_copy((const char *) a, (const char *) b);
