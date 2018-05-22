@@ -575,7 +575,7 @@ int sys_draw_string(int wd, int x, int y, char *s)
 
 */
 
-int sys_draw_create(int wd, int x, int y, int w, int h)
+int sys_open_window(int wd, int x, int y, int w, int h)
 {
 	int fd = process_available_fd(current);
 	if(fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
@@ -679,8 +679,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_pipe();
 	case SYSCALL_OPEN_CONSOLE:
 		return sys_open_console(a);
-	case SYSCALL_DRAW_CREATE:
-		return sys_draw_create(a, b, c, d, e);
+	case SYSCALL_OPEN_WINDOW:
+		return sys_open_window(a, b, c, d, e);
 	case SYSCALL_DRAW_WRITE:
 		return sys_draw_write((struct graphics_command *) a);
 	case SYSCALL_GETTIMEOFDAY:

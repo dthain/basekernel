@@ -72,9 +72,9 @@ int set_blocking( int fd, int b )
 	return syscall( SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0 );
 }
 
-int draw_create(int wd, int x, int y, int w, int h)
+int open_window(int wd, int x, int y, int w, int h)
 {
-	return syscall(SYSCALL_DRAW_CREATE, wd, x, y, w, h);
+	return syscall(SYSCALL_OPEN_WINDOW, wd, x, y, w, h);
 }
 
 void draw_write(struct graphics_command *s)

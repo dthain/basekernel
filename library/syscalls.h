@@ -36,7 +36,7 @@ int lseek( int fd, int offset, int whence );
 int close( int fd );
 extern void* sbrk( int a );
 char keyboard_read_char();
-int draw_create( int wd, int x, int y, int w, int h );
+int open_window( int wd, int x, int y, int w, int h );
 int set_blocking( int fd, int b );
 int console_open( int fd );
 int pipe_open();

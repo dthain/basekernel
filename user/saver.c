@@ -20,7 +20,7 @@ void move(int *x, int *d, int min, int max);
 
 int main(const char *argv[], int argc)
 {
-	int wd = draw_create(KNO_STDWIN, 600, 500, WIDTH, HEIGHT);
+	int wd = open_window(KNO_STDWIN, 600, 500, WIDTH, HEIGHT);
 	if(wd < 0) {
 		debug("Window create failed!\n");
 		return 1;
