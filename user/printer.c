@@ -20,7 +20,7 @@ int main(const char *argv[], int argc)
 	int wd = draw_create(KNO_STDWIN, 600, 300, WIDTH, HEIGHT);
 	if(wd < 0) {
 		debug("Window create failed!\n");
-		exit(1);
+		return 1;
 	}
 	draw_window(wd);
 	draw_color(0, 0, 255);
@@ -30,7 +30,7 @@ int main(const char *argv[], int argc)
 	int cd = console_open(wd);
 	if(cd < 0) {
 		debug("Console open failed!\n");
-		exit(2);
+		return 2;
 	}
 	dup(cd, KNO_STDOUT);
 

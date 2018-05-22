@@ -23,7 +23,7 @@ int main(const char *argv[], int argc)
 	int wd = draw_create(KNO_STDWIN, 600, 500, WIDTH, HEIGHT);
 	if(wd < 0) {
 		debug("Window create failed!\n");
-		exit(1);
+		return 1;
 	}
 
 	int r = 255;
@@ -58,10 +58,8 @@ int main(const char *argv[], int argc)
 
 		draw_line(x1, y1, x2 - x1, y2 - y1);
 		draw_flush();
-		sleep(25);
+		process_sleep(25);
 	}
-
-	exit(0);
 
 	return 0;
 }

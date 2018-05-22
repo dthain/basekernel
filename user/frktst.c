@@ -3,7 +3,7 @@
 
 int main(const char *argv[], int argc)
 {
-	int x = fork();
+	int x = process_fork();
 	printf("hello world, I am %d.\n", process_self());
 	printf("My fork returned %d\n", x);
 

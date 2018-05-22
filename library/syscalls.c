@@ -15,12 +15,12 @@ void debug(const char *str)
 	syscall(SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0);
 }
 
-void exit(int status)
+void process_exit(int status)
 {
 	syscall(SYSCALL_PROCESS_EXIT, status, 0, 0, 0, 0);
 }
 
-int yield()
+int process_yield()
 {
 	return syscall(SYSCALL_PROCESS_YIELD, 0, 0, 0, 0, 0);
 }
@@ -85,7 +85,7 @@ void draw_write(struct graphics_command *s)
 	syscall(SYSCALL_DRAW_WRITE, (uint32_t) s, 0, 0, 0, 0);
 }
 
-int sleep(unsigned int ms)
+int process_sleep(unsigned int ms)
 {
 	return syscall(SYSCALL_PROCESS_SLEEP, ms, 0, 0, 0, 0);
 }
@@ -110,7 +110,7 @@ int process_run(const char *cmd, const char **argv, int argc)
 	return syscall(SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0);
 }
 
-int fork()
+int process_fork()
 {
 	self_pid_cache = 0;
 	self_ppid_cache = 0;
@@ -120,7 +120,7 @@ int fork()
 	return cpid;
 }
 
-void exec(const char *path, const char **argv, int argc)
+void process_exec(const char *path, const char **argv, int argc)
 {
 	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
 }

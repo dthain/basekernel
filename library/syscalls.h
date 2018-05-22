@@ -11,11 +11,17 @@ See the file LICENSE for details.
 #include "graphics_lib.h"
 
 void debug( const char *str );
-void exit( int status );
-int yield();
+void process_exit( int status );
+int process_yield();
 int process_run( const char *cmd, const char** argv, int argc );
-int fork();
-void exec( const char *path, const char ** argv, int argc);
+int process_fork();
+void process_exec( const char *path, const char ** argv, int argc);
+int process_self();
+int process_parent();
+int process_kill( unsigned int pid );
+int process_reap( unsigned int pid );
+int process_wait( struct process_info* info, int timeout );
+int process_sleep( unsigned int ms );
 int ns_copy(const char *old_ns, const char * new_ns);
 int ns_delete(const char *ns);
 int ns_get_perms(const char *ns);
@@ -41,12 +47,6 @@ int rmdir(const char *path);
 int pwd(char *buffer);
 int chdir(const char *path);
 void draw_write( struct graphics_command *s );
-int sleep( unsigned int ms );
 uint32_t gettimeofday();
-int process_self();
-int process_parent();
-int process_kill( unsigned int pid );
-int process_reap( unsigned int pid );
-int process_wait( struct process_info* info, int timeout );
 
 #endif

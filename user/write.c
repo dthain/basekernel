@@ -6,7 +6,6 @@ See the file LICENSE for details.
 
 /*
 A trivial user level program to try out basic system calls.
-This program requires that write() and exit() work correctly.
 */
 
 #include "syscalls.h"
@@ -50,7 +49,7 @@ int main(const char *argv[], int argc)
 		flush();
 	}
 	close(fd);
-	exit(0);
+	process_exit(0);
 
 	return 0;
 }

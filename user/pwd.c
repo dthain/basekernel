@@ -30,7 +30,6 @@ int main(const char *argv[], int argc)
 	printf("final directory:\n");
 	pwd(buffer);
 	printf("%s\n", buffer);
-	exit(0);
 
 	return 0;
 }

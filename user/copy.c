@@ -35,7 +35,6 @@ int main(const char *argv[], int argc)
 	printf("done!\n");
 	close(fd1);
 	close(fd2);
-	exit(0);
 
 	return 0;
 }

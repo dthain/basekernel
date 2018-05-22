@@ -37,11 +37,11 @@ int process_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = fork();
+			int pid = process_fork();
 			if(pid != 0) {
 				printf("started process %d\n", pid);
 			} else {
-				exec(pch, argv, 2);
+				process_exec(pch, argv, 2);
 			}
 		} else
 			printf("start: missing argument\n");
@@ -59,7 +59,7 @@ int process_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = fork();
+			int pid = process_fork();
 			if(pid != 0) {
 				printf("started process %d\n", pid);
 				struct process_info info;
@@ -67,7 +67,7 @@ int process_command(char *line)
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 				process_reap(info.pid);
 			} else {
-				exec(pch, argv, i);
+				process_exec(pch, argv, i);
 			}
 		} else
 			printf("run: missing argument\n");
