@@ -20,8 +20,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_RUNNING 2
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
-#define PROCESS_STATE_FORK_CHILD   5
-#define PROCESS_STATE_FORK_PARENT  6
+
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_OBJECTS   100
 #define PROCESS_MAX_FS_SPACES 5
@@ -46,7 +45,6 @@ struct process {
 	struct fs_dirent *cwd;
 	int cwd_depth;
 	struct list mounts;
-	uint32_t entry;
 	uint32_t pid;
 	uint32_t ppid;
 	void *brk;
@@ -65,7 +63,8 @@ void process_launch(struct process *p);
 void process_pass_arguments(struct process *p, const char **argv, int argc);
 void process_inherit(struct process *p);
 
-void process_fork_freeze();
+void process_stack_copy( struct process *parent, struct process * child );
+
 void process_yield();
 void process_preempt();
 void process_exit(int code);

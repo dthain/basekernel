@@ -37,6 +37,7 @@ void process_init()
 	fs_spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
 	memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
 	fs_spaces_used = 0;
+
 	current = process_create(0, 0, 0);
 
 	pagetable_load(current->pagetable);
@@ -54,14 +55,14 @@ void process_init()
 	console_printf("process: ready\n");
 }
 
-static void process_stack_init(struct process *p)
+static void process_stack_init( struct process *p )
 {
 	struct x86_stack *s;
 
 	p->state = PROCESS_STATE_CRADLE;
 
-	p->kstack_top = p->kstack + PAGE_SIZE - sizeof(*s);
-	p->kstack_ptr = p->kstack_top;
+	p->kstack_top = p->kstack + PAGE_SIZE - 8;
+	p->kstack_ptr = p->kstack_top - sizeof(*s);
 
 	s = (struct x86_stack *) p->kstack_ptr;
 
@@ -70,11 +71,29 @@ static void process_stack_init(struct process *p)
 	s->old_addr = (unsigned) intr_return;
 	s->ds = X86_SEGMENT_USER_DATA;
 	s->cs = X86_SEGMENT_USER_CODE;
-	s->eip = p->entry;
+	s->eip = PROCESS_ENTRY_POINT;
 	s->eflags.interrupt = 1;
 	s->eflags.iopl = 3;
 	s->esp = PROCESS_STACK_INIT;
 	s->ss = X86_SEGMENT_USER_DATA;
+}
+
+void process_stack_copy( struct process *parent, struct process *child )
+{
+	memcpy(child->kstack,parent->kstack,PAGE_SIZE);
+
+	child->kstack_top = child->kstack + PAGE_SIZE - 8;
+	child->kstack_ptr = child->kstack_top - sizeof(struct x86_stack);
+
+	struct x86_stack *child_regs = (struct x86_stack *) child->kstack_ptr;
+	struct x86_stack *parent_regs = (struct x86_stack *) parent->kstack_ptr;
+
+	*child_regs = *parent_regs;
+
+	child_regs->regs2.ebp = (uint32_t) (child->kstack_ptr + 28);
+	child_regs->old_ebp = (uint32_t) (child->kstack_ptr + 32);
+	child_regs->old_addr = (unsigned) intr_return;
+	child_regs->regs1.eax = 0;
 }
 
 static int process_allocate_pid()
@@ -127,7 +146,6 @@ struct process *process_create(unsigned code_size, unsigned stack_size, int pid)
 	pagetable_alloc(p->pagetable, PROCESS_STACK_INIT + 0xF - stack_size + 1, stack_size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
 
 	p->kstack = memory_alloc_page(1);
-	p->entry = PROCESS_ENTRY_POINT;
 	p->brk = 0;
 	if(pid == 0) {
 		p->pid = process_allocate_pid();
@@ -187,10 +205,12 @@ static void process_switch(int newstate)
 			asm("pushl %ecx");
 			asm("pushl %ebx");
 			asm("pushl %eax");
-		      asm("movl %%esp, %0":"=r"(current->kstack_ptr));
+			asm("movl %%esp, %0":"=r"(current->kstack_ptr));
 		}
+
 		interrupt_stack_pointer = (void *) INTERRUPT_STACK_TOP;
 		current->state = newstate;
+
 		if(newstate == PROCESS_STATE_READY) {
 			list_push_tail(&ready_list, &current->node);
 		}
@@ -210,14 +230,9 @@ static void process_switch(int newstate)
 		interrupt_block();
 	}
 
-	if(current->state == PROCESS_STATE_FORK_CHILD) {
-		current->kstack_ptr = current->kstack - (processes[current->ppid - 1]->kstack - processes[current->ppid - 1]->kstack_ptr);
-		memcpy((void *) (current->kstack), (void *) (processes[current->ppid - 1]->kstack), PAGE_SIZE);
-		processes[current->ppid - 1]->state = PROCESS_STATE_READY;
-		list_push_tail(&ready_list, &processes[current->ppid - 1]->node);
-	}
 	current->state = PROCESS_STATE_RUNNING;
 	interrupt_stack_pointer = current->kstack_top;
+
 	asm("movl %0, %%cr3"::"r"(current->pagetable));
 	asm("movl %0, %%esp"::"r"(current->kstack_ptr));
 
@@ -241,11 +256,6 @@ void process_preempt()
 	}
 }
 
-void process_fork_freeze()
-{
-	process_switch(PROCESS_STATE_FORK_PARENT);
-}
-
 void process_yield()
 {
 	process_switch(PROCESS_STATE_READY);
@@ -253,7 +263,7 @@ void process_yield()
 
 void process_exit(int code)
 {
-	console_printf("process exiting with status %d...\n", code);
+	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
 	process_switch(PROCESS_STATE_GRAVE);
@@ -294,7 +304,7 @@ void process_wakeup_all(struct list *q)
 
 void process_dump(struct process *p)
 {
-	struct x86_stack *s = (struct x86_stack *) (p->kstack + PAGE_SIZE - sizeof(*s));
+	struct x86_stack *s = (struct x86_stack *) (p->kstack_top - sizeof(*s));
 	console_printf("kstack: %x\n", p->kstack);
 	console_printf("stackp: %x\n", p->kstack_ptr);
 	console_printf("eax: %x     cs: %x\n", s->regs1.eax, s->cs);
