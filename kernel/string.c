@@ -5,8 +5,6 @@ See the file LICENSE for details.
 */
 
 #include "string.h"
-#include "process.h"
-#include "console.h"
 #include "kerneltypes.h"
 #include "ascii.h"
 #include "kmalloc.h"
