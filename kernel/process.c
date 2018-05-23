@@ -180,10 +180,8 @@ struct process *process_create(unsigned code_size, unsigned stack_size )
 	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
 
 	// XXX table should be allocated
-	// 100 should not be a magic number
-
 	int i;
-	for(i = 0; i < 100; i++) {
+	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
 
@@ -195,7 +193,7 @@ struct process *process_create(unsigned code_size, unsigned stack_size )
 void process_delete(struct process *p)
 {
 	int i;
-	for(i = 0; i < 100; i++) {
+	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		if(p->ktable[i]) {
 			kobject_close(p->ktable[i]);
 		}

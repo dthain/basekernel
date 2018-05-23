@@ -21,7 +21,6 @@ See the file LICENSE for details.
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
 
-#define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_OBJECTS   100
 #define PROCESS_MAX_FS_SPACES 5
 #define PROCESS_MAX_PID 1024
@@ -48,11 +47,6 @@ struct process {
 	uint32_t pid;
 	uint32_t ppid;
 	uint32_t brk;
-};
-
-struct process_pointer {
-	struct list_node node;
-	struct process *p;
 };
 
 void process_init();
