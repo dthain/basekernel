@@ -24,7 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
-struct process *process_table[MAX_PID] = { 0 };
+struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
 struct mount {
 	struct list_node node;
@@ -92,7 +92,7 @@ void process_stack_copy( struct process *parent, struct process *child )
 }
 
 /*
-Valid pids start at 1 and go to MAX_PID.
+Valid pids start at 1 and go to PROCESS_MAX_PID.
 To avoid confusion, keep picking increasing
 pids until it is necessary to wrap around.
 "last" is the most recently selected pid.
@@ -104,7 +104,7 @@ static int process_allocate_pid()
 
 	int i;
 
-	for(i=last+1;i<MAX_PID;i++) {
+	for(i=last+1;i<PROCESS_MAX_PID;i++) {
 		if(!process_table[i]) {
 			last = i;
 			return i;
@@ -411,7 +411,7 @@ int process_chdir(struct process *p, const char *path)
 void process_make_dead(struct process *dead)
 {
 	int i;
-	for(i = 0; i < MAX_PID; i++) {
+	for(i = 0; i < PROCESS_MAX_PID; i++) {
 		if(process_table[i] && process_table[i]->ppid == dead->pid) {
 			process_make_dead(process_table[i]);
 		}
@@ -428,7 +428,7 @@ void process_make_dead(struct process *dead)
 
 int process_kill(uint32_t pid)
 {
-	if(pid > 0 && pid <= MAX_PID) {
+	if(pid > 0 && pid <= PROCESS_MAX_PID) {
 		struct process *dead = process_table[pid];
 		if(dead) {
 			console_printf("process killed\n");

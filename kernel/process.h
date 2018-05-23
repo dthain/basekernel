@@ -24,7 +24,7 @@ See the file LICENSE for details.
 #define PROCESS_MAX_WINDOWS   5
 #define PROCESS_MAX_OBJECTS   100
 #define PROCESS_MAX_FS_SPACES 5
-
+#define PROCESS_MAX_PID 1024
 
 #define PROCESS_EXIT_NORMAL   0
 #define PROCESS_EXIT_KILLED   1
@@ -47,7 +47,7 @@ struct process {
 	struct list mounts;
 	uint32_t pid;
 	uint32_t ppid;
-  uint32_t brk;
+	uint32_t brk;
 };
 
 struct process_pointer {

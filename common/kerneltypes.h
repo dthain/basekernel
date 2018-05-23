@@ -12,7 +12,6 @@
 #define GIGA (KILO*KILO*KILO)
 
 #define MAX_ARGV_LENGTH 256
-#define MAX_PID 1024
 
 typedef int int32_t;
 typedef short int16_t;
