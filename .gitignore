@@ -1,5 +1,9 @@
 *.o
-bootblock
-kernel
-basekernel.img
-basekernel.iso
+*.elf
+*.img
+*.iso
+*.a
+*.exe
+*~
+kernel/kernel
+kernel/bootblock
