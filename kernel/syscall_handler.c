@@ -78,7 +78,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	process_inherit(p);
 	process_pass_arguments(p, argv, argc);
 	process_launch(p);
-	return 0;
+	return p->pid;
 }
 
 int sys_process_exec(const char *path, const char **argv, int argc)
