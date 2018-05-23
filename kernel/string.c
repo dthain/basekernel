@@ -196,6 +196,10 @@ void memcpy(void *vd, const void *vs, unsigned length)
 	}
 }
 
+// XXX these are defined by the console module
+extern void printf_putstring( const char *str );
+extern void printf_putchar( char c );
+
 static void printf_puthexdigit(uint8_t i)
 {
 	if(i < 10) {
