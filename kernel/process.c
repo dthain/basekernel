@@ -24,7 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
-struct process *processes[MAX_PID] = { 0 };
+struct process *process_table[MAX_PID] = { 0 };
 
 struct mount {
 	struct list_node node;
@@ -91,17 +91,33 @@ void process_stack_copy( struct process *parent, struct process *child )
 	child_regs->regs1.eax = 0;
 }
 
+/*
+Valid pids start at 1 and go to MAX_PID.
+To avoid confusion, keep picking increasing
+pids until it is necessary to wrap around.
+"last" is the most recently selected pid.
+*/
+
 static int process_allocate_pid()
 {
 	static int last = 0;
+
 	int i;
-	for(i = 0; i < MAX_PID; i++) {
-		int pid = 1 + ((last + i) % MAX_PID);
-		if(!processes[pid - 1]) {
-			last = pid;
-			return pid;
+
+	for(i=last+1;i<MAX_PID;i++) {
+		if(!process_table[i]) {
+			last = i;
+			return i;
 		}
 	}
+
+	for(i=1;i<last;i++) {
+		if(!process_table[i]) {
+			last = i;
+			return i;
+		}
+	}
+
 	return 0;
 }
 
@@ -150,6 +166,9 @@ struct process *process_create(unsigned code_size, unsigned stack_size )
 
 	p = memory_alloc_page(1);
 
+	p->pid = process_allocate_pid();
+	process_table[p->pid] = p;
+
 	p->pagetable = pagetable_create();
 	pagetable_init(p->pagetable);
 
@@ -159,9 +178,6 @@ struct process *process_create(unsigned code_size, unsigned stack_size )
 	p->kstack = memory_alloc_page(1);
 	p->kstack_top = p->kstack + PAGE_SIZE - 8;
 	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
-
-	p->pid = process_allocate_pid();
-	processes[p->pid - 1] = p;
 
 	// XXX table should be allocated
 	// 100 should not be a magic number
@@ -185,7 +201,7 @@ void process_delete(struct process *p)
 		}
 	}
 	pagetable_delete(p->pagetable);
-	processes[p->pid - 1] = 0;
+	process_table[p->pid] = 0;
 	memory_free_page(p->kstack);
 	memory_free_page(p);
 }
@@ -396,8 +412,8 @@ void process_make_dead(struct process *dead)
 {
 	int i;
 	for(i = 0; i < MAX_PID; i++) {
-		if(processes[i] && processes[i]->ppid == dead->pid) {
-			process_make_dead(processes[i]);
+		if(process_table[i] && process_table[i]->ppid == dead->pid) {
+			process_make_dead(process_table[i]);
 		}
 	}
 	dead->exitcode = 0;
@@ -413,7 +429,7 @@ void process_make_dead(struct process *dead)
 int process_kill(uint32_t pid)
 {
 	if(pid > 0 && pid <= MAX_PID) {
-		struct process *dead = processes[pid - 1];
+		struct process *dead = process_table[pid];
 		if(dead) {
 			console_printf("process killed\n");
 			process_make_dead(dead);
