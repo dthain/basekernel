@@ -9,6 +9,6 @@ See the file LICENSE for details.
 
 #include "process.h"
 
-struct process* elf_load(const char* path, int pid);
+int elf_load( struct process *p, const char *path );
 
 #endif

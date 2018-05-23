@@ -8,6 +8,9 @@ KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 
 all: basekernel.iso
 
+run: basekernel.iso
+	qemu-system-i386 -cdrom basekernel.iso -hda /tmp/hda -hdb /tmp/hdb -hdd /tmp/hdd
+
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
 

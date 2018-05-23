@@ -1,5 +1,0 @@
-*.o
-bootblock
-kernel
-basekernel.img
-basekernel.iso

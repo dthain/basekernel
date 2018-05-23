@@ -59,7 +59,7 @@ struct x86_regs {
 struct x86_stack {
 	struct x86_regs		regs2;
 	int32_t			old_ebp;
-	int32_t			old_addr;
+	int32_t			old_eip;
 	struct x86_regs		regs1;
 	int32_t			ds;
 	int32_t			intr_num;

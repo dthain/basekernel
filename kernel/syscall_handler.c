@@ -66,66 +66,44 @@ int sys_sbrk(int a)
 	return vaddr;
 }
 
-/*
-sys_process_run creates a new child process running the executable named by "path".
-In this temporary implementation, we use the cdrom filesystem directly.
-(Instead, we should go through the abstract filesystem interface.)
-Takes in argv and argc for the new process' main
-*/
-
 int sys_process_run(const char *path, const char **argv, int argc)
 {
-	struct process *p = elf_load(path, 0);
+	struct process *p = process_create(0,0);
 
-	if(!p) {
-		return ENOENT;
+	if(!elf_load(p,path)) {
+		// XXX need to get errror from elf_load
+		process_kill(p->pid);
+		return EINVAL;
 	}
-
 	process_inherit(p);
 	process_pass_arguments(p, argv, argc);
-
-
-	/* Put the new process into the ready list */
-
 	process_launch(p);
-
-	return p->pid;
+	return 0;
 }
 
-void sys_process_exec(const char *path, const char **argv, int argc)
+int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	if(!fs_spaces[current->fs_spaces[current->cws].gindex].present || fs_space_depth_check(path, current->cwd_depth) == -1) {
-		return;
-	}
-	struct process *p = elf_load(path, current->pid);
-
-	if(!p) {
-		return;
+	  return EINVAL;
 	}
 
-	memcpy(p->ktable, current->ktable, sizeof(p->ktable));
-	p->ppid = current->ppid;
-	p->mounts = current->mounts;
-	p->cwd = current->cwd;
-	p->cws = current->cws;
-	memcpy(p->fs_spaces, current->fs_spaces, sizeof(p->fs_spaces));
-	p->fs_space_count = current->fs_space_count;
-	pagetable_delete(current->pagetable);
-	process_pass_arguments(p, argv, argc);
-	current = p;
-	process_yield();	// Otherwise we will jump back into the old process
+	if(!elf_load(current,path)) {
+		// XXX need to get errror from elf_load
+		return ENOENT;
+	}
+	process_pass_arguments(current, argv, argc);
+	return 0;
 }
 
 int sys_process_fork()
 {
-	struct process *p = process_create(0, 0, 0);
+	struct process *p = process_create(0,0);
 	p->ppid = current->pid;
 	pagetable_delete(p->pagetable);
 	p->pagetable = pagetable_duplicate(current->pagetable);
 	process_inherit(p);
 	process_stack_copy(current,p);
 	process_launch(p);
-
 	return p->pid;
 }
 
@@ -375,8 +353,9 @@ int sys_open(const char *path, int mode, int flags)
 	struct fs_dirent *cwd = current->cwd;
 	struct fs_dirent *d = fs_dirent_namei(cwd, path);
 	if(!d) {
-		int ret = fs_dirent_mkfile(cwd, path);
+		fs_dirent_mkfile(cwd, path);
 		// XXX return value not checked!
+		
 		d = fs_dirent_namei(cwd, path);
 	}
 	struct fs_file *fp = fs_file_open(d, mode);
@@ -586,7 +565,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
-		sys_process_exec((const char *) a, (const char **) b, c);
+		return sys_process_exec((const char *) a, (const char **) b, c);
 	case SYSCALL_PROCESS_KILL:
 		return sys_process_kill(a);
 	case SYSCALL_PROCESS_WAIT:

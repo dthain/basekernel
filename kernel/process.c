@@ -38,7 +38,7 @@ void process_init()
 	memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
 	fs_spaces_used = 0;
 
-	current = process_create(0, 0, 0);
+	current = process_create(0, 0);
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
@@ -55,23 +55,20 @@ void process_init()
 	console_printf("process: ready\n");
 }
 
-static void process_stack_init( struct process *p )
+void process_stack_reset( struct process *p, unsigned entry_point )
 {
 	struct x86_stack *s;
 
 	p->state = PROCESS_STATE_CRADLE;
 
-	p->kstack_top = p->kstack + PAGE_SIZE - 8;
-	p->kstack_ptr = p->kstack_top - sizeof(*s);
-
 	s = (struct x86_stack *) p->kstack_ptr;
 
 	s->regs2.ebp = (uint32_t) (p->kstack_ptr + 28);
 	s->old_ebp = (uint32_t) (p->kstack_ptr + 32);
-	s->old_addr = (unsigned) intr_return;
+	s->old_eip = (unsigned) intr_return;
 	s->ds = X86_SEGMENT_USER_DATA;
 	s->cs = X86_SEGMENT_USER_CODE;
-	s->eip = PROCESS_ENTRY_POINT;
+	s->eip = entry_point;
 	s->eflags.interrupt = 1;
 	s->eflags.iopl = 3;
 	s->esp = PROCESS_STACK_INIT;
@@ -80,19 +77,17 @@ static void process_stack_init( struct process *p )
 
 void process_stack_copy( struct process *parent, struct process *child )
 {
-	memcpy(child->kstack,parent->kstack,PAGE_SIZE);
-
 	child->kstack_top = child->kstack + PAGE_SIZE - 8;
 	child->kstack_ptr = child->kstack_top - sizeof(struct x86_stack);
 
 	struct x86_stack *child_regs = (struct x86_stack *) child->kstack_ptr;
-	struct x86_stack *parent_regs = (struct x86_stack *) parent->kstack_ptr;
+	struct x86_stack *parent_regs = (struct x86_stack *) (parent->kstack_top - sizeof(struct x86_stack));
 
 	*child_regs = *parent_regs;
 
 	child_regs->regs2.ebp = (uint32_t) (child->kstack_ptr + 28);
 	child_regs->old_ebp = (uint32_t) (child->kstack_ptr + 32);
-	child_regs->old_addr = (unsigned) intr_return;
+	child_regs->old_eip = (unsigned) intr_return;
 	child_regs->regs1.eax = 0;
 }
 
@@ -134,7 +129,22 @@ void process_inherit(struct process *p)
 	p->ppid = current->pid;
 }
 
-struct process *process_create(unsigned code_size, unsigned stack_size, int pid)
+int  process_vm_size_set( struct process *p, unsigned size )
+{
+	pagetable_alloc(p->pagetable, PROCESS_ENTRY_POINT, size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+	p->brk = size + PROCESS_ENTRY_POINT;
+	// XXX need to un-allocate unused pages
+	return 1;
+}
+
+int  process_stack_size_set( struct process *p, unsigned size )
+{
+	pagetable_alloc(p->pagetable, -size, size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+	// XXX need to un-allocate unused pages
+	return 1;
+}
+
+struct process *process_create(unsigned code_size, unsigned stack_size )
 {
 	struct process *p;
 
@@ -142,33 +152,26 @@ struct process *process_create(unsigned code_size, unsigned stack_size, int pid)
 
 	p->pagetable = pagetable_create();
 	pagetable_init(p->pagetable);
-	pagetable_alloc(p->pagetable, PROCESS_ENTRY_POINT, code_size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
-	pagetable_alloc(p->pagetable, PROCESS_STACK_INIT + 0xF - stack_size + 1, stack_size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+
+	process_vm_size_set(p,code_size);
+	process_stack_size_set(p,code_size);
 
 	p->kstack = memory_alloc_page(1);
-	p->brk = 0;
-	if(pid == 0) {
-		p->pid = process_allocate_pid();
-		if(p->pid) {
-			processes[p->pid - 1] = p;
-		} else {
-			return 0;
-		}
-	} else {
-		if(processes[pid - 1]) {
-			process_delete(processes[pid - 1]);
-			processes[pid - 1] = p;
-			p->pid = pid;
-		} else {
-			return 0;
-		}
-	}
+	p->kstack_top = p->kstack + PAGE_SIZE - 8;
+	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
+
+	p->pid = process_allocate_pid();
+	processes[p->pid - 1] = p;
+
+	// XXX table should be allocated
+	// 100 should not be a magic number
+
 	int i;
 	for(i = 0; i < 100; i++) {
 		p->ktable[i] = 0;
 	}
 
-	process_stack_init(p);
+	process_stack_reset(p,PROCESS_ENTRY_POINT);
 
 	return p;
 }
@@ -223,8 +226,8 @@ static void process_switch(int newstate)
 
 	while(1) {
 		current = (struct process *) list_pop_head(&ready_list);
-		if(current)
-			break;
+		if(current) break;
+
 		interrupt_unblock();
 		interrupt_wait();
 		interrupt_block();

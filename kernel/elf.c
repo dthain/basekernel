@@ -55,7 +55,7 @@ static char *elf_load_image(const char *path)
 	return image;
 }
 
-static uint32_t elf_get_brk(char *image, const char *path)
+static uint32_t elf_get_brk(const char *image, const char *path)
 {
 	int e_phoff = *(int *) (image + ELF_HEADER_PROGHEAD_OFFSET);
 	int e_phentsize = *(short *) (image + ELF_HEADER_PROGHEADSIZE_OFFSET);
@@ -65,7 +65,7 @@ static uint32_t elf_get_brk(char *image, const char *path)
 	uint32_t max_mem = 0;
 	int i;
 	for(i = 0; i < e_phnum; ++i) {
-		char *index = image + e_phoff + e_phentsize * i;
+		const char *index = image + e_phoff + e_phentsize * i;
 		uint32_t vadr = *(int *) (index + ELF_PROGHEADER_VADR_OFFSET);
 		uint32_t size = *(int *) (index + ELF_PROGHEADER_MSIZE_OFFSET);
 		if(max_mem < vadr + size) {
@@ -84,33 +84,28 @@ static uint32_t elf_get_brk(char *image, const char *path)
 	return max_mem;
 }
 
-static struct process *elf_load_process(char *image, const char *path, int pid)
+int elf_load_process( struct process *p, const char *image, const char *path )
 {
 
-	int e_entry = *(int *) (image + ELF_HEADER_ENTRY_OFFSET);
-	int e_phoff = *(int *) (image + ELF_HEADER_PROGHEAD_OFFSET);
-	int e_phentsize = *(short *) (image + ELF_HEADER_PROGHEADSIZE_OFFSET);
-	int e_phnum = *(short *) (image + ELF_HEADER_PROGHEADNUM_OFFSET);
+	uint32_t e_entry = *(uint32_t *) (image + ELF_HEADER_ENTRY_OFFSET);
+	uint32_t e_phoff = *(uint32_t *) (image + ELF_HEADER_PROGHEAD_OFFSET);
+	uint16_t e_phentsize = *(uint16_t *) (image + ELF_HEADER_PROGHEADSIZE_OFFSET);
+	uint16_t e_phnum = *(uint16_t *) (image + ELF_HEADER_PROGHEADNUM_OFFSET);
 
 	uint32_t max_mem = elf_get_brk(image, path);
 	if(!max_mem) {
 		return 0;
 	}
-	/* Create a new process with enough pages for the executable and one page for the stack */
 
-	struct process *p = process_create(max_mem - PROCESS_ENTRY_POINT, PAGE_SIZE, pid);
+	/* Reset the process VM space to match the desired program */
 
-	/* Set process entry point based off ELF data */
-	((struct x86_stack *) p->kstack_ptr)->eip = e_entry;
-	p->brk = (void *) max_mem;
-
-	if(!p) {
-		return 0;
-	}
+	process_vm_size_set(p,max_mem - PROCESS_ENTRY_POINT);
+	process_stack_size_set(p,PAGE_SIZE);
+	process_stack_reset(p,e_entry);
 
 	int i;
 	for(i = 0; i < e_phnum; ++i) {
-		char *index = image + e_phoff + e_phentsize * i;
+		const char *index = image + e_phoff + e_phentsize * i;
 		uint32_t offs = *(int *) (index + ELF_PROGHEADER_FOFF_OFFSET);
 		uint32_t vadr = *(int *) (index + ELF_PROGHEADER_VADR_OFFSET);
 		uint32_t size = *(int *) (index + ELF_PROGHEADER_FSIZE_OFFSET);
@@ -131,18 +126,19 @@ static struct process *elf_load_process(char *image, const char *path, int pid)
 			copied += amount;
 		}
 	}
-	return p;
+	return 1;
 }
 
-struct process *elf_load(const char *path, int pid)
+int elf_load( struct process *p, const char *path )
 {
 	char *image = elf_load_image(path);
 	if(!image) {
 		return 0;
 	}
 
-	struct process *p = elf_load_process(image, path, pid);
+	elf_load_process(p,image, path );
+	// XXX check return value
 
 	kfree(image);
-	return p;
+	return 1;
 }
