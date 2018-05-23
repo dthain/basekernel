@@ -9,7 +9,7 @@ See the file LICENSE for details.
 
 #include "kerneltypes.h"
 #include "bitmap.h"
-#include "graphics_lib.h"
+#include "gfxstream.h"
 
 struct graphics_color {
 	uint8_t r;

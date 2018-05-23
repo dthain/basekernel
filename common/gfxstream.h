@@ -4,8 +4,8 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#ifndef GRAPHICS_LIB_H
-#define GRAPHICS_LIB_H
+#ifndef GFXSTREAM_H
+#define GFXSTREAM_H
 
 typedef enum {GRAPHICS_END=0, GRAPHICS_WINDOW, GRAPHICS_COLOR, GRAPHICS_LINE, GRAPHICS_RECT, GRAPHICS_CLEAR, GRAPHICS_TEXT} graphics_command_t;
 

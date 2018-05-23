@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "user-io.h"
-#include "graphics_lib.h"
+#include "gfxstream.h"
 #include "kerneltypes.h"
 #include "syscalls.h"
 #include "string.h"

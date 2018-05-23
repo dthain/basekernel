@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "syscall.h"
-#include "graphics_lib.h"
+#include "gfxstream.h"
 
 void debug(const char *str)
 {

@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #define SYSCALLS_H
 
 #include "kerneltypes.h"
-#include "graphics_lib.h"
+#include "gfxstream.h"
 
 void debug( const char *str );
 void process_exit( int status );

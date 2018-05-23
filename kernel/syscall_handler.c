@@ -15,7 +15,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "fs_space.h"
 #include "memorylayout.h"
-#include "graphics_lib.h"
+#include "gfxstream.h"
 #include "main.h"
 #include "fs.h"
 #include "kobject.h"
