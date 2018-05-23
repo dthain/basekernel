@@ -72,7 +72,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 
 	if(!elf_load(p,path)) {
 		// XXX need to get errror from elf_load
-		process_kill(p->pid);
+		process_delete(p);
 		return EINVAL;
 	}
 	process_inherit(p);
