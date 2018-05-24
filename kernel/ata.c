@@ -323,7 +323,7 @@ static int ata_write_unlocked( int id, const void *buffer, int nblocks, int offs
 	return nblocks;
 }
 
-int ata_write( int id, void *buffer, int nblocks, int offset )
+int ata_write( int id, const void *buffer, int nblocks, int offset )
 {
 	int result;
 	mutex_lock(&ata_mutex);

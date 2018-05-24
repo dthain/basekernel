@@ -74,10 +74,15 @@ static void fix_filename( char *name, int length )
 	name[length] = 0;
 }
 
-static int  cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
+static int cdrom_dirent_read_block( struct fs_dirent *d, char *buffer, uint32_t blocknum )
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	return device_read( cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum );
+	int nblocks = device_read( cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum );
+	if(nblocks==1) {
+		return ATAPI_BLOCKSIZE;
+	} else {
+		return -1;
+	}
 }
 
 static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char *name )

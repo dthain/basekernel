@@ -24,7 +24,7 @@ int ata_device_read(struct device *d, void *buffer, int nblocks, int offset)
 	return ata_read(d->unit, buffer, nblocks, offset);
 }
 
-int ata_device_write(struct device *d, void *buffer, int nblocks, int offset)
+int ata_device_write(struct device *d, const void *buffer, int nblocks, int offset)
 {
 	return ata_write(d->unit, buffer, nblocks, offset);
 }
@@ -78,7 +78,7 @@ int device_read(struct device *d, void *buffer, int size, int offset)
 			int ret = d->read(d, buffer, size, offset);
 			if(ret == 1 && d->buffer)
 				buffer_add(d->buffer, offset, buffer);
-			return ret;
+			return 1;
 		} else {
 			return 1;
 		}
@@ -87,7 +87,7 @@ int device_read(struct device *d, void *buffer, int size, int offset)
 	}
 }
 
-int device_write(struct device *d, void *buffer, int size, int offset)
+int device_write(struct device *d, const void *buffer, int size, int offset)
 {
 	if(d->write) {
 		if(d->buffer) {

@@ -45,7 +45,7 @@ void console_heartbeat()
 	onoff = !onoff;
 }
 
-int console_device_write(struct device *device, void *buffer, int size, int offset)
+int console_device_write(struct device *device, const void *buffer, int size, int offset)
 {
 	struct console_device *d = (struct console_device *) device;
 	graphics_char(d->gx, d->xpos * 8, d->ypos * 8, ' ');
@@ -138,7 +138,7 @@ struct device *console_init(struct graphics *g)
 	return (struct device *) &console;
 }
 
-int console_device_write_debug(struct device *device, void *buffer, int size, int offset)
+int console_device_write_debug(struct device *device, const void *buffer, int size, int offset)
 {
 	return console_device_write(device, buffer, size, offset);
 }

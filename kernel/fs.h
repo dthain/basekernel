@@ -45,7 +45,7 @@ struct fs_dirent *fs_volume_root(struct fs_volume *);
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode);
 int fs_dirent_close(struct fs_dirent *d);
 int fs_file_read(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset );
-int fs_file_write(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset );
+int fs_file_write(struct fs_file *f, const char *buffer, uint32_t length, uint32_t offset );
 int fs_file_close(struct fs_file *f);
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
@@ -73,7 +73,7 @@ struct fs_dirent_ops {
         int (*link)(struct fs_dirent *d, const char *oldpath, const char *newpath);
         int (*unlink)(struct fs_dirent *d, const char *name);
         int (*read_block)(struct fs_dirent *d, char *buffer, uint32_t blocknum);
-        int (*write_block)(struct fs_dirent *d, char *buffer, uint32_t blocknum);
+        int (*write_block)(struct fs_dirent *d, const char *buffer, uint32_t blocknum);
         int (*resize)(struct fs_dirent *d, uint32_t blocks);
         int (*compare)(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 };

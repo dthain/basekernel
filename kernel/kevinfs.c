@@ -75,13 +75,13 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return device_read(device, buffer, num_blocks, index) ? 0 : -1;
+	return device_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
-int kevinfs_ata_write_block(struct device *device, uint32_t index, void *buffer)
+int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE/ATA_BLOCKSIZE;
-	return device_write(device, buffer, num_blocks, index) ? 0 : -1;
+	return device_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
@@ -368,7 +368,7 @@ static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
 	return 0;
 }
 
-static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_no, uint8_t * buffer)
+static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_no, const uint8_t * buffer)
 {
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
@@ -397,7 +397,7 @@ static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t addres
 	return kevinfs_read_data_block(kv, node->direct_addresses[address_no], (uint8_t *) buffer);
 }
 
-static int kevinfs_write_block(struct fs_dirent *d, char *buffer, uint32_t address_no)
+static int kevinfs_write_block(struct fs_dirent *d, const char *buffer, uint32_t address_no)
 {
 	struct kevinfs_dirent *kd = d->private_data;
 	return kevinfs_write_data_block(kd, address_no, (uint8_t *) buffer);
