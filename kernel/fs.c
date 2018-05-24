@@ -2,6 +2,7 @@
 #include "kmalloc.h"
 #include "string.h"
 #include "list.h"
+#include "memory.h"
 
 struct list l;
 
@@ -156,50 +157,64 @@ int fs_file_close(struct fs_file *f)
 	return 0;
 }
 
-static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
-{
-	struct fs_dirent *d = f->d;
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->read_block) {
-		return ops->read_block(d, buffer, blocknum);
-	}
-	return -1;
-}
-
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
 	return init_file(d, mode);
 }
 
-int fs_file_read(struct fs_file *f, char *buffer, uint32_t n)
+static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
 {
-	struct fs_block_map *bm = f->private_data;
-	uint32_t read = 0;
+	return f->d->ops->read_block(f->d,buffer,blocknum);
+}
 
-	if(!(FS_FILE_READ & f->mode))
-		return -1;
+int fs_file_read( struct fs_file *file, char *buffer, uint32_t length, uint32_t offset )
+{
+	int total = 0;
+	int bs = file->d->v->block_size;
 
-	while(read < n && bm->block * bm->block_size + (bm->offset % bm->block_size) < f->sz) {
-		uint32_t to_read = 0;
-		if(bm->offset == bm->read_length) {
-			fs_file_read_block(f, bm->buffer, bm->block);
-			if(f->sz <= (bm->block + 1) * bm->block_size) {
-				bm->read_length = f->sz - bm->block * bm->block_size;
-			} else {
-				bm->read_length = bm->block_size;
-			}
-			bm->block++;
-			bm->offset = 0;
-		}
-		to_read = bm->block_size - bm->offset;
-		if(n - read < bm->block_size - bm->offset) {
-			to_read = n - read;
-		}
-		memcpy(buffer + read, bm->buffer + bm->offset, to_read);
-		bm->offset += to_read;
-		read += to_read;
+	if(offset>file->sz) {
+		return 0;
 	}
-	return read;
+
+	if(offset+length>file->sz) {
+		length = file->sz - offset;
+	}
+
+	char *temp = memory_alloc_page(0);
+
+	while(length>0) {
+
+		int blocknum = offset / bs;
+		int actual = 0;
+
+		if(offset%bs) {
+			actual = fs_file_read_block(file,temp,blocknum);			
+			if(actual!=bs) goto failure;
+			actual = bs-offset%bs; 
+			memcpy(buffer,&temp[offset%bs],actual);
+		} else if(length>=bs) {
+			actual = fs_file_read_block(file,buffer,blocknum);
+			if(actual!=bs) goto failure;
+		} else {
+			actual = fs_file_read_block(file,temp,blocknum);			
+			if(actual!=bs) goto failure;
+			actual = length;
+			memcpy(buffer,temp,actual);
+		}
+
+		buffer += actual;
+		length -= actual;
+		offset += actual;
+		total  += actual;
+	}
+
+	memory_free_page(temp);
+	return total;
+
+	failure:
+	memory_free_page(temp);
+	if(total==0) return -1;
+	return total;
 }
 
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
