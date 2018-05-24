@@ -286,7 +286,7 @@ static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd) {
 	struct fs_dirent *d = kmalloc(sizeof(struct fs_dirent));
 	memset(d, 0, sizeof(struct fs_volume));
 	d->private_data = cdd;
-	d->sz = cdd->length;
+	d->size = cdd->length;
 	d->ops = &cdrom_dirent_ops;
 	return d;
 }

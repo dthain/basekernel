@@ -37,7 +37,7 @@ static char *elf_load_image(const char *path)
 		return 0;
 	}
 
-	int length = d->sz;
+	int length = d->size;
 
 	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
 	char *image = kmalloc(length);

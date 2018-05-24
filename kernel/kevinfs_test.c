@@ -9,7 +9,7 @@ void test_mount() {
 	struct fs *f = fs_get("kevin");
 	struct fs_volume *v = fs_volume_mount(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
-	printf("root fs_dirent size: %d\n", d->sz);
+	printf("root fs_dirent size: %d\n", d->size);
 }
 
 void test_lsdir_empty() {

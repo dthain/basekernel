@@ -39,7 +39,7 @@ struct kevinfs_inode {
 	uint32_t inode_number;
 
 	uint32_t is_directory;
-	uint32_t sz;
+	uint32_t size;
 	uint32_t link_count;
 
 	uint32_t direct_addresses[FS_INODE_MAXBLOCKS];

@@ -17,7 +17,7 @@ struct fs {
 struct fs_file {
 	void *private_data;
 	struct fs_dirent *d;
-	uint32_t sz;
+	uint32_t size;
 	int8_t mode;
 };
 
@@ -30,7 +30,7 @@ struct fs_volume {
 struct fs_dirent {
 	void *private_data;
 	struct fs_volume *v;
-	uint32_t sz;
+	uint32_t size;
 	const struct fs_dirent_ops *ops;
 };
 

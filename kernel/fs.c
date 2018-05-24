@@ -9,7 +9,7 @@ struct list l;
 static struct fs_file *init_file(struct fs_dirent *d, uint32_t mode)
 {
 	struct fs_file *res = kmalloc(sizeof(struct fs_file));
-	res->sz = d->sz;
+	res->size = d->size;
 	res->d = d;
 	res->private_data = 0;
 	res->mode = mode;
@@ -138,56 +138,60 @@ struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 
 static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
 {
-	return f->d->ops->read_block(f->d,buffer,blocknum);
+	return f->d->ops->read_block(f->d, buffer, blocknum);
 }
 
-int fs_file_read( struct fs_file *file, char *buffer, uint32_t length, uint32_t offset )
+int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
 	int bs = file->d->v->block_size;
 
-	if(offset>file->sz) {
+	if(offset > file->size) {
 		return 0;
 	}
 
-	if(offset+length>file->sz) {
-		length = file->sz - offset;
+	if(offset + length > file->size) {
+		length = file->size - offset;
 	}
 
 	char *temp = memory_alloc_page(0);
 
-	while(length>0) {
+	while(length > 0) {
 
 		int blocknum = offset / bs;
 		int actual = 0;
 
-		if(offset%bs) {
-			actual = fs_file_read_block(file,temp,blocknum);			
-			if(actual!=bs) goto failure;
-			actual = bs-offset%bs; 
-			memcpy(buffer,&temp[offset%bs],actual);
-		} else if(length>=bs) {
-			actual = fs_file_read_block(file,buffer,blocknum);
-			if(actual!=bs) goto failure;
+		if(offset % bs) {
+			actual = fs_file_read_block(file, temp, blocknum);
+			if(actual != bs)
+				goto failure;
+			actual = bs - offset % bs;
+			memcpy(buffer, &temp[offset % bs], actual);
+		} else if(length >= bs) {
+			actual = fs_file_read_block(file, buffer, blocknum);
+			if(actual != bs)
+				goto failure;
 		} else {
-			actual = fs_file_read_block(file,temp,blocknum);			
-			if(actual!=bs) goto failure;
+			actual = fs_file_read_block(file, temp, blocknum);
+			if(actual != bs)
+				goto failure;
 			actual = length;
-			memcpy(buffer,temp,actual);
+			memcpy(buffer, temp, actual);
 		}
 
 		buffer += actual;
 		length -= actual;
 		offset += actual;
-		total  += actual;
+		total += actual;
 	}
 
 	memory_free_page(temp);
 	return total;
 
-	failure:
+      failure:
 	memory_free_page(temp);
-	if(total==0) return -1;
+	if(total == 0)
+		return -1;
 	return total;
 }
 
@@ -227,59 +231,65 @@ int fs_dirent_unlink(struct fs_dirent *d, const char *name)
 	return 0;
 }
 
-static int fs_file_write_block(struct fs_file *f, const char *buffer, uint32_t blocknum )
+static int fs_file_write_block(struct fs_file *f, const char *buffer, uint32_t blocknum)
 {
-	return f->d->ops->write_block(f->d,buffer,blocknum);
+	return f->d->ops->write_block(f->d, buffer, blocknum);
 }
 
-int fs_file_write( struct fs_file *file, const char *buffer, uint32_t length, uint32_t offset )
+int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
 	int bs = file->d->v->block_size;
 
 	char *temp = memory_alloc_page(0);
 
-	while(length>0) {
+	while(length > 0) {
 
 		int blocknum = offset / bs;
 		int actual = 0;
 
-		if(offset%bs) {
-			actual = fs_file_read_block(file,temp,blocknum);			
-			if(actual!=bs) goto failure;
+		if(offset % bs) {
+			actual = fs_file_read_block(file, temp, blocknum);
+			if(actual != bs)
+				goto failure;
 
-			actual = bs-offset%bs; 
-			memcpy(&temp[offset%bs],buffer,actual);
+			actual = bs - offset % bs;
+			memcpy(&temp[offset % bs], buffer, actual);
 
-			int wactual = fs_file_write_block(file,temp,blocknum);
-			if(wactual!=bs) goto failure;
+			int wactual = fs_file_write_block(file, temp, blocknum);
+			if(wactual != bs)
+				goto failure;
 
-		} else if(length>=bs) {
-			actual = fs_file_write_block(file,buffer,blocknum);
-			if(actual!=bs) goto failure;
+		} else if(length >= bs) {
+			actual = fs_file_write_block(file, buffer, blocknum);
+			if(actual != bs)
+				goto failure;
 		} else {
-			actual = fs_file_read_block(file,temp,blocknum);			
-			if(actual!=bs) goto failure;
+			actual = fs_file_read_block(file, temp, blocknum);
+			if(actual != bs)
+				goto failure;
 
 			actual = length;
-			memcpy(temp,buffer,actual);
+			memcpy(temp, buffer, actual);
 
-			int wactual = fs_file_write_block(file,temp,blocknum);
-			if(wactual!=bs) goto failure;
+			int wactual = fs_file_write_block(file, temp, blocknum);
+			if(wactual != bs)
+				goto failure;
 		}
 
 		buffer += actual;
 		length -= actual;
 		offset += actual;
-		total  += actual;
+		total += actual;
 	}
 
 	memory_free_page(temp);
 	return total;
 
-	failure:
+      failure:
 	memory_free_page(temp);
-	if(total==0) return -1;
+	if(total == 0)
+		return -1;
 	return total;
 }
 
