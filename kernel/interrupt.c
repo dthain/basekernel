@@ -40,16 +40,21 @@ static void unknown_exception( int i, int code )
 
 	if(i==14) {
 		asm("mov %%cr2, %0" : "=r" (vaddr) );
-        int data = vaddr < (int)current->brk;
-        int stack = vaddr > (int)current->brk && pagetable_getmap(current->pagetable,vaddr+PAGE_SIZE,&paddr);
+
+		// XXX Now that the process tracks the current data/stack size, we can more easily distinguish the reason for the fault.
+		int data = vaddr < (int)current->vm_data_size;
+		int stack = current->vm_data_size && pagetable_getmap(current->pagetable,vaddr+PAGE_SIZE,&paddr,0);
+
 		//Check for a valid mapping (which will result from violating the permissions on page), or that
 		//we are either accessing neither the stack nor the heap, or somehow both, and error if so
-		if (pagetable_getmap(current->pagetable,vaddr,&paddr) || !(data ^ stack)) {
+
+		if (pagetable_getmap(current->pagetable,vaddr,&paddr,0) || !(data ^ stack)) {
 			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
 		} else {
-            pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+			// XXX update process->vm_stack_size when growing the stack.
+			pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
 			return;
 		}
 	} else {

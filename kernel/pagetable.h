@@ -21,9 +21,10 @@ See the file LICENSE for details.
 struct pagetable * pagetable_create();
 void pagetable_init( struct pagetable *p );
 int  pagetable_map( struct pagetable *p, unsigned vaddr, unsigned paddr, int flags );
-int  pagetable_getmap( struct pagetable *p, unsigned vaddr, unsigned *paddr );
+int  pagetable_getmap( struct pagetable *p, unsigned vaddr, unsigned *paddr, int *flags );
 void pagetable_unmap( struct pagetable *p, unsigned vaddr );
 void pagetable_alloc( struct pagetable *p, unsigned vaddr, unsigned length, int flags );
+void pagetable_free( struct pagetable *p, unsigned vaddr, unsigned length );
 void pagetable_delete( struct pagetable *p );
 struct pagetable * pagetable_duplicate( struct pagetable *p );
 struct pagetable * pagetable_load( struct pagetable *p );

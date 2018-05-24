@@ -50,7 +50,7 @@ void pagetable_init(struct pagetable *p)
 	}
 }
 
-int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr)
+int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr, int *flags )
 {
 	struct pagetable *q;
 	struct pageentry *e;
@@ -69,6 +69,13 @@ int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr)
 		return 0;
 
 	*paddr = e->addr << 12;
+
+	if(flags) {
+		*flags = 0;
+		if(e->readwrite)  *flags |= PAGE_FLAG_READWRITE;
+		if(e->avail&0x01) *flags |= PAGE_FLAG_ALLOC;
+		if(!e->user)      *flags |= PAGE_FLAG_KERNEL;
+	}
 
 	return 1;
 }
@@ -177,8 +184,29 @@ void pagetable_alloc(struct pagetable *p, unsigned vaddr, unsigned length, int f
 
 	while(npages > 0) {
 		unsigned paddr;
-		if(!pagetable_getmap(p, vaddr, &paddr)) {
+		if(!pagetable_getmap(p, vaddr, &paddr, 0)) {
 			pagetable_map(p, vaddr, 0, flags | PAGE_FLAG_ALLOC);
+		}
+		vaddr += PAGE_SIZE;
+		npages--;
+	}
+}
+
+void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length )
+{
+	unsigned npages = length / PAGE_SIZE;
+
+	if(length % PAGE_SIZE)
+		npages++;
+
+	vaddr &= 0xfffff000;
+
+	while(npages > 0) {
+		unsigned paddr;
+		int flags;
+		if(pagetable_getmap(p, vaddr, &paddr, &flags)) {
+			pagetable_unmap(p,vaddr);
+			if(flags&PAGE_FLAG_ALLOC) memory_free_page((void*)paddr);
 		}
 		vaddr += PAGE_SIZE;
 		npages--;
@@ -188,7 +216,7 @@ void pagetable_alloc(struct pagetable *p, unsigned vaddr, unsigned length, int f
 struct pagetable *pagetable_load(struct pagetable *p)
 {
 	struct pagetable *oldp;
-      asm("mov %%cr3, %0":"=r"(oldp));
+	asm("mov %%cr3, %0":"=r"(oldp));
 	asm("mov %0, %%cr3"::"r"(p));
 	return oldp;
 }

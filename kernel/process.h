@@ -46,21 +46,22 @@ struct process {
 	struct list mounts;
 	uint32_t pid;
 	uint32_t ppid;
-	uint32_t brk;
+	uint32_t vm_data_size;
+	uint32_t vm_stack_size;
 };
 
 void process_init();
 
-struct process *process_create( unsigned code_size, unsigned stack_size );
+struct process *process_create();
 void process_delete(struct process *p);
 void process_launch(struct process *p);
 void process_pass_arguments(struct process *p, const char **argv, int argc);
 void process_inherit(struct process *p);
 
-void process_stack_reset( struct process *p, unsigned entry_point );
-void process_stack_copy( struct process *parent, struct process * child );
+void process_kstack_reset( struct process *p, unsigned entry_point );
+void process_kstack_copy( struct process *parent, struct process * child );
 
-int  process_vm_size_set( struct process *p, unsigned size );
+int  process_data_size_set( struct process *p, unsigned size );
 int  process_stack_size_set( struct process *p, unsigned size );
 
 void process_yield();

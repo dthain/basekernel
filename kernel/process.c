@@ -38,7 +38,7 @@ void process_init()
 	memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
 	fs_spaces_used = 0;
 
-	current = process_create(0, 0);
+	current = process_create();
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
@@ -55,7 +55,7 @@ void process_init()
 	console_printf("process: ready\n");
 }
 
-void process_stack_reset( struct process *p, unsigned entry_point )
+void process_kstack_reset( struct process *p, unsigned entry_point )
 {
 	struct x86_stack *s;
 
@@ -75,7 +75,7 @@ void process_stack_reset( struct process *p, unsigned entry_point )
 	s->ss = X86_SEGMENT_USER_DATA;
 }
 
-void process_stack_copy( struct process *parent, struct process *child )
+void process_kstack_copy( struct process *parent, struct process *child )
 {
 	child->kstack_top = child->kstack + PAGE_SIZE - 8;
 	child->kstack_ptr = child->kstack_top - sizeof(struct x86_stack);
@@ -145,22 +145,44 @@ void process_inherit(struct process *p)
 	p->ppid = current->pid;
 }
 
-int  process_vm_size_set( struct process *p, unsigned size )
+int  process_data_size_set( struct process *p, unsigned size )
 {
-	pagetable_alloc(p->pagetable, PROCESS_ENTRY_POINT, size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
-	p->brk = size + PROCESS_ENTRY_POINT;
-	// XXX need to un-allocate unused pages
-	return 1;
+	// XXX check valid ranges
+	// XXX round up to page size
+
+	if(size>p->vm_data_size) {
+		uint32_t start = PROCESS_ENTRY_POINT + p->vm_data_size;
+		pagetable_alloc(p->pagetable,start,size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+	} else if(size<p->vm_data_size) {
+		uint32_t start = PROCESS_ENTRY_POINT + size;
+		pagetable_free(p->pagetable,start,p->vm_data_size);
+	} else {
+		// requested size is equal to current.
+	}
+
+	p->vm_data_size = size;
+	return 0;
 }
 
 int  process_stack_size_set( struct process *p, unsigned size )
 {
-	pagetable_alloc(p->pagetable, -size, size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
-	// XXX need to un-allocate unused pages
-	return 1;
+	// XXX check valid ranges
+	// XXX round up to page size
+
+	if(size>p->vm_stack_size) {
+		uint32_t start = -size;
+		pagetable_alloc(p->pagetable,start,size-p->vm_stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+	} else {
+		uint32_t start = -p->vm_stack_size;
+		pagetable_free(p->pagetable,start,p->vm_stack_size-size);
+	}
+
+	p->vm_stack_size = size;
+
+	return 0;
 }
 
-struct process *process_create(unsigned code_size, unsigned stack_size )
+struct process *process_create()
 {
 	struct process *p;
 
@@ -172,20 +194,23 @@ struct process *process_create(unsigned code_size, unsigned stack_size )
 	p->pagetable = pagetable_create();
 	pagetable_init(p->pagetable);
 
-	process_vm_size_set(p,code_size);
-	process_stack_size_set(p,code_size);
+	p->vm_data_size = 0;
+	p->vm_stack_size = 0;
+
+	process_data_size_set(p,PAGE_SIZE);
+	process_stack_size_set(p,PAGE_SIZE);
 
 	p->kstack = memory_alloc_page(1);
 	p->kstack_top = p->kstack + PAGE_SIZE - 8;
 	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
+
+	process_kstack_reset(p,PROCESS_ENTRY_POINT);
 
 	// XXX table should be allocated
 	int i;
 	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
-
-	process_stack_reset(p,PROCESS_ENTRY_POINT);
 
 	return p;
 }
@@ -487,7 +512,7 @@ void process_pass_arguments(struct process *p, const char **argv, int argc)
 	/* Copy command line arguments */
 	struct x86_stack *s = (struct x86_stack *) p->kstack_ptr;
 	unsigned paddr;
-	pagetable_getmap(p->pagetable, PROCESS_STACK_INIT - PAGE_SIZE + 0x10, &paddr);
+	pagetable_getmap(p->pagetable, PROCESS_STACK_INIT - PAGE_SIZE + 0x10, &paddr, 0);
 	char *esp = (char *) paddr + PAGE_SIZE - 0x10;
 	char *ebp = esp;
 	/* Copy each argument */

@@ -47,28 +47,15 @@ int sys_process_yield()
 	return 0;
 }
 
-int sys_sbrk(int a)
+int sys_sbrk( int delta )
 {
-	unsigned int vaddr = (unsigned int) current->brk;
-	unsigned int paddr;
-	unsigned int i;
-	for(i = 0; i < (unsigned int) a; i += PAGE_SIZE) {
-		if(!pagetable_getmap(current->pagetable, vaddr, &paddr)) {
-			pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
-		}
-		vaddr += PAGE_SIZE;
-	}
-	if(!pagetable_getmap(current->pagetable, vaddr, &paddr)) {
-		pagetable_alloc(current->pagetable, vaddr, PAGE_SIZE, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
-	}
-	vaddr = (unsigned int) current->brk;
-	current->brk += a;
-	return vaddr;
+	process_data_size_set( current,current->vm_data_size + delta );
+	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
 int sys_process_run(const char *path, const char **argv, int argc)
 {
-	struct process *p = process_create(0,0);
+	struct process *p = process_create();
 
 	if(!elf_load(p,path)) {
 		// XXX need to get errror from elf_load
@@ -97,12 +84,12 @@ int sys_process_exec(const char *path, const char **argv, int argc)
 
 int sys_process_fork()
 {
-	struct process *p = process_create(0,0);
+	struct process *p = process_create();
 	p->ppid = current->pid;
 	pagetable_delete(p->pagetable);
 	p->pagetable = pagetable_duplicate(current->pagetable);
 	process_inherit(p);
-	process_stack_copy(current,p);
+	process_kstack_copy(current,p);
 	process_launch(p);
 	return p->pid;
 }

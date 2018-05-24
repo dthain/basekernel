@@ -99,9 +99,9 @@ int elf_load_process( struct process *p, const char *image, const char *path )
 
 	/* Reset the process VM space to match the desired program */
 
-	process_vm_size_set(p,max_mem - PROCESS_ENTRY_POINT);
+	process_data_size_set(p,max_mem - PROCESS_ENTRY_POINT);
 	process_stack_size_set(p,PAGE_SIZE);
-	process_stack_reset(p,e_entry);
+	process_kstack_reset(p,e_entry);
 
 	int i;
 	for(i = 0; i < e_phnum; ++i) {
@@ -113,7 +113,7 @@ int elf_load_process( struct process *p, const char *image, const char *path )
 		while(copied < size) {
 			unsigned paddr;
 			unsigned vaddr = vadr + copied;
-			pagetable_getmap(p->pagetable, vaddr, &paddr);
+			pagetable_getmap(p->pagetable, vaddr, &paddr, 0);
 			paddr += (vaddr % PAGE_SIZE);
 			int amount = PAGE_SIZE;
 			if(copied + amount > size) {
