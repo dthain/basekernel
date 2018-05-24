@@ -32,9 +32,6 @@ struct cdrom_dirent {
 static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
 static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
 int strcmp_cdrom_ident(const char * ident, const char * s);
-char * strdup(const char * s);
-void strtoupper(char * name);
-void strtolower(char * name);
 
 static struct cdrom_dirent * cdrom_dirent_create( struct cdrom_volume *volume, int sector, int length, int isdir )
 {
