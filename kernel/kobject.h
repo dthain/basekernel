@@ -27,6 +27,7 @@ struct kobject {
         KOBJECT_PIPE
     } type;
     int rc;
+    int offset;
 };
 
 struct kobject *kobject_create_file(struct fs_file *f);

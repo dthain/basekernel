@@ -253,7 +253,7 @@ int fs_dirent_unlink(struct fs_dirent *d, const char *name)
 	return 0;
 }
 
-int fs_file_write(struct fs_file *f, char *buffer, uint32_t n)
+int fs_file_write(struct fs_file *f, char *buffer, uint32_t n, uint32_t offset )
 {
 	struct fs_dirent *d = f->d;
 	struct fs_block_map *bm = f->private_data;

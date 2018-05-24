@@ -101,14 +101,14 @@ void test_write_file() {
 	struct fs_dirent *d_f = fs_dirent_namei(d, "read_write_file");
 	struct fs_file *fp = fs_file_open(d_f, FILE_MODE_WRITE);
 	printf("opened read_write_file for writing\n");
-	int result = fs_file_write(fp, wbuffer, sizeof(wbuffer));
+	int result = fs_file_write(fp, wbuffer, sizeof(wbuffer),0);
 	printf("wrote %d bytes\n", result);
 	fs_file_close(fp);
 	printf("closed read_write_file\n");
 	printf("opened read_write_file for reading\n");
 	fp = fs_file_open(d_f, FILE_MODE_READ);
 	printf("read %d bytes:\n", result);
-	result = fs_file_read(fp, buffer, sizeof(wbuffer));
+	result = fs_file_read(fp, buffer, sizeof(wbuffer),0);
 	printf("%s\n", buffer);
 	fs_file_close(fp);
 	printf("closed read_write_file\n");

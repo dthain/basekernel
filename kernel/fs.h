@@ -44,8 +44,8 @@ struct fs_dirent *fs_volume_root(struct fs_volume *);
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode);
 int fs_dirent_close(struct fs_dirent *d);
-int fs_file_read(struct fs_file *f, char *buffer, uint32_t n);
-int fs_file_write(struct fs_file *f, char *buffer, uint32_t n);
+int fs_file_read(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset );
+int fs_file_write(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset );
 int fs_file_close(struct fs_file *f);
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);

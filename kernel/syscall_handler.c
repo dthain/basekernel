@@ -389,6 +389,7 @@ int sys_write(int fd, void *data, int length)
 
 int sys_lseek(int fd, int offset, int whence)
 {
+	// XXX add kobject method here
 	return ENOSYS;
 }
 
