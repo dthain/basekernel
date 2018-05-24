@@ -24,4 +24,4 @@ bootblock.elf: bootblock.o
 	${CC} ${KERNEL_CCFLAGS} -I ../common $< -o $@
 
 clean:
-	rm -rf basekernel.img *.elf kernel bootblock $(KERNEL_OBJECTS)
+	rm -rf basekernel.img *.o *.elf kernel bootblock bootblock.o
