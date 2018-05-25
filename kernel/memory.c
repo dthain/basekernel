@@ -28,7 +28,7 @@ void memory_init()
 {
 	int i;
 
-	pages_total = (total_memory*1024)/(PAGE_SIZE/1024);
+	pages_total = (total_memory*1024*1024 - MAIN_MEMORY_START) / PAGE_SIZE;
 	pages_free = pages_total;
 	console_printf("memory: %d MB (%d KB) total\n",(pages_free*PAGE_SIZE)/MEGA,(pages_free*PAGE_SIZE)/KILO);
 
