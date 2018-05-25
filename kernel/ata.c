@@ -24,7 +24,8 @@ See the file LICENSE for details.
 #define ATA_BASE2	0x1E8
 #define ATA_BASE3	0x168
 
-#define ATA_TIMEOUT     3
+#define ATA_TIMEOUT 5000
+#define ATA_IDENTIFY_TIMEOUT 1000
 
 #define ATA_DATA	0   /* data register */
 #define ATA_ERROR	1   /* error register */
@@ -76,6 +77,7 @@ static const int ata_base[4] = {ATA_BASE0,ATA_BASE0,ATA_BASE1,ATA_BASE1};
 static int ata_interrupt_active = 0;
 static struct list queue = {0,0};
 static struct mutex ata_mutex = MUTEX_INIT;
+static int identify_in_progress = 0;
 
 static void ata_interrupt( int intr, int code )
 {
@@ -96,6 +98,8 @@ static int ata_wait( int id, int mask, int state )
 	clock_t start, elapsed;
 	int t;
 
+	int timeout_millis = identify_in_progress ? ATA_IDENTIFY_TIMEOUT : ATA_TIMEOUT;
+
 	start = clock_read();
 
 	while(1) {
@@ -109,8 +113,11 @@ static int ata_wait( int id, int mask, int state )
 			return 0;
 		}
 		elapsed = clock_diff(start,clock_read());
-		if(elapsed.seconds>ATA_TIMEOUT) {
-			console_printf("ata: timeout\n");
+		int elapsed_millis = elapsed.seconds*1000 + elapsed.millis;
+		if(elapsed_millis>timeout_millis) {
+			if(!identify_in_progress) {
+				console_printf("ata: timeout\n");
+			}
 			ata_reset(id);
 			return 0;
 		}
@@ -342,10 +349,16 @@ the the device is simply not connected.
 
 static int ata_identify( int id, int command, void *buffer )
 {
-	if(!ata_begin(id,command,0,0)) return 0;
-	if(!ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) return 0;
-	ata_pio_read(id,buffer,512);
-	return 1;
+	int result;
+	identify_in_progress = 1;
+	if(ata_begin(id,command,0,0) && ata_wait(id,ATA_STATUS_DRQ,ATA_STATUS_DRQ)) {
+		ata_pio_read(id,buffer,512);
+		result = 1;
+	} else {
+		result = 0;
+	}
+	identify_in_progress = 0;
+	return result;
 }
 
 int ata_probe( int id, int *nblocks, int *blocksize, char *name )
@@ -382,7 +395,7 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 		*blocksize = ATAPI_BLOCKSIZE;
 
 	} else {
-		console_printf("ata unit %d: identify command failed\n",id);
+		console_printf("ata unit %d: not connected\n",id);
 		return 0;
 	}
 
