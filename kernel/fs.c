@@ -4,6 +4,8 @@
 #include "list.h"
 #include "memory.h"
 
+#define MIN(x,y) ((x)<(y)?(x):(y))
+
 struct list l;
 
 static struct fs_file *init_file(struct fs_dirent *d, uint32_t mode)
@@ -155,6 +157,7 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 	}
 
 	char *temp = memory_alloc_page(0);
+	if(!temp) return -1;
 
 	while(length > 0) {
 
@@ -165,7 +168,7 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 			actual = fs_file_read_block(file, temp, blocknum);
 			if(actual != bs)
 				goto failure;
-			actual = bs - offset % bs;
+			actual = MIN(bs - offset % bs,length);
 			memcpy(buffer, &temp[offset % bs], actual);
 		} else if(length >= bs) {
 			actual = fs_file_read_block(file, buffer, blocknum);
@@ -188,7 +191,7 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 	memory_free_page(temp);
 	return total;
 
-      failure:
+	failure:
 	memory_free_page(temp);
 	if(total == 0)
 		return -1;
@@ -253,7 +256,7 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 			if(actual != bs)
 				goto failure;
 
-			actual = bs - offset % bs;
+			actual = MIN(bs - offset % bs,length);
 			memcpy(&temp[offset % bs], buffer, actual);
 
 			int wactual = fs_file_write_block(file, temp, blocknum);

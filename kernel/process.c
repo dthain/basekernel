@@ -59,7 +59,7 @@ void process_kstack_reset( struct process *p, unsigned entry_point )
 {
 	struct x86_stack *s;
 
-	p->state = PROCESS_STATE_CRADLE;
+	current->state = PROCESS_STATE_CRADLE;
 
 	s = (struct x86_stack *) p->kstack_ptr;
 
@@ -150,9 +150,14 @@ int  process_data_size_set( struct process *p, unsigned size )
 	// XXX check valid ranges
 	// XXX round up to page size
 
+	if(size%PAGE_SIZE) {
+		size += (PAGE_SIZE - size%PAGE_SIZE);
+	}
+
 	if(size>p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + p->vm_data_size;
-		pagetable_alloc(p->pagetable,start,size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE);
+		pagetable_alloc(p->pagetable,start,size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+		memset((void*)start,size,0);
 	} else if(size<p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + size;
 		pagetable_free(p->pagetable,start,p->vm_data_size);
@@ -161,6 +166,8 @@ int  process_data_size_set( struct process *p, unsigned size )
 	}
 
 	p->vm_data_size = size;
+	pagetable_refresh();
+
 	return 0;
 }
 
@@ -172,14 +179,22 @@ int  process_stack_size_set( struct process *p, unsigned size )
 	if(size>p->vm_stack_size) {
 		uint32_t start = -size;
 		pagetable_alloc(p->pagetable,start,size-p->vm_stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
+		memset((void*)start,size-p->vm_stack_size,0);
 	} else {
 		uint32_t start = -p->vm_stack_size;
 		pagetable_free(p->pagetable,start,p->vm_stack_size-size);
 	}
 
 	p->vm_stack_size = size;
+	pagetable_refresh();
 
 	return 0;
+}
+
+void process_stack_reset( struct process *p, unsigned size )
+{
+	process_stack_size_set(p,size);
+	memset((void*)-size,size,0);
 }
 
 struct process *process_create()
@@ -197,8 +212,8 @@ struct process *process_create()
 	p->vm_data_size = 0;
 	p->vm_stack_size = 0;
 
-	process_data_size_set(p,PAGE_SIZE);
-	process_stack_size_set(p,PAGE_SIZE);
+	process_data_size_set(p,2*PAGE_SIZE);
+	process_stack_size_set(p,2*PAGE_SIZE);
 
 	p->kstack = memory_alloc_page(1);
 	p->kstack_top = p->kstack + PAGE_SIZE - 8;
@@ -211,6 +226,8 @@ struct process *process_create()
 	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
+
+	p->state = PROCESS_STATE_READY;
 
 	return p;
 }
@@ -346,7 +363,7 @@ void process_wakeup_all(struct list *q)
 
 void process_dump(struct process *p)
 {
-	struct x86_stack *s = (struct x86_stack *) (p->kstack_top - sizeof(*s));
+	struct x86_stack *s = (struct x86_stack *) (INTERRUPT_STACK_TOP - sizeof(*s));
 	console_printf("kstack: %x\n", p->kstack);
 	console_printf("stackp: %x\n", p->kstack_ptr);
 	console_printf("eax: %x     cs: %x\n", s->regs1.eax, s->cs);

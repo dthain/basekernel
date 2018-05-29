@@ -38,7 +38,7 @@ static int mount_cd(int unit, char *fs_type)
 		struct fs_dirent *d = fs_volume_root(v);
 		if(d) {
 			root_directory = d;
-			current_directory = d;
+			current -> cwd = d;
 			return 0;
 		} else {
 			printf("couldn't access root dir!\n");
@@ -55,7 +55,7 @@ static int mount_cd(int unit, char *fs_type)
 
 static int list_directory(const char *path)
 {
-	struct fs_dirent *d = current_directory;
+	struct fs_dirent *d = current->cwd;
 	if(d) {
 		int buffer_length = 1024;
 		char *buffer = kmalloc(buffer_length);
@@ -87,6 +87,15 @@ static int process_command(char *line)
 			process_yield();
 		} else
 			printf("start: missing argument\n");
+	} else if(pch && !strcmp(pch, "exec")) {
+		pch = strtok(0, " ");
+		if(pch) {
+			const char *argv[] = { pch, "exec" };
+			sys_process_exec(pch,argv,2);
+			process_yield();
+		} else {
+			printf("exe: missing argument\n");
+		}
 	} else if(pch && !strcmp(pch, "run")) {
 		pch = strtok(0, " ");
 		if(pch) {
@@ -183,7 +192,7 @@ static int process_command(char *line)
 	} else if(pch && !strcmp(pch, "mkdir")) {
 		pch = strtok(0, " ");
 		if(pch)
-			fs_dirent_mkdir(current_directory, pch);
+			fs_dirent_mkdir(current->cwd, pch);
 		else
 			printf("mkdir: missing argument\n");
 	} else if(pch && !strcmp(pch, "format")) {
@@ -202,13 +211,13 @@ static int process_command(char *line)
 	} else if(pch && !strcmp(pch, "rmdir")) {
 		pch = strtok(0, " ");
 		if(pch)
-			fs_dirent_rmdir(current_directory, pch);
+			fs_dirent_rmdir(current->cwd, pch);
 		else
 			printf("rmdir: missing argument\n");
 	} else if(pch && !strcmp(pch, "chdir")) {
 		pch = strtok(0, " ");
 		if(pch)
-			current_directory = fs_dirent_namei(current_directory, pch);
+			current->cwd = fs_dirent_namei(current->cwd, pch);
 		else
 			printf("chdir: missing argument\n");
 	} else if(pch && !strcmp(pch, "time")) {

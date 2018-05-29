@@ -1,144 +1,154 @@
-/*
-Copyright (C) 2018 The University of Notre Dame
-This software is distributed under the GNU General Public License.
-See the file LICENSE for details.
-*/
 
-#include "console.h"
 #include "elf.h"
 #include "fs.h"
-#include "kmalloc.h"
-#include "main.h"
-#include "memorylayout.h"
+#include "string.h"
+#include "console.h"
 #include "process.h"
+#include "syscall.h"
+#include "memorylayout.h"
 
-#define ELF_MAGIC_NUMBER               0x464c457f	/*ELF Magic number, in little endian order */
-#define ELF_PROG_TYPE_LOAD             0x00000001	/*LOAD segment type for the ELF program header */
+struct elf_header {
+	char ident[16];
+	uint16_t type;
+	uint16_t machine;
+	uint32_t version;
+	uint32_t entry;
+	uint32_t program_offset;
+	uint32_t section_offset;
+	uint32_t flags;
+	uint16_t header_size;
+	uint16_t phentsize;
+	uint16_t phnum;
+	uint16_t shentsize;
+	uint16_t shnum;
+	uint16_t shstrndx;
+};
 
-#define ELF_HEADER_ENTRY_OFFSET        0x00000018	/*Location of the process entry point in the ELF header */
-#define ELF_HEADER_PROGHEAD_OFFSET     0x0000001c	/*Location of the program header location in the ELF header */
-#define ELF_HEADER_PROGHEADSIZE_OFFSET 0x0000002a	/*Location of the program header size in the ELF header */
-#define ELF_HEADER_PROGHEADNUM_OFFSET  0x0000002c	/*Location of the number of program header segments in the ELF header */
+#define ELF_HEADER_TYPE_NONE         0
+#define ELF_HEADER_TYPE_OBJECT       1
+#define ELF_HEADER_TYPE_EXECUTABLE   2
+#define ELF_HEADER_TYPE_DYNAMIC      3
+#define ELF_HEADER_TYPE_CORE         4
 
-#define ELF_PROGHEADER_FOFF_OFFSET     0x00000004	/*Location of the file offset of a program segment in the program header */
-#define ELF_PROGHEADER_VADR_OFFSET     0x00000008	/*Location of the virtual address of a program segment in the program header */
-#define ELF_PROGHEADER_FSIZE_OFFSET    0x00000010	/*Location of the file size of the program segment in the program header */
-#define ELF_PROGHEADER_MSIZE_OFFSET    0x00000014	/*Location of the in memory size of the program segment in the program header */
+#define ELF_HEADER_MACHINE_I386   3
+#define ELF_HEADER_MACHINE_ARM    40
+#define ELF_HEADER_MACHINE_X86_64 62
 
-static char *elf_load_image(const char *path)
+#define ELF_HEADER_VERSION     1
+
+struct elf_program {
+	uint32_t type;
+	uint32_t offset;
+	uint32_t vaddr;
+	uint32_t paddr;
+	uint32_t file_size;
+	uint32_t memory_size;
+	uint32_t flags;
+	uint32_t align;
+};
+
+#define ELF_PROGRAM_TYPE_LOADABLE 1
+
+struct elf_section {
+	uint32_t name;
+	uint32_t type;
+	uint32_t flags;
+	uint32_t address;
+	uint32_t offset;
+	uint32_t size;
+	uint32_t link;
+	uint32_t info;
+	uint32_t alignment;
+	uint32_t entry_size;
+};
+
+#define ELF_SECTION_TYPE_NULL         0
+#define ELF_SECTION_TYPE_PROGRAM      1
+#define ELF_SECTION_TYPE_SYMBOL_TABLE 2
+#define ELF_SECTION_TYPE_STRING_TABLE 3
+#define ELF_SECTION_TYPE_RELA         4
+#define ELF_SECTION_TYPE_HASH         5
+#define ELF_SECTION_TYPE_DYNAMIC      6
+#define ELF_SECTION_TYPE_NOTE         7
+#define ELF_SECTION_TYPE_BSS          8
+
+#define ELF_SECTION_FLAGS_WRITE    1
+#define ELF_SECTION_FLAGS_MEMORY   2
+#define ELF_SECTION_FLAGS_EXEC     8
+#define ELF_SECTION_FLAGS_MERGE    16
+#define ELF_SECTION_FLAGS_STRINGS  32
+#define ELF_SECTION_FLAGS_INFO_LINK 64
+#define ELF_SECTION_FLAGS_LINK_ORDER 128
+#define ELF_SECTION_FLAGS_NONSTANDARD 256
+#define ELF_SECTION_FLAGS_GROUP 512
+#define ELF_SECTION_FLAGS_TLS 1024
+
+
+int elf_load( struct process *p, const char *filename )
 {
-	/* Open and find the named path, if it exists. */
-
-	if(!root_directory)
-		return 0;
-
-	struct fs_dirent *d = fs_dirent_namei(root_directory, path);
-	if(!d) {
-		return 0;
-	}
-
-	int length = d->size;
-
-	struct fs_file *f = fs_file_open(d, FS_FILE_READ);
-	char *image = kmalloc(length);
-	fs_file_read(f, image, length,0);
-	fs_dirent_close(d);
-	fs_file_close(f);
-
-	int ei_mag = *(int *) (image);
-	if(ei_mag != ELF_MAGIC_NUMBER) {
-		printf("Error loading program %s, unexpected magic number 0x%x - expected 0x%x\n", path, ei_mag, ELF_MAGIC_NUMBER);
-		kfree(image);
-		return 0;
-	}
-
-	return image;
-}
-
-static uint32_t elf_get_brk(const char *image, const char *path)
-{
-	int e_phoff = *(int *) (image + ELF_HEADER_PROGHEAD_OFFSET);
-	int e_phentsize = *(short *) (image + ELF_HEADER_PROGHEADSIZE_OFFSET);
-	int e_phnum = *(short *) (image + ELF_HEADER_PROGHEADNUM_OFFSET);
-
-	/* Calculate the process brk point */
-	uint32_t max_mem = 0;
+	struct elf_header header;
+	struct elf_program program;
+	struct elf_section section;
 	int i;
-	for(i = 0; i < e_phnum; ++i) {
-		const char *index = image + e_phoff + e_phentsize * i;
-		uint32_t vadr = *(int *) (index + ELF_PROGHEADER_VADR_OFFSET);
-		uint32_t size = *(int *) (index + ELF_PROGHEADER_MSIZE_OFFSET);
-		if(max_mem < vadr + size) {
-			max_mem = vadr + size;
-		}
-		uint32_t type = *(int *) (index);
-		if(type != ELF_PROG_TYPE_LOAD) {
-			printf("Error loading program %s, unexpected program header type 0x%x - expected 0x%x\n", path, type, ELF_PROG_TYPE_LOAD);
-			return 0;
-		}
-		if(vadr < PROCESS_ENTRY_POINT) {
-			printf("Error loading program %s, it requested to be loaded at 0x%x, which is not allowed\n", path, vadr);
-			return 0;
-		}
-	}
-	return max_mem;
-}
+	uint32_t actual;
 
-int elf_load_process( struct process *p, const char *image, const char *path )
-{
+	struct fs_dirent *d = fs_dirent_namei(p->cwd,filename);
+	if(!d) return ENOENT;
 
-	uint32_t e_entry = *(uint32_t *) (image + ELF_HEADER_ENTRY_OFFSET);
-	uint32_t e_phoff = *(uint32_t *) (image + ELF_HEADER_PROGHEAD_OFFSET);
-	uint16_t e_phentsize = *(uint16_t *) (image + ELF_HEADER_PROGHEADSIZE_OFFSET);
-	uint16_t e_phnum = *(uint16_t *) (image + ELF_HEADER_PROGHEADNUM_OFFSET);
+	struct fs_file *file = fs_file_open(d,FS_FILE_READ);
+	if(!file) return ENOENT;
 
-	uint32_t max_mem = elf_get_brk(image, path);
-	if(!max_mem) {
-		return 0;
-	}
+	actual = fs_file_read(file,(char*)&header,sizeof(header),0);
+	if(actual!=sizeof(header)) goto noload;
 
-	/* Reset the process VM space to match the desired program */
+	if(strncmp(header.ident,"\177ELF",4) || header.machine!=ELF_HEADER_MACHINE_I386 || header.version!=ELF_HEADER_VERSION) goto noexec;
 
-	process_data_size_set(p,max_mem - PROCESS_ENTRY_POINT);
-	process_stack_size_set(p,PAGE_SIZE);
-	process_kstack_reset(p,e_entry);
+	actual = fs_file_read(file,(char*)&program,sizeof(program),header.program_offset);
+	if(actual!=sizeof(program)) goto noload;
 
-	int i;
-	for(i = 0; i < e_phnum; ++i) {
-		const char *index = image + e_phoff + e_phentsize * i;
-		uint32_t offs = *(int *) (index + ELF_PROGHEADER_FOFF_OFFSET);
-		uint32_t vadr = *(int *) (index + ELF_PROGHEADER_VADR_OFFSET);
-		uint32_t size = *(int *) (index + ELF_PROGHEADER_FSIZE_OFFSET);
-		int copied = 0;
-		while(copied < size) {
-			unsigned paddr;
-			unsigned vaddr = vadr + copied;
-			pagetable_getmap(p->pagetable, vaddr, &paddr, 0);
-			paddr += (vaddr % PAGE_SIZE);
-			int amount = PAGE_SIZE;
-			if(copied + amount > size) {
-				amount = size - copied;
+	//printf("elf: text %x bytes from offset %x at address %x length %x\n",program.file_size,program.offset,program.vaddr,program.memory_size);
+
+	if( program.type!=ELF_PROGRAM_TYPE_LOADABLE || program.vaddr<PROCESS_ENTRY_POINT || program.memory_size>0x8000000 || program.memory_size!=program.file_size ) goto noexec;
+
+	process_data_size_set(p,program.memory_size);
+
+	actual = fs_file_read(file,(char*)program.vaddr,program.memory_size,program.offset);
+	if(actual!=program.memory_size) goto mustdie;
+
+	for(i=0;i<header.shnum;i++) {
+		actual = fs_file_read(file,(char*)&section,sizeof(section),header.section_offset+i*header.shentsize);
+		if(actual!=sizeof(section)) goto mustdie;
+
+		if(section.type==ELF_SECTION_TYPE_BSS) {
+			uint32_t limit = section.address + section.size - PROCESS_ENTRY_POINT;
+			if(limit>p->vm_data_size) {
+				process_data_size_set(p,section.address+section.size-PROCESS_ENTRY_POINT);
 			}
-			if(paddr / PAGE_SIZE < (paddr + amount) / PAGE_SIZE) {
-				amount = ((paddr + amount) / PAGE_SIZE) * PAGE_SIZE - paddr;
-			}
-			memcpy((void *) paddr, image + offs + copied, amount);
-			copied += amount;
+		} else {
+			/* skip all other section types */
 		}
 	}
-	return 1;
-}
 
-int elf_load( struct process *p, const char *path )
-{
-	char *image = elf_load_image(path);
-	if(!image) {
-		return 0;
-	}
+	fs_file_close(file);
 
-	elf_load_process(p,image, path );
-	// XXX check return value
+	process_stack_reset(current,PAGE_SIZE*2);
+	process_kstack_reset(current,header.entry);
 
-	kfree(image);
-	return 1;
+	return 0;
+
+	noload:
+	printf("elf: %s failed to load correctly!\n",filename);
+	fs_file_close(file);
+	return ENOENT;
+
+	noexec:
+	printf("elf: %s is not a valid i386 ELF executable\n",filename);
+	fs_file_close(file);
+	return ENOEXEC;
+
+	mustdie:
+	printf("elf: %s did not load correctly\n",filename);
+	fs_file_close(file);
+	process_kill(p->pid);
+	return ENOEXEC;
 }

@@ -70,15 +70,26 @@ int sys_process_run(const char *path, const char **argv, int argc)
 
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
+  /*
 	if(!fs_spaces[current->fs_spaces[current->cws].gindex].present || fs_space_depth_check(path, current->cwd_depth) == -1) {
 	  return EINVAL;
 	}
+  */
 
-	if(!elf_load(current,path)) {
-		// XXX need to get errror from elf_load
-		return ENOENT;
-	}
+	int r = elf_load(current,path);
+	if(r<0) return r;
 	process_pass_arguments(current, argv, argc);
+
+	/*
+	IMPORTANT: Following a successful exec, we cannot return via
+	the normal path, because our stack has been reset to that
+	of a fresh process.  We must switch in order to jump
+	to the new stack properly.
+	*/
+
+	process_yield();
+
+	/* NOTREACHED */
 	return 0;
 }
 

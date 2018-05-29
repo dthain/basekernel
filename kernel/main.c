@@ -29,7 +29,6 @@ See the file LICENSE for details.
 #include "serial.h"
 
 struct dirent *root_directory = 0;
-struct dirent *current_directory = 0;
 
 /*
 This is the C initialization point of the kernel.
