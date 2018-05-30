@@ -149,6 +149,5 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 	mustdie:
 	printf("elf: %s did not load correctly\n",filename);
 	fs_file_close(file);
-	process_kill(p->pid);
-	return ENOEXEC;
+	return EFAILEXEC;
 }

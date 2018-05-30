@@ -53,6 +53,8 @@ int sys_sbrk( int delta )
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
+struct fs_dirent * fs_master_lookup( const char *path, int *error );
+
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
@@ -71,15 +73,17 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	
 	addr_t entry;
 	int r = elf_load(p,path,&entry);
-
-	process_stack_reset(p,PAGE_SIZE);
+	if(r>=0) {
+		process_stack_reset(p,PAGE_SIZE);
+	}
 
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
 	if(r<0) {
-		// XXX synchronize process-death issues here.
-		process_delete(p);
+		if(r==EFAILEXEC) {
+			process_delete(p);
+		}
 		return r;
 	}
 
@@ -91,15 +95,14 @@ int sys_process_run(const char *path, const char **argv, int argc)
 
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
-  /*
-	if(!fs_spaces[current->fs_spaces[current->cws].gindex].present || fs_space_depth_check(path, current->cwd_depth) == -1) {
-	  return EINVAL;
-	}
-  */
-
 	addr_t entry;
 	int r = elf_load(current,path,&entry);
-	if(r<0) return r;
+	if(r<0) {
+		if(r==EFAILEXEC) {
+			process_kill(current->pid);
+		}
+		return r;
+	}
 
 	process_stack_reset(current,PAGE_SIZE);
 	process_kstack_reset(current,entry);

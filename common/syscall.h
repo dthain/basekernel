@@ -55,7 +55,8 @@ typedef enum {
 	EINVAL = -2,
 	EACCES = -3,
 	ENOSYS = -4,
-	ENOEXEC = -5
+	ENOEXEC = -5,
+	EFAILEXEC = 6
 } syscall_error_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);
