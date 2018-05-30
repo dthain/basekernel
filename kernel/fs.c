@@ -8,23 +8,9 @@
 
 struct list l;
 
-static struct fs_file *init_file(struct fs_dirent *d, uint32_t mode)
-{
-	struct fs_file *res = kmalloc(sizeof(struct fs_file));
-	res->size = d->size;
-	res->d = d;
-	res->private_data = 0;
-	res->mode = mode;
-	return res;
-}
-
-static void delete_file(struct fs_file *f)
-{
-	kfree(f);
-}
-
 int fs_register(struct fs *f)
 {
+	if(!f) return 0;
 	struct fs *f_final = kmalloc(sizeof(struct fs));
 	memcpy(f_final, f, sizeof(struct fs));
 	list_push_tail(&l, &f_final->node);
@@ -48,24 +34,20 @@ struct fs *fs_get(const char *name)
 
 struct fs_volume *fs_volume_mount(struct fs *f, uint32_t device_no)
 {
-	if(f->mount)
-		return f->mount(device_no);
+	if(f && f->mount) return f->mount(device_no);
 	return 0;
 }
 
 int fs_volume_umount(struct fs_volume *v)
 {
-	const struct fs_volume_ops *ops = v->ops;
-	if(ops->umount)
-		return ops->umount(v);
+	if(v && v->ops && v->ops->umount) return v->ops->umount(v);
 	return -1;
 }
 
 struct fs_dirent *fs_volume_root(struct fs_volume *v)
 {
-	const struct fs_volume_ops *ops = v->ops;
-	if(ops->root) {
-		struct fs_dirent *res = ops->root(v);
+	if (v && v->ops && v->ops->root ) {
+		struct fs_dirent *res = v->ops->root(v);
 		res->v = v;
 		return res;
 	}
@@ -74,17 +56,15 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->readdir)
-		return ops->readdir(d, buffer, buffer_length);
+	if(d && d->ops && d->ops->readdir)
+		return d->ops->readdir(d, buffer, buffer_length);
 	return -1;
 }
 
 static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->lookup) {
-		struct fs_dirent *res = ops->lookup(d, name);
+	if( d && d->ops && d->ops->lookup ) {
+		struct fs_dirent *res = d->ops->lookup(d, name);
 		res->v = d->v;
 		return res;
 	}
@@ -93,10 +73,8 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 {
-	const struct fs_dirent_ops *ops = d1->ops;
-	if(ops->compare) {
-		int ret = ops->compare(d1, d2, result);
-		return ret;
+	if(d1 && d2 && d1->ops && d1->ops->compare) {
+		return d1->ops->compare(d1, d2, result);
 	}
 	return -1;
 }
@@ -104,6 +82,8 @@ int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
 {
+	if(!d || !path) return 0;
+
 	char *lpath = kmalloc(strlen(path) + 1);
 	strcpy(lpath, path);
 
@@ -121,21 +101,28 @@ struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
 
 int fs_dirent_close(struct fs_dirent *d)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->close)
-		return ops->close(d);
+	if(d && d->ops && d->ops->close)
+		return d->ops->close(d);
 	return -1;
 }
 
 int fs_file_close(struct fs_file *f)
 {
-	delete_file(f);
+	if(!f) return 0;
+	kfree(f);
 	return 0;
 }
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
-	return init_file(d, mode);
+	if(!d) return 0;
+
+	struct fs_file *f = kmalloc(sizeof(*f));
+	f->size = d->size;
+	f->d = d;
+	f->private_data = 0;
+	f->mode = mode;
+	return f;
 }
 
 static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
@@ -200,36 +187,32 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->mkdir) {
-		return ops->mkdir(d, name);
+	if(d && d->ops && d->ops->mkdir) {
+		return d->ops->mkdir(d, name);
 	}
 	return 0;
 }
 
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->mkfile) {
-		return ops->mkfile(d, name);
+	if(d && d->ops && d->ops->mkfile) {
+		return d->ops->mkfile(d, name);
 	}
 	return 0;
 }
 
 int fs_dirent_rmdir(struct fs_dirent *d, const char *name)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->rmdir) {
-		return ops->rmdir(d, name);
+	if(d && d->ops && d->ops->rmdir) {
+		return d->ops->rmdir(d, name);
 	}
 	return 0;
 }
 
 int fs_dirent_unlink(struct fs_dirent *d, const char *name)
 {
-	const struct fs_dirent_ops *ops = d->ops;
-	if(ops->unlink) {
-		return ops->unlink(d, name);
+	if(d && d->ops && d->ops->unlink) {
+		return d->ops->unlink(d, name);
 	}
 	return 0;
 }
@@ -298,7 +281,7 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 int fs_mkfs(struct fs *f, uint32_t device_no)
 {
-	if(f->mkfs) {
+	if(f && f->mkfs) {
 		return f->mkfs(device_no);
 	}
 	return 0;
