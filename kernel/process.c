@@ -59,7 +59,7 @@ void process_kstack_reset( struct process *p, unsigned entry_point )
 {
 	struct x86_stack *s;
 
-	current->state = PROCESS_STATE_CRADLE;
+	p->state = PROCESS_STATE_CRADLE;
 
 	s = (struct x86_stack *) p->kstack_ptr;
 
@@ -121,28 +121,32 @@ static int process_allocate_pid()
 	return 0;
 }
 
-void process_inherit(struct process *p)
+void process_inherit( struct process *parent, struct process *child )
 {
 	/* Copy kernel objects */
-	memcpy(p->ktable, current->ktable, sizeof(current->ktable));
+	memcpy(child->ktable, parent->ktable, sizeof(parent->ktable));
 	int i;
 	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
-		if(p->ktable[i]) {
-			p->ktable[i]->rc++;
+		if(child->ktable[i]) {
+			child->ktable[i]->rc++;
 		}
 	}
+	/* Inherit current working dir */
+	// XXX need to duplicate or use reference counts.
+	child->cwd = parent->cwd;
+
 	/* Copy fs_spaces */
-	p->fs_space_count = current->fs_space_count;
-	p->cws = current->cws;
-	for(i = 0; i < p->fs_space_count; i++) {
-		p->fs_spaces[i].name = kmalloc(strlen(current->fs_spaces[i].name) + 1);
-		strcpy(p->fs_spaces[i].name, current->fs_spaces[i].name);
-		p->fs_spaces[i].perms = current->fs_spaces[i].perms;
-		p->fs_spaces[i].gindex = current->fs_spaces[i].gindex;
-		fs_spaces[p->fs_spaces[i].gindex].count++;
+	child->fs_space_count = parent->fs_space_count;
+	child->cws = parent->cws;
+	for(i = 0; i < child->fs_space_count; i++) {
+		child->fs_spaces[i].name = kmalloc(strlen(parent->fs_spaces[i].name) + 1);
+		strcpy(child->fs_spaces[i].name, parent->fs_spaces[i].name);
+		child->fs_spaces[i].perms = parent->fs_spaces[i].perms;
+		child->fs_spaces[i].gindex = parent->fs_spaces[i].gindex;
+		fs_spaces[child->fs_spaces[i].gindex].count++;
 	}
 	/* Set the parent of the new process to the calling process */
-	p->ppid = current->pid;
+	child->ppid = parent->pid;
 }
 
 int  process_data_size_set( struct process *p, unsigned size )
@@ -392,13 +396,13 @@ static int process_register_mount(struct process *p, struct mount *m)
 {
 	struct mount *m_final = kmalloc(sizeof(struct mount));
 	memcpy(m_final, m, sizeof(struct mount));
-	list_push_tail(&current->mounts, &m_final->node);
+	list_push_tail(&p->mounts, &m_final->node);
 	return 0;
 }
 
 struct mount *process_mount_get(struct process *p, const char *name)
 {
-	struct list_node *iter = current->mounts.head;
+	struct list_node *iter = p->mounts.head;
 	while(iter) {
 		struct mount *m = (struct mount *) iter;
 		if(!strcmp(name, m->name)) {
@@ -436,7 +440,7 @@ int process_chdir(struct process *p, const char *path)
 		path += 1;
 		p->cwd = 0;
 	}
-	if(!current->cwd) {
+	if(!p->cwd) {
 		p->cwd = fs_spaces[p->fs_spaces[p->cws].gindex].d;
 		p->cwd_depth = 0;
 	}

@@ -23,7 +23,7 @@ typedef unsigned char uint8_t;
 
 typedef uint8_t bool;
 
-typedef uint32_t ptrint_t;
+typedef uint32_t addr_t;
 
 struct process_info {
 	int pid;

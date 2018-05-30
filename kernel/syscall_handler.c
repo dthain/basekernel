@@ -53,16 +53,36 @@ int sys_sbrk( int delta )
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
+/*
+process_run() creates a child process in a more efficient
+way than fork/exec by creating the child without duplicating
+the memory state, then loading 
+*/
+
 int sys_process_run(const char *path, const char **argv, int argc)
 {
 	struct process *p = process_create();
 
-	if(!elf_load(p,path)) {
-		// XXX need to get errror from elf_load
+	process_inherit(current,p);
+
+	struct pagetable *old_pagetable = current->pagetable;
+	current->pagetable = p->pagetable;
+	pagetable_load(p->pagetable);
+	
+	addr_t entry;
+	int r = elf_load(p,path,&entry);
+
+	current->pagetable = old_pagetable;
+	pagetable_load(old_pagetable);
+
+	if(r<0) {
+		// XXX synchronize process-death issues here.
 		process_delete(p);
-		return EINVAL;
+		return r;
 	}
-	process_inherit(p);
+
+	process_stack_reset(p,PAGE_SIZE);
+	process_kstack_reset(p,entry);
 	process_pass_arguments(p, argv, argc);
 	process_launch(p);
 	return p->pid;
@@ -76,8 +96,12 @@ int sys_process_exec(const char *path, const char **argv, int argc)
 	}
   */
 
-	int r = elf_load(current,path);
+	addr_t entry;
+	int r = elf_load(current,path,&entry);
 	if(r<0) return r;
+
+	process_stack_reset(current,PAGE_SIZE);
+	process_kstack_reset(current,entry);
 	process_pass_arguments(current, argv, argc);
 
 	/*
@@ -99,10 +123,41 @@ int sys_process_fork()
 	p->ppid = current->pid;
 	pagetable_delete(p->pagetable);
 	p->pagetable = pagetable_duplicate(current->pagetable);
-	process_inherit(p);
+	process_inherit(current,p);
 	process_kstack_copy(current,p);
 	process_launch(p);
 	return p->pid;
+}
+
+int sys_process_sleep(unsigned int ms)
+{
+	clock_wait(ms);
+	return 0;
+}
+
+int sys_process_self()
+{
+	return current->pid;
+}
+
+int sys_process_parent()
+{
+	return current->ppid;
+}
+
+int sys_process_kill(int pid)
+{
+	return process_kill(pid);
+}
+
+int sys_process_wait(struct process_info *info, int timeout)
+{
+	return process_wait_child(info, timeout);
+}
+
+int sys_process_reap(int pid)
+{
+	return process_reap(pid);
 }
 
 int sys_ns_copy(const char *old_ns, const char *new_ns)
@@ -511,37 +566,6 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 int sys_draw_write(struct graphics_command *s)
 {
 	return graphics_write(s);
-}
-
-int sys_process_sleep(unsigned int ms)
-{
-	clock_wait(ms);
-	return 0;
-}
-
-int sys_process_self()
-{
-	return current->pid;
-}
-
-int sys_process_parent()
-{
-	return current->ppid;
-}
-
-int sys_process_kill(int pid)
-{
-	return process_kill(pid);
-}
-
-int sys_process_wait(struct process_info *info, int timeout)
-{
-	return process_wait_child(info, timeout);
-}
-
-int sys_process_reap(int pid)
-{
-	return process_reap(pid);
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)

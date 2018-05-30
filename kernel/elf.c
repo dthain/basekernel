@@ -84,7 +84,7 @@ struct elf_section {
 #define ELF_SECTION_FLAGS_TLS 1024
 
 
-int elf_load( struct process *p, const char *filename )
+int elf_load( struct process *p, const char *filename, addr_t *entry )
 {
 	struct elf_header header;
 	struct elf_program program;
@@ -131,8 +131,7 @@ int elf_load( struct process *p, const char *filename )
 
 	fs_file_close(file);
 
-	process_stack_reset(current,PAGE_SIZE*2);
-	process_kstack_reset(current,header.entry);
+	*entry = header.entry;
 
 	return 0;
 

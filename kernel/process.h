@@ -56,7 +56,7 @@ struct process *process_create();
 void process_delete(struct process *p);
 void process_launch(struct process *p);
 void process_pass_arguments(struct process *p, const char **argv, int argc);
-void process_inherit(struct process *p);
+void process_inherit(struct process *parent, struct process *child );
 
 void process_stack_reset( struct process *p, unsigned size );
 void process_kstack_reset( struct process *p, unsigned entry_point );
