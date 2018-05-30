@@ -89,7 +89,7 @@ int pagetable_map(struct pagetable *p, unsigned vaddr, unsigned paddr, int flags
 	unsigned b = (vaddr >> 12) & 0x3ff;
 
 	if(flags & PAGE_FLAG_ALLOC) {
-		paddr = (unsigned) memory_alloc_page(0);
+		paddr = (unsigned) memory_alloc_page(flags&PAGE_FLAG_CLEAR);
 		if(!paddr)
 			return 0;
 	}
@@ -171,6 +171,8 @@ void pagetable_delete(struct pagetable *p)
 			memory_free_page(q);
 		}
 	}
+
+	memory_free_page(p);
 }
 
 void pagetable_alloc(struct pagetable *p, unsigned vaddr, unsigned length, int flags)

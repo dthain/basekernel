@@ -160,8 +160,7 @@ int  process_data_size_set( struct process *p, unsigned size )
 
 	if(size>p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + p->vm_data_size;
-		pagetable_alloc(p->pagetable,start,size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
-		memset((void*)start,size,0);
+		pagetable_alloc(p->pagetable,start,size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE|PAGE_FLAG_CLEAR);
 	} else if(size<p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + size;
 		pagetable_free(p->pagetable,start,p->vm_data_size);
@@ -182,8 +181,7 @@ int  process_stack_size_set( struct process *p, unsigned size )
 
 	if(size>p->vm_stack_size) {
 		uint32_t start = -size;
-		pagetable_alloc(p->pagetable,start,size-p->vm_stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE);
-		memset((void*)start,size-p->vm_stack_size,0);
+		pagetable_alloc(p->pagetable,start,size-p->vm_stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE|PAGE_FLAG_CLEAR);
 	} else {
 		uint32_t start = -p->vm_stack_size;
 		pagetable_free(p->pagetable,start,p->vm_stack_size-size);
@@ -486,11 +484,12 @@ int process_kill(uint32_t pid)
 	}
 }
 
-int process_wait_child(struct process_info *info, int timeout)
+int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 {
 	clock_t start, elapsed;
 	uint32_t total;
-	if(!info) return 1;
+
+	if(!info) return -1;
 
 	start = clock_read();
 
@@ -498,11 +497,11 @@ int process_wait_child(struct process_info *info, int timeout)
 		struct process *p = (struct process *) (grave_list.head);
 		while(p) {
 			struct process *next = (struct process *) p->node.next;
-			if(p->ppid == current->pid) {
+			if( (pid!=0 && p->pid==pid) || (p->ppid == current->pid ) ) {
 				info->exitcode = p->exitcode;
 				info->exitreason = p->exitreason;
 				info->pid = p->pid;
-				return 0;
+				return p->pid;
 			}
 			p = next;
 		}
@@ -510,7 +509,8 @@ int process_wait_child(struct process_info *info, int timeout)
 		elapsed = clock_diff(start, clock_read());
 		total = elapsed.millis + elapsed.seconds * 1000;
 	} while(total < timeout || timeout < 0);
-	return 1;
+
+	return 0;
 }
 
 int process_reap(uint32_t pid)

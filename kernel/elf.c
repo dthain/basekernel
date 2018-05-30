@@ -123,6 +123,7 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 			uint32_t limit = section.address + section.size - PROCESS_ENTRY_POINT;
 			if(limit>p->vm_data_size) {
 				process_data_size_set(p,section.address+section.size-PROCESS_ENTRY_POINT);
+				memset((void*)section.address,section.size,0);
 			}
 		} else {
 			/* skip all other section types */

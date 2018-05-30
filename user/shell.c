@@ -96,7 +96,7 @@ int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			struct process_info info;
-			if(!process_wait(&info, 5000)) {
+			if(process_wait(&info, 5000)>0) {
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 			} else {
 				printf("wait: timeout\n");

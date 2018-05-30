@@ -72,6 +72,8 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	addr_t entry;
 	int r = elf_load(p,path,&entry);
 
+	process_stack_reset(p,PAGE_SIZE);
+
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
@@ -81,7 +83,6 @@ int sys_process_run(const char *path, const char **argv, int argc)
 		return r;
 	}
 
-	process_stack_reset(p,PAGE_SIZE);
 	process_kstack_reset(p,entry);
 	process_pass_arguments(p, argv, argc);
 	process_launch(p);
@@ -152,7 +153,7 @@ int sys_process_kill(int pid)
 
 int sys_process_wait(struct process_info *info, int timeout)
 {
-	return process_wait_child(info, timeout);
+	return process_wait_child(0,info,timeout);
 }
 
 int sys_process_reap(int pid)

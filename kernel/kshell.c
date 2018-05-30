@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "cdromfs.h"
 #include "kmalloc.h"
+#include "memory.h"
 #include "process.h"
 #include "main.h"
 #include "ascii.h"
@@ -104,7 +105,7 @@ static int process_command(char *line)
 			if(pid >= 0) {
 				printf("started process %d\n", pid);
 				struct process_info info;
-				process_wait_child(&info, -1);
+				process_wait_child(pid,&info, -1);
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 				process_reap(info.pid);
 			} else {
@@ -147,7 +148,7 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			struct process_info info;
-			if(!process_wait_child(&info, 5000)) {
+			if(process_wait_child(0,&info,5000)>0) {
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 
 			} else {
@@ -168,14 +169,15 @@ static int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			while(1) {
-				const char *argv[] = { "TEXT.EXE", "arg1", "arg2", "arg3", "arg4", "arg5", 0 };
-				sys_process_run("TEST.EXE", argv, 6);
+				const char *argv[] = { "test.exe", "arg1", "arg2", "arg3", "arg4", "arg5", 0 };
+				sys_process_run("/bin/test.exe", argv, 6);
 				struct process_info info;
-				if(process_wait_child(&info, 5000)) {
+				if(process_wait_child(0,&info,5000)>0) {
 					printf("process %d exited with status %d\n", info.pid, info.exitcode);
-					if(info.exitcode != 0)
-						return 1;
+					process_reap(info.pid);
 				}
+
+				printf("memory: %d/%d\n",memory_pages_free(),memory_pages_total());
 			}
 		}
 

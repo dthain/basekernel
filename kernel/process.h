@@ -76,7 +76,7 @@ void process_wakeup_all(struct list *q);
 void process_reap_all();
 
 int process_kill(uint32_t pid);
-int process_wait_child(struct process_info *info, int timeout);
+int process_wait_child( uint32_t pid, struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
 
 int process_available_fd(struct process *p);
