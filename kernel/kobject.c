@@ -13,7 +13,7 @@
 struct kobject *kobject_create_file(struct fs_file *f) {
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_FILE;
-    k->rc = 1;
+    k->refcount = 1;
     k->data.file = f;
     k->offset = 0;
     return k;
@@ -22,7 +22,7 @@ struct kobject *kobject_create_file(struct fs_file *f) {
 struct kobject *kobject_create_device(struct device *d){ 
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_DEVICE;
-    k->rc = 1;
+    k->refcount = 1;
     k->data.device = d;
     return k;
 }
@@ -30,7 +30,7 @@ struct kobject *kobject_create_device(struct device *d){
 struct kobject *kobject_create_graphics(struct graphics *g){ 
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_GRAPHICS;
-    k->rc = 1;
+    k->refcount = 1;
     k->data.graphics = g;
     return k;
 }
@@ -38,7 +38,7 @@ struct kobject *kobject_create_graphics(struct graphics *g){
 struct kobject *kobject_create_pipe(struct pipe *p){ 
     struct kobject *k = kmalloc(sizeof(*k));
     k->type = KOBJECT_PIPE;
-    k->rc = 1;
+    k->refcount = 1;
     k->data.pipe = p;
     return k;
 }
@@ -78,7 +78,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size) {
 
 int kobject_close(struct kobject *kobject) {
     int ret;
-    if (--kobject->rc <= 0) {
+    if (--kobject->refcount <= 0) {
         switch (kobject->type) {
             case KOBJECT_INVALID: return 0;
             case KOBJECT_GRAPHICS: return 0;
@@ -91,7 +91,7 @@ int kobject_close(struct kobject *kobject) {
                 pipe_close(kobject->data.pipe);
                 return 1;
         }
-    } else if (kobject->rc == 1) {
+    } else if (kobject->refcount == 1) {
         switch (kobject->type) {
             case KOBJECT_INVALID: return 0;
             case KOBJECT_GRAPHICS: return 0;

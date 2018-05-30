@@ -26,7 +26,7 @@ struct kobject {
         KOBJECT_GRAPHICS,
         KOBJECT_PIPE
     } type;
-    int rc;
+    int refcount;
     int offset;
 };
 
