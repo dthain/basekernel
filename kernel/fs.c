@@ -43,9 +43,10 @@ struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no)
 	return v;
 }
 
-void fs_volume_addref(struct fs_volume *v)
+struct fs_volume * fs_volume_addref(struct fs_volume *v)
 {
 	v->refcount++;
+	return v;
 }
 
 int fs_volume_close(struct fs_volume *v)
@@ -112,9 +113,10 @@ struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
 	return d;
 }
 
-void fs_dirent_addref(struct fs_dirent *d)
+struct fs_dirent * fs_dirent_addref(struct fs_dirent *d)
 {
 	d->refcount++;
+	return d;
 }
 
 int fs_dirent_close(struct fs_dirent *d)
@@ -141,9 +143,10 @@ struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 	return f;
 }
 
-void fs_file_addref( struct fs_file *f )
+struct fs_file * fs_file_addref( struct fs_file *f )
 {
 	f->refcount++;
+	return f;
 }
 
 int fs_file_close(struct fs_file *f)
