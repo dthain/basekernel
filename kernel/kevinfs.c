@@ -235,7 +235,7 @@ int kevinfs_ata_ffs_range(struct device *device, uint32_t start, uint32_t end, u
 }
 
 
-static int kevinfs_get_available_block(struct kevinfs_volume *kv, uint32_t * index)
+static int kevinfs_lookup_available_block(struct kevinfs_volume *kv, uint32_t * index)
 {
 	struct kevinfs_superblock *super = kv->super;
 	int res = kevinfs_ata_ffs_range(kv->device, super->block_bitmap_start, super->free_block_start, index);
@@ -244,7 +244,7 @@ static int kevinfs_get_available_block(struct kevinfs_volume *kv, uint32_t * ind
 	return kevinfs_ata_set_bit(kv->device, *index, super->block_bitmap_start, super->free_block_start);
 }
 
-static int kevinfs_get_available_inode(struct kevinfs_volume *kv, uint32_t * index)
+static int kevinfs_lookup_available_inode(struct kevinfs_volume *kv, uint32_t * index)
 {
 	struct kevinfs_superblock *super = kv->super;
 	int res = kevinfs_ata_ffs_range(kv->device, super->inode_bitmap_start, super->inode_start, index);
@@ -281,7 +281,7 @@ static struct kevinfs_inode *kevinfs_create_new_inode(struct kevinfs_volume *kv,
 	struct kevinfs_inode *node;
 	uint32_t inode_number;
 
-	if(kevinfs_get_available_inode(kv, &inode_number) < 0)
+	if(kevinfs_lookup_available_inode(kv, &inode_number) < 0)
 		return 0;
 
 	node = kmalloc(sizeof(struct kevinfs_inode));
@@ -296,7 +296,7 @@ static struct kevinfs_inode *kevinfs_create_new_inode(struct kevinfs_volume *kv,
 	return node;
 }
 
-static struct kevinfs_inode *kevinfs_get_inode(struct kevinfs_volume *kv, uint32_t inode_number)
+static struct kevinfs_inode *kevinfs_lookup_inode(struct kevinfs_volume *kv, uint32_t inode_number)
 {
 	struct kevinfs_superblock *super = kv->super;
 	struct kevinfs_inode *node = 0;
@@ -494,7 +494,7 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 	if(num_blocks > FS_INODE_MAXBLOCKS)
 		return -1;
 	for(i = node->direct_addresses_len; i < num_blocks; i++) {
-		if(kevinfs_get_available_block(kv, &(node->direct_addresses[i])) < 0) {
+		if(kevinfs_lookup_available_block(kv, &(node->direct_addresses[i])) < 0) {
 			return -1;
 		}
 	}
@@ -667,7 +667,7 @@ static int kevinfs_dir_rm(struct kevinfs_dir_record_list *current_files, const c
 
 	lookup = kevinfs_lookup_dir_prev(filename, current_files);
 	next = lookup + lookup->offset_to_next;
-	node = kevinfs_get_inode(parent->kv, next->inode_number);
+	node = kevinfs_lookup_inode(parent->kv, next->inode_number);
 	kd = kevinfs_inode_as_kevinfs_dirent(parent->kv, node);
 
 	if(node && node->is_directory && node->size == FS_EMPTY_DIR_SIZE_BYTES && next->is_directory && strcmp(next->filename, filename) == 0) {
@@ -877,7 +877,7 @@ static int kevinfs_unlink(struct fs_dirent *d, const char *filename)
 	}
 
 	if(dir_record_to_rm) {
-		node_to_rm = kevinfs_get_inode(kv, dir_record_to_rm->inode_number);
+		node_to_rm = kevinfs_lookup_inode(kv, dir_record_to_rm->inode_number);
 	}
 	kd_to_rm = kevinfs_inode_as_kevinfs_dirent(kv, node_to_rm);
 
@@ -908,7 +908,7 @@ static int kevinfs_link(struct fs_dirent *d, const char *filename, const char *n
 	}
 
 	dir_to_access = kevinfs_lookup_dir_exact(filename, cwd_record_list);
-	node_to_access = kevinfs_get_inode(kv, dir_to_access->inode_number);
+	node_to_access = kevinfs_lookup_inode(kv, dir_to_access->inode_number);
 	kd_to_access = kevinfs_inode_as_kevinfs_dirent(kv, node_to_access);
 	new_record = kevinfs_init_record_by_filename(new_filename, kd_to_access);
 
@@ -941,7 +941,7 @@ static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *
 	struct kevinfs_inode *node = 0;
 
 	if(target) {
-		node = kevinfs_get_inode(kv, target->inode_number);
+		node = kevinfs_lookup_inode(kv, target->inode_number);
 	}
 	res = kevinfs_inode_as_kevinfs_dirent(kv, node);
 
@@ -1024,7 +1024,7 @@ static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_vol
 static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
-	struct kevinfs_inode *node = kevinfs_get_inode(kv, kv->root_inode_num);
+	struct kevinfs_inode *node = kevinfs_lookup_inode(kv, kv->root_inode_num);
 	struct kevinfs_dirent *kd = kevinfs_inode_as_kevinfs_dirent(kv, node);
 	return kd ? kevinfs_dirent_as_dirent(kd) : 0;
 }
@@ -1032,7 +1032,7 @@ static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 static int kevinfs_umount(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
-	struct kevinfs_inode *node = kevinfs_get_inode(kv, kv->root_inode_num);
+	struct kevinfs_inode *node = kevinfs_lookup_inode(kv, kv->root_inode_num);
 	kfree(node);
 	kfree(kv);
 	return 0;

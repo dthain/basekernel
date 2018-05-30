@@ -15,37 +15,41 @@ struct fs {
 };
 
 struct fs_file {
-	void *private_data;
 	struct fs_dirent *d;
 	uint32_t size;
 	int8_t mode;
+	int refcount;
+	void *private_data;
 };
 
 struct fs_volume {
-	void *private_data;
 	const struct fs_volume_ops *ops;
 	uint32_t block_size;
+	int refcount;
+	void *private_data;
 };
 
 struct fs_dirent {
-	void *private_data;
 	struct fs_volume *v;
 	uint32_t size;
+	int refcount;
 	const struct fs_dirent_ops *ops;
+	void *private_data;
 };
 
+struct fs *fs_lookup(const char *name);
 int fs_mkfs(struct fs *f, uint32_t device_no);
-struct fs *fs_get(const char *name);
 int fs_register(struct fs *f);
 
-struct fs_volume *fs_volume_mount(struct fs *f, uint32_t device_no);
-int fs_volume_umount(struct fs_volume *v);
+struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no);
 struct fs_dirent *fs_volume_root(struct fs_volume *);
+void fs_volume_addref(struct fs_volume *v);
+int fs_volume_close(struct fs_volume *v);
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode);
-int fs_dirent_close(struct fs_dirent *d);
 int fs_file_read(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset );
 int fs_file_write(struct fs_file *f, const char *buffer, uint32_t length, uint32_t offset );
+void fs_file_addref( struct fs_file *f );
 int fs_file_close(struct fs_file *f);
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
@@ -56,6 +60,8 @@ int fs_dirent_unlink(struct fs_dirent *d, const char *name);
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
+void fs_dirent_addref(struct fs_dirent *d);
+int fs_dirent_close(struct fs_dirent *d);
 
 struct fs_volume_ops {
         struct fs_dirent *(*root)(struct fs_volume *d);

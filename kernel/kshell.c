@@ -29,12 +29,12 @@ static int print_directory(char *d, int length)
 
 static int mount_cd(int unit, char *fs_type)
 {
-	struct fs *fs = fs_get(fs_type);
+	struct fs *fs = fs_lookup(fs_type);
 	if(!fs) {
 		printf("invalid fs type: %s\n", fs_type);
 		return -1;
 	}
-	struct fs_volume *v = fs_volume_mount(fs, unit);
+	struct fs_volume *v = fs_volume_open(fs, unit);
 	if(v) {
 		struct fs_dirent *d = fs_volume_root(v);
 		if(d) {
@@ -45,7 +45,7 @@ static int mount_cd(int unit, char *fs_type)
 			printf("couldn't access root dir!\n");
 			return 1;
 		}
-		fs_volume_umount(v);
+		fs_volume_close(v);
 	} else {
 		printf("couldn't mount filesystem!\n");
 		return 2;
@@ -202,7 +202,7 @@ static int process_command(char *line)
 		int unit;
 		if(pch && str2int(pch, &unit)) {
 			char *fs_type = strtok(0, " ");
-			struct fs *f = fs_get(fs_type);
+			struct fs *f = fs_lookup(fs_type);
 			if(!f)
 				printf("invalid fs type: %s\n", fs_type);
 			else

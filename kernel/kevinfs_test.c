@@ -6,16 +6,16 @@
 
 void test_mount() {
 	printf("test_mount\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	printf("root fs_dirent size: %d\n", d->size);
 }
 
 void test_lsdir_empty() {
 	printf("test_lsdir_empty\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	char buffer[1000];
 	int n = fs_dirent_readdir(d, buffer, 1000);
@@ -25,8 +25,8 @@ void test_lsdir_empty() {
 
 void test_mkdir() {
 	printf("test_mkdir\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	fs_dirent_mkdir(d, "example_directory");
 	char buffer[1000];
@@ -37,8 +37,8 @@ void test_mkdir() {
 
 void test_rmdir() {
 	printf("test_rmdir\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	fs_dirent_rmdir(d, "example_directory");
 	char buffer[1000];
@@ -49,8 +49,8 @@ void test_rmdir() {
 
 void test_mkdir_to_max() {
 	printf("test_mkdir_to_max\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	uint32_t i;
 	for (i = 0;; i++) {
@@ -69,8 +69,8 @@ void test_mkdir_to_max() {
 
 void test_rmdir_to_min() {
 	printf("test_rmdir_to_min\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	uint32_t i;
 	for (i = 0;; i++) {
@@ -88,8 +88,8 @@ void test_rmdir_to_min() {
 
 void test_write_file() {
 	printf("test_file_read_write\n");
-	struct fs *f = fs_get("kevin");
-	struct fs_volume *v = fs_volume_mount(f, 0);
+	struct fs *f = fs_lookup("kevin");
+	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	fs_dirent_mkfile(d, "read_write_file");
 	char buffer[1000];
