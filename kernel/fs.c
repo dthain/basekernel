@@ -38,7 +38,9 @@ struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no)
 {
 	const struct fs_ops *ops = f->ops;
 	if(!ops->mount) return 0;
-	return f->ops->mount(device_no);
+	struct fs_volume *v = f->ops->mount(device_no);
+	if(v) v->fs = f;
+	return v;
 }
 
 void fs_volume_addref(struct fs_volume *v)
@@ -130,9 +132,6 @@ int fs_dirent_close(struct fs_dirent *d)
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->open) return 0;
-
 	struct fs_file *f = kmalloc(sizeof(*f));
 	f->size = d->size;
 	f->d = d;

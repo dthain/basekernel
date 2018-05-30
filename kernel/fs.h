@@ -65,8 +65,6 @@ struct fs_ops {
 	struct fs_volume * (*mount) ( int unit );
         int (*umount)(struct fs_volume *d);
 	int (*mkfs) ( int unit );
-
-        struct fs_file *(*open)(struct fs_dirent *d, int8_t mode);
         int (*close)(struct fs_dirent *d);
         int (*mkdir)(struct fs_dirent *d, const char *name);
         int (*mkfile)(struct fs_dirent *d, const char *name);
