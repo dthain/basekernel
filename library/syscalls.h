@@ -39,7 +39,6 @@ int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
 int pwd(char *buffer);
 int chdir(const char *path);
-void draw_write( struct graphics_command *s );
 uint32_t gettimeofday();
 
 #endif

@@ -50,7 +50,7 @@ struct graphics *graphics_create(struct graphics *parent)
 	return g;
 }
 
-int graphics_object_write(struct graphics_command *command, struct graphics *g)
+int graphics_object_write( struct graphics *g, struct graphics_command *command )
 {
 	char *str;
 	struct graphics_color c;
@@ -88,7 +88,7 @@ int graphics_object_write(struct graphics_command *command, struct graphics *g)
 	return 0;
 }
 
-int graphics_write(struct graphics_command *command)
+int graphics_write( struct graphics *g, struct graphics_command *command )
 {
 	int window = -1;
 	char *str;
@@ -107,22 +107,22 @@ int graphics_write(struct graphics_command *command)
 			c.g = command->args[1];
 			c.b = command->args[2];
 			c.a = 0;
-			graphics_fgcolor(current->ktable[window]->data.graphics, c);
+			graphics_fgcolor(g, c);
 			break;
 		case GRAPHICS_RECT:
-			graphics_rect(current->ktable[window]->data.graphics, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_rect(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_CLEAR:
-			graphics_clear(current->ktable[window]->data.graphics, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_clear(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_LINE:
-			graphics_line(current->ktable[window]->data.graphics, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_line(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_TEXT:
 			str = (char *) command->args[2];
 			int i;
 			for(i = 0; str[i]; i++) {
-				graphics_char(current->ktable[window]->data.graphics, command->args[0] + i * 8, command->args[1], str[i]);
+				graphics_char(g, command->args[0] + i * 8, command->args[1], str[i]);
 			}
 			break;
 		default:

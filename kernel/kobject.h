@@ -35,6 +35,8 @@ struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_pipe(struct pipe *p);
 
+struct kobject *kobject_addref( struct kobject *k );
+
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);

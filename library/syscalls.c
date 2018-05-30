@@ -77,11 +77,6 @@ int open_window(int wd, int x, int y, int w, int h)
 	return syscall(SYSCALL_OPEN_WINDOW, wd, x, y, w, h);
 }
 
-void draw_write(struct graphics_command *s)
-{
-	syscall(SYSCALL_DRAW_WRITE, (uint32_t) s, 0, 0, 0, 0);
-}
-
 int process_sleep(unsigned int ms)
 {
 	return syscall(SYSCALL_PROCESS_SLEEP, ms, 0, 0, 0, 0);

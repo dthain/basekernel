@@ -118,7 +118,7 @@ void process_inherit( struct process *parent, struct process *child )
 	int i;
 	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
 		if(child->ktable[i]) {
-			child->ktable[i]->refcount++;
+			child->ktable[i] = kobject_addref(parent->ktable[i]);
 		}
 	}
 	/* Inherit current working dir */

@@ -251,8 +251,7 @@ int sys_dup(int fd1, int fd2)
 	if(current->ktable[fd2]) {
 		kobject_close(current->ktable[fd2]);
 	}
-	current->ktable[fd2] = current->ktable[fd1];
-	current->ktable[fd2]->refcount++;
+	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
 	return fd2;
 }
 
@@ -375,11 +374,6 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
-int sys_draw_write(struct graphics_command *s)
-{
-	return graphics_write(s);
-}
-
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	switch (n) {
@@ -429,8 +423,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
-	case SYSCALL_DRAW_WRITE:
-		return sys_draw_write((struct graphics_command *) a);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_SBRK:
