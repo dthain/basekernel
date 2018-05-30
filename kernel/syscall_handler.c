@@ -176,9 +176,9 @@ int sys_chdir(const char *path)
 
 	d = fs_dirent_namei(current->cwd,path);
 	if(d) {
-	      // XXX reference counting here
-	      current->cwd = d;
-	      return 0;
+		fs_dirent_close(current->cwd);
+		current->cwd = fs_dirent_addref(d);
+		return 0;
 	} else {
 		// XXX get error back from namei
 		return ENOENT;

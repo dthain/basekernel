@@ -59,6 +59,8 @@ void process_kstack_copy( struct process *parent, struct process * child );
 int  process_data_size_set( struct process *p, unsigned size );
 int  process_stack_size_set( struct process *p, unsigned size );
 
+int process_available_fd(struct process *p);
+
 void process_yield();
 void process_preempt();
 void process_exit(int code);
@@ -72,11 +74,6 @@ void process_reap_all();
 int process_kill(uint32_t pid);
 int process_wait_child( uint32_t pid, struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
-
-int process_available_fd(struct process *p);
-int process_mount_as(struct process *p, struct fs_volume *v, const char *ns);
-int process_unmount(struct process *p, const char *ns);
-int process_chdir(struct process *p, const char *path);
 
 extern struct process *current;
 

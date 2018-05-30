@@ -64,9 +64,9 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 	const struct fs_ops *ops = v->fs->ops;
 	if(!ops->root) return 0;
 
-	struct fs_dirent *res = v->fs->ops->root(v);
-	res->v = v;
-	return res;
+	struct fs_dirent *d = v->fs->ops->root(v);
+	d->v = fs_volume_addref(v);
+	return d;
 }
 
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
@@ -81,9 +81,9 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->lookup) return 0;
 
-	struct fs_dirent *res = ops->lookup(d, name);
-	res->v = d->v;
-	return res;
+	struct fs_dirent *r = ops->lookup(d, name);
+	r->v = fs_volume_addref(d->v);
+	return r;
 }
 
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
@@ -126,17 +126,19 @@ int fs_dirent_close(struct fs_dirent *d)
 
 	d->refcount--;
 	if(d->refcount<=0) {
-		return ops->close(d);
-	} else {
-		return 0;
+		struct fs_volume *v = d->v;
+		ops->close(d);
+		fs_volume_close(v);
 	}
+
+	return 0;
 }
 
 struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 {
 	struct fs_file *f = kmalloc(sizeof(*f));
 	f->size = d->size;
-	f->d = d;
+	f->d = fs_dirent_addref(d);
 	f->private_data = 0;
 	f->mode = mode;
 	f->refcount = 1;
@@ -154,6 +156,7 @@ int fs_file_close(struct fs_file *f)
 	if(!f) return 0;
 	f->refcount--;
 	if(f->refcount<=0) {
+		fs_dirent_close(f->d);
 		// XXX free private data?
 		kfree(f);
 	}
