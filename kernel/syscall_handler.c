@@ -252,7 +252,7 @@ int sys_dup(int fd1, int fd2)
 		kobject_close(current->ktable[fd2]);
 	}
 	current->ktable[fd2] = current->ktable[fd1];
-	current->ktable[fd2]->rc++;
+	current->ktable[fd2]->refcount++;
 	return fd2;
 }
 
