@@ -15,10 +15,6 @@ A trivial user level program to try out basic system calls.
 int main(const char *argv[], int argc)
 {
 	uint32_t j = 0;
-	printf("mounting\n");
-	int res = mount(0, "kevin", "K");
-	printf("mounted successfully? %d\n", res);
-	ns_change("K");
 	chdir("/");
 	printf("got root\n");
 	int fd = open("kevin", 2, 0);

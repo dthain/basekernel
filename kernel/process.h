@@ -21,8 +21,7 @@ See the file LICENSE for details.
 #define PROCESS_STATE_BLOCKED 3
 #define PROCESS_STATE_GRAVE   4
 
-#define PROCESS_MAX_OBJECTS   100
-#define PROCESS_MAX_FS_SPACES 5
+#define PROCESS_MAX_OBJECTS 32
 #define PROCESS_MAX_PID 1024
 
 #define PROCESS_EXIT_NORMAL   0
@@ -38,12 +37,7 @@ struct process {
 	char *kstack_top;
 	char *kstack_ptr;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
-	struct fs_space_ref fs_spaces[PROCESS_MAX_FS_SPACES];
-	int fs_space_count;
-	int cws;
 	struct fs_dirent *cwd;
-	int cwd_depth;
-	struct list mounts;
 	uint32_t pid;
 	uint32_t ppid;
 	uint32_t vm_data_size;

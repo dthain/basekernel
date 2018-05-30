@@ -26,18 +26,8 @@ struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
 struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
-struct mount {
-	struct list_node node;
-	char *name;
-	struct fs_volume *v;
-};
-
 void process_init()
 {
-	fs_spaces = kmalloc(MAX_FS_SPACES * sizeof(struct fs_space));
-	memset(fs_spaces, 0, MAX_FS_SPACES * sizeof(struct fs_space));
-	fs_spaces_used = 0;
-
 	current = process_create();
 
 	pagetable_load(current->pagetable);
@@ -135,16 +125,6 @@ void process_inherit( struct process *parent, struct process *child )
 	// XXX need to duplicate or use reference counts.
 	child->cwd = parent->cwd;
 
-	/* Copy fs_spaces */
-	child->fs_space_count = parent->fs_space_count;
-	child->cws = parent->cws;
-	for(i = 0; i < child->fs_space_count; i++) {
-		child->fs_spaces[i].name = kmalloc(strlen(parent->fs_spaces[i].name) + 1);
-		strcpy(child->fs_spaces[i].name, parent->fs_spaces[i].name);
-		child->fs_spaces[i].perms = parent->fs_spaces[i].perms;
-		child->fs_spaces[i].gindex = parent->fs_spaces[i].gindex;
-		fs_spaces[child->fs_spaces[i].gindex].count++;
-	}
 	/* Set the parent of the new process to the calling process */
 	child->ppid = parent->pid;
 }
@@ -388,66 +368,6 @@ int process_available_fd(struct process *p)
 			return i;
 	}
 	return -1;
-}
-
-static int process_register_mount(struct process *p, struct mount *m)
-{
-	struct mount *m_final = kmalloc(sizeof(struct mount));
-	memcpy(m_final, m, sizeof(struct mount));
-	list_push_tail(&p->mounts, &m_final->node);
-	return 0;
-}
-
-struct mount *process_mount_get(struct process *p, const char *name)
-{
-	struct list_node *iter = p->mounts.head;
-	while(iter) {
-		struct mount *m = (struct mount *) iter;
-		if(!strcmp(name, m->name)) {
-			struct mount *ret = kmalloc(sizeof(struct mount));
-			memcpy(ret, m, sizeof(struct mount));
-			return ret;
-		}
-		iter = iter->next;
-	}
-	return 0;
-}
-
-int process_mount_as(struct process *p, struct fs_volume *v, const char *ns)
-{
-	struct mount *m = kmalloc(sizeof(struct mount));
-	m->name = kmalloc(strlen(ns) + 1);
-	strcpy(m->name, ns);
-	m->v = v;
-	process_register_mount(p, m);
-	return 0;
-}
-
-static int process_chdir_with_cwd(struct process *p, const char *path)
-{
-	struct fs_dirent *d;
-	if(!(d = fs_dirent_namei(p->cwd, path)))
-		return -1;
-	p->cwd = d;
-	return 0;
-}
-
-int process_chdir(struct process *p, const char *path)
-{
-	if(path[0] == '/') {
-		path += 1;
-		p->cwd = 0;
-	}
-	if(!p->cwd) {
-		p->cwd = fs_spaces[p->fs_spaces[p->cws].gindex].d;
-		p->cwd_depth = 0;
-	}
-	int newdepth = fs_space_depth_check(path, p->cwd_depth);
-	if(newdepth == -1) {
-		return -1;
-	}
-	p->cwd_depth = newdepth;
-	return process_chdir_with_cwd(p, path);
 }
 
 void process_make_dead(struct process *dead)

@@ -117,36 +117,6 @@ void process_exec(const char *path, const char **argv, int argc)
 	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
 }
 
-int ns_copy(const char *old_ns, const char *new_ns)
-{
-	return syscall(SYSCALL_NS_COPY, (uint32_t) old_ns, (uint32_t) new_ns, 0, 0, 0);
-}
-
-int ns_delete(const char *ns)
-{
-	return syscall(SYSCALL_NS_DELETE, (uint32_t) ns, 0, 0, 0, 0);
-}
-
-int ns_get_perms(const char *ns)
-{
-	return syscall(SYSCALL_NS_GET_PERMS, (uint32_t) ns, 0, 0, 0, 0);
-}
-
-int ns_remove_perms(const char *ns, int mask)
-{
-	return syscall(SYSCALL_NS_GET_PERMS, (uint32_t) ns, mask, 0, 0, 0);
-}
-
-int ns_lower_root(const char *ns, const char *path)
-{
-	return syscall(SYSCALL_NS_GET_PERMS, (uint32_t) ns, (uint32_t) path, 0, 0, 0);
-}
-
-int ns_change(const char *ns)
-{
-	return syscall(SYSCALL_NS_CHANGE, (uint32_t) ns, 0, 0, 0, 0);
-}
-
 int process_kill(unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_KILL, pid, 0, 0, 0, 0);
@@ -155,11 +125,6 @@ int process_kill(unsigned int pid)
 int console_open(int wd)
 {
 	return syscall(SYSCALL_OPEN_CONSOLE, wd, 0, 0, 0, 0);
-}
-
-int mount(uint32_t device_no, const char *fs_name, const char *ns)
-{
-	return syscall(SYSCALL_MOUNT, device_no, (uint32_t) fs_name, (uint32_t) ns, 0, 0);
 }
 
 int chdir(const char *ns, const char *path)

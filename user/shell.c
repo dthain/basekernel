@@ -102,26 +102,6 @@ int process_command(char *line)
 				printf("wait: timeout\n");
 			}
 		}
-	} else if(pch && !strcmp(pch, "mount")) {
-		pch = strtok(0, " ");
-		int unit;
-		if(!(pch && str2int(pch, &unit))) {
-			printf("Incorrect arguments, usage: mount <unit_no> <fs_type> <ns_name>\n");
-			return 1;
-		}
-		char *fs_type = strtok(0, " ");
-		if(!fs_type) {
-			printf("Incorrect arguments, usage: mount <unit_no> <fs_type> <ns_name>\n");
-			return 1;
-		}
-		char *ns_name = strtok(0, " ");
-		if(!ns_name) {
-			printf("Incorrect arguments, usage: mount <unit_no> <fs_type> <ns_name>\n");
-			return 1;
-		}
-		if(mount(unit, fs_type, ns_name)) {
-			printf("Error mounting.\n");
-		}
 	} else if(pch && !strcmp(pch, "list")) {
 		if(!has_ns) {
 			printf("Error, no namespace.\n");
@@ -141,17 +121,6 @@ int process_command(char *line)
 			return 1;
 		}
 		chdir(path);
-	} else if(pch && !strcmp(pch, "ns_change")) {
-		char *ns = strtok(0, " ");
-		if(!ns) {
-			printf("Incorrect arguments, usage: chdir <path>\n");
-			return 1;
-		}
-		if(ns_change(ns)) {
-			printf("Error changing namespace.\n");
-			return 1;
-		}
-		has_ns = 1;
 	} else if(pch && !strcmp(pch, "help")) {
 		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type> <ns_name>", "chdir <path>", "ns_change <ns_name>", "list", "start <path>", "kill <pid>", "reap <pid>",
 		       "wait", "help", "exit");
