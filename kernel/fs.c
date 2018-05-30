@@ -37,7 +37,7 @@ int fs_mkfs(struct fs *f, uint32_t device_no)
 struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no)
 {
 	const struct fs_ops *ops = f->ops;
-	if(ops->mount) return 0;
+	if(!ops->mount) return 0;
 	return f->ops->mount(device_no);
 }
 
