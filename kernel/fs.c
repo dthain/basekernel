@@ -7,28 +7,22 @@
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
-struct list l;
+static struct fs *fs_list = 0;
 
-int fs_register(struct fs *f)
+void fs_register(struct fs *f)
 {
-	if(!f) return 0;
-	struct fs *f_final = kmalloc(sizeof(struct fs));
-	memcpy(f_final, f, sizeof(struct fs));
-	list_push_tail(&l, &f_final->node);
-	return 0;
+	f->next = fs_list;
+	fs_list = f;
 }
 
 struct fs *fs_lookup(const char *name)
 {
-	struct list_node *iter = l.head;
-	while(iter) {
-		struct fs *f = (struct fs *) iter;
-		if(!strcmp(name, f->name)) {
-			struct fs *ret = kmalloc(sizeof(struct fs));
-			memcpy(ret, f, sizeof(struct fs));
-			return ret;
+	struct fs *f;
+
+	for(f=fs_list;f;f=f->next) {
+		if(!strcmp(name,f->name)) {
+			return f;
 		}
-		iter = iter->next;
 	}
 	return 0;
 }
@@ -36,13 +30,13 @@ struct fs *fs_lookup(const char *name)
 int fs_mkfs(struct fs *f, uint32_t device_no)
 {
 	if(!f) return EINVAL;
-	return f->mkfs(device_no);
+	return f->ops->mkfs(device_no);
 }
 
 struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no)
 {
 	if(!f) return 0;
-	return f->mount(device_no);
+	return f->ops->mount(device_no);
 }
 
 void fs_volume_addref(struct fs_volume *v)
@@ -50,12 +44,11 @@ void fs_volume_addref(struct fs_volume *v)
 	v->refcount++;
 }
 
-
 int fs_volume_close(struct fs_volume *v)
 {
 	if(!v) return EINVAL;
 	v->refcount--;
-	if(v->refcount<0) return v->ops->umount(v);
+	if(v->refcount<0) return v->fs->ops->umount(v);
 	return -1;
 }
 
@@ -63,7 +56,7 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 {
 	if(!v) return 0;
 
-	struct fs_dirent *res = v->ops->root(v);
+	struct fs_dirent *res = v->fs->ops->root(v);
 	res->v = v;
 	return res;
 }
@@ -71,14 +64,14 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 {
 	if(!d) return EINVAL;
-	return d->ops->readdir(d, buffer, buffer_length);
+	return d->v->fs->ops->readdir(d, buffer, buffer_length);
 }
 
 static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
 	if(!d || !name) return 0;
 
-	struct fs_dirent *res = d->ops->lookup(d, name);
+	struct fs_dirent *res = d->v->fs->ops->lookup(d, name);
 	res->v = d->v;
 	return res;
 }
@@ -86,7 +79,7 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 {
 	if(!d1 || !d2) return EINVAL;
-	return d1->ops->compare(d1, d2, result);
+	return d1->v->fs->ops->compare(d1, d2, result);
 }
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
@@ -118,7 +111,7 @@ int fs_dirent_close(struct fs_dirent *d)
 	if(!d) return EINVAL;
 	d->refcount--;
 	if(d->refcount<0) {
-		return d->ops->close(d);
+		return d->v->fs->ops->close(d);
 	} else {
 		return 0;
 	}
@@ -155,7 +148,7 @@ int fs_file_close(struct fs_file *f)
 
 static int fs_file_read_block(struct fs_file *f, char *buffer, uint32_t blocknum)
 {
-	return f->d->ops->read_block(f->d, buffer, blocknum);
+	return f->d->v->fs->ops->read_block(f->d, buffer, blocknum);
 }
 
 int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t offset)
@@ -216,30 +209,30 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 {
 	if(!d || !name) return EINVAL;
-	return d->ops->mkdir(d, name);
+	return d->v->fs->ops->mkdir(d, name);
 }
 
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 {
 	if(!d || !name) return EINVAL;
-	return d->ops->mkfile(d, name);
+	return d->v->fs->ops->mkfile(d, name);
 }
 
 int fs_dirent_rmdir(struct fs_dirent *d, const char *name)
 {
 	if(!d || !name) return EINVAL;
-	return d->ops->rmdir(d, name);
+	return d->v->fs->ops->rmdir(d, name);
 }
 
 int fs_dirent_unlink(struct fs_dirent *d, const char *name)
 {
 	if(!d || !name) return EINVAL;
-	return d->ops->unlink(d, name);
+	return d->v->fs->ops->unlink(d, name);
 }
 
 static int fs_file_write_block(struct fs_file *f, const char *buffer, uint32_t blocknum)
 {
-	return f->d->ops->write_block(f->d, buffer, blocknum);
+	return f->d->v->fs->ops->write_block(f->d, buffer, blocknum);
 }
 
 int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uint32_t offset)

@@ -756,7 +756,7 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 	return record;
 }
 
-static struct fs_volume *kevinfs_mount(uint32_t unit_no)
+static struct fs_volume *kevinfs_mount(int unit_no)
 {
 	struct device *device = device_open("ATA", unit_no);
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
@@ -951,7 +951,7 @@ static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *
 	return kevinfs_dirent_as_dirent(res);
 }
 
-static int kevinfs_mkfs(uint32_t unit_no)
+static int kevinfs_mkfs( int unit_no)
 {
 	struct kevinfs_dir_record_list *top_dir;
 	struct kevinfs_inode *first_node;
@@ -984,30 +984,11 @@ static int kevinfs_mkfs(uint32_t unit_no)
 	return ret;
 }
 
-static int kevinfs_register()
-{
-	char kevin_name[] = "kevin";
-	char *kevin_name_cpy = kmalloc(6);
-	struct fs f;
-	strcpy(kevin_name_cpy, kevin_name);
-	f.mount = kevinfs_mount;
-	f.mkfs = kevinfs_mkfs;
-	f.name = kevin_name_cpy;
-	fs_register(&f);
-	return 0;
-}
-
 static int kevinfs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 {
 	struct kevinfs_dirent *kd1 = d1->private_data;
 	struct kevinfs_dirent *kd2 = d2->private_data;
 	*result = (kd1->node->inode_number == kd2->node->inode_number);
-	return 0;
-}
-
-int kevinfs_init(void)
-{
-	kevinfs_register();
 	return 0;
 }
 
@@ -1038,25 +1019,6 @@ static int kevinfs_umount(struct fs_volume *v)
 	return 0;
 }
 
-static struct fs_volume_ops kevinfs_volume_ops = {
-	.umount = kevinfs_umount,
-	.root = kevinfs_root
-};
-
-static struct fs_dirent_ops kevinfs_dirent_ops = {
-	.readdir = kevinfs_read_dir,
-	.mkdir = kevinfs_mkdir,
-	.mkfile = kevinfs_mkfile,
-	.lookup = kevinfs_dirent_lookup,
-	.rmdir = kevinfs_rmdir,
-	.unlink = kevinfs_unlink,
-	.link = kevinfs_link,
-	.read_block = kevinfs_read_block,
-	.write_block = kevinfs_write_block,
-	.resize = kevinfs_dirent_resize,
-	.compare = kevinfs_dirent_compare,
-};
-
 static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *super, struct device *device)
 {
 	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
@@ -1078,8 +1040,8 @@ static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv)
 {
 	struct fs_volume *v = kmalloc(sizeof(struct fs_volume));
 	v->private_data = kv;
-	v->ops = &kevinfs_volume_ops;
 	v->block_size = FS_BLOCKSIZE;
+	v->refcount = 1;
 	return v;
 }
 
@@ -1090,6 +1052,44 @@ static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
 	struct fs_dirent *d = kmalloc(sizeof(struct fs_dirent));
 	d->private_data = kd;
 	d->size = kd->node->size;
-	d->ops = &kevinfs_dirent_ops;
+	d->refcount = 1;
 	return d;
 }
+
+static struct fs_ops kevinfs_ops = {
+	.mount = kevinfs_mount,
+	.umount = kevinfs_umount,
+	.mkfs = kevinfs_mkfs,
+	.root = kevinfs_root,
+	.readdir = kevinfs_read_dir,
+	.mkdir = kevinfs_mkdir,
+	.mkfile = kevinfs_mkfile,
+	.lookup = kevinfs_dirent_lookup,
+	.rmdir = kevinfs_rmdir,
+	.unlink = kevinfs_unlink,
+	.link = kevinfs_link,
+	.read_block = kevinfs_read_block,
+	.write_block = kevinfs_write_block,
+	.resize = kevinfs_dirent_resize,
+	.compare = kevinfs_dirent_compare,
+};
+
+
+static struct fs kevin_fs = {
+	"kevinfs",
+	&kevinfs_ops,
+	0
+};
+
+static int kevinfs_register()
+{
+	fs_register(&kevin_fs);
+	return 0;
+}
+
+int kevinfs_init(void)
+{
+	kevinfs_register();
+	return 0;
+}
+

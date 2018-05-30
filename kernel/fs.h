@@ -5,13 +5,25 @@
 #define FS_FILE_WRITE (1 << 1)
 
 #include "kerneltypes.h"
-#include "list.h"
 
 struct fs {
-	struct list_node node;
 	char *name;
-	struct fs_volume *(*mount)(uint32_t device_no);
-	int (*mkfs)(uint32_t device_no);
+	const struct fs_ops *ops;
+	struct fs *next;
+};
+
+struct fs_volume {
+	struct fs *fs;
+	uint32_t block_size;
+	int refcount;
+	void *private_data;
+};
+
+struct fs_dirent {
+	struct fs_volume *v;
+	uint32_t size;
+	int refcount;
+	void *private_data;
 };
 
 struct fs_file {
@@ -22,24 +34,9 @@ struct fs_file {
 	void *private_data;
 };
 
-struct fs_volume {
-	const struct fs_volume_ops *ops;
-	uint32_t block_size;
-	int refcount;
-	void *private_data;
-};
-
-struct fs_dirent {
-	struct fs_volume *v;
-	uint32_t size;
-	int refcount;
-	const struct fs_dirent_ops *ops;
-	void *private_data;
-};
-
+void fs_register(struct fs *f);
 struct fs *fs_lookup(const char *name);
 int fs_mkfs(struct fs *f, uint32_t device_no);
-int fs_register(struct fs *f);
 
 struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no);
 struct fs_dirent *fs_volume_root(struct fs_volume *);
@@ -63,16 +60,17 @@ int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 void fs_dirent_addref(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
 
-struct fs_volume_ops {
+struct fs_ops {
         struct fs_dirent *(*root)(struct fs_volume *d);
+	struct fs_volume * (*mount) ( int unit );
         int (*umount)(struct fs_volume *d);
-};
+	int (*mkfs) ( int unit );
 
-struct fs_dirent_ops {
         struct fs_file *(*open)(struct fs_dirent *d, int8_t mode);
         int (*close)(struct fs_dirent *d);
         int (*mkdir)(struct fs_dirent *d, const char *name);
         int (*mkfile)(struct fs_dirent *d, const char *name);
+
         struct fs_dirent *(*lookup)(struct fs_dirent *d, const char *name);
         int (*readdir)(struct fs_dirent *d, char *buffer, int buffer_length);
         int (*rmdir)(struct fs_dirent *d, const char *name);
