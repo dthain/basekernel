@@ -50,6 +50,5 @@ void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t 
 void graphics_char(struct graphics *g, int32_t x, int32_t y, char c);
 
 int graphics_write( struct graphics *g, struct graphics_command *command);
-int graphics_object_write( struct graphics *g, struct graphics_command *command );
 
 #endif

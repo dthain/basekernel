@@ -69,7 +69,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size) {
     switch (kobject->type) {
         case KOBJECT_INVALID: return 0;
         case KOBJECT_GRAPHICS:
-	  return graphics_object_write(kobject->data.graphics,(struct graphics_command*)buffer);
+	  return graphics_write(kobject->data.graphics,(struct graphics_command*)buffer);
 	case KOBJECT_FILE: {
 	    int actual = fs_file_write(kobject->data.file, (char*)buffer, (uint32_t)size, kobject->offset );
 	    if(actual>0) kobject->offset += actual;

@@ -50,44 +50,6 @@ struct graphics *graphics_create(struct graphics *parent)
 	return g;
 }
 
-int graphics_object_write( struct graphics *g, struct graphics_command *command )
-{
-	char *str;
-	struct graphics_color c;
-
-	while(command && command->type) {
-		switch (command->type) {
-		case GRAPHICS_COLOR:
-			c.r = command->args[0];
-			c.g = command->args[1];
-			c.b = command->args[2];
-			c.a = 0;
-			graphics_fgcolor(g, c);
-			break;
-		case GRAPHICS_RECT:
-			graphics_rect(g, command->args[0], command->args[1], command->args[2], command->args[3]);
-			break;
-		case GRAPHICS_CLEAR:
-			graphics_clear(g, command->args[0], command->args[1], command->args[2], command->args[3]);
-			break;
-		case GRAPHICS_LINE:
-			graphics_line(g, command->args[0], command->args[1], command->args[2], command->args[3]);
-			break;
-		case GRAPHICS_TEXT:
-			str = (char *) command->args[2];
-			int i;
-			for(i = 0; str[i]; i++) {
-				graphics_char(g, command->args[0] + i * 8, command->args[1], str[i]);
-			}
-			break;
-		default:
-			break;
-		}
-		command++;
-	}
-	return 0;
-}
-
 int graphics_write( struct graphics *g, struct graphics_command *command )
 {
 	int window = -1;
