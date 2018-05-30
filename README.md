@@ -23,11 +23,11 @@ To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wi
 
 ## Quick Start Instructions
 
+If you are building on a Linux-X86 machine
+and have the QEMU virtual machine installed:
+
 ```
 git clone https://github.com/dthain/basekernel
-cd basekernel
-./build-cross-compiler.sh
-export PATH=`pwd`/cross/bin:$PATH
 make
 qemu-system-i386 -cdrom basekernel.iso
 ```
@@ -57,4 +57,12 @@ And use the <tt>run</tt> command to run a program:
 <pre>
 run /bin/saver.exe
 </pre>
+
+## Cross-Compiling Instructions
+
+If you are building on any other type of machine,
+you will probably need to build a cross-compiler
+using `build-cross-compiler.sh` and then edit
+`Makefile.config` to use the cross compiler binaries,
+then execute `make` to create `basekernel.iso`
 
