@@ -7,7 +7,6 @@ See the file LICENSE for details.
 #ifndef MAIN_H
 #define MAIN_H
 
-extern struct fs_dirent *root_directory;
-extern struct graphics graphics_root;
+/* nothing at the moment! */
 
 #endif

@@ -37,7 +37,8 @@ struct process {
 	char *kstack_top;
 	char *kstack_ptr;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
-	struct fs_dirent *cwd;
+	struct fs_dirent *current_dir;
+	struct fs_dirent *root_dir;
 	uint32_t pid;
 	uint32_t ppid;
 	uint32_t vm_data_size;

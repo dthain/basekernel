@@ -170,14 +170,21 @@ uint32_t sys_gettimeofday()
 	return rtc_time_to_timestamp(&t);
 }
 
+static struct fs_dirent * fs_resolve( const char *path )
+{
+	if(path[0]=='/') {
+		return fs_dirent_namei(current->root_dir,&path[1]);
+	} else {
+		return fs_dirent_namei(current->current_dir,path);
+	}
+}
+
 int sys_chdir(const char *path)
 {
-	struct fs_dirent *d;
-
-	d = fs_dirent_namei(current->cwd,path);
+	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
-		fs_dirent_close(current->cwd);
-		current->cwd = fs_dirent_addref(d);
+		fs_dirent_close(current->current_dir);
+		current->current_dir = d;
 		return 0;
 	} else {
 		// XXX get error back from namei
@@ -185,30 +192,31 @@ int sys_chdir(const char *path)
 	}
 }
 
-int sys_mkdir(const char *name)
+int sys_readdir(const char *path, char *buffer, int len)
 {
-	return fs_dirent_mkdir(current->cwd, name);
-}
-
-int sys_readdir(const char *name, char *buffer, int len)
-{
-	struct fs_dirent *d = fs_dirent_namei(current->cwd, name);
+	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		return fs_dirent_readdir(d, buffer, len);
 	} else {
 		// XXX get error back from namei
 		return ENOENT;
 	}
-
 }
 
-int sys_rmdir(const char *name)
+int sys_mkdir(const char *path)
 {
-	struct fs_dirent *d = fs_dirent_namei(current->cwd, name);
-	if(d) {
-		return fs_dirent_rmdir(d, name);
-	} else {
+	// XXX doesn't work -- separate parent and new directory.
 
+	return fs_dirent_mkdir(current->current_dir,path);
+}
+
+int sys_rmdir(const char *path)
+{
+	struct fs_dirent *d = fs_resolve(path);
+	if(d) {
+		// XXX this API doesn't make sense.
+		return fs_dirent_rmdir(d,path);
+	} else {
 		// XXX get error back from namei
 		return -1;
 	}
@@ -220,12 +228,12 @@ int sys_open(const char *path, int mode, int flags)
 	if(fd < 0)
 		return -1;
 
-	struct fs_dirent *cwd = current->cwd;
-	struct fs_dirent *d = fs_dirent_namei(cwd, path);
+	struct fs_dirent *d = fs_resolve(path);
 	if(!d) {
-		fs_dirent_mkfile(cwd, path);
+		// XXX creating in current_dir, not parent dir!
+		fs_dirent_mkfile(current->current_dir, path);
 		// XXX return value not checked!
-		d = fs_dirent_namei(cwd, path);
+		d = fs_dirent_namei(current->current_dir, path);
 	}
 	struct fs_file *fp = fs_file_open(d, mode);
 	current->ktable[fd] = kobject_create_file(fp);
@@ -283,7 +291,7 @@ int sys_close(int fd)
 
 int sys_pwd(char *result)
 {
-	struct fs_dirent *d = current->cwd;
+	struct fs_dirent *d = current->current_dir;
 	char dir_list[LSDIR_TEMP_BUFFER_SIZE];
 	memset(dir_list, 0, LSDIR_TEMP_BUFFER_SIZE);
 	result[0] = 0;
@@ -352,6 +360,8 @@ int sys_open_console(int wd)
 	current->ktable[fd] = kobject_create_device(d);
 	return fd;
 }
+
+// XXX don't go into kobject internals
 
 int sys_open_window(int wd, int x, int y, int w, int h)
 {

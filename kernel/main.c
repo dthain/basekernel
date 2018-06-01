@@ -28,8 +28,6 @@ See the file LICENSE for details.
 #include "kevinfs.h"
 #include "serial.h"
 
-struct dirent *root_directory = 0;
-
 /*
 This is the C initialization point of the kernel.
 By the time we reach this point, we are in protected mode,

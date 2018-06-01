@@ -121,9 +121,10 @@ void process_inherit( struct process *parent, struct process *child )
 			child->ktable[i] = kobject_addref(parent->ktable[i]);
 		}
 	}
-	/* Inherit current working dir */
-	// XXX need to duplicate or use reference counts.
-	child->cwd = fs_dirent_addref(parent->cwd);
+
+	/* Inherit current and root directories */
+	child->current_dir = fs_dirent_addref(parent->current_dir);
+	child->root_dir = fs_dirent_addref(parent->root_dir);
 
 	/* Set the parent of the new process to the calling process */
 	child->ppid = parent->pid;
@@ -222,7 +223,8 @@ void process_delete(struct process *p)
 			kobject_close(p->ktable[i]);
 		}
 	}
-	fs_dirent_close(p->cwd);
+	fs_dirent_close(p->current_dir);
+	fs_dirent_close(p->root_dir);
 	pagetable_delete(p->pagetable);
 	memory_free_page(p->kstack);
 	memory_free_page(p);
