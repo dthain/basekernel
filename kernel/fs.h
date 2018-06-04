@@ -34,6 +34,8 @@ struct fs_file {
 	void *private_data;
 };
 
+struct fs_dirent * fs_resolve( const char *path );
+
 void fs_register(struct fs *f);
 struct fs *fs_lookup(const char *name);
 int fs_mkfs(struct fs *f, uint32_t device_no);

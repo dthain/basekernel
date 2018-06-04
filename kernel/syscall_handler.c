@@ -52,8 +52,6 @@ int sys_sbrk( int delta )
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
-struct fs_dirent * fs_master_lookup( const char *path, int *error );
-
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
@@ -168,15 +166,6 @@ uint32_t sys_gettimeofday()
 	struct rtc_time t;
 	rtc_read(&t);
 	return rtc_time_to_timestamp(&t);
-}
-
-static struct fs_dirent * fs_resolve( const char *path )
-{
-	if(path[0]=='/') {
-		return fs_dirent_namei(current->root_dir,&path[1]);
-	} else {
-		return fs_dirent_namei(current->current_dir,path);
-	}
 }
 
 int sys_chdir(const char *path)

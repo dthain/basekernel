@@ -4,10 +4,20 @@
 #include "string.h"
 #include "list.h"
 #include "memory.h"
+#include "process.h"
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
 static struct fs *fs_list = 0;
+
+struct fs_dirent * fs_resolve( const char *path )
+{
+	if(path[0]=='/') {
+		return fs_dirent_namei(current->root_dir,&path[1]);
+	} else {
+		return fs_dirent_namei(current->current_dir,path);
+	}
+}
 
 void fs_register(struct fs *f)
 {
