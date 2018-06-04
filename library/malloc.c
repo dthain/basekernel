@@ -1,6 +1,6 @@
 /* The next parts are all for configuring dlmalloc to work with basekernel */
 #define ENOMEM 0
-#define EINVAL 0
+#define KERROR_INVALID_REQUEST 0
 #define LACKS_TIME_H
 #define LACKS_SYS_TYPES_H
 #define MALLOC_FAILURE_ACTION
@@ -952,7 +952,7 @@ DLMALLOC_EXPORT void* dlmemalign(size_t, size_t);
   Allocates a chunk of n bytes, aligned in accord with the alignment
   argument. Differs from memalign only in that it (1) assigns the
   allocated memory to *pp rather than returning it, (2) fails and
-  returns EINVAL if the alignment is not a power of two (3) fails and
+  returns KERROR_INVALID_REQUEST if the alignment is not a power of two (3) fails and
   returns ENOMEM if memory cannot be allocated.
 */
 DLMALLOC_EXPORT int dlposix_memalign(void**, size_t, size_t);
@@ -5293,7 +5293,7 @@ int dlposix_memalign(void** pp, size_t alignment, size_t bytes) {
     size_t d = alignment / sizeof(void*);
     size_t r = alignment % sizeof(void*);
     if (r != 0 || d == 0 || (d & (d-SIZE_T_ONE)) != 0)
-      return EINVAL;
+      return KERROR_INVALID_REQUEST;
     else if (bytes <= MAX_REQUEST - alignment) {
       if (alignment <  MIN_CHUNK_SIZE)
         alignment = MIN_CHUNK_SIZE;

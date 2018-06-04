@@ -43,14 +43,14 @@ typedef enum {
 } syscall_t;
 
 typedef enum {
-	ENOENT = -1,
-	EINVAL = -2,
-	EACCES = -3,
-	ENOSYS = -4,
-	ENOEXEC = -5,
-	EFAILEXEC = -6,
-	EOPNOTSUPP = -7,
-	ENOTDIR = -8
+	KERROR_NOT_FOUND = -1,
+	KERROR_INVALID_REQUEST = -2,
+	KERROR_PERMISSION_DENIED = -3,
+	KERROR_NOT_IMPLEMENTED = -4,
+	KERROR_NOT_EXECUTABLE = -5,
+	KERROR_EXECUTION_FAILED = -6,
+	KERROR_NOT_SUPPORTED = -7,
+	KERROR_NOT_A_DIRECTORY = -8
 } syscall_error_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);

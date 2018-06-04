@@ -78,7 +78,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	pagetable_load(old_pagetable);
 
 	if(r<0) {
-		if(r==EFAILEXEC) {
+		if(r==KERROR_EXECUTION_FAILED) {
 			process_delete(p);
 		}
 		return r;
@@ -95,7 +95,7 @@ int sys_process_exec(const char *path, const char **argv, int argc)
 	addr_t entry;
 	int r = elf_load(current,path,&entry);
 	if(r<0) {
-		if(r==EFAILEXEC) {
+		if(r==KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
 		return r;
@@ -177,7 +177,7 @@ int sys_chdir(const char *path)
 		return 0;
 	} else {
 		// XXX get error back from namei
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 }
 
@@ -188,7 +188,7 @@ int sys_readdir(const char *path, char *buffer, int len)
 		return fs_dirent_readdir(d, buffer, len);
 	} else {
 		// XXX get error back from namei
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 }
 
@@ -237,12 +237,12 @@ int sys_keyboard_read_char()
 int sys_dup(int fd1, int fd2)
 {
 	if(fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 	if(fd2 < 0) {
 		fd2 = process_available_fd(current);
 		if(!fd2) {
-			return ENOENT;
+			return KERROR_NOT_FOUND;
 		}
 	}
 	if(current->ktable[fd2]) {
@@ -267,7 +267,7 @@ int sys_write(int fd, void *data, int length)
 int sys_lseek(int fd, int offset, int whence)
 {
 	// XXX add kobject method here
-	return ENOSYS;
+	return KERROR_NOT_IMPLEMENTED;
 }
 
 int sys_close(int fd)
@@ -320,11 +320,11 @@ int sys_open_pipe()
 {
 	int fd = process_available_fd(current);
 	if(fd < 0) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 	struct pipe *p = pipe_open();
 	if(!p) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 	current->ktable[fd] = kobject_create_pipe(p);
 	return fd;
@@ -340,11 +340,11 @@ int sys_open_console(int wd)
 {
 	int fd = process_available_fd(current);
 	if(wd < 0 || fd < 0) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 	struct device *d = console_create(current->ktable[wd]->data.graphics);
 	if(!d) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 	current->ktable[fd] = kobject_create_device(d);
 	return fd;
@@ -356,13 +356,13 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 {
 	int fd = process_available_fd(current);
 	if(fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 
 	current->ktable[fd] = kobject_create_graphics(graphics_create(current->ktable[wd]->data.graphics));
 
 	if(!current->ktable[fd]) {
-		return ENOENT;
+		return KERROR_NOT_FOUND;
 	}
 
 	current->ktable[fd]->data.graphics->clip.x = x + current->ktable[wd]->data.graphics->clip.x;

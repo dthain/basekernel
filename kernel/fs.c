@@ -38,7 +38,7 @@ struct fs *fs_lookup(const char *name)
 int fs_mkfs(struct fs *f, uint32_t device_no)
 {
 	const struct fs_ops *ops = f->ops;
-	if(!ops->mkfs) return EOPNOTSUPP;
+	if(!ops->mkfs) return KERROR_NOT_SUPPORTED;
 	return f->ops->mkfs(device_no);
 }
 
@@ -60,7 +60,7 @@ struct fs_volume * fs_volume_addref(struct fs_volume *v)
 int fs_volume_close(struct fs_volume *v)
 {
 	const struct fs_ops *ops = v->fs->ops;
-	if(!ops->umount) return EOPNOTSUPP;
+	if(!ops->umount) return KERROR_NOT_SUPPORTED;
 
 	v->refcount--;
 	if(v->refcount<=0) return v->fs->ops->umount(v);
@@ -80,7 +80,7 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->readdir) return EOPNOTSUPP;
+	if(!ops->readdir) return KERROR_NOT_SUPPORTED;
 	return ops->readdir(d, buffer, buffer_length);
 }
 
@@ -97,7 +97,7 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 {
 	const struct fs_ops *ops = d1->v->fs->ops;
-	if(!ops->compare) return EOPNOTSUPP;
+	if(!ops->compare) return KERROR_NOT_SUPPORTED;
 
 	return d1->v->fs->ops->compare(d1, d2, result);
 }
@@ -130,7 +130,7 @@ struct fs_dirent * fs_dirent_addref(struct fs_dirent *d)
 int fs_dirent_close(struct fs_dirent *d)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->close) return EOPNOTSUPP;
+	if(!ops->close) return KERROR_NOT_SUPPORTED;
 
 	d->refcount--;
 	if(d->refcount<=0) {
@@ -177,7 +177,7 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 	int bs = file->d->v->block_size;
 
 	const struct fs_ops *ops = file->d->v->fs->ops;
-	if(!ops->read_block) return EINVAL;
+	if(!ops->read_block) return KERROR_INVALID_REQUEST;
 
 	if(offset > file->size) {
 		return 0;
@@ -263,7 +263,7 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	int bs = file->d->v->block_size;
 
 	const struct fs_ops *ops = file->d->v->fs->ops;
-	if(!ops->write_block || !ops->read_block) return EINVAL;
+	if(!ops->write_block || !ops->read_block) return KERROR_INVALID_REQUEST;
 
 	char *temp = memory_alloc_page(0);
 

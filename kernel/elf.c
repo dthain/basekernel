@@ -93,10 +93,10 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 	uint32_t actual;
 
 	struct fs_dirent *d = fs_dirent_namei(p->current_dir,filename);
-	if(!d) return ENOENT;
+	if(!d) return KERROR_NOT_FOUND;
 
 	struct fs_file *file = fs_file_open(d,FS_FILE_READ);
-	if(!file) return ENOENT;
+	if(!file) return KERROR_NOT_FOUND;
 
 	actual = fs_file_read(file,(char*)&header,sizeof(header),0);
 	if(actual!=sizeof(header)) goto noload;
@@ -139,15 +139,15 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 	noload:
 	printf("elf: %s failed to load correctly!\n",filename);
 	fs_file_close(file);
-	return ENOENT;
+	return KERROR_NOT_FOUND;
 
 	noexec:
 	printf("elf: %s is not a valid i386 ELF executable\n",filename);
 	fs_file_close(file);
-	return ENOEXEC;
+	return KERROR_NOT_EXECUTABLE;
 
 	mustdie:
 	printf("elf: %s did not load correctly\n",filename);
 	fs_file_close(file);
-	return EFAILEXEC;
+	return KERROR_EXECUTION_FAILED;
 }

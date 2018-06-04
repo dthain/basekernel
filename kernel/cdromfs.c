@@ -128,7 +128,7 @@ static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffe
 {
 	struct cdrom_dirent *cddir = dir->private_data;
 
-	if(!cddir->isdir) return ENOTDIR;
+	if(!cddir->isdir) return KERROR_NOT_A_DIRECTORY;
 
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;

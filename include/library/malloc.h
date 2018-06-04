@@ -187,7 +187,7 @@ void* dlmemalign(size_t, size_t);
   Allocates a chunk of n bytes, aligned in accord with the alignment
   argument. Differs from memalign only in that it (1) assigns the
   allocated memory to *pp rather than returning it, (2) fails and
-  returns EINVAL if the alignment is not a power of two (3) fails and
+  returns KERROR_INVALID_REQUEST if the alignment is not a power of two (3) fails and
   returns ENOMEM if memory cannot be allocated.
 */
 int dlposix_memalign(void**, size_t, size_t);
