@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #include "console.h"
 #include "ioports.h"
 #include "interrupt.h"
-#include "ascii.h"
+#include "kernel/ascii.h"
 #include "process.h"
 #include "kernelcore.h"
 #include "device.h"

@@ -8,8 +8,8 @@ See the file LICENSE for details.
 A trivial user level program to try out basic system calls.
 */
 
-#include "syscalls.h"
-#include "string.h"
+#include "library/syscalls.h"
+#include "library/string.h"
 
 char *shakespeare[] = {
 	"[Horatio] Now cracke a Noble heart:",

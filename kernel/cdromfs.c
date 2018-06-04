@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "kmalloc.h"
 #include "console.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "string.h"
 #include "iso9660.h"
 #include "ata.h"
@@ -14,7 +14,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "device.h"
 #include "cdromfs.h"
-#include "syscall.h"
+#include "kernel/syscall.h"
 
 struct cdrom_volume {
 	struct device* device;

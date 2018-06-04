@@ -7,7 +7,7 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "graphics.h"
 #include "device.h"
 #include "buffer.h"

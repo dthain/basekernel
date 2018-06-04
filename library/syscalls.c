@@ -4,8 +4,8 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "syscall.h"
-#include "gfxstream.h"
+#include "kernel/syscall.h"
+#include "kernel/gfxstream.h"
 
 void debug(const char *str)
 {

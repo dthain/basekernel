@@ -3,7 +3,7 @@
 #define HASHTABLE_PRIME 31
 #define HASHTABLE_GOLDEN_RATIO 0x61C88647
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct hash_set {
 	uint32_t total_buckets;

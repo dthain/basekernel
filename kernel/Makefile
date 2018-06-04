@@ -18,10 +18,10 @@ bootblock.elf: bootblock.o
 	${LD} ${KERNEL_LDFLAGS} -Ttext 0 $< -o $@
 
 %.o: %.c
-	${CC} ${KERNEL_CCFLAGS} -I ../common $< -o $@
+	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
 
 %.o: %.S
-	${CC} ${KERNEL_CCFLAGS} -I ../common $< -o $@
+	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
 
 clean:
 	rm -rf basekernel.img *.o *.elf kernel bootblock bootblock.o

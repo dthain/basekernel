@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "kmalloc.h"
 #include "console.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "memorylayout.h"
 
 #define KUNIT sizeof(struct kmalloc_chunk)

@@ -4,7 +4,7 @@
 #define FS_FILE_READ (1 << 0)
 #define FS_FILE_WRITE (1 << 1)
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct fs {
 	char *name;

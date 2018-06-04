@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "list.h"
 #include "pagetable.h"
 #include "kobject.h"

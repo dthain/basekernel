@@ -19,8 +19,8 @@
 #define HAVE_MMAP 0
 #define MMAP_CLEARS 0
 #define HAVE_MREMAP 0
-#include "string.h"      /* for memset etc */
-#include "syscalls.h"     /* for sbrk, sysconf */
+#include "library/string.h"      /* for memset etc */
+#include "library/syscalls.h"     /* for sbrk, sysconf */
 /* END CUSTOM SETTINGS */
 /* Below is the unedited dlmalloc code */
 /*

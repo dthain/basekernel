@@ -7,7 +7,7 @@
 #ifndef PIPE_H
 #define PIPE_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "list.h"
 
 #define PIPE_SIZE (1024)

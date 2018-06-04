@@ -15,7 +15,7 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "memorylayout.h"
 #include "kmalloc.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "kernelcore.h"
 #include "main.h"
 #include "keyboard.h"

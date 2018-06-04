@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef MOUSE_H
 #define MOUSE_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct mouse_event {
 	uint8_t buttons;

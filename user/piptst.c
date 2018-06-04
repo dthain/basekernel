@@ -1,6 +1,6 @@
-#include "syscalls.h"
-#include "user-io.h"
-#include "string.h"
+#include "library/syscalls.h"
+#include "library/user-io.h"
+#include "library/string.h"
 
 int main(const char *argv[], int argc)
 {

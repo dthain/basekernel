@@ -1,6 +1,6 @@
 #include "fs.h"
 #include "kmalloc.h"
-#include "syscall.h"
+#include "kernel/syscall.h"
 #include "string.h"
 #include "list.h"
 #include "memory.h"

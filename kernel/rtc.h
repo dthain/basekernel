@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef RTC_H
 #define RTC_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct rtc_time {
 	uint8_t second;

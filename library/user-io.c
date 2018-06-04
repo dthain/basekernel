@@ -4,11 +4,11 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "user-io.h"
-#include "gfxstream.h"
-#include "kerneltypes.h"
-#include "syscalls.h"
-#include "string.h"
+#include "kernel/gfxstream.h"
+#include "kernel/types.h"
+#include "library/user-io.h"
+#include "library/syscalls.h"
+#include "library/string.h"
 #include "stdarg.h"
 
 static char stdio_buffer[PAGE_SIZE] = { 0 };

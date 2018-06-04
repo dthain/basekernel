@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 void	memory_init();
 void *	memory_alloc_page( bool zeroit );

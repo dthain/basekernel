@@ -4,7 +4,8 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "syscall.h"
+#include "kernel/syscall.h"
+#include "kernel/gfxstream.h"
 #include "syscall_handler.h"
 #include "console.h"
 #include "keyboard.h"
@@ -14,7 +15,6 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "string.h"
 #include "memorylayout.h"
-#include "gfxstream.h"
 #include "main.h"
 #include "fs.h"
 #include "kobject.h"

@@ -1,7 +1,7 @@
 #ifndef ELF_H
 #define ELF_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "process.h"
 
 /*

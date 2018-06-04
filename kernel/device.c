@@ -5,7 +5,7 @@
  */
 
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "device.h"
 #include "string.h"
 #include "ata.h"

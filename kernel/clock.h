@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 typedef struct {
 	uint32_t seconds;

@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "console.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "memory.h"
 #include "string.h"
 #include "memorylayout.h"

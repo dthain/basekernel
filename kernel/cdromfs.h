@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef CDROMFS_H
 #define CDROMFS_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "fs.h"
 
 #define CDROM_BLOCK_SIZE 2048

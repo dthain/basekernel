@@ -1,4 +1,4 @@
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "device.h"
 
 struct buffer;

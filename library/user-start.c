@@ -13,7 +13,7 @@ the main function.  Note that this function cannot exit, but
 must invoke the process_exit() system call to terminate the process.
 */
 
-#include "syscalls.h"
+#include "library/syscalls.h"
 
 int main( const char *argv[], int argc );
 

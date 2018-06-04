@@ -8,8 +8,8 @@ See the file LICENSE for details.
 A fun graphics demo that features text bouncing around the screen.
 */
 
-#include "syscalls.h"
-#include "user-io.h"
+#include "library/syscalls.h"
+#include "library/user-io.h"
 #define WIDTH    (200)
 #define HEIGHT   (200)
 typedef unsigned int uint32_t;

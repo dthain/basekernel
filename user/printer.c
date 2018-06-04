@@ -8,9 +8,9 @@ See the file LICENSE for details.
 A fun graphics demo that features a line segment bouncing around the screen.
 */
 
-#include "syscalls.h"
-#include "string.h"
-#include "user-io.h"
+#include "library/syscalls.h"
+#include "library/string.h"
+#include "library/user-io.h"
 
 #define WIDTH    (200)
 #define HEIGHT   (200)

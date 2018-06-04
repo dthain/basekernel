@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef PIC_H
 #define PIC_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 void pic_init( int base0, int base1 );
 void pic_enable( uint8_t irq );

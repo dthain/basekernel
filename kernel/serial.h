@@ -1,6 +1,6 @@
 #ifndef SERIAL_H
 #define SERIAL_H
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 void serial_init();
 char serial_read(uint8_t port_no);

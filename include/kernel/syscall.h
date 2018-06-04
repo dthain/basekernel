@@ -4,10 +4,10 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+#ifndef KERNEL_SYSCALL_H
+#define KERNEL_SYSCALL_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 typedef enum {
 	SYSCALL_DEBUG,

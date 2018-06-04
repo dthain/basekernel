@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "ioports.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "console.h"
 
 #define PIC_ICW1 0x11

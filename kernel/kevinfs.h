@@ -18,7 +18,7 @@ See the file LICENSE for details.
 #define FILE_MODE_READ (1u << 0)
 #define FILE_MODE_WRITE (1u << 1)
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct kevinfs_superblock {
 	uint32_t magic;

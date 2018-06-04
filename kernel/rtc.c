@@ -9,7 +9,7 @@ Driver for the Motorola MC 146818A Real Time Clock
 Recommended reading: page 11-15 of the RTC data sheet
 */
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "ioports.h"
 #include "rtc.h"
 #include "console.h"

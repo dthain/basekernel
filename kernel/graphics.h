@@ -7,9 +7,9 @@ See the file LICENSE for details.
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "bitmap.h"
-#include "gfxstream.h"
+#include "kernel/gfxstream.h"
 
 struct graphics_color {
 	uint8_t r;

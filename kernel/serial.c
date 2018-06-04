@@ -3,7 +3,7 @@
 //     https://wiki.osdev.org/Serial_Ports
 //     http://www.webcitation.org/5ugQv5JOw
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "ioports.h"
 
 #define COM1 0x3f8

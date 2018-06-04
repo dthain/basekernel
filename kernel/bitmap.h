@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef BITMAP_H
 #define BITMAP_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 struct bitmap * bitmap_create_root();
 

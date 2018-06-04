@@ -4,7 +4,7 @@
  * for details. 
  */
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "pipe.h"
 #include "kmalloc.h"
 #include "process.h"

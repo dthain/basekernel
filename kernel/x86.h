@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef X86_H
 #define X86_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 #define X86_SEGMENT_SELECTOR( seg, rpl )  (((seg)<<3)+(rpl))
 

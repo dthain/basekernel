@@ -1,5 +1,5 @@
-#include "syscalls.h"
-#include "string.h"
+#include "library/syscalls.h"
+#include "library/string.h"
 
 int main(const char *argv[], int argc)
 {

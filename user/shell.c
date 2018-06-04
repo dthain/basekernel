@@ -1,8 +1,8 @@
-#include "string.h"
-#include "syscalls.h"
-#include "kerneltypes.h"
-#include "user-io.h"
-#include "ascii.h"
+#include "library/string.h"
+#include "library/syscalls.h"
+#include "kernel/types.h"
+#include "library/user-io.h"
+#include "kernel/ascii.h"
 
 int has_ns = 0;
 

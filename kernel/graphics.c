@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "graphics.h"
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "ioports.h"
 #include "font.h"
 #include "string.h"

@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef KERNELCORE_H
 #define KERNELCORE_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 extern uint16_t video_xbytes;
 extern uint16_t video_xres;

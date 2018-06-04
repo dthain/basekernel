@@ -4,7 +4,7 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 #include "ata.h"
 #include "kmalloc.h"
 #include "kevinfs.h"

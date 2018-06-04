@@ -1,7 +1,7 @@
 #ifndef ISO9660_H
 #define ISO9660_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 #pragma pack(1)
 

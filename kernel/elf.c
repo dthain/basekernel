@@ -4,7 +4,7 @@
 #include "string.h"
 #include "console.h"
 #include "process.h"
-#include "syscall.h"
+#include "kernel/syscall.h"
 #include "memorylayout.h"
 
 struct elf_header {

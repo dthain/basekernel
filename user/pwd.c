@@ -5,9 +5,9 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "syscalls.h"
-#include "string.h"
-#include "user-io.h"
+#include "library/syscalls.h"
+#include "library/string.h"
+#include "library/user-io.h"
 
 int main(const char *argv[], int argc)
 {

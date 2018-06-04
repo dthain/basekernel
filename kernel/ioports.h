@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #ifndef IOPORTS_H
 #define IOPORTS_H
 
-#include "kerneltypes.h"
+#include "kernel/types.h"
 
 /*
 These are C wrappers around the assembly instruction IN and OUT
