@@ -6,8 +6,6 @@
 #include "memory.h"
 #include "process.h"
 
-#define MIN(x,y) ((x)<(y)?(x):(y))
-
 static struct fs *fs_list = 0;
 
 struct fs_dirent * fs_resolve( const char *path )

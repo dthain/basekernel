@@ -13,6 +13,9 @@
 
 #define MAX_ARGV_LENGTH 256
 
+#define MIN(x,y) ( ((x)<(y)) ? (x) : (y) )
+#define MAX(x,y) ( ((x)>(y)) ? (x) : (y) )
+
 typedef int int32_t;
 typedef short int16_t;
 typedef char int8_t;

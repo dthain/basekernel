@@ -14,10 +14,6 @@ See the file LICENSE for details.
 #include "string.h"
 #include "process.h"
 
-#ifndef MIN
-#define MIN(x,y) (((x)<(y)) ? (x) : (y) )
-#endif
-
 #define FACTOR 256
 
 static struct graphics_color color_black = { 0, 0, 0, 0 };
