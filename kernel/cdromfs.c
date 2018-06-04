@@ -14,6 +14,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "device.h"
 #include "cdromfs.h"
+#include "syscall.h"
 
 struct cdrom_volume {
 	struct device* device;
@@ -126,6 +127,9 @@ static struct fs_dirent * cdrom_dirent_lookup( struct fs_dirent *dir, const char
 static int cdrom_dirent_read_dir( struct fs_dirent *dir, char *buffer, int buffer_length )
 {
 	struct cdrom_dirent *cddir = dir->private_data;
+
+	if(!cddir->isdir) return ENOTDIR;
+
 	char *data = cdrom_dirent_load(dir);
 	if(!data) return 0;
 

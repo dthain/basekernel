@@ -50,6 +50,7 @@ typedef enum {
 	ENOEXEC = -5,
 	EFAILEXEC = -6,
 	EOPNOTSUPP = -7,
+	ENOTDIR = -8
 } syscall_error_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);
