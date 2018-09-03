@@ -3,13 +3,14 @@
 GCC="gcc-8.2.0"
 BINUTILS="binutils-2.31.1"
 
-PREFIX=`pwd`/cross
+CURRDIR=`pwd`
+PREFIX=$CURRDIR/cross
 WORKDIR=`mktemp -d`
 
 echo "Installing cross-compiler to $PREFIX"
 echo "Building in directory $WORKDIR"
 
-pushd "$WORKDIR"
+cd "$WORKDIR"
 
 # get and extract sources
 
@@ -43,5 +44,5 @@ cd $GCC-elf-objs
 make all-gcc && make all-target-libgcc && make install-gcc && make install-target-libgcc
 cd ..
 
-popd
+cd "$CURRDIR"
 rm -rf "$WORKDIR"
