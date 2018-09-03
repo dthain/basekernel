@@ -12,7 +12,6 @@ See the file LICENSE for details.
 #include "pagetable.h"
 #include "kobject.h"
 #include "x86.h"
-#include "fs_space.h"
 #include "fs.h"
 
 #define PROCESS_STATE_CRADLE  0
