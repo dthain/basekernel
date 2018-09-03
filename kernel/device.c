@@ -102,12 +102,3 @@ int device_write(struct device *d, const void *buffer, int size, int offset)
 		return -1;
 	}
 }
-
-struct device *device_subset(struct device *d, int dx0, int dy0, int dx1, int dy1)
-{
-	if(d->subset) {
-		return d->subset(d, dx0, dy0, dx1, dy1);
-	} else {
-		return 0;
-	}
-}
