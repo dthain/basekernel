@@ -100,7 +100,7 @@ struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
 static int kevinfs_ata_write_superblock(struct device *device)
 {
 	uint8_t wbuffer[FS_BLOCKSIZE];
-	int num_blocks;
+	uint32_t num_blocks;
 	int ata_blocksize;
 	uint32_t superblock_num_blocks,  available_blocks, free_blocks,
 		 total_inodes, total_bits, inode_sector_size,
@@ -1092,4 +1092,3 @@ int kevinfs_init(void)
 	kevinfs_register();
 	return 0;
 }
-
