@@ -136,12 +136,22 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	super.num_free_blocks = free_blocks;
 
 	memcpy(wbuffer, &super, sizeof(super));
-
-	uint32_t i;
-	for (i = super.inode_bitmap_start; i < super.free_block_start; i++) {
+	uint32_t counter = 0;
+	printf("Writing inode bitmap...\n");
+	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
 		if(!device_write(device, zeros, 1, i))
 			return -1;
+		counter++;
 	}
+	printf("%u blocks written\n", counter);
+	counter = 0;
+	printf("Writing free block bitmap...\n");
+	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
+		if(!device_write(device, zeros, 1, i))
+			return -1;
+		counter++;
+	}
+	printf("%u blocks written\n", counter);
 	return kevinfs_ata_write_block(device, 0, wbuffer);
 }
 
