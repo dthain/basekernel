@@ -409,14 +409,16 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	cbuffer[256]=0;
 
 	/* Vendor supplied name is at byte 54 */
-
 	strcpy(name,&cbuffer[54]);
 	name[40] = 0;
 
-	console_printf("ata unit %d: %s %u MB %s\n",
+	/* Get disk size in megabytes*/
+	double mbytes = ((double) *nblocks) * (((double) *blocksize)/MEGA);
+
+	console_printf("ata unit %d: %s %u blocks %u MB %s\n",
 		id,
-		(*blocksize)==512 ? "ata disk" : "atapi cdrom",
-		(*nblocks)*(*blocksize)/1024/1024,
+		(*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks,
+		(uint32_t) mbytes,
 		name);
 
 	return 1;
