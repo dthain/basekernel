@@ -63,7 +63,7 @@ int kernel_main()
 	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
 
-	while(1) console_putchar(keyboard_read());
+	while(1) console_putchar(keyboard_read(0));
 
 	return 0;
 }
