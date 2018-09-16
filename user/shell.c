@@ -123,7 +123,7 @@ int main(char **argv, int argc)
 	printf("u$ ");
 	while(1) {
 		flush();
-		c = keyboard_read_char();
+		c = keyboard_read_char(0);
 		if(pos == line && c == ASCII_BS)
 			continue;
 		printf_putchar(c);
