@@ -7,8 +7,6 @@ See the file LICENSE for details.
 #include "kernel/syscall.h"
 #include "kernel/gfxstream.h"
 
-#define NONBLOCK 0;
-
 void debug(const char *str)
 {
 	syscall(SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0);
