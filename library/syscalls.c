@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #include "kernel/syscall.h"
 #include "kernel/gfxstream.h"
 
+#define NONBLOCK 0;
+
 void debug(const char *str)
 {
 	syscall(SYSCALL_DEBUG, (uint32_t) str, 0, 0, 0, 0);
@@ -57,9 +59,10 @@ extern void *sbrk(int a)
 	return (void *) syscall(SYSCALL_SBRK, a, 0, 0, 0, 0);
 }
 
-int keyboard_read_char()
+// 1 for non-blocking, 0 for blocking
+int keyboard_read_char(int non_blocking)
 {
-	return syscall(SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0);
+	return syscall(SYSCALL_KEYBOARD_READ_CHAR, non_blocking, 0, 0, 0, 0);
 }
 
 int pipe_open()
