@@ -113,7 +113,7 @@ static void keyboard_interrupt(int i, int code)
 	process_wakeup(&queue);
 }
 
-int keyboard_device_read(struct device *d, void *dest, int size, int offset)
+int keyboard_device_read_block(struct device *d, void *dest, int size, int offset)
 {
 	int i;
 	for(i = 0; i < size; i++) {
@@ -126,8 +126,26 @@ int keyboard_device_read(struct device *d, void *dest, int size, int offset)
 	return size;
 }
 
-char keyboard_read()
+int keyboard_device_read_nonblock(struct device *d, void *dest, int size, int offset)
 {
+	int i;
+	for(i = 0; i < size; i++) {
+		if(keyboard_buffer_read == keyboard_buffer_write) {
+			return -1;
+		}
+		((char *) dest)[i] = buffer[keyboard_buffer_read];
+		keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
+	}
+	return size;
+}
+
+char keyboard_read(int non_blocking)
+{
+	if (non_blocking) {
+		keyboard.read = keyboard_device_read_nonblock;
+	} else {
+		keyboard.read = keyboard_device_read_block;
+	}
 	char toRet = 0;
 	device_read(&keyboard, &toRet, 1, 0);
 	return toRet;
@@ -141,7 +159,7 @@ struct device *keyboard_get()
 void keyboard_init()
 {
 	keyboard.block_size = 1;
-	keyboard.read = keyboard_device_read;
+	keyboard.read = keyboard_device_read_block;
 	interrupt_register(33, keyboard_interrupt);
 	interrupt_enable(33);
 	console_printf("keyboard: ready\n");
