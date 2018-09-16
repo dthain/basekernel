@@ -73,24 +73,38 @@ int main(const char *argv[], int argc) {
 
 	// Misc. initializations
 	int status, wd;
-	char in = 'm';
+	char in;
 	char tin;
 
 	// Initialize the Window
 	if ((wd = initialize_window(0, 0, WIDTH, HEIGHT, thick, 255, 255, 255)) < 0) {
 		return 1;
 	}
-	printf_putstring("Changes noted!\n");
+	draw_string(x+thick*3, y+thick*4, "Press any key to start");
+	draw_string(x+thick*3, y+thick*8, "j: up");
+	draw_string(x+thick*3, y+thick*12, "n: down");
+	draw_string(x+thick*3, y+thick*16, "m: right");
+	draw_string(x+thick*3, y+thick*20, "b: left");
+	draw_flush();
+
+
+	tin = keyboard_read_char(0);
+	in = 'm';
 
 	while (1) {
 		// Draw the board
 		draw_board(wd, thick, thick, game_width, game_height, x_steps, y_steps, snake_coords, apple, thick);
 
 		// Wait
-		process_sleep(125);
+		process_sleep(100);
 
-		// Get users next input
-		tin = keyboard_read_char();
+		// Get users next input -- non-blocking
+		tin = keyboard_read_char(1);
+
+		// Skip if the user goes reverse direction
+		if ((tin == 'b' && in == 'm') || (tin == 'm' && in == 'b') || (tin == 'j' && in == 'n') || (tin == 'n' && in == 'j'))
+			continue;
+
 		if (tin > 0)
 			in = tin;
 
@@ -150,12 +164,16 @@ uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords * a
 uint16_t randint(uint16_t min, uint16_t max) {
 	// Could be a lot better but at the moment it works
 	uint16_t state = (uint16_t)gettimeofday();
-	if (state%3 == 0) {
+	if (state%5 == 0) {
 		state += 50000;
+	} else if (state%4 == 0) {
+		state += 1000;
+	} else if (state%3 == 0) {
+		state += 10000;
 	} else if (state%2 == 0) {
-		state += 5000;
+		state += 25000;
 	} else {
-		state += 500;
+		state += 16000;
 	}
 	uint16_t diff = max - min;
 	
