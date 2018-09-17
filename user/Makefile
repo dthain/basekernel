@@ -1,6 +1,6 @@
 include ../Makefile.config
 
-USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe exctst.exe file_describe_test.exe saver.exe ball.exe write.exe pwd.exe shell.exe piptst.exe
+USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe exctst.exe describefile.exe saver.exe ball.exe write.exe pwd.exe shell.exe piptst.exe
 
 all: $(USER_PROGRAMS)
 

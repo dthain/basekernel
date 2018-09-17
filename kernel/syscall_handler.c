@@ -418,6 +418,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_lseek(a, b, c);
 	case SYSCALL_CLOSE:
 		return sys_close(a);
+	case SYSCALL_FILE_DESCRIBE:
+		return sys_file_describe(a);
 	case SYSCALL_KEYBOARD_READ_CHAR:
 		return sys_keyboard_read_char();
 	case SYSCALL_SET_BLOCKING:

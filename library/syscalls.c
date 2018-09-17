@@ -28,7 +28,7 @@ int open(const char *path, int mode, int flags)
 }
 
 int file_describe(int fd) {
-  return syscall(SYSCALL_FILE_DESCRIBE, 0, 0, 0, 0, 0, 0);
+  return syscall(SYSCALL_FILE_DESCRIBE, 0, 0, 0, 0, 0);
 }
 
 int dup(int fd1, int fd2)
