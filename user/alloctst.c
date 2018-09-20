@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 /*
-A fun graphics demo that features text bouncing around the screen.
+Test to check that we are able to allocate more than 1 page of memory on the stack
 */
 
 #include "library/syscalls.h"
