@@ -36,19 +36,22 @@ static const char * exception_names[] = {
 
 static void unknown_exception( int i, int code )
 {
-	unsigned vaddr, paddr;
+	unsigned vaddr, paddr, esp;
 
 	if(i==14) {
-		asm("mov %%cr2, %0" : "=r" (vaddr) );
+		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed
+		asm("mov %%esp, %0" : "=r" (esp) ); // stack pointer
 
-		// XXX Now that the process tracks the current data/stack size, we can more easily distinguish the reason for the fault.
-		int data = vaddr < (int)current->vm_data_size;
-		int stack = current->vm_data_size && pagetable_getmap(current->pagetable,vaddr+PAGE_SIZE,&paddr,0);
+		// Check if the requested memory is in the stack or data
+		int data_access = vaddr < current->vm_data_size;
+		int stack_access = current->vm_data_size && vaddr > esp;
 
-		//Check for a valid mapping (which will result from violating the permissions on page), or that
-		//we are either accessing neither the stack nor the heap, or somehow both, and error if so
-
-		if (pagetable_getmap(current->pagetable,vaddr,&paddr,0) || !(data ^ stack)) {
+		// Check if the requested memory is already in use
+		int page_already_present = pagetable_getmap(current->pagetable,vaddr,&paddr,0);
+		
+		// Check if page is already mapped (which will result from violating the permissions on page) or that
+		// we are accessing neither the stack nor the heap, or we are accessing both. If so, error
+		if (page_already_present || !(data_access ^ stack_access)) {
 			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
