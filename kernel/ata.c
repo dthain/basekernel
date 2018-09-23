@@ -413,12 +413,13 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	name[40] = 0;
 
 	/* Get disk size in megabytes*/
-	double mbytes = ((double) *nblocks) * (((double) *blocksize)/MEGA);
+	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
 	console_printf("ata unit %d: %s %u blocks %u MB %s\n",
 		id,
-		(*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks,
-		(uint32_t) mbytes,
+		(*blocksize)==512 ? "ata disk" : "atapi cdrom",
+		*nblocks,
+		mbytes,
 		name);
 
 	return 1;
