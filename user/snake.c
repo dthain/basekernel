@@ -88,8 +88,13 @@ int main(const char *argv[], int argc) {
 	draw_flush();
 
 
-	tin = keyboard_read_char(0);
-	in = 'm';
+	read(0, &tin, 1);
+	if (tin != 'm' && tin != 'n') {
+		in = 'm';
+	} else {
+		in = tin;
+	}
+	
 
 	while (1) {
 		// Draw the board
@@ -99,7 +104,7 @@ int main(const char *argv[], int argc) {
 		process_sleep(100);
 
 		// Get users next input -- non-blocking
-		tin = keyboard_read_char(1);
+		read_nonblock(0, &tin, 1);;
 
 		// Skip if the user goes reverse direction
 		if ((tin == 'b' && in == 'm') || (tin == 'm' && in == 'b') || (tin == 'j' && in == 'n') || (tin == 'n' && in == 'j'))
@@ -116,8 +121,6 @@ int main(const char *argv[], int argc) {
 			return 0;
 		}
 	}
-
-	return 0;
 }
 
 
