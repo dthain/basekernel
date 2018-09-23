@@ -157,12 +157,12 @@ int process_wait(struct process_info *info, int timeout)
 	return syscall(SYSCALL_PROCESS_WAIT, (uint32_t) info, timeout, 0, 0, 0);
 }
 
-int sys_stat(struct stat *s)
+int sys_stat(struct sys_stat *s)
 {
 	return syscall(SYSCALL_SYS_STAT, (uint32_t) s, 0, 0, 0, 0);
 }
 
-int process_stat(struct stat *s, uint32_t pid)
+int process_stat(struct proc_stat *s, unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_STAT, (uint32_t) s, pid, 0, 0, 0);
 }

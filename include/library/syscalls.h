@@ -39,6 +39,8 @@ int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
 int pwd(char *buffer);
 int chdir(const char *path);
+int sys_stat(struct sys_stat *s);
+int process_stat(struct proc_stat *s, unsigned int pid);
 uint32_t gettimeofday();
 
 #endif

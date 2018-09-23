@@ -388,13 +388,12 @@ int sys_sys_stat(struct sys_stat *s) {
 }
 
 int sys_process_stat(struct proc_stat *s, int pid) {
-	process_stat(pid, s);
-	return 0;
+	return process_stat(pid, s);
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
-	if (n < MAX_SYSCALL) {
+	if ((n < MAX_SYSCALL) && current) {
 		current->stat.syscall_count[n]++;
 	}
 	switch (n) {

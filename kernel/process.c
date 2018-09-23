@@ -209,9 +209,7 @@ struct process *process_create()
 	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
-
-	memset(&(p->stat), 0, sizeof(struct proc_stat));
-
+	
 	p->state = PROCESS_STATE_READY;
 
 	return p;
