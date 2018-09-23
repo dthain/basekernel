@@ -79,6 +79,13 @@ static struct list queue = {0,0};
 static struct mutex ata_mutex = MUTEX_INIT;
 static int identify_in_progress = 0;
 
+static struct ata_count counters = {0};
+
+struct ata_count ata_stat()
+{
+	return counters;
+}
+
 static void ata_interrupt( int intr, int code )
 {
 	ata_interrupt_active=1;
@@ -222,6 +229,7 @@ int ata_read( int id, void *buffer, int nblocks, int offset )
 	mutex_lock(&ata_mutex);
 	result = ata_read_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
+	counters.blocks_read[id] += nblocks;
 	return result;
 }
 
@@ -307,6 +315,7 @@ int atapi_read( int id, void *buffer, int nblocks, int offset )
 	mutex_lock(&ata_mutex);
 	result = atapi_read_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
+	counters.blocks_read[id] += nblocks;
 	return result;
 }
 
@@ -336,6 +345,7 @@ int ata_write( int id, const void *buffer, int nblocks, int offset )
 	mutex_lock(&ata_mutex);
 	result = ata_write_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
+	counters.blocks_written[id] += nblocks;
 	return result;
 }
 
@@ -386,6 +396,9 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	if(ata_identify(id,ATA_COMMAND_IDENTIFY,cbuffer)) {
 
 		*nblocks = buffer[1]*buffer[3]*buffer[6];
+		printf("%d logical cylinders\n", buffer[1]);
+		printf("%d logical heads\n", buffer[3]);
+		printf("%d logical sectors/track\n", buffer[6]);
 		*blocksize = ATA_BLOCKSIZE;
 
  	} else if(ata_identify(id,ATAPI_COMMAND_IDENTIFY,cbuffer)) {
@@ -430,6 +443,10 @@ void ata_init()
 	unsigned int nblocks;
 	int blocksize=0;
 	char longname[256];
+	for (int i = 0; i < 4; i++) {
+		counters.blocks_read[i] = 0;
+		counters.blocks_written[i] = 0;
+	}
 
 	console_printf("ata: setting up interrupts\n");
 
