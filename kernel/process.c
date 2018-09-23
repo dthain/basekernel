@@ -210,6 +210,8 @@ struct process *process_create()
 		p->ktable[i] = 0;
 	}
 
+	memset(&(p->stat), 0, sizeof(struct proc_stat));
+
 	p->state = PROCESS_STATE_READY;
 
 	return p;
@@ -421,6 +423,7 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 		while(p) {
 			struct process *next = (struct process *) p->node.next;
 			if( (pid!=0 && p->pid==pid) || (p->ppid == current->pid ) ) {
+				info->stat = p->stat;
 				info->exitcode = p->exitcode;
 				info->exitreason = p->exitreason;
 				info->pid = p->pid;
@@ -474,4 +477,12 @@ void process_pass_arguments(struct process *p, const char **argv, int argc)
 	*((char **) (ebp - 12)) = (char *) (PROCESS_STACK_INIT - MAX_ARGV_LENGTH * argc - 4 * argc);
 	*((int *) (ebp - 8)) = argc;
 	s->esp -= (esp - ebp) + 16;
+}
+
+int process_stat(int pid, struct proc_stat *s) {
+	if (pid > PROCESS_MAX_PID || !process_table[pid]) {
+		return 1;
+	}
+ *s = process_table[pid]->stat;
+ return 0;
 }

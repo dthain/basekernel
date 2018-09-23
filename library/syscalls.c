@@ -162,7 +162,7 @@ int sys_stat(struct stat *s)
 	return syscall(SYSCALL_SYS_STAT, (uint32_t) s, 0, 0, 0, 0);
 }
 
-int proc_stat(struct stat *s, uint32_t pid)
+int process_stat(struct stat *s, uint32_t pid)
 {
 	return syscall(SYSCALL_PROCESS_STAT, (uint32_t) s, pid, 0, 0, 0);
 }

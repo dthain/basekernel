@@ -41,7 +41,8 @@ typedef enum {
 	SYSCALL_READDIR,
 	SYSCALL_PWD,
 	SYSCALL_SYS_STAT,
-	SYSCALL_PROCESS_STAT
+	SYSCALL_PROCESS_STAT,
+	MAX_SYSCALL // must be the last element in the enum
 } syscall_t;
 
 typedef enum {

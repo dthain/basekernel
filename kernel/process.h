@@ -39,6 +39,7 @@ struct process {
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
 	struct fs_dirent *current_dir;
 	struct fs_dirent *root_dir;
+	struct proc_stat stat;
 	uint32_t pid;
 	uint32_t ppid;
 	uint32_t vm_data_size;
@@ -75,6 +76,8 @@ void process_reap_all();
 int process_kill(uint32_t pid);
 int process_wait_child( uint32_t pid, struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
+
+int process_stat(int pid, struct proc_stat *stat);
 
 extern struct process *current;
 

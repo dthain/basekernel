@@ -230,6 +230,7 @@ int ata_read( int id, void *buffer, int nblocks, int offset )
 	result = ata_read_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
 	counters.blocks_read[id] += nblocks;
+	current->stat.blocks_read[id] += nblocks;
 	return result;
 }
 
@@ -316,6 +317,7 @@ int atapi_read( int id, void *buffer, int nblocks, int offset )
 	result = atapi_read_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
 	counters.blocks_read[id] += nblocks;
+	current->stat.blocks_read[id] += nblocks;
 	return result;
 }
 
@@ -346,6 +348,7 @@ int ata_write( int id, const void *buffer, int nblocks, int offset )
 	result = ata_write_unlocked(id,buffer,nblocks,offset);
 	mutex_unlock(&ata_mutex);
 	counters.blocks_written[id] += nblocks;
+	current->stat.blocks_written[id] += nblocks;
 	return result;
 }
 

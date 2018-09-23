@@ -374,7 +374,7 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
-int sys_sys_stat(struct stat *s) {
+int sys_sys_stat(struct sys_stat *s) {
 	struct rtc_time t;
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
@@ -387,12 +387,16 @@ int sys_sys_stat(struct stat *s) {
 	return 0;
 }
 
-int sys_process_stat(struct stat *s, int pid) {
+int sys_process_stat(struct proc_stat *s, int pid) {
+	process_stat(pid, s);
 	return 0;
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
+	if (n < MAX_SYSCALL) {
+		current->stat.syscall_count[n]++;
+	}
 	switch (n) {
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
@@ -455,9 +459,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PWD:
 		return sys_pwd((char *) a);
 	case SYSCALL_SYS_STAT:
-		return sys_sys_stat((struct stat *) a);
+		return sys_sys_stat((struct sys_stat *) a);
 	case SYSCALL_PROCESS_STAT:
-		return sys_process_stat((struct stat *) a, b);
+		return sys_process_stat((struct proc_stat *) a, b);
 	default:
 		return -1;
 	}
