@@ -34,4 +34,10 @@ struct process_info {
 	int exitreason;
 };
 
+struct stat {
+	uint32_t time;
+	uint32_t blocks_read[4];
+	uint32_t blocks_written[4];
+};
+
 #endif
