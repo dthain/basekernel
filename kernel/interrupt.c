@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "pic.h"
 #include "process.h"
 #include "kernelcore.h"
+#include "x86.h"
 
 static interrupt_handler_t interrupt_handler_table[48];
 static uint32_t interrupt_count[48];
@@ -39,12 +40,12 @@ static void unknown_exception( int i, int code )
 	unsigned vaddr, paddr, esp;
 
 	if(i==14) {
-		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed
-		asm("mov %%esp, %0" : "=r" (esp) ); // stack pointer
+		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed		
+		esp  = ((struct x86_stack *)current->kstack_ptr)->esp; // stack pointer of the process that raised the exception
 
 		// Check if the requested memory is in the stack or data
 		int data_access = vaddr < current->vm_data_size;
-		int stack_access = current->vm_data_size && vaddr > esp;
+		int stack_access = current->vm_data_size && vaddr >= esp;
 
 		// Check if the requested memory is already in use
 		int page_already_present = pagetable_getmap(current->pagetable,vaddr,&paddr,0);
@@ -53,6 +54,7 @@ static void unknown_exception( int i, int code )
 		// we are accessing neither the stack nor the heap, or we are accessing both. If so, error
 		if (page_already_present || !(data_access ^ stack_access)) {
 			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
+			console_printf("interrupt: illegal page access at esp %x\n",esp);
 			process_dump(current);
 			process_exit(0);
 		} else {
