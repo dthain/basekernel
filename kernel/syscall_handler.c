@@ -46,9 +46,9 @@ int sys_process_yield()
 	return 0;
 }
 
-int sys_sbrk( int delta )
+int sys_sbrk(int delta)
 {
-	process_data_size_set( current,current->vm_data_size + delta );
+	process_data_size_set(current, current->vm_data_size + delta);
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
@@ -62,29 +62,29 @@ int sys_process_run(const char *path, const char **argv, int argc)
 {
 	struct process *p = process_create();
 
-	process_inherit(current,p);
+	process_inherit(current, p);
 
 	struct pagetable *old_pagetable = current->pagetable;
 	current->pagetable = p->pagetable;
 	pagetable_load(p->pagetable);
-	
+
 	addr_t entry;
-	int r = elf_load(p,path,&entry);
-	if(r>=0) {
-		process_stack_reset(p,PAGE_SIZE);
+	int r = elf_load(p, path, &entry);
+	if(r >= 0) {
+		process_stack_reset(p, PAGE_SIZE);
 	}
 
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
-	if(r<0) {
-		if(r==KERROR_EXECUTION_FAILED) {
+	if(r < 0) {
+		if(r == KERROR_EXECUTION_FAILED) {
 			process_delete(p);
 		}
 		return r;
 	}
 
-	process_kstack_reset(p,entry);
+	process_kstack_reset(p, entry);
 	process_pass_arguments(p, argv, argc);
 	process_launch(p);
 	return p->pid;
@@ -93,24 +93,24 @@ int sys_process_run(const char *path, const char **argv, int argc)
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	addr_t entry;
-	int r = elf_load(current,path,&entry);
-	if(r<0) {
-		if(r==KERROR_EXECUTION_FAILED) {
+	int r = elf_load(current, path, &entry);
+	if(r < 0) {
+		if(r == KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
 		return r;
 	}
 
-	process_stack_reset(current,PAGE_SIZE);
-	process_kstack_reset(current,entry);
+	process_stack_reset(current, PAGE_SIZE);
+	process_kstack_reset(current, entry);
 	process_pass_arguments(current, argv, argc);
 
 	/*
-	IMPORTANT: Following a successful exec, we cannot return via
-	the normal path, because our stack has been reset to that
-	of a fresh process.  We must switch in order to jump
-	to the new stack properly.
-	*/
+	   IMPORTANT: Following a successful exec, we cannot return via
+	   the normal path, because our stack has been reset to that
+	   of a fresh process.  We must switch in order to jump
+	   to the new stack properly.
+	 */
 
 	process_yield();
 
@@ -124,8 +124,8 @@ int sys_process_fork()
 	p->ppid = current->pid;
 	pagetable_delete(p->pagetable);
 	p->pagetable = pagetable_duplicate(current->pagetable);
-	process_inherit(current,p);
-	process_kstack_copy(current,p);
+	process_inherit(current, p);
+	process_kstack_copy(current, p);
 	process_launch(p);
 	return p->pid;
 }
@@ -153,7 +153,7 @@ int sys_process_kill(int pid)
 
 int sys_process_wait(struct process_info *info, int timeout)
 {
-	return process_wait_child(0,info,timeout);
+	return process_wait_child(0, info, timeout);
 }
 
 int sys_process_reap(int pid)
@@ -196,7 +196,7 @@ int sys_mkdir(const char *path)
 {
 	// XXX doesn't work -- separate parent and new directory.
 
-	return fs_dirent_mkdir(current->current_dir,path);
+	return fs_dirent_mkdir(current->current_dir, path);
 }
 
 int sys_rmdir(const char *path)
@@ -204,7 +204,7 @@ int sys_rmdir(const char *path)
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		// XXX this API doesn't make sense.
-		return fs_dirent_rmdir(d,path);
+		return fs_dirent_rmdir(d, path);
 	} else {
 		// XXX get error back from namei
 		return -1;
