@@ -375,7 +375,7 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 }
 
 int sys_sys_stat(struct sys_stat *s) {
-	struct rtc_time t;
+	struct rtc_time t = {0};
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
 	struct ata_count a = ata_stat();
@@ -383,7 +383,6 @@ int sys_sys_stat(struct sys_stat *s) {
 		s->blocks_written[i] = a.blocks_written[i];
 		s->blocks_read[i] = a.blocks_read[i];
 	}
-
 	return 0;
 }
 
