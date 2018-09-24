@@ -1,0 +1,24 @@
+/*
+Copyright (C) 2018 The University of Notre Dame
+This software is distributed under the GNU General Public License.
+See the file LICENSE for details.
+*/
+
+#include "library/syscalls.h"
+#include "library/string.h"
+
+int main(int argc, char const *argv[]) {
+	struct sys_stat s = {0};
+	if (!sys_stat(&s)) {
+		return 1;
+	}
+
+	printf("System uptime: %dh %dd %ds\n", s.time / (60*60), s.time / 60, s.time % 60);
+	printf("Disk 0: %d blocks read, %d blocks written\n", s.blocks_read[0], s.blocks_written[0]);
+	printf("Disk 1: %d blocks read, %d blocks written\n", s.blocks_read[1], s.blocks_written[1]);
+	printf("Disk 2: %d blocks read, %d blocks written\n", s.blocks_read[2], s.blocks_written[2]);
+	printf("Disk 3: %d blocks read, %d blocks written\n", s.blocks_read[3], s.blocks_written[3]);
+
+
+	return 0;
+}
