@@ -153,7 +153,8 @@ void rtc_init()
 	interrupt_register(40,rtc_interrupt_handler);
 	interrupt_enable(40);
 
-	struct rtc_time t;
+	rtc_fetch_time();
+	struct rtc_time t = {0};
 	rtc_read(&t);
 	boottime = rtc_time_to_timestamp(&t);
 
