@@ -108,9 +108,8 @@ int main(const char *argv[], int argc)
 
 		// Skip if the user goes reverse direction
 		if((tin == 'b' && in == 'm') || (tin == 'm' && in == 'b') || (tin == 'j' && in == 'n') || (tin == 'n' && in == 'j'))
-			continue;
-
-		if(tin > 0)
+			in = in;
+		else if(tin > 0 && (tin == 'b' || tin == 'm' || tin == 'n' || tin == 'j'))
 			in = tin;
 
 		// Try to move the snake
