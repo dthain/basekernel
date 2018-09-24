@@ -67,10 +67,10 @@ int main() {
 
 
 	if (failure == 1) {
-		temp = (int *)((void *)fail_array_2 - 2000131);
+		temp = (int *)((void *)sp - 2000131);
 		temp[0] = 1;
 		printf("Pointer address %u\n", sp);
-		printf("Pointer address %u\n", fail_array_2);
+		// printf("Pointer address %u\n", fail_array_2);
 		printf("Pointer address %u\n", &temp[0]);
 	}
 
