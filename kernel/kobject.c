@@ -16,6 +16,7 @@ struct kobject *kobject_create_file(struct fs_file *f) {
     k->refcount = 1;
     k->data.file = f;
     k->offset = 0;
+
     return k;
 }
 
@@ -123,3 +124,6 @@ int kobject_set_blocking(struct kobject *kobject, int b) {
     return 0;
 }
 
+int kobject_get_type(struct kobject *kobject) {
+    return kobject->type;
+}
