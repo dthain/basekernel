@@ -27,8 +27,9 @@ int open(const char *path, int mode, int flags)
 	return syscall(SYSCALL_OPEN, (uint32_t) path, mode, flags, 0, 0);
 }
 
-int file_describe(int fd) {
-  return syscall(SYSCALL_FILE_DESCRIBE, fd, 0, 0, 0, 0);
+int file_describe(int fd)
+{
+	return syscall(SYSCALL_FILE_DESCRIBE, fd, 0, 0, 0, 0);
 }
 
 int dup(int fd1, int fd2)
@@ -68,12 +69,12 @@ int keyboard_read_char()
 
 int pipe_open()
 {
-        return syscall( SYSCALL_OPEN_PIPE, 0, 0, 0, 0, 0 );
+	return syscall(SYSCALL_OPEN_PIPE, 0, 0, 0, 0, 0);
 }
 
-int set_blocking( int fd, int b )
+int set_blocking(int fd, int b)
 {
-	return syscall( SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0 );
+	return syscall(SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0);
 }
 
 int open_window(int wd, int x, int y, int w, int h)
