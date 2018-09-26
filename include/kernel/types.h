@@ -28,22 +28,10 @@ typedef uint8_t bool;
 
 typedef uint32_t addr_t;
 
-struct sys_stat {
-	uint32_t time;
-	uint32_t blocks_read[4];
-	uint32_t blocks_written[4];
-};
-struct proc_stat {
-	uint32_t blocks_read[4];
-	uint32_t blocks_written[4];
-	uint32_t syscall_count[40]; //XXX this should be dynamic based on how many system calls there are
-};
-
 struct process_info {
 	int pid;
 	int exitcode;
 	int exitreason;
-	struct proc_stat stat;
 };
 
 #endif

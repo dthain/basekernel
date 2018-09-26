@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define PROCESS_H
 
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "list.h"
 #include "pagetable.h"
 #include "kobject.h"

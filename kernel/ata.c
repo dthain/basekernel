@@ -231,7 +231,8 @@ int ata_read( int id, void *buffer, int nblocks, int offset )
 	mutex_unlock(&ata_mutex);
 	counters.blocks_read[id] += nblocks;
 	if (current) {
-		current->stat.blocks_read[id] += nblocks;
+		current->stat.blocks_read += nblocks;
+		current->stat.bytes_read += nblocks*ATA_BLOCKSIZE;
 	}
 	return result;
 }
@@ -320,7 +321,8 @@ int atapi_read( int id, void *buffer, int nblocks, int offset )
 	mutex_unlock(&ata_mutex);
 	counters.blocks_read[id] += nblocks;
 	if (current) {
-		current->stat.blocks_read[id] += nblocks;
+		current->stat.blocks_read += nblocks;
+		current->stat.bytes_read += nblocks * ATAPI_BLOCKSIZE;
 	}
 	return result;
 }
@@ -353,7 +355,8 @@ int ata_write( int id, const void *buffer, int nblocks, int offset )
 	mutex_unlock(&ata_mutex);
 	counters.blocks_written[id] += nblocks;
 	if (current) {
-		current->stat.blocks_written[id] += nblocks;
+		current->stat.blocks_written += nblocks;
+		current->stat.bytes_written += nblocks * ATA_BLOCKSIZE;
 	}
 	return result;
 }

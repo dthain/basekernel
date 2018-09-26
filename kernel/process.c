@@ -209,7 +209,7 @@ struct process *process_create()
 	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
-	
+
 	p->state = PROCESS_STATE_READY;
 
 	return p;
@@ -421,7 +421,6 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 		while(p) {
 			struct process *next = (struct process *) p->node.next;
 			if( (pid!=0 && p->pid==pid) || (p->ppid == current->pid ) ) {
-				info->stat = p->stat;
 				info->exitcode = p->exitcode;
 				info->exitreason = p->exitreason;
 				info->pid = p->pid;
