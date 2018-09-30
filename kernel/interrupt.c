@@ -42,9 +42,6 @@ static void unknown_exception( int i, int code )
 	if(i==14) {
 		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed		
 		esp  = ((struct x86_stack *)(current->kstack_top - sizeof(struct x86_stack)))->esp; // stack pointer of the process that raised the exception
-
-		console_printf("esp: %x\n",esp);
-
 		// Check if the requested memory is in the stack or data
 		int data_access = vaddr < current->vm_data_size;
 		int stack_access = vaddr >= esp;
