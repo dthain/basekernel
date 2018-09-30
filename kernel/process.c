@@ -24,6 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
+struct list grave_watcher_list = { 0, 0 }; // parent processes are put here to wait for their children
 struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
 void process_init()
@@ -310,6 +311,12 @@ void process_exit(int code)
 	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
+
+	// On exit, wake up parent off the grave_watcher list
+	if (current->ppid)
+	{
+		process_wakeup_parent(&grave_watcher_list, current->ppid);
+	}
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -334,6 +341,34 @@ void process_reap_all()
 	struct process *p;
 	while((p = (struct process *) list_pop_head(&grave_list))) {
 		process_delete(p);
+	}
+}
+
+/* Wakes up parent off of the corresponding list*/
+void process_wakeup_parent(struct list *q, uint32_t ppid)
+{
+	struct process *top_p;
+	struct process *p;
+	uint32_t first = 1;
+	// Loop through all the waiting parents for the desired parent
+	while((p = (struct process *) list_pop_head(q))) {
+
+		if (first) {
+			top_p = p;
+			first = 0;
+		} else if (top_p == p) {
+			printf("Error: parent not found\n");
+			break;
+		}
+
+		if (p->pid == ppid) {
+			p->state = PROCESS_STATE_READY;
+			list_push_tail(&ready_list, &p->node);
+			break;
+		}
+		// Push p on the back of the list if its not the right parent
+		list_push_tail(q, &p->node);
+
 	}
 }
 
@@ -428,7 +463,7 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 			}
 			p = next;
 		}
-		process_wait(&ready_list);
+		process_wait(&grave_watcher_list);
 		elapsed = clock_diff(start, clock_read());
 		total = elapsed.millis + elapsed.seconds * 1000;
 	} while(total < timeout || timeout < 0);
