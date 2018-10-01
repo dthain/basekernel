@@ -44,7 +44,12 @@ static void unknown_exception( int i, int code )
 		esp  = ((struct x86_stack *)(current->kstack_top - sizeof(struct x86_stack)))->esp; // stack pointer of the process that raised the exception
 		// Check if the requested memory is in the stack or data
 		int data_access = vaddr < current->vm_data_size;
-		int stack_access = vaddr >= esp - 128; // subtract 128 for the red-zone 
+
+		// Subtract 128 from esp because of the red-zone 
+		// According to https:gcc.gnu.org, the red zone is a 128-byte area beyond 
+		// the stack pointer that will not be modified by signal or interrupt handlers 
+		// and therefore can be used for temporary data without adjusting the stack pointer.
+		int stack_access = vaddr >= esp - 128; 
 
 		// Check if the requested memory is already in use
 		int page_already_present = pagetable_getmap(current->pagetable,vaddr,&paddr,0);
