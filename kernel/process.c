@@ -315,7 +315,7 @@ void process_exit(int code)
 	// On exit, wake up parent off the grave_watcher list
 	if (current->ppid)
 	{
-		process_wakeup_parent(&grave_watcher_list, current->ppid);
+		process_wakeup_parent(&grave_watcher_list, current->ppid, current->pid);
 	}
 	process_switch(PROCESS_STATE_GRAVE);
 }
@@ -345,29 +345,28 @@ void process_reap_all()
 }
 
 /* Wakes up parent off of the corresponding list*/
-void process_wakeup_parent(struct list *q, uint32_t ppid)
+void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid)
 {
-	struct process *top_p;
-	struct process *p;
+	struct grave_watcher *top_p;
+	struct grave_watcher *p;
 	uint32_t first = 1;
 	// Loop through all the waiting parents for the desired parent
-	while((p = (struct process *) list_pop_head(q))) {
+	while((p = (struct grave_watcher *) list_pop_head(q))) {
 
 		if (first) {
 			top_p = p;
 			first = 0;
 		} else if (top_p == p) {
-			printf("Error: parent not found\n");
 			break;
 		}
 
-		if (p->pid == ppid) {
-			p->state = PROCESS_STATE_READY;
-			list_push_tail(&ready_list, &p->node);
+		if (p->parent->pid == ppid && p->child_pid == pid) {
+			p->parent->state = PROCESS_STATE_READY;
+			list_push_tail(&ready_list, &(p->parent)->node);
 			break;
 		}
 		// Push p on the back of the list if its not the right parent
-		list_push_tail(q, &p->node);
+		list_push_tail(q, &(p->parent)->node);
 
 	}
 }
