@@ -13,12 +13,12 @@
 #include "buffer.h"
 
 struct device {
-	int (*read) (struct device * d, void *buffer, int size, int offset);
-	int (*write) (struct device * d, const void *buffer, int size, int offset);
-	int unit;
-	int block_size;
-	int alloced;
-	struct buffer *buffer;
+    int (*read) (struct device *d, void *buffer, int size, int offset);
+    int (*write) (struct device *d, const void *buffer, int size, int offset);
+    int unit;
+    int block_size;
+    int alloced;
+    struct buffer *buffer;
 };
 
 void device_init();
