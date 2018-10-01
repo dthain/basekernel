@@ -21,7 +21,7 @@ struct console_device {
 
 struct graphics_color bgcolor = { 0, 0, 0 };
 struct graphics_color fgcolor = { 100, 100, 255 };
-struct console_device console = {{ 0 }};
+struct console_device console = { {0} };
 
 static void console_reset(struct console_device *d)
 {

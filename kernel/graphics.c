@@ -46,7 +46,7 @@ struct graphics *graphics_create(struct graphics *parent)
 	return g;
 }
 
-int graphics_write( struct graphics *g, struct graphics_command *command )
+int graphics_write(struct graphics *g, struct graphics_command *command)
 {
 	int window = -1;
 	char *str;
