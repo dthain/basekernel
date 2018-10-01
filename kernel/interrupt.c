@@ -44,7 +44,7 @@ static void unknown_exception( int i, int code )
 		esp  = ((struct x86_stack *)(current->kstack_top - sizeof(struct x86_stack)))->esp; // stack pointer of the process that raised the exception
 		// Check if the requested memory is in the stack or data
 		int data_access = vaddr < current->vm_data_size;
-		int stack_access = vaddr >= esp;
+		int stack_access = vaddr >= esp - 128; // subtract 128 for the red-zone 
 
 		// Check if the requested memory is already in use
 		int page_already_present = pagetable_getmap(current->pagetable,vaddr,&paddr,0);
