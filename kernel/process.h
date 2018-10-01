@@ -44,6 +44,11 @@ struct process {
 	uint32_t vm_stack_size;
 };
 
+struct grave_watcher {
+	struct process * parent;
+	uint32_t child_pid;
+};
+
 void process_init();
 
 struct process *process_create();
@@ -68,7 +73,7 @@ void process_dump(struct process *p);
 
 void process_wait(struct list *q);
 void process_wakeup(struct list *q);
-void process_wakeup_parent(struct list *q, uint32_t ppid);
+void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid);
 void process_wakeup_all(struct list *q);
 void process_reap_all();
 
