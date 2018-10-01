@@ -229,6 +229,17 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
+int sys_object_set_intent(int fd, int intent)
+{
+	current->ktable[fd]->intent = intent;
+	return 0;
+}
+
+int sys_object_get_intent(int fd)
+{
+	return current->ktable[fd]->intent;
+}
+
 int sys_file_describe(int fd)
 {
 	int fd_type = kobject_get_type(current->ktable[fd]);
@@ -422,6 +433,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_close(a);
 	case SYSCALL_FILE_DESCRIBE:
 		return sys_file_describe(a);
+	case SYSCALL_OBJECT_SET_INTENT:
+		return sys_object_set_intent(a, b);
+	case SYSCALL_OBJECT_GET_INTENT:
+		return sys_object_get_intent(a);
 	case SYSCALL_KEYBOARD_READ_CHAR:
 		return sys_keyboard_read_char();
 	case SYSCALL_SET_BLOCKING:

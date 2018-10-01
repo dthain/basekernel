@@ -29,6 +29,8 @@ int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
+void set_intent(int fd, int intent);
+int get_intent(int fd);
 extern void* sbrk( int a );
 char keyboard_read_char();
 int open_window( int wd, int x, int y, int w, int h );

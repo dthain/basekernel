@@ -27,6 +27,7 @@ struct kobject {
 		KOBJECT_PIPE
 	} type;
 	int refcount;
+	int intent;
 	int offset;
 };
 
@@ -42,5 +43,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);
 int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_type(struct kobject *kobject);
+void kobject_set_intent(struct kobject *kobject, int new_intent);
+int kobject_get_intent(struct kobject *kobject);
 
 #endif
