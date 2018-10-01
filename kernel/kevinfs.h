@@ -12,6 +12,7 @@ See the file LICENSE for details.
 #define FS_BLOCKSIZE 4096
 #define FS_SIZE (1u<<20)
 #define FS_INODE_MAXBLOCKS 10
+#define FS_INDIRECT_MAXBLOCKS FS_BLOCKSIZE / sizeof(uint32_t) - 1
 #define FS_RESERVED_BITS_COUNT 1031
 #define FS_EMPTY_DIR_SIZE 2
 #define FS_EMPTY_DIR_SIZE_BYTES FS_EMPTY_DIR_SIZE * sizeof(struct kevinfs_dir_record)
@@ -44,6 +45,11 @@ struct kevinfs_inode {
 
 	uint32_t direct_addresses[FS_INODE_MAXBLOCKS];
 	uint32_t direct_addresses_len;
+	uint32_t indirect_block_address;
+};
+struct kevinfs_indirect_block {
+	uint32_t indirect_addresses_len;
+	uint32_t indirect_addresses[FS_INDIRECT_MAXBLOCKS];
 };
 
 struct kevinfs_dir_record {

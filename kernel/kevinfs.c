@@ -379,14 +379,6 @@ static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
 	return 0;
 }
 
-static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_no, const uint8_t * buffer)
-{
-	struct kevinfs_volume *kv = kd->kv;
-	struct kevinfs_inode *node = kd->node;
-	struct kevinfs_superblock *super = kv->super;
-	return kevinfs_ata_write_block(kv->device, super->free_block_start + node->direct_addresses[address_no], buffer);
-}
-
 static int kevinfs_read_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t * buffer)
 {
 	bool is_active;
@@ -405,7 +397,37 @@ static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t addres
 	struct kevinfs_dirent *kd = d->private_data;
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
-	return kevinfs_read_data_block(kv, node->direct_addresses[address_no], (uint8_t *) buffer);
+	uint32_t address = 0;
+	if (address_no >= FS_INODE_MAXBLOCKS) {
+		address_no -= FS_INODE_MAXBLOCKS;
+		struct kevinfs_indirect_block indirect_struct = {0};
+		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
+			return -1;
+		}
+		address = indirect_struct.indirect_addresses[address_no];
+	} else {
+		address = node->direct_addresses[address_no];
+	}
+	return kevinfs_read_data_block(kv, address, (uint8_t *) buffer);
+}
+
+static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_no, const uint8_t * buffer)
+{
+	struct kevinfs_volume *kv = kd->kv;
+	struct kevinfs_inode *node = kd->node;
+	struct kevinfs_superblock *super = kv->super;
+	uint32_t address = 0;
+	if (address_no >= FS_INODE_MAXBLOCKS) {
+		address_no -= FS_INODE_MAXBLOCKS;
+		struct kevinfs_indirect_block indirect_struct = {0};
+		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
+			return -1;
+		}
+		address = indirect_struct.indirect_addresses[address_no];
+	} else {
+		address = node->direct_addresses[address_no];
+	}
+	return kevinfs_ata_write_block(kv->device, super->free_block_start + address, buffer);
 }
 
 static int kevinfs_write_block(struct fs_dirent *d, const char *buffer, uint32_t address_no)
@@ -502,9 +524,9 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 	uint32_t i;
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
-	if(num_blocks > FS_INODE_MAXBLOCKS)
-		return -1;
-	for(i = node->direct_addresses_len; i < num_blocks; i++) {
+	// if(num_blocks > FS_INODE_MAXBLOCKS)
+	// 	return -1;
+	for(i = node->direct_addresses_len; i < MIN(num_blocks,FS_INODE_MAXBLOCKS); i++) {
 		if(kevinfs_lookup_available_block(kv, &(node->direct_addresses[i])) < 0) {
 			return -1;
 		}
@@ -515,7 +537,39 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 		}
 		node->direct_addresses[i - 1] = 0;
 	}
-	node->direct_addresses_len = num_blocks;
+	node->direct_addresses_len = MIN(num_blocks,FS_INODE_MAXBLOCKS);
+
+	if (num_blocks > FS_INODE_MAXBLOCKS) {
+		num_blocks -= FS_INODE_MAXBLOCKS;
+		if (num_blocks > FS_INDIRECT_MAXBLOCKS)
+			return -1;
+		struct kevinfs_indirect_block indirect_struct = {0};
+		if (!node->indirect_block_address) {
+			if(kevinfs_lookup_available_block(kv, &(node->indirect_block_address)) < 0) {
+				return -1;
+			}
+		} else {
+			if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
+				return -1;
+			}
+		}
+
+		for(i = indirect_struct.indirect_addresses_len; i < MIN(num_blocks,FS_INDIRECT_MAXBLOCKS); i++) {
+			if(kevinfs_lookup_available_block(kv, &(indirect_struct.indirect_addresses[i])) < 0) {
+				return -1;
+			}
+		}
+		for(i = indirect_struct.indirect_addresses_len; i > num_blocks; i--) {
+			if(kevinfs_delete_data(kv, indirect_struct.indirect_addresses[i - 1]) < 0) {
+				return -1;
+			}
+			indirect_struct.indirect_addresses[i - 1] = 0;
+		}
+		indirect_struct.indirect_addresses_len = num_blocks;
+		if (kevinfs_ata_write_block(kv->device, kv->super->free_block_start + node->indirect_block_address, (uint8_t *) &indirect_struct)) {
+			return -1;
+		}
+	}
 	return 0;
 }
 
