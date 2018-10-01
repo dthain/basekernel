@@ -45,6 +45,7 @@ struct process {
 };
 
 struct grave_watcher {
+	struct list_node node;
 	struct process * parent;
 	uint32_t child_pid;
 };

@@ -366,7 +366,7 @@ void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid)
 			break;
 		}
 		// Push p on the back of the list if its not the right parent
-		list_push_tail(q, &(p->parent)->node);
+		list_push_tail(q, &p->node);
 
 	}
 }
@@ -462,7 +462,13 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 			}
 			p = next;
 		}
-		process_wait(&grave_watcher_list);
+		struct grave_watcher * parent_watcher = kmalloc(sizeof(struct grave_watcher));
+		parent_watcher->parent = current;
+		parent_watcher->child_pid = pid;
+
+		list_push_tail(&grave_watcher_list, &(parent_watcher)->node);
+		process_switch(PROCESS_STATE_BLOCKED);
+
 		elapsed = clock_diff(start, clock_read());
 		total = elapsed.millis + elapsed.seconds * 1000;
 	} while(total < timeout || timeout < 0);
