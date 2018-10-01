@@ -229,6 +229,12 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
+int sys_file_describe(int fd) {
+  // TODO(dsmith47): is this a valid error return for typing kobjects?
+  if (!current->ktable[fd]) return 0;
+  return current->ktable[fd]->type;
+}
+
 int sys_keyboard_read_char()
 {
 	return keyboard_read();
