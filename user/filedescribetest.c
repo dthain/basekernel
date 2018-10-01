@@ -18,8 +18,16 @@ int main(const char **argv, int argc)
 	if(!window_descriptor) {
 		return 1;
 	}
-	type = file_describe(window_descriptor);
-	printf("Window file %d is of type: %d\n", window_descriptor, type);
+
+	// Since a process gets a few files by default, we can allocate one to
+	// get an upper bound and then iterate over all fds.
+	// TODO: decide whether this is adquate for testing or needs a syscall
+	//       for usage in user programs
+	int last_descriptor = window_descriptor;
+	for (int descriptor = 0; descriptor < window_descriptor; descriptor++) {
+		type = file_describe(descriptor);
+		printf("FD: %d is of type: %d\n", descriptor, type);
+	}
 
 	/*
 	 * Presently, the following code returns the same error as the file open
