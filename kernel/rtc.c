@@ -50,22 +50,22 @@ Recommended reading: page 11-15 of the RTC data sheet
 
 /* Register B bits */
 
-#define RTC_B_SET  (1<<7) /* if set, may write new time */
-#define RTC_B_PIE  (1<<6) /* periodic interrupt enabled */
-#define RTC_B_AIE  (1<<5) /* alarm interrupt enabled */
-#define RTC_B_UIE  (1<<4) /* update interrupt enabled */
-#define RTC_B_SQWE (1<<3) /* square wave enabled */
-#define RTC_B_DM   (1<<2) /* data mode: 1=binary 0=decimal */
-#define RTC_B_2412 (1<<1) /* 1=24 hour mode 0=12 hour mode */
-#define RTC_B_DSE  (1<<0) /* daylight savings enable */
+#define RTC_B_SET  (1<<7)	/* if set, may write new time */
+#define RTC_B_PIE  (1<<6)	/* periodic interrupt enabled */
+#define RTC_B_AIE  (1<<5)	/* alarm interrupt enabled */
+#define RTC_B_UIE  (1<<4)	/* update interrupt enabled */
+#define RTC_B_SQWE (1<<3)	/* square wave enabled */
+#define RTC_B_DM   (1<<2)	/* data mode: 1=binary 0=decimal */
+#define RTC_B_2412 (1<<1)	/* 1=24 hour mode 0=12 hour mode */
+#define RTC_B_DSE  (1<<0)	/* daylight savings enable */
 
 /* Register C bits */
 /* Note that reading C is necessary to acknowledge an interrupt */
 
-#define RTC_C_IRQF (1<<7) /* 1=any interrupt pending */
-#define RTC_C_PF   (1<<6) /* periodic interrupt pending */
-#define RTC_C_AF   (1<<5) /* alarm interrupt pending */
-#define RTC_C_UF   (1<<4) /* update interrupt pending */
+#define RTC_C_IRQF (1<<7)	/* 1=any interrupt pending */
+#define RTC_C_PF   (1<<6)	/* periodic interrupt pending */
+#define RTC_C_AF   (1<<5)	/* alarm interrupt pending */
+#define RTC_C_UF   (1<<4)	/* update interrupt pending */
 
 #define SECS_PER_MIN  60
 #define SECS_PER_HOUR 3600
@@ -76,23 +76,23 @@ Recommended reading: page 11-15 of the RTC data sheet
 
 #define LEAP_YEAR(Y) ( (Y>0) && !(Y%4) && ( (Y%100) || !(Y%400) ) )
 
-static const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31};
+static const uint8_t monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-static uint8_t rtc_bcd_to_binary( uint8_t bcd )
+static uint8_t rtc_bcd_to_binary(uint8_t bcd)
 {
-	return (bcd&0x0f) + (bcd>>4)*10;
+	return (bcd & 0x0f) + (bcd >> 4) * 10;
 }
 
-static uint8_t rtc_read_port( uint16_t address )
+static uint8_t rtc_read_port(uint16_t address)
 {
-	outb_slow(address,RTC_ADDRESS_PORT);
+	outb_slow(address, RTC_ADDRESS_PORT);
 	return inb_slow(RTC_DATA_PORT);
 }
 
-static void rtc_write_port( uint8_t value, uint16_t address )
+static void rtc_write_port(uint8_t value, uint16_t address)
 {
-	outb_slow(address,RTC_ADDRESS_PORT);
-	outb_slow(value,RTC_DATA_PORT);
+	outb_slow(address, RTC_ADDRESS_PORT);
+	outb_slow(value, RTC_DATA_PORT);
 }
 
 static struct rtc_time cached_time;
@@ -101,7 +101,7 @@ static void rtc_fetch_time()
 {
 	struct rtc_time t;
 
-	int addpm=0;
+	int addpm = 0;
 
 	do {
 		t.second = rtc_read_port(RTC_SECONDS);
@@ -112,7 +112,7 @@ static void rtc_fetch_time()
 		t.year = rtc_read_port(RTC_YEAR);
 	} while(t.second != rtc_read_port(RTC_SECONDS));
 
-	if(t.hour&0x80) {
+	if(t.hour & 0x80) {
 		addpm = 1;
 		t.hour &= 0x7f;
 	} else {
@@ -121,13 +121,14 @@ static void rtc_fetch_time()
 
 	t.second = rtc_bcd_to_binary(t.second);
 	t.minute = rtc_bcd_to_binary(t.minute);
-	t.hour   = rtc_bcd_to_binary(t.hour);
-	if(addpm) t.hour += 12;
-	t.day    = rtc_bcd_to_binary(t.day);
-	t.month  = rtc_bcd_to_binary(t.month);
-	t.year   = rtc_bcd_to_binary(t.year);
+	t.hour = rtc_bcd_to_binary(t.hour);
+	if(addpm)
+		t.hour += 12;
+	t.day = rtc_bcd_to_binary(t.day);
+	t.month = rtc_bcd_to_binary(t.month);
+	t.year = rtc_bcd_to_binary(t.year);
 
-	if(t.year>=70) {
+	if(t.year >= 70) {
 		t.year += 1900;
 	} else {
 		t.year += 2000;
@@ -136,7 +137,7 @@ static void rtc_fetch_time()
 	cached_time = t;
 }
 
-static void rtc_interrupt_handler( int intr, int code )
+static void rtc_interrupt_handler(int intr, int code)
 {
 	rtc_fetch_time();
 	rtc_read_port(RTC_REGISTER_C);
@@ -148,17 +149,17 @@ void rtc_init()
 
 	status = rtc_read_port(RTC_REGISTER_B);
 	status |= RTC_B_UIE;
-	rtc_write_port(status,RTC_REGISTER_B);
+	rtc_write_port(status, RTC_REGISTER_B);
 
-	interrupt_register(40,rtc_interrupt_handler);
+	interrupt_register(40, rtc_interrupt_handler);
 	interrupt_enable(40);
 
 	console_printf("rtc: ready\n");
 }
 
-void rtc_read( struct rtc_time *tout )
+void rtc_read(struct rtc_time *tout)
 {
-	memcpy(tout,&cached_time,sizeof(cached_time));
+	memcpy(tout, &cached_time, sizeof(cached_time));
 }
 
 uint32_t rtc_time_to_timestamp(struct rtc_time *t)
@@ -167,20 +168,20 @@ uint32_t rtc_time_to_timestamp(struct rtc_time *t)
 	uint32_t seconds;
 
 	seconds = (t->year - 1970) * (SECS_PER_DAY * 365);
-	for (i = 1970; i < t->year; i++) {
-	  if (LEAP_YEAR(i)) {
-	    seconds +=  SECS_PER_DAY;
-	  }
+	for(i = 1970; i < t->year; i++) {
+		if(LEAP_YEAR(i)) {
+			seconds += SECS_PER_DAY;
+		}
 	}
 
-	for (i = 1; i < t->month; i++) {
-	  if ( (i == 2) && LEAP_YEAR(t->year)) {
-	    seconds += SECS_PER_DAY * 29;
-	  } else {
-	    seconds += SECS_PER_DAY * monthDays[i-1];
-	  }
+	for(i = 1; i < t->month; i++) {
+		if((i == 2) && LEAP_YEAR(t->year)) {
+			seconds += SECS_PER_DAY * 29;
+		} else {
+			seconds += SECS_PER_DAY * monthDays[i - 1];
+		}
 	}
-	seconds += (t->day-1) * SECS_PER_DAY;
+	seconds += (t->day - 1) * SECS_PER_DAY;
 	seconds += t->hour * SECS_PER_HOUR;
 	seconds += t->minute * SECS_PER_MIN;
 	seconds += t->second;

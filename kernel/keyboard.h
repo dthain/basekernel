@@ -9,9 +9,9 @@ See the file LICENSE for details.
 
 #include "device.h"
 
-struct device* keyboard_get();
+struct device *keyboard_get();
 char keyboard_read();
 void keyboard_init();
-int keyboard_device_read(struct device* d, void* dest, int size, int offset);
+int keyboard_device_read(struct device *d, void *dest, int size, int offset);
 
 #endif

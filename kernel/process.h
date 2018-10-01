@@ -50,14 +50,14 @@ struct process *process_create();
 void process_delete(struct process *p);
 void process_launch(struct process *p);
 void process_pass_arguments(struct process *p, const char **argv, int argc);
-void process_inherit(struct process *parent, struct process *child );
+void process_inherit(struct process *parent, struct process *child);
 
-void process_stack_reset( struct process *p, unsigned size );
-void process_kstack_reset( struct process *p, unsigned entry_point );
-void process_kstack_copy( struct process *parent, struct process * child );
+void process_stack_reset(struct process *p, unsigned size);
+void process_kstack_reset(struct process *p, unsigned entry_point);
+void process_kstack_copy(struct process *parent, struct process *child);
 
-int  process_data_size_set( struct process *p, unsigned size );
-int  process_stack_size_set( struct process *p, unsigned size );
+int process_data_size_set(struct process *p, unsigned size);
+int process_stack_size_set(struct process *p, unsigned size);
 
 int process_available_fd(struct process *p);
 
@@ -72,7 +72,7 @@ void process_wakeup_all(struct list *q);
 void process_reap_all();
 
 int process_kill(uint32_t pid);
-int process_wait_child( uint32_t pid, struct process_info *info, int timeout);
+int process_wait_child(uint32_t pid, struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
 
 extern struct process *current;

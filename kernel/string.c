@@ -135,25 +135,28 @@ char *strtok(char *s, const char *delim)
 	return word;
 }
 
-char * strdup(const char * s) {
-	char * new = kmalloc(strlen(s) + 1);
-	if (new)
+char *strdup(const char *s)
+{
+	char *new = kmalloc(strlen(s) + 1);
+	if(new)
 		strcpy(new, s);
 	return new;
 }
 
-void strtoupper(char * name) {
-	while (*name) {
-		if (*name >= 'a' && *name <= 'z') {
+void strtoupper(char *name)
+{
+	while(*name) {
+		if(*name >= 'a' && *name <= 'z') {
 			*name -= 'a' - 'A';
 		}
 		name++;
 	}
 }
 
-void strtolower(char * name) {
-	while (*name) {
-		if (*name >= 'A' && *name <= 'Z') {
+void strtolower(char *name)
+{
+	while(*name) {
+		if(*name >= 'A' && *name <= 'Z') {
 			*name += 'a' - 'A';
 		}
 		name++;
@@ -197,8 +200,8 @@ void memcpy(void *vd, const void *vs, unsigned length)
 }
 
 // XXX these are defined by the console module
-extern void printf_putstring( const char *str );
-extern void printf_putchar( char c );
+extern void printf_putstring(const char *str);
+extern void printf_putchar(char c);
 
 static void printf_puthexdigit(uint8_t i)
 {

@@ -44,11 +44,11 @@ int kernel_main()
 	serial_init();
 #endif
 
-	console_printf("video: %d x %d\n",video_xres,video_yres,video_xbytes);
-	console_printf("kernel: %d bytes\n",kernel_size);
+	console_printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
+	console_printf("kernel: %d bytes\n", kernel_size);
 
 	memory_init();
-	kmalloc_init((char*)KMALLOC_START,KMALLOC_LENGTH);
+	kmalloc_init((char *) KMALLOC_START, KMALLOC_LENGTH);
 	interrupt_init();
 	device_init();
 	rtc_init();
@@ -63,7 +63,8 @@ int kernel_main()
 	console_printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
 
-	while(1) console_putchar(keyboard_read());
+	while(1)
+		console_putchar(keyboard_read());
 
 	return 0;
 }

@@ -16,8 +16,8 @@
 #define ATA_DEVICE_COUNT   4
 #define ATAPI_DEVICE_COUNT 4
 
-static struct device ata_devices[ATA_DEVICE_COUNT] = {{ 0 }};
-static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {{ 0 }};
+static struct device ata_devices[ATA_DEVICE_COUNT] = { {0} };
+static struct device atapi_devices[ATAPI_DEVICE_COUNT] = { {0} };
 
 int ata_device_read(struct device *d, void *buffer, int nblocks, int offset)
 {
