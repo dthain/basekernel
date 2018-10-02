@@ -63,6 +63,7 @@ static void unknown_exception( int i, int code )
 			process_exit(0);
 		} else {
 			// XXX update process->vm_stack_size when growing the stack.
+			console_printf("Interrupt raised, vaddr: %x esp: %x valid access\n", vaddr, esp);
 			pagetable_alloc(current->pagetable,vaddr,PAGE_SIZE,PAGE_FLAG_USER|PAGE_FLAG_READWRITE|PAGE_FLAG_CLEAR);
 			return;
 		}
