@@ -49,7 +49,7 @@ void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t
 void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
 void graphics_char(struct graphics *g, int32_t x, int32_t y, char c);
 
-int graphics_write( struct graphics *g, struct graphics_command *command);
+int graphics_write(struct graphics *g, struct graphics_command *command);
 
 extern struct graphics graphics_root;
 #endif

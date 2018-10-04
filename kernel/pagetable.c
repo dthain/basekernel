@@ -50,7 +50,7 @@ void pagetable_init(struct pagetable *p)
 	}
 }
 
-int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr, int *flags )
+int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr, int *flags)
 {
 	struct pagetable *q;
 	struct pageentry *e;
@@ -72,9 +72,12 @@ int pagetable_getmap(struct pagetable *p, unsigned vaddr, unsigned *paddr, int *
 
 	if(flags) {
 		*flags = 0;
-		if(e->readwrite)  *flags |= PAGE_FLAG_READWRITE;
-		if(e->avail&0x01) *flags |= PAGE_FLAG_ALLOC;
-		if(!e->user)      *flags |= PAGE_FLAG_KERNEL;
+		if(e->readwrite)
+			*flags |= PAGE_FLAG_READWRITE;
+		if(e->avail & 0x01)
+			*flags |= PAGE_FLAG_ALLOC;
+		if(!e->user)
+			*flags |= PAGE_FLAG_KERNEL;
 	}
 
 	return 1;
@@ -89,7 +92,7 @@ int pagetable_map(struct pagetable *p, unsigned vaddr, unsigned paddr, int flags
 	unsigned b = (vaddr >> 12) & 0x3ff;
 
 	if(flags & PAGE_FLAG_ALLOC) {
-		paddr = (unsigned) memory_alloc_page(flags&PAGE_FLAG_CLEAR);
+		paddr = (unsigned) memory_alloc_page(flags & PAGE_FLAG_CLEAR);
 		if(!paddr)
 			return 0;
 	}
@@ -194,7 +197,7 @@ void pagetable_alloc(struct pagetable *p, unsigned vaddr, unsigned length, int f
 	}
 }
 
-void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length )
+void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length)
 {
 	unsigned npages = length / PAGE_SIZE;
 
@@ -207,8 +210,9 @@ void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length )
 		unsigned paddr;
 		int flags;
 		if(pagetable_getmap(p, vaddr, &paddr, &flags)) {
-			pagetable_unmap(p,vaddr);
-			if(flags&PAGE_FLAG_ALLOC) memory_free_page((void*)paddr);
+			pagetable_unmap(p, vaddr);
+			if(flags & PAGE_FLAG_ALLOC)
+				memory_free_page((void *) paddr);
 		}
 		vaddr += PAGE_SIZE;
 		npages--;
@@ -218,7 +222,7 @@ void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length )
 struct pagetable *pagetable_load(struct pagetable *p)
 {
 	struct pagetable *oldp;
-	asm("mov %%cr3, %0":"=r"(oldp));
+      asm("mov %%cr3, %0":"=r"(oldp));
 	asm("mov %0, %%cr3"::"r"(p));
 	return oldp;
 }

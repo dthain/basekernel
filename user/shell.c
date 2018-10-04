@@ -4,8 +4,6 @@
 #include "library/user-io.h"
 #include "kernel/ascii.h"
 
-int has_ns = 0;
-
 void print_directory(char *d, int length)
 {
 	while(length > 0) {
@@ -24,10 +22,6 @@ int process_command(char *line)
 		if(pch)
 			printf("%s\n", pch);
 	} else if(pch && !strcmp(pch, "start")) {
-		if(!has_ns) {
-			printf("Error, no namespace.\n");
-			return 1;
-		}
 		pch = strtok(0, " ");
 		if(pch) {
 			const char *argv[20];
@@ -46,10 +40,6 @@ int process_command(char *line)
 		} else
 			printf("start: missing argument\n");
 	} else if(pch && !strcmp(pch, "run")) {
-		if(!has_ns) {
-			printf("Error, no namespace.\n");
-			return 1;
-		}
 		pch = strtok(0, " ");
 		if(pch) {
 			const char *argv[20];
@@ -96,25 +86,17 @@ int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			struct process_info info;
-			if(process_wait(&info, 5000)>0) {
+			if(process_wait(&info, 5000) > 0) {
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 			} else {
 				printf("wait: timeout\n");
 			}
 		}
 	} else if(pch && !strcmp(pch, "list")) {
-		if(!has_ns) {
-			printf("Error, no namespace.\n");
-			return 1;
-		}
 		char buffer[1024];
 		int length = readdir(".", buffer, 1024);
 		print_directory(buffer, length);
 	} else if(pch && !strcmp(pch, "chdir")) {
-		if(!has_ns) {
-			printf("Error, no namespace.\n");
-			return 1;
-		}
 		char *path = strtok(0, " ");
 		if(!path) {
 			printf("Incorrect arguments, usage: chdir <path>\n");
@@ -122,8 +104,7 @@ int process_command(char *line)
 		}
 		chdir(path);
 	} else if(pch && !strcmp(pch, "help")) {
-		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type> <ns_name>", "chdir <path>", "ns_change <ns_name>", "list", "start <path>", "kill <pid>", "reap <pid>",
-		       "wait", "help", "exit");
+		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type>", "list", "start <path>", "kill <pid>", "reap <pid>", "wait", "help", "exit");
 	} else if(pch && !strcmp(pch, "exit")) {
 		return -1;
 	} else if(pch) {

@@ -16,8 +16,8 @@
 #define ATA_DEVICE_COUNT   4
 #define ATAPI_DEVICE_COUNT 4
 
-static struct device ata_devices[ATA_DEVICE_COUNT] = {{ 0 }};
-static struct device atapi_devices[ATAPI_DEVICE_COUNT] = {{ 0 }};
+static struct device ata_devices[ATA_DEVICE_COUNT] = { {0} };
+static struct device atapi_devices[ATAPI_DEVICE_COUNT] = { {0} };
 
 int ata_device_read(struct device *d, void *buffer, int nblocks, int offset)
 {
@@ -100,14 +100,5 @@ int device_write(struct device *d, const void *buffer, int size, int offset)
 		return ret;
 	} else {
 		return -1;
-	}
-}
-
-struct device *device_subset(struct device *d, int dx0, int dy0, int dx1, int dy1)
-{
-	if(d->subset) {
-		return d->subset(d, dx0, dy0, dx1, dy1);
-	} else {
-		return 0;
 	}
 }
