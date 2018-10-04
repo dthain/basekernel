@@ -8,7 +8,7 @@ all: user-start.o baselib.a
 	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
 
 baselib.a: ${LIBRARY_OBJECTS}
-	ar rv $@ ${LIBRARY_OBJECTS}
+	${AR} rv $@ ${LIBRARY_OBJECTS}
 
 clean:
 	rm -rf *.a *.o

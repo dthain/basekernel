@@ -25,11 +25,13 @@ int process_sleep(unsigned int ms);
 int open(const char *path, int mode, int flags);
 int dup(int fd1, int fd2);
 int read(int fd, void *data, int length);
+
 int read_nonblock(int fd, void *data, int length);
 int write(int fd, void *data, int length);
 int lseek(int fd, int offset, int whence);
 int close(int fd);
 extern void *sbrk(int a);
+
 int open_window(int wd, int x, int y, int w, int h);
 int set_blocking(int fd, int b);
 int console_open(int fd);
