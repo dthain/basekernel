@@ -57,18 +57,15 @@ struct device *device_open(char *name, int unit)
 	if(!strcmp("ATA", name)) {
 		if(unit >= 0 && unit < ATA_DEVICE_COUNT) {
 			return &ata_devices[unit];
-		} else {
-			return 0;
 		}
+		return 0;
 	} else if(!strcmp("ATAPI", name)) {
 		if(unit >= 0 && unit < ATAPI_DEVICE_COUNT) {
 			return &atapi_devices[unit];
-		} else {
-			return 0;
 		}
-	} else {
 		return 0;
 	}
+	return 0;
 }
 
 int device_read(struct device *d, void *buffer, int size, int offset)
@@ -79,12 +76,24 @@ int device_read(struct device *d, void *buffer, int size, int offset)
 			if(ret == 1 && d->buffer)
 				buffer_add(d->buffer, offset, buffer);
 			return 1;
-		} else {
+		}
+		return 1;
+	}
+	return -1;
+}
+
+int device_read_nonblock(struct device *d, void *buffer, int size, int offset)
+{
+	if(d->read_nonblock) {
+		if(!d->buffer || buffer_read(d->buffer, offset, buffer) < 0) {
+			int ret = d->read_nonblock(d, buffer, size, offset);
+			if(ret == 1 && d->buffer)
+				buffer_add(d->buffer, offset, buffer);
 			return 1;
 		}
-	} else {
-		return -1;
+		return 1;
 	}
+	return -1;
 }
 
 int device_write(struct device *d, const void *buffer, int size, int offset)
@@ -98,7 +107,6 @@ int device_write(struct device *d, const void *buffer, int size, int offset)
 			buffer_add(d->buffer, offset, buffer);
 		}
 		return ret;
-	} else {
-		return -1;
 	}
+	return -1;
 }

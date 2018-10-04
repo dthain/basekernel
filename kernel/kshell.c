@@ -234,7 +234,7 @@ int kshell_readline(char *line, int length)
 {
 	int i = 0;
 	while(i < (length - 1)) {
-		char c = keyboard_read();
+		char c = keyboard_read(0);
 		if(c == ASCII_CR) {
 			line[i] = 0;
 			printf("\n");

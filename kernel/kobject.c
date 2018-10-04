@@ -73,6 +73,23 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 	return 0;
 }
 
+int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
+{
+	switch (kobject->type) {
+	case KOBJECT_INVALID:
+		return 0;
+	case KOBJECT_GRAPHICS:
+		return 0;
+	case KOBJECT_FILE:
+		return 0;
+	case KOBJECT_PIPE:
+		return 0;
+	case KOBJECT_DEVICE:
+		return device_read_nonblock(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
+	}
+	return 0;
+}
+
 int kobject_write(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
@@ -130,6 +147,7 @@ int kobject_close(struct kobject *kobject)
 	return 0;
 }
 
+
 int kobject_set_blocking(struct kobject *kobject, int b)
 {
 	switch (kobject->type) {
@@ -146,3 +164,4 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	}
 	return 0;
 }
+

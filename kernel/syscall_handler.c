@@ -229,11 +229,6 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
-int sys_keyboard_read_char()
-{
-	return keyboard_read();
-}
-
 int sys_dup(int fd1, int fd2)
 {
 	if(fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS) {
@@ -257,6 +252,13 @@ int sys_read(int fd, void *data, int length)
 	struct kobject *p = current->ktable[fd];
 	return kobject_read(p, data, length);
 }
+
+int sys_read_nonblock(int fd, void *data, int length)
+{
+	struct kobject *p = current->ktable[fd];
+	return kobject_read_nonblock(p, data, length);
+}
+
 
 int sys_write(int fd, void *data, int length)
 {
@@ -406,14 +408,14 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_dup(a, b);
 	case SYSCALL_READ:
 		return sys_read(a, (void *) b, c);
+	case SYSCALL_READ_NONBLOCK:
+		return sys_read_nonblock(a, (void *) b, c);
 	case SYSCALL_WRITE:
 		return sys_write(a, (void *) b, c);
 	case SYSCALL_LSEEK:
 		return sys_lseek(a, b, c);
 	case SYSCALL_CLOSE:
 		return sys_close(a);
-	case SYSCALL_KEYBOARD_READ_CHAR:
-		return sys_keyboard_read_char();
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

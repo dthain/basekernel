@@ -37,6 +37,12 @@ int read(int fd, void *data, int length)
 	return syscall(SYSCALL_READ, fd, (uint32_t) data, length, 0, 0);
 }
 
+int read_nonblock(int fd, void *data, int length)
+{
+	return syscall(SYSCALL_READ_NONBLOCK, fd, (uint32_t) data, length, 0, 0);
+}
+
+
 int write(int fd, void *data, int length)
 {
 	return syscall(SYSCALL_WRITE, fd, (uint32_t) data, length, 0, 0);
@@ -55,11 +61,6 @@ int close(int fd)
 extern void *sbrk(int a)
 {
 	return (void *) syscall(SYSCALL_SBRK, a, 0, 0, 0, 0);
-}
-
-int keyboard_read_char()
-{
-	return syscall(SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0);
 }
 
 int pipe_open()
