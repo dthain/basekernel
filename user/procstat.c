@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "library/syscalls.h"
 #include "kernel/syscall.h"
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "library/string.h"
 
 int main(int argc, char const *argv[]) {
@@ -28,8 +28,8 @@ int main(int argc, char const *argv[]) {
 	struct process_info info;
 	process_wait(&info, -1);
 	unsigned int timeElapsed = gettimeofday() - startTime;
-	struct proc_stat stat;
-	process_stat(&stat, pid);
+	struct proc_stats stat;
+	process_stats(&stat, pid);
 	printf("Process %u exited with status %d\n", info.pid, info.exitcode);
 	printf("Time elapsed: %d:%d:%d\n", timeElapsed/3600, (timeElapsed%3600)/60, timeElapsed % 60);
 	printf("%d blocks read, %d blocks written\n", stat.blocks_read, stat.blocks_written);

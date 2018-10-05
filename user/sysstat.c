@@ -8,8 +8,8 @@ See the file LICENSE for details.
 #include "library/string.h"
 
 int main(int argc, char const *argv[]) {
-	struct sys_stat s = {0};
-	if (sys_stat(&s)) {
+	struct sys_stats s = {0};
+	if (sys_stats(&s)) {
 		return 1;
 	}
 

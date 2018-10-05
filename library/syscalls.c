@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "kernel/syscall.h"
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "kernel/gfxstream.h"
 
 void debug(const char *str)
@@ -158,12 +158,12 @@ int process_wait(struct process_info *info, int timeout)
 	return syscall(SYSCALL_PROCESS_WAIT, (uint32_t) info, timeout, 0, 0, 0);
 }
 
-int sys_stat(struct sys_stat *s)
+int sys_stats(struct sys_stats *s)
 {
-	return syscall(SYSCALL_SYS_STAT, (uint32_t) s, 0, 0, 0, 0);
+	return syscall(SYSCALL_SYS_STATS, (uint32_t) s, 0, 0, 0, 0);
 }
 
-int process_stat(struct proc_stat *s, unsigned int pid)
+int process_stats(struct proc_stats *s, unsigned int pid)
 {
-	return syscall(SYSCALL_PROCESS_STAT, (uint32_t) s, pid, 0, 0, 0);
+	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
 }
