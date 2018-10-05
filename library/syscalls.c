@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "kernel/syscall.h"
+#include "kernel/stat.h"
 #include "kernel/gfxstream.h"
 
 void debug(const char *str)

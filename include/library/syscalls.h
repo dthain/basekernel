@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define SYSCALLS_H
 
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "kernel/gfxstream.h"
 
 void debug( const char *str );
