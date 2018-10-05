@@ -205,7 +205,6 @@ static int ata_read_unlocked(int id, void *buffer, int nblocks, int offset)
 	if(!ata_begin(id, ATA_COMMAND_READ, nblocks, offset))
 		return 0;
 
-
 	// XXX On fast virtual hardware, waiting for the interrupt
 	// doesn't work b/c it has already arrived before we get here.
 	// For now, busy wait until a fix is in place.
@@ -378,7 +377,8 @@ static int ata_identify(int id, int command, void *buffer)
 	return result;
 }
 
-int ata_probe(int id, int *nblocks, int *blocksize, char *name)
+
+int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 {
 	uint16_t buffer[256];
 	char *cbuffer = (char *) buffer;
@@ -426,20 +426,23 @@ int ata_probe(int id, int *nblocks, int *blocksize, char *name)
 	cbuffer[256] = 0;
 
 	/* Vendor supplied name is at byte 54 */
-
-	strcpy(name, &cbuffer[54]);
+	strcpy(name,&cbuffer[54]);
 	name[40] = 0;
 
-	console_printf("ata unit %d: %s %d MB %s\n", id, (*blocksize) == 512 ? "ata disk" : "atapi cdrom", (*nblocks) * (*blocksize) / 1024 / 1024, name);
+	/* Get disk size in megabytes*/
+	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
+	console_printf("ata unit %d: %s %u blocks %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
 	return 1;
 }
 
 void ata_init()
 {
 	int i;
-	int nblocks;
+
+	unsigned int nblocks;
 	int blocksize = 0;
+
 	char longname[256];
 
 	console_printf("ata: setting up interrupts\n");

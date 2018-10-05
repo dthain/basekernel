@@ -100,10 +100,12 @@ struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
 static int kevinfs_ata_write_superblock(struct device *device)
 {
 	uint8_t wbuffer[FS_BLOCKSIZE];
-	int num_blocks;
+	uint32_t num_blocks;
 	int ata_blocksize;
-	uint32_t superblock_num_blocks, available_blocks, free_blocks, total_inodes, total_bits, inode_sector_size, inode_bit_sector_size, data_bit_sector_size;
-	if(!ata_probe(device->unit, &num_blocks, &ata_blocksize, 0) || num_blocks == 0)
+	uint32_t superblock_num_blocks,  available_blocks, free_blocks,
+		 total_inodes, total_inode_bitmap_bytes, total_block_bitmap_bytes, inode_sector_size,
+		 inode_bit_sector_size, data_bit_sector_size;
+	if (!ata_probe(device->unit, &num_blocks, &ata_blocksize, 0) || num_blocks == 0)
 		return -1;
 
 	char zeros[ata_blocksize];
@@ -115,10 +117,11 @@ static int kevinfs_ata_write_superblock(struct device *device)
 				  )
 		);
 	total_inodes = free_blocks / 8;
-	total_bits = free_blocks;
+	total_inode_bitmap_bytes = CONTAINERS(total_inodes, 8);
+	total_block_bitmap_bytes = CONTAINERS(free_blocks, 8);
 	inode_sector_size = CONTAINERS((total_inodes * sizeof(struct kevinfs_inode)), FS_BLOCKSIZE);
-	inode_bit_sector_size = CONTAINERS(total_bits, FS_BLOCKSIZE);
-	data_bit_sector_size = CONTAINERS(total_bits, FS_BLOCKSIZE);
+	inode_bit_sector_size = CONTAINERS(total_inode_bitmap_bytes, FS_BLOCKSIZE);
+	data_bit_sector_size = CONTAINERS(total_block_bitmap_bytes, FS_BLOCKSIZE);
 
 	super.magic = FS_MAGIC;
 	super.blocksize = FS_BLOCKSIZE;
@@ -131,12 +134,22 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	super.num_free_blocks = free_blocks;
 
 	memcpy(wbuffer, &super, sizeof(super));
-
-	uint32_t i;
-	for(i = super.inode_bitmap_start; i < super.free_block_start; i++) {
+	uint32_t counter = 0;
+	printf("Writing inode bitmap...\n");
+	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
 		if(!device_write(device, zeros, 1, i))
 			return -1;
+		counter++;
 	}
+	printf("%u blocks written\n", counter);
+	counter = 0;
+	printf("Writing free block bitmap...\n");
+	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
+		if(!device_write(device, zeros, 1, i))
+			return -1;
+		counter++;
+	}
+	printf("%u blocks written\n", counter);
 	return kevinfs_ata_write_block(device, 0, wbuffer);
 }
 
