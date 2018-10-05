@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define SYSCALLS_H
 
 #include "kernel/types.h"
+#include "kernel/stats.h"
 #include "kernel/gfxstream.h"
 
 void debug(const char *str);
@@ -41,6 +42,8 @@ int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
 int pwd(char *buffer);
 int chdir(const char *path);
+int sys_stats(struct sys_stats *s);
+int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
 
 #endif

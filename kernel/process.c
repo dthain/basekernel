@@ -477,3 +477,11 @@ void process_pass_arguments(struct process *p, const char **argv, int argc)
 	*((int *) (ebp - 8)) = argc;
 	s->esp -= (esp - ebp) + 16;
 }
+
+int process_stats(int pid, struct proc_stats *s) {
+	if (pid > PROCESS_MAX_PID || !process_table[pid]) {
+		return 1;
+	}
+ *s = process_table[pid]->stats;
+ return 0;
+}

@@ -24,6 +24,7 @@ See the file LICENSE for details.
 #include "elf.h"
 #include "kmalloc.h"
 #include "memory.h"
+#include "ata.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -55,7 +56,7 @@ int sys_sbrk(int delta)
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
-the memory state, then loading 
+the memory state, then loading
 */
 
 int sys_process_run(const char *path, const char **argv, int argc)
@@ -375,8 +376,27 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
+int sys_sys_stats(struct sys_stats *s) {
+	struct rtc_time t = {0};
+	rtc_read(&t);
+	s->time = rtc_time_to_timestamp(&t) - boottime;
+	struct ata_count a = ata_stats();
+	for (int i = 0; i < 4; i++) {
+		s->blocks_written[i] = a.blocks_written[i];
+		s->blocks_read[i] = a.blocks_read[i];
+	}
+	return 0;
+}
+
+int sys_process_stats(struct proc_stats *s, int pid) {
+	return process_stats(pid, s);
+}
+
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
+	if ((n < MAX_SYSCALL) && current) {
+		current->stats.syscall_count[n]++;
+	}
 	switch (n) {
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
@@ -438,6 +458,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_rmdir((const char *) a);
 	case SYSCALL_PWD:
 		return sys_pwd((char *) a);
+	case SYSCALL_SYS_STATS:
+		return sys_sys_stats((struct sys_stats *) a);
+	case SYSCALL_PROCESS_STATS:
+		return sys_process_stats((struct proc_stats *) a, b);
 	default:
 		return -1;
 	}
