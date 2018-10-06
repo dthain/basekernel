@@ -9,7 +9,7 @@ See the file LICENSE for details.
 
 #define FS_FILENAME_MAXLEN 255
 #define FS_MAGIC 0x1209
-#define FS_BLOCKSIZE 512
+#define FS_BLOCKSIZE 4096
 #define FS_SIZE (1u<<20)
 #define FS_INODE_MAXBLOCKS 10
 #define FS_RESERVED_BITS_COUNT 1031

@@ -28,6 +28,7 @@ and have the QEMU virtual machine installed:
 
 ```
 git clone https://github.com/dthain/basekernel
+cd basekernel
 make
 qemu-system-i386 -cdrom basekernel.iso
 ```

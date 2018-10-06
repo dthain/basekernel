@@ -169,8 +169,8 @@ void memcpy(void *vd, const void *vs, unsigned length)
 	}
 }
 
-extern void printf_putstring( const char *str );
-extern void printf_putchar( char c );
+extern void printf_putstring(const char *str);
+extern void printf_putchar(char c);
 
 static void printf_puthexdigit(uint8_t i)
 {

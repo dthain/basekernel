@@ -21,21 +21,22 @@ int main(const char *argv[], int argc)
 	printf("\n");
 
 	int n = 4096;
-	printf("adding up %d values...\n",n);
+	printf("adding up %d values...\n", n);
 
 	int *big = malloc(n * sizeof(int));
-	if(!big) printf("malloc failed!\n");
+	if(!big)
+		printf("malloc failed!\n");
 
-	for(i=0; i<n; i++ ) {
+	for(i = 0; i < n; i++) {
 		big[i] = i;
 	}
 	int sum = 0;
-	for(i = 0; i<n; ++i) {
+	for(i = 0; i < n; ++i) {
 		sum += big[i];
 	}
 	free(big);
 
-	printf("The sum of 0 to %d is %d\n",n,sum);
+	printf("The sum of 0 to %d is %d\n", n, sum);
 
 	return 0;
 }
