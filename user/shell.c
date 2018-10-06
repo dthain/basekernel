@@ -86,7 +86,7 @@ int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			struct process_info info;
-			if(process_wait(&info, 5000)>0) {
+			if(process_wait(&info, 5000) > 0) {
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 			} else {
 				printf("wait: timeout\n");
@@ -104,8 +104,7 @@ int process_command(char *line)
 		}
 		chdir(path);
 	} else if(pch && !strcmp(pch, "help")) {
-		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type>", "list", "start <path>", "kill <pid>", "reap <pid>",
-		       "wait", "help", "exit");
+		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type>", "list", "start <path>", "kill <pid>", "reap <pid>", "wait", "help", "exit");
 	} else if(pch && !strcmp(pch, "exit")) {
 		return -1;
 	} else if(pch) {
@@ -123,7 +122,7 @@ int main(char **argv, int argc)
 	printf("u$ ");
 	while(1) {
 		flush();
-		c = keyboard_read_char();
+		read(0, &c, 1);
 		if(pos == line && c == ASCII_BS)
 			continue;
 		printf_putchar(c);

@@ -15,7 +15,7 @@ struct mouse_event {
 	int32_t y;
 };
 
-void mouse_read( struct mouse_event *e );
+void mouse_read(struct mouse_event *e);
 void mouse_init();
 
 #endif

@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "kernel/syscall.h"
+#include "kernel/stats.h"
 #include "kernel/gfxstream.h"
 
 void debug(const char *str)
@@ -37,6 +38,12 @@ int read(int fd, void *data, int length)
 	return syscall(SYSCALL_READ, fd, (uint32_t) data, length, 0, 0);
 }
 
+int read_nonblock(int fd, void *data, int length)
+{
+	return syscall(SYSCALL_READ_NONBLOCK, fd, (uint32_t) data, length, 0, 0);
+}
+
+
 int write(int fd, void *data, int length)
 {
 	return syscall(SYSCALL_WRITE, fd, (uint32_t) data, length, 0, 0);
@@ -57,19 +64,14 @@ extern void *sbrk(int a)
 	return (void *) syscall(SYSCALL_SBRK, a, 0, 0, 0, 0);
 }
 
-int keyboard_read_char()
-{
-	return syscall(SYSCALL_KEYBOARD_READ_CHAR, 0, 0, 0, 0, 0);
-}
-
 int pipe_open()
 {
-        return syscall( SYSCALL_OPEN_PIPE, 0, 0, 0, 0, 0 );
+	return syscall(SYSCALL_OPEN_PIPE, 0, 0, 0, 0, 0);
 }
 
-int set_blocking( int fd, int b )
+int set_blocking(int fd, int b)
 {
-	return syscall( SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0 );
+	return syscall(SYSCALL_SET_BLOCKING, fd, b, 0, 0, 0);
 }
 
 int open_window(int wd, int x, int y, int w, int h)
@@ -155,4 +157,14 @@ int process_reap(unsigned int pid)
 int process_wait(struct process_info *info, int timeout)
 {
 	return syscall(SYSCALL_PROCESS_WAIT, (uint32_t) info, timeout, 0, 0, 0);
+}
+
+int sys_stats(struct sys_stats *s)
+{
+	return syscall(SYSCALL_SYS_STATS, (uint32_t) s, 0, 0, 0, 0);
+}
+
+int process_stats(struct proc_stats *s, unsigned int pid)
+{
+	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
 }

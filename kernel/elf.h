@@ -11,6 +11,6 @@ loads the text, data, and bss into memory, and updates the
 entry point value in the current process structure.
 */
 
-int elf_load( struct process *p, const char *filename, addr_t *entry );
+int elf_load(struct process *p, const char *filename, addr_t * entry);
 
 #endif

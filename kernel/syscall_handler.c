@@ -24,6 +24,7 @@ See the file LICENSE for details.
 #include "elf.h"
 #include "kmalloc.h"
 #include "memory.h"
+#include "ata.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -46,45 +47,45 @@ int sys_process_yield()
 	return 0;
 }
 
-int sys_sbrk( int delta )
+int sys_sbrk(int delta)
 {
-	process_data_size_set( current,current->vm_data_size + delta );
+	process_data_size_set(current, current->vm_data_size + delta);
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
-the memory state, then loading 
+the memory state, then loading
 */
 
 int sys_process_run(const char *path, const char **argv, int argc)
 {
 	struct process *p = process_create();
 
-	process_inherit(current,p);
+	process_inherit(current, p);
 
 	struct pagetable *old_pagetable = current->pagetable;
 	current->pagetable = p->pagetable;
 	pagetable_load(p->pagetable);
-	
+
 	addr_t entry;
-	int r = elf_load(p,path,&entry);
-	if(r>=0) {
-		process_stack_reset(p,PAGE_SIZE);
+	int r = elf_load(p, path, &entry);
+	if(r >= 0) {
+		process_stack_reset(p, PAGE_SIZE);
 	}
 
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
-	if(r<0) {
-		if(r==KERROR_EXECUTION_FAILED) {
+	if(r < 0) {
+		if(r == KERROR_EXECUTION_FAILED) {
 			process_delete(p);
 		}
 		return r;
 	}
 
-	process_kstack_reset(p,entry);
+	process_kstack_reset(p, entry);
 	process_pass_arguments(p, argv, argc);
 	process_launch(p);
 	return p->pid;
@@ -93,24 +94,24 @@ int sys_process_run(const char *path, const char **argv, int argc)
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	addr_t entry;
-	int r = elf_load(current,path,&entry);
-	if(r<0) {
-		if(r==KERROR_EXECUTION_FAILED) {
+	int r = elf_load(current, path, &entry);
+	if(r < 0) {
+		if(r == KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
 		return r;
 	}
 
-	process_stack_reset(current,PAGE_SIZE);
-	process_kstack_reset(current,entry);
+	process_stack_reset(current, PAGE_SIZE);
+	process_kstack_reset(current, entry);
 	process_pass_arguments(current, argv, argc);
 
 	/*
-	IMPORTANT: Following a successful exec, we cannot return via
-	the normal path, because our stack has been reset to that
-	of a fresh process.  We must switch in order to jump
-	to the new stack properly.
-	*/
+	   IMPORTANT: Following a successful exec, we cannot return via
+	   the normal path, because our stack has been reset to that
+	   of a fresh process.  We must switch in order to jump
+	   to the new stack properly.
+	 */
 
 	process_yield();
 
@@ -124,8 +125,8 @@ int sys_process_fork()
 	p->ppid = current->pid;
 	pagetable_delete(p->pagetable);
 	p->pagetable = pagetable_duplicate(current->pagetable);
-	process_inherit(current,p);
-	process_kstack_copy(current,p);
+	process_inherit(current, p);
+	process_kstack_copy(current, p);
 	process_launch(p);
 	return p->pid;
 }
@@ -153,7 +154,7 @@ int sys_process_kill(int pid)
 
 int sys_process_wait(struct process_info *info, int timeout)
 {
-	return process_wait_child(0,info,timeout);
+	return process_wait_child(0, info, timeout);
 }
 
 int sys_process_reap(int pid)
@@ -196,7 +197,7 @@ int sys_mkdir(const char *path)
 {
 	// XXX doesn't work -- separate parent and new directory.
 
-	return fs_dirent_mkdir(current->current_dir,path);
+	return fs_dirent_mkdir(current->current_dir, path);
 }
 
 int sys_rmdir(const char *path)
@@ -204,7 +205,7 @@ int sys_rmdir(const char *path)
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		// XXX this API doesn't make sense.
-		return fs_dirent_rmdir(d,path);
+		return fs_dirent_rmdir(d, path);
 	} else {
 		// XXX get error back from namei
 		return -1;
@@ -227,11 +228,6 @@ int sys_open(const char *path, int mode, int flags)
 	struct fs_file *fp = fs_file_open(d, mode);
 	current->ktable[fd] = kobject_create_file(fp);
 	return fd;
-}
-
-int sys_keyboard_read_char()
-{
-	return keyboard_read();
 }
 
 int sys_dup(int fd1, int fd2)
@@ -257,6 +253,13 @@ int sys_read(int fd, void *data, int length)
 	struct kobject *p = current->ktable[fd];
 	return kobject_read(p, data, length);
 }
+
+int sys_read_nonblock(int fd, void *data, int length)
+{
+	struct kobject *p = current->ktable[fd];
+	return kobject_read_nonblock(p, data, length);
+}
+
 
 int sys_write(int fd, void *data, int length)
 {
@@ -373,8 +376,27 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
+int sys_sys_stats(struct sys_stats *s) {
+	struct rtc_time t = {0};
+	rtc_read(&t);
+	s->time = rtc_time_to_timestamp(&t) - boottime;
+	struct ata_count a = ata_stats();
+	for (int i = 0; i < 4; i++) {
+		s->blocks_written[i] = a.blocks_written[i];
+		s->blocks_read[i] = a.blocks_read[i];
+	}
+	return 0;
+}
+
+int sys_process_stats(struct proc_stats *s, int pid) {
+	return process_stats(pid, s);
+}
+
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
+	if ((n < MAX_SYSCALL) && current) {
+		current->stats.syscall_count[n]++;
+	}
 	switch (n) {
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
@@ -406,14 +428,14 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_dup(a, b);
 	case SYSCALL_READ:
 		return sys_read(a, (void *) b, c);
+	case SYSCALL_READ_NONBLOCK:
+		return sys_read_nonblock(a, (void *) b, c);
 	case SYSCALL_WRITE:
 		return sys_write(a, (void *) b, c);
 	case SYSCALL_LSEEK:
 		return sys_lseek(a, b, c);
 	case SYSCALL_CLOSE:
 		return sys_close(a);
-	case SYSCALL_KEYBOARD_READ_CHAR:
-		return sys_keyboard_read_char();
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:
@@ -436,6 +458,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_rmdir((const char *) a);
 	case SYSCALL_PWD:
 		return sys_pwd((char *) a);
+	case SYSCALL_SYS_STATS:
+		return sys_sys_stats((struct sys_stats *) a);
+	case SYSCALL_PROCESS_STATS:
+		return sys_process_stats((struct proc_stats *) a, b);
 	default:
 		return -1;
 	}

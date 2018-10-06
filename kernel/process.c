@@ -48,7 +48,7 @@ void process_init()
 	console_printf("process: ready\n");
 }
 
-void process_kstack_reset( struct process *p, unsigned entry_point )
+void process_kstack_reset(struct process *p, unsigned entry_point)
 {
 	struct x86_stack *s;
 
@@ -68,7 +68,7 @@ void process_kstack_reset( struct process *p, unsigned entry_point )
 	s->ss = X86_SEGMENT_USER_DATA;
 }
 
-void process_kstack_copy( struct process *parent, struct process *child )
+void process_kstack_copy(struct process *parent, struct process *child)
 {
 	child->kstack_top = child->kstack + PAGE_SIZE - 8;
 	child->kstack_ptr = child->kstack_top - sizeof(struct x86_stack);
@@ -97,14 +97,14 @@ static int process_allocate_pid()
 
 	int i;
 
-	for(i=last+1;i<PROCESS_MAX_PID;i++) {
+	for(i = last + 1; i < PROCESS_MAX_PID; i++) {
 		if(!process_table[i]) {
 			last = i;
 			return i;
 		}
 	}
 
-	for(i=1;i<last;i++) {
+	for(i = 1; i < last; i++) {
 		if(!process_table[i]) {
 			last = i;
 			return i;
@@ -114,7 +114,7 @@ static int process_allocate_pid()
 	return 0;
 }
 
-void process_inherit( struct process *parent, struct process *child )
+void process_inherit(struct process *parent, struct process *child)
 {
 	/* Copy kernel objects */
 	memcpy(child->ktable, parent->ktable, sizeof(parent->ktable));
@@ -133,21 +133,21 @@ void process_inherit( struct process *parent, struct process *child )
 	child->ppid = parent->pid;
 }
 
-int  process_data_size_set( struct process *p, unsigned size )
+int process_data_size_set(struct process *p, unsigned size)
 {
 	// XXX check valid ranges
 	// XXX round up to page size
 
-	if(size%PAGE_SIZE) {
-		size += (PAGE_SIZE - size%PAGE_SIZE);
+	if(size % PAGE_SIZE) {
+		size += (PAGE_SIZE - size % PAGE_SIZE);
 	}
 
-	if(size>p->vm_data_size) {
+	if(size > p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + p->vm_data_size;
-		pagetable_alloc(p->pagetable,start,size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE|PAGE_FLAG_CLEAR);
-	} else if(size<p->vm_data_size) {
+		pagetable_alloc(p->pagetable, start, size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE | PAGE_FLAG_CLEAR);
+	} else if(size < p->vm_data_size) {
 		uint32_t start = PROCESS_ENTRY_POINT + size;
-		pagetable_free(p->pagetable,start,p->vm_data_size);
+		pagetable_free(p->pagetable, start, p->vm_data_size);
 	} else {
 		// requested size is equal to current.
 	}
@@ -158,17 +158,17 @@ int  process_data_size_set( struct process *p, unsigned size )
 	return 0;
 }
 
-int  process_stack_size_set( struct process *p, unsigned size )
+int process_stack_size_set(struct process *p, unsigned size)
 {
 	// XXX check valid ranges
 	// XXX round up to page size
 
-	if(size>p->vm_stack_size) {
+	if(size > p->vm_stack_size) {
 		uint32_t start = -size;
-		pagetable_alloc(p->pagetable,start,size-p->vm_stack_size,PAGE_FLAG_USER|PAGE_FLAG_READWRITE|PAGE_FLAG_CLEAR);
+		pagetable_alloc(p->pagetable, start, size - p->vm_stack_size, PAGE_FLAG_USER | PAGE_FLAG_READWRITE | PAGE_FLAG_CLEAR);
 	} else {
 		uint32_t start = -p->vm_stack_size;
-		pagetable_free(p->pagetable,start,p->vm_stack_size-size);
+		pagetable_free(p->pagetable, start, p->vm_stack_size - size);
 	}
 
 	p->vm_stack_size = size;
@@ -177,10 +177,10 @@ int  process_stack_size_set( struct process *p, unsigned size )
 	return 0;
 }
 
-void process_stack_reset( struct process *p, unsigned size )
+void process_stack_reset(struct process *p, unsigned size)
 {
-	process_stack_size_set(p,size);
-	memset((void*)-size,size,0);
+	process_stack_size_set(p, size);
+	memset((void *) -size, size, 0);
 }
 
 struct process *process_create()
@@ -198,18 +198,18 @@ struct process *process_create()
 	p->vm_data_size = 0;
 	p->vm_stack_size = 0;
 
-	process_data_size_set(p,2*PAGE_SIZE);
-	process_stack_size_set(p,2*PAGE_SIZE);
+	process_data_size_set(p, 2 * PAGE_SIZE);
+	process_stack_size_set(p, 2 * PAGE_SIZE);
 
 	p->kstack = memory_alloc_page(1);
 	p->kstack_top = p->kstack + PAGE_SIZE - 8;
 	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
 
-	process_kstack_reset(p,PROCESS_ENTRY_POINT);
+	process_kstack_reset(p, PROCESS_ENTRY_POINT);
 
 	// XXX table should be allocated
 	int i;
-	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
+	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
 		p->ktable[i] = 0;
 	}
 
@@ -221,7 +221,7 @@ struct process *process_create()
 void process_delete(struct process *p)
 {
 	int i;
-	for(i = 0; i <PROCESS_MAX_OBJECTS; i++) {
+	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
 		if(p->ktable[i]) {
 			kobject_close(p->ktable[i]);
 		}
@@ -252,7 +252,7 @@ static void process_switch(int newstate)
 			asm("pushl %ecx");
 			asm("pushl %ebx");
 			asm("pushl %eax");
-			asm("movl %%esp, %0":"=r"(current->kstack_ptr));
+		      asm("movl %%esp, %0":"=r"(current->kstack_ptr));
 		}
 
 		interrupt_stack_pointer = (void *) INTERRUPT_STACK_TOP;
@@ -270,7 +270,8 @@ static void process_switch(int newstate)
 
 	while(1) {
 		current = (struct process *) list_pop_head(&ready_list);
-		if(current) break;
+		if(current)
+			break;
 
 		interrupt_unblock();
 		interrupt_wait();
@@ -313,12 +314,7 @@ void process_exit(int code)
 	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
-
-	// On exit, wake up parent off the grave_watcher list
-	if (current->ppid)
-	{
-		process_wakeup_parent(&grave_watcher_list, current->ppid, current->pid);
-	}
+	process_wakeup_parent(&grave_watcher_list); // On exit, wake up parent if need be
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -347,14 +343,13 @@ void process_reap_all()
 }
 
 /* Wakes up parent off of the corresponding list*/
-void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid)
+void process_wakeup_parent(struct list *q)
 {
-	struct grave_watcher *top_p;
-	struct grave_watcher *p;
+	struct process *top_p;
+	struct process *p;
 	uint32_t first = 1;
-	// Loop through all the waiting parents for the desired parent
-	while((p = (struct grave_watcher *) list_pop_head(q))) {
-
+	// Loop through all the waiting parents to see if one needs to be woken up
+	while((p = (struct process *) list_pop_head(q))) {
 		if (first) {
 			top_p = p;
 			first = 0;
@@ -362,14 +357,13 @@ void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid)
 			break;
 		}
 
-		if (p->parent->pid == ppid && p->child_pid == pid) {
-			p->parent->state = PROCESS_STATE_READY;
-			list_push_tail(&ready_list, &(p->parent)->node);
+		if (p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
+			p->state = PROCESS_STATE_READY;
+			p->waiting_for_child_pid = 0;
+			list_push_tail(&ready_list, &p->node);
 			break;
 		}
-		// Push p on the back of the list if its not the right parent
-		list_push_tail(q, &p->node);
-
+		list_push_tail(q, &p->node); // add item back on the list
 	}
 }
 
@@ -443,12 +437,13 @@ int process_kill(uint32_t pid)
 	}
 }
 
-int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
+int process_wait_child(uint32_t pid, struct process_info *info, int timeout)
 {
 	clock_t start, elapsed;
 	uint32_t total;
 
-	if(!info) return -1;
+	if(!info)
+		return -1;
 
 	start = clock_read();
 
@@ -456,7 +451,7 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 		struct process *p = (struct process *) (grave_list.head);
 		while(p) {
 			struct process *next = (struct process *) p->node.next;
-			if( (pid!=0 && p->pid==pid) || (p->ppid == current->pid ) ) {
+			if((pid != 0 && p->pid == pid) || (p->ppid == current->pid)) {
 				info->exitcode = p->exitcode;
 				info->exitreason = p->exitreason;
 				info->pid = p->pid;
@@ -464,12 +459,9 @@ int process_wait_child( uint32_t pid, struct process_info *info, int timeout)
 			}
 			p = next;
 		}
-		struct grave_watcher * parent_watcher = kmalloc(sizeof(struct grave_watcher));
-		parent_watcher->parent = current;
-		parent_watcher->child_pid = pid;
 
-		list_push_tail(&grave_watcher_list, &(parent_watcher)->node);
-		process_switch(PROCESS_STATE_BLOCKED);
+		current->waiting_for_child_pid = pid;
+		process_wait(&grave_watcher_list);
 
 		elapsed = clock_diff(start, clock_read());
 		total = elapsed.millis + elapsed.seconds * 1000;
@@ -516,4 +508,12 @@ void process_pass_arguments(struct process *p, const char **argv, int argc)
 	*((char **) (ebp - 12)) = (char *) (PROCESS_STACK_INIT - MAX_ARGV_LENGTH * argc - 4 * argc);
 	*((int *) (ebp - 8)) = argc;
 	s->esp -= (esp - ebp) + 16;
+}
+
+int process_stats(int pid, struct proc_stats *s) {
+	if (pid > PROCESS_MAX_PID || !process_table[pid]) {
+		return 1;
+	}
+ *s = process_table[pid]->stats;
+ return 0;
 }

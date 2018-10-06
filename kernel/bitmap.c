@@ -10,7 +10,7 @@ See the file LICENSE for details.
 
 static struct bitmap root_bitmap;
 
-struct bitmap * bitmap_create_root()
+struct bitmap *bitmap_create_root()
 {
 	root_bitmap.width = video_xres;
 	root_bitmap.height = video_yres;
@@ -19,12 +19,13 @@ struct bitmap * bitmap_create_root()
 	return &root_bitmap;
 }
 
-struct bitmap * bitmap_create( int width, int height, int format )
+struct bitmap *bitmap_create(int width, int height, int format)
 {
 	struct bitmap *b = kmalloc(sizeof(*b));
-	if(!b) return 0;
+	if(!b)
+		return 0;
 
-	b->data = kmalloc(width*height*3);
+	b->data = kmalloc(width * height * 3);
 	if(!b->data) {
 		kfree(b);
 		return 0;
@@ -37,9 +38,8 @@ struct bitmap * bitmap_create( int width, int height, int format )
 	return b;
 }
 
-void bitmap_delete( struct bitmap *b )
+void bitmap_delete(struct bitmap *b)
 {
 	kfree(b->data);
 	kfree(b);
 }
-
