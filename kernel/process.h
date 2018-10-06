@@ -42,12 +42,7 @@ struct process {
 	uint32_t ppid;
 	uint32_t vm_data_size;
 	uint32_t vm_stack_size;
-};
-
-struct grave_watcher {
-	struct list_node node;
-	struct process * parent;
-	uint32_t child_pid;
+	uint32_t waiting_for_child_pid;
 };
 
 void process_init();

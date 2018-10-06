@@ -43,6 +43,8 @@ void process_init()
 
 	current->state = PROCESS_STATE_READY;
 
+	current->waiting_for_child_pid = 0;
+
 	console_printf("process: ready\n");
 }
 
