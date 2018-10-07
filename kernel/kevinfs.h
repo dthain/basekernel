@@ -44,11 +44,9 @@ struct kevinfs_inode {
 	uint32_t link_count;
 
 	uint32_t direct_addresses[FS_DIRECT_MAXBLOCKS];
-	uint32_t direct_addresses_len;
 	uint32_t indirect_block_address;
 };
 struct kevinfs_indirect_block {
-	uint32_t indirect_addresses_len;
 	uint32_t indirect_addresses[FS_INDIRECT_MAXBLOCKS];
 };
 

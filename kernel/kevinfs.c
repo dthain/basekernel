@@ -361,24 +361,6 @@ static int kevinfs_save_dirent(struct kevinfs_dirent *kd)
 	return 0;
 }
 
-static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
-{
-	uint32_t i;
-	struct kevinfs_inode *node = kd->node;
-	if(node->is_directory)
-		node->link_count--;
-	node->link_count--;
-	if(node->link_count > 0)
-		return kevinfs_save_dirent(kd);
-	if(kevinfs_delete_dirent(kd))
-		return -1;
-	for(i = 0; i < node->direct_addresses_len; i++) {
-		if(kevinfs_delete_data(kd->kv, node->direct_addresses[i]) < 0)
-			return -1;
-	}
-	return 0;
-}
-
 static int kevinfs_read_data_block(struct kevinfs_volume *kv, uint32_t index, uint8_t * buffer)
 {
 	bool is_active;
@@ -455,6 +437,35 @@ static struct kevinfs_dir_record_list *kevinfs_dir_alloc(uint32_t list_len)
 	return ret;
 }
 
+static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
+{
+	uint32_t i;
+	struct kevinfs_inode *node = kd->node;
+	if(node->is_directory)
+		node->link_count--;
+	node->link_count--;
+	if(node->link_count > 0)
+		return kevinfs_save_dirent(kd);
+	if(kevinfs_delete_dirent(kd))
+		return -1;
+	uint32_t num_blocks = node->size / FS_BLOCKSIZE + (node->size % FS_BLOCKSIZE ? 1:0);
+	if (num_blocks > FS_DIRECT_MAXBLOCKS) {
+		struct kevinfs_indirect_block indirect_struct = {0};
+		if (kevinfs_read_data_block(kd->kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
+			return 0;
+		}
+		for (i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
+			if(kevinfs_delete_data(kd->kv, indirect_struct.indirect_addresses[i]) < 0)
+				return -1;
+		}
+	}
+	for(i = 0; i < MIN(num_blocks, FS_DIRECT_MAXBLOCKS); i++) {
+		if(kevinfs_delete_data(kd->kv, node->direct_addresses[i]) < 0)
+			return -1;
+	}
+	return 0;
+}
+
 static void kevinfs_dir_dealloc(struct kevinfs_dir_record_list *dir_list)
 {
 	kfree(dir_list->list);
@@ -466,7 +477,8 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 {
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_volume *kv = kd->kv;
-	uint8_t buffer[FS_BLOCKSIZE * node->direct_addresses_len];
+	uint32_t num_blocks = node->size / FS_BLOCKSIZE + (node->size % FS_BLOCKSIZE ? 1:0);
+	uint8_t buffer[node->size];
 	uint32_t num_files = node->size / sizeof(struct kevinfs_dir_record);
 	struct kevinfs_dir_record_list *res = kevinfs_dir_alloc(num_files);
 	struct kevinfs_dir_record *files = res->list;
@@ -475,10 +487,23 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 		return 0;
 
 	uint32_t i;
-	for(i = 0; i < node->direct_addresses_len; i++) {
+	for(i = 0; i < MIN(num_blocks, FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_read_data_block(kv, node->direct_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
 			kevinfs_dir_dealloc(res);
 			return 0;
+		}
+	}
+	if (num_blocks > FS_DIRECT_MAXBLOCKS) {
+		struct kevinfs_indirect_block indirect;
+		if(kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *)&indirect) < 0) {
+			kevinfs_dir_dealloc(res);
+			return 0;
+		}
+		for(i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
+			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
+				kevinfs_dir_dealloc(res);
+				return 0;
+			}
 		}
 	}
 
@@ -524,18 +549,19 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 	uint32_t i;
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
-	for(i = node->direct_addresses_len; i < MIN(num_blocks,FS_DIRECT_MAXBLOCKS); i++) {
+	uint32_t num_blocks_old = node->size/FS_BLOCKSIZE + (node->size%FS_BLOCKSIZE ? 1:0);
+	uint32_t direct_addresses_len = MIN(num_blocks_old, FS_DIRECT_MAXBLOCKS);
+	for(i = direct_addresses_len; i < MIN(num_blocks,FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_lookup_available_block(kv, &(node->direct_addresses[i])) < 0) {
 			return -1;
 		}
 	}
-	for(i = node->direct_addresses_len; i > num_blocks; i--) {
+	for(i = direct_addresses_len; i > num_blocks; i--) {
 		if(kevinfs_delete_data(kv, node->direct_addresses[i - 1]) < 0) {
 			return -1;
 		}
 		node->direct_addresses[i - 1] = 0;
 	}
-	node->direct_addresses_len = MIN(num_blocks,FS_DIRECT_MAXBLOCKS);
 
 	if (num_blocks > FS_DIRECT_MAXBLOCKS) {
 		num_blocks -= FS_DIRECT_MAXBLOCKS;
@@ -551,19 +577,18 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 				return -1;
 			}
 		}
-
-		for(i = indirect_struct.indirect_addresses_len; i < MIN(num_blocks,FS_INDIRECT_MAXBLOCKS); i++) {
+		uint32_t indirect_addresses_len = MAX(0, num_blocks_old - FS_DIRECT_MAXBLOCKS);
+		for(i = indirect_addresses_len; i < MIN(num_blocks,FS_INDIRECT_MAXBLOCKS); i++) {
 			if(kevinfs_lookup_available_block(kv, &(indirect_struct.indirect_addresses[i])) < 0) {
 				return -1;
 			}
 		}
-		for(i = indirect_struct.indirect_addresses_len; i > num_blocks; i--) {
+		for(i = indirect_addresses_len; i > num_blocks; i--) {
 			if(kevinfs_delete_data(kv, indirect_struct.indirect_addresses[i - 1]) < 0) {
 				return -1;
 			}
 			indirect_struct.indirect_addresses[i - 1] = 0;
 		}
-		indirect_struct.indirect_addresses_len = num_blocks;
 		if (kevinfs_ata_write_block(kv->device, kv->super->free_block_start + node->indirect_block_address, (uint8_t *) &indirect_struct)) {
 			return -1;
 		}
