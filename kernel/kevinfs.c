@@ -398,8 +398,8 @@ static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t addres
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
 	uint32_t address = 0;
-	if (address_no >= FS_INODE_MAXBLOCKS) {
-		address_no -= FS_INODE_MAXBLOCKS;
+	if (address_no >= FS_DIRECT_MAXBLOCKS) {
+		address_no -= FS_DIRECT_MAXBLOCKS;
 		struct kevinfs_indirect_block indirect_struct = {0};
 		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
 			return -1;
@@ -417,8 +417,8 @@ static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_superblock *super = kv->super;
 	uint32_t address = 0;
-	if (address_no >= FS_INODE_MAXBLOCKS) {
-		address_no -= FS_INODE_MAXBLOCKS;
+	if (address_no >= FS_DIRECT_MAXBLOCKS) {
+		address_no -= FS_DIRECT_MAXBLOCKS;
 		struct kevinfs_indirect_block indirect_struct = {0};
 		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
 			return -1;
@@ -526,7 +526,7 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 	struct kevinfs_inode *node = kd->node;
 	// if(num_blocks > FS_INODE_MAXBLOCKS)
 	// 	return -1;
-	for(i = node->direct_addresses_len; i < MIN(num_blocks,FS_INODE_MAXBLOCKS); i++) {
+	for(i = node->direct_addresses_len; i < MIN(num_blocks,FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_lookup_available_block(kv, &(node->direct_addresses[i])) < 0) {
 			return -1;
 		}
@@ -537,10 +537,10 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 		}
 		node->direct_addresses[i - 1] = 0;
 	}
-	node->direct_addresses_len = MIN(num_blocks,FS_INODE_MAXBLOCKS);
+	node->direct_addresses_len = MIN(num_blocks,FS_DIRECT_MAXBLOCKS);
 
-	if (num_blocks > FS_INODE_MAXBLOCKS) {
-		num_blocks -= FS_INODE_MAXBLOCKS;
+	if (num_blocks > FS_DIRECT_MAXBLOCKS) {
+		num_blocks -= FS_DIRECT_MAXBLOCKS;
 		if (num_blocks > FS_INDIRECT_MAXBLOCKS)
 			return -1;
 		struct kevinfs_indirect_block indirect_struct = {0};
