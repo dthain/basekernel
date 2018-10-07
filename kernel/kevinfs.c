@@ -524,8 +524,6 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 	uint32_t i;
 	struct kevinfs_volume *kv = kd->kv;
 	struct kevinfs_inode *node = kd->node;
-	// if(num_blocks > FS_INODE_MAXBLOCKS)
-	// 	return -1;
 	for(i = node->direct_addresses_len; i < MIN(num_blocks,FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_lookup_available_block(kv, &(node->direct_addresses[i])) < 0) {
 			return -1;
