@@ -378,8 +378,10 @@ int process_highest_fd(struct process *p)
 {
 	struct kobject **fdtable = current->ktable;
 	int i;
-	for(i = PROCESS_MAX_OBJECTS; i > -1; i--) {
-		if(fdtable[i] >= 0)
+	// Because of 0-indexing, PROCESS_MAX_OBJECTS is the size and
+	// therefor 1 offset, don't look for 0 there.
+	for(i = PROCESS_MAX_OBJECTS - 1; i > -1; i--) {
+		if(fdtable[i] != 0)
 			return i;
 	}
 	return -1;
