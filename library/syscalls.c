@@ -33,6 +33,16 @@ int file_describe(int fd)
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
+int object_set_intent(int fd, int intent)
+{
+	return syscall(SYSCALL_OBJECT_SET_INTENT, intent, 0, 0, 0, 0);
+}
+
+int object_get_intent(int fd)
+{
+	return syscall(SYSCALL_OBJECT_GET_INTENT, 0, 0, 0, 0, 0);
+}
+
 int dup(int fd1, int fd2)
 {
 	return syscall(SYSCALL_DUP, fd1, fd2, 0, 0, 0);

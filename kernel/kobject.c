@@ -168,3 +168,13 @@ int kobject_get_type(struct kobject *kobject)
 {
 	return kobject->type;
 }
+
+void kobject_set_intent(struct kobject *kobject, int new_intent)
+{
+	kobject->intent = new_intent;
+}
+
+int kobject_get_intent(struct kobject *kobject)
+{
+	return kobject->intent;
+}
