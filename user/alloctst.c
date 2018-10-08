@@ -59,7 +59,7 @@ int func1();
 	// Test 4: Test for failure of malloc
 int main() {
 	func1();
-	// printf("Stack address %x\n");
+	printf("After Function\n");
 	unsigned sp;
 	asm( "mov %%esp, %0" : "=rm" ( sp ));
 	int * temp;
@@ -71,9 +71,8 @@ int main() {
 	printf("Temp  address %x\n", &temp[0]);
 
 
-
-	printf_putstring("Fail passed!\n");
-	flush();
+	printf("Fail passed!\n");
+	// flush();
 	return 0;
 }
 
