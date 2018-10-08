@@ -586,6 +586,19 @@ int sys_process_stats(struct proc_stats *s, int pid)
 	return process_stats(pid, s);
 }
 
+int sys_dup_volume(int src, int dst, char *srcfstype, char*dstfstype) {
+	struct fs *srcfs = fs_lookup(srcfstype);
+	struct fs *dstfs = fs_lookup(dstfstype);
+
+	struct fs_volume *srcv = fs_volume_open(srcfs,src);
+	struct fs_volume *dstv = fs_volume_open(dstfs,dst);
+	struct fs_dirent *srcroot = fs_volume_root(srcv);
+	struct fs_dirent *dstroot = fs_volume_root(dstv);
+	fs_dirent_dup(srcroot, dstroot);
+	printf("Dup finished\n");
+
+	return 0;
+}
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	if((n < MAX_SYSCALL) && current) {
@@ -670,6 +683,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_sys_stats((struct sys_stats *) a);
 	case SYSCALL_PROCESS_STATS:
 		return sys_process_stats((struct proc_stats *) a, b);
+	case SYSCALL_DUP_VOLUME:
+		return(sys_dup_volume((int) a, (int) b, (char *) c, (char *) d));
 	default:
 		return -1;
 	}

@@ -27,6 +27,7 @@ int process_object_max();
 int open(const char *path, int mode, int flags);
 int object_type(int fd);
 int dup(int fd1, int fd2);
+int dup_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs);
 int read(int fd, void *data, int length);
 int read_nonblock(int fd, void *data, int length);
 int write(int fd, void *data, int length);

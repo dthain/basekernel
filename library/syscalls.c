@@ -203,3 +203,7 @@ int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd
 {
 	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) fds, fd_len);
 }
+int dup_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs)
+{
+	return syscall(SYSCALL_DUP_VOLUME, srcdisk, dstdisk, (uint32_t) srcfs, (uint32_t) destfs, 0);
+}
