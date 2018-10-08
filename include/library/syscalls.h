@@ -34,6 +34,7 @@ int close(int fd);
 extern void *sbrk(int a);
 
 int open_window(int wd, int x, int y, int w, int h);
+int get_window_properties(int wd, uint32_t * properties);
 int set_blocking(int fd, int b);
 int console_open(int fd);
 int pipe_open();
