@@ -241,12 +241,18 @@ int sys_object_get_intent(int fd)
 	return current->ktable[fd]->intent;
 }
 
-int sys_file_describe(int fd)
+int sys_object_type(int fd)
 {
 	int fd_type = kobject_get_type(current->ktable[fd]);
 	if(!fd_type)
 		return 0;
 	return fd_type;
+}
+
+int sys_process_max_fd()
+{
+	int max_fd = process_highest_fd(current);
+	return max_fd;
 }
 
 int sys_dup(int fd1, int fd2)
@@ -456,7 +462,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_CLOSE:
 		return sys_close(a);
 	case SYSCALL_OBJECT_TYPE:
-		return sys_file_describe(a);
+		return sys_object_type(a);
+	case SYSCALL_PROCESS_MAX_FD:
+		return sys_process_max_fd(a);
 	case SYSCALL_OBJECT_SET_INTENT:
 		return sys_object_set_intent(a, b);
 	case SYSCALL_OBJECT_GET_INTENT:

@@ -374,6 +374,17 @@ int process_available_fd(struct process *p)
 	return -1;
 }
 
+int process_highest_fd(struct process *p)
+{
+	struct kobject **fdtable = current->ktable;
+	int i;
+	for(i = PROCESS_MAX_OBJECTS; i > -1; i--) {
+		if(fdtable[i] >= 0)
+			return i;
+	}
+	return -1;
+}
+
 void process_make_dead(struct process *dead)
 {
 	int i;

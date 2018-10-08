@@ -25,8 +25,8 @@ int main(const char **argv, int argc)
 	// get an upper bound and then iterate over all fds.
 	// TODO: decide whether this is adquate for testing or needs a syscall
 	//       for usage in user programs
-	int last_descriptor = window_descriptor;
-	for (int descriptor = 0; descriptor < window_descriptor; descriptor++) 
+	int last_descriptor = highest_fd();
+	for (int descriptor = 0; descriptor < last_descriptor; descriptor++) 
 	{
 		type = file_describe(descriptor);
 		intent = object_get_intent(descriptor);
