@@ -20,15 +20,16 @@ int main(const char **argv, int argc)
 	if(!window_descriptor) {
 		return 1;
 	}
+	object_set_intent(window_descriptor, 1);
 
-	// Since a process gets a few files by default, we can allocate one to
-	// get an upper bound and then iterate over all fds.
-	// TODO: decide whether this is adquate for testing or needs a syscall
-	//       for usage in user programs
 	int last_descriptor = highest_fd();
-	for (int descriptor = 0; descriptor < last_descriptor; descriptor++) 
+	// First a test of highest_fd()
+	printf("Highest allocated FD: %d\nLast Descriptor: %d\n",
+			window_descriptor, last_descriptor);
+
+	for (int descriptor = 0; descriptor <= last_descriptor; descriptor++) 
 	{
-		type = file_describe(descriptor);
+		type = object_type(descriptor);
 		intent = object_get_intent(descriptor);
 		printf("FD: %d is of type: %d, with intent %d\n", descriptor, type, intent);
 	}
