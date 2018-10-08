@@ -186,7 +186,7 @@ uint16_t randint(uint16_t min, uint16_t max)
 
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
 {
-	int wd = open_window(KNO_STDWIN, 500, 500, w_b, h_b);
+	int wd = open_window(3, 500, 500, w_b, h_b);
 	if(wd < 0) {
 		debug("Window create failed!\n");
 		return -1;
