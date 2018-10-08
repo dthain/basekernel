@@ -232,14 +232,10 @@ int sys_open(const char *path, int mode, int flags)
 
 int sys_file_describe(int fd)
 {
-  // TODO(dsmith47): is this a valid error return for typing kobjects?
-  if (!current->ktable[fd]) return 0;
-  return current->ktable[fd]->type;
-}
-
-int sys_keyboard_read_char()
-{
-	return keyboard_read();
+	int fd_type = kobject_get_type(current->ktable[fd]);
+	if(!fd_type)
+		return 0;
+	return fd_type;
 }
 
 int sys_dup(int fd1, int fd2)
@@ -448,6 +444,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_lseek(a, b, c);
 	case SYSCALL_CLOSE:
 		return sys_close(a);
+	case SYSCALL_OBJECT_TYPE:
+		return sys_file_describe(a);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

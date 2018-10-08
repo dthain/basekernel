@@ -28,8 +28,9 @@ int open(const char *path, int mode, int flags)
 	return syscall(SYSCALL_OPEN, (uint32_t) path, mode, flags, 0, 0);
 }
 
-int file_describe(int fd) {
-  return syscall(SYSCALL_FILE_DESCRIBE, 0, 0, 0, 0, 0, 0);
+int file_describe(int fd)
+{
+	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
 int dup(int fd1, int fd2)
