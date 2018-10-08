@@ -58,17 +58,25 @@ int func1();
 
 	// Test 4: Test for failure of malloc
 int main() {
-	func1();
+	//func1();
 	printf("After Function\n");
 	unsigned sp;
 	asm( "mov %%esp, %0" : "=rm" ( sp ));
 	int * temp;
 
-	temp = (int *)((void *)sp - 5000);
-	temp[0] = 1;
+	int below = 5000;
+
+	while(1) {
+		temp = (int *)((void *)sp - below);
+		temp[0] = 1;
+		printf("Temp  address %x\n", &temp[0]);	
+		below -= 1000;
+	} 
+
+
 	
-	printf("Stack address %x\n", sp);
-	printf("Temp  address %x\n", &temp[0]);
+	// printf("Stack address %x\n", sp);
+	// printf("Temp  address %x\n", &temp[0]);
 
 
 	printf("Fail passed!\n");
