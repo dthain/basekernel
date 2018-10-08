@@ -29,7 +29,6 @@ struct process *process_table[PROCESS_MAX_PID] = { 0 };
 void process_init()
 {
 	current = process_create();
-
 	pagetable_load(current->pagetable);
 	pagetable_enable();
 
@@ -41,6 +40,18 @@ void process_init()
 	graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
+
+	for (int i = 0; i < 20; ++i)
+	{
+		current->window_descriptors[i] = 0;
+		current->open_windows[i] = 0;
+	}
+
+	// If the process is the shell, set the window_descriptors, open windows to the std wind
+	if (current->pid == 1) {
+		current->open_windows[0] = 3;
+		current->window_descriptors[0] = 3;
+	}
 
 	console_printf("process: ready\n");
 }
@@ -125,6 +136,11 @@ void process_inherit(struct process *parent, struct process *child)
 	/* Inherit current and root directories */
 	child->current_dir = fs_dirent_addref(parent->current_dir);
 	child->root_dir = fs_dirent_addref(parent->root_dir);
+
+	/* Child receives all the open_windows of parent */
+	for (int i = 0; i < 20; ++i) {
+		child->window_descriptors[i] = parent->open_windows[i];
+	}
 
 	/* Set the parent of the new process to the calling process */
 	child->ppid = parent->pid;
