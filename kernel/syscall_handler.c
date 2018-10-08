@@ -55,7 +55,7 @@ int sys_sbrk( int delta )
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
-the memory state, then loading 
+the memory state, then loading
 */
 
 int sys_process_run(const char *path, const char **argv, int argc)
@@ -67,7 +67,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 	struct pagetable *old_pagetable = current->pagetable;
 	current->pagetable = p->pagetable;
 	pagetable_load(p->pagetable);
-	
+
 	addr_t entry;
 	int r = elf_load(p,path,&entry);
 	if(r>=0) {
@@ -373,6 +373,20 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
+int sys_dup_volume(int src, int dst, char *srcfstype, char*dstfstype) {
+	struct fs *srcfs = fs_lookup(srcfstype);
+	struct fs *dstfs = fs_lookup(dstfstype);
+
+	struct fs_volume *srcv = fs_volume_open(srcfs,src);
+	struct fs_volume *dstv = fs_volume_open(dstfs,dst);
+	struct fs_dirent *srcroot = fs_volume_root(srcv);
+	struct fs_dirent *dstroot = fs_volume_root(dstv);
+	fs_dirent_dup(srcroot, dstroot);
+	printf("Dup finished\n");
+
+	return 0;
+}
+
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	switch (n) {
@@ -436,6 +450,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_rmdir((const char *) a);
 	case SYSCALL_PWD:
 		return sys_pwd((char *) a);
+	case SYSCALL_DUP_VOLUME:
+		return(sys_dup_volume((int) a, (int) b, (char *) c, (char *) d));
 	default:
 		return -1;
 	}

@@ -317,3 +317,51 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	return total;
 }
 
+int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
+	char *buffer = kmalloc(4096);
+	memset(buffer,'\t',4096);
+	printf("Reading directory... ");
+	int length = fs_dirent_readdir(src, buffer, 4096);
+	printf("Done.\n");
+	if (length <= 0) {
+		return length;
+	}
+	buffer[MIN(length, 4095)] = 0;
+	char *name = strtok(buffer, "\t");
+	while (name) {
+		printf("%x: ",name);
+		printf("%s\n",name);
+		if (name > buffer + length) break;
+		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
+			name = strtok(0, "\t");
+			continue;
+		}
+		printf("Copying %s... ", name);
+		struct fs_dirent *new_src, *new_dst;
+		new_src = fs_dirent_lookup(src, name);
+		char temp[1];
+		if (fs_dirent_readdir(src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
+			fs_dirent_mkfile(dst, name);
+			new_dst = fs_dirent_lookup(dst, name);
+			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
+			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
+			char * filebuf = kmalloc(src_file->size);
+			fs_file_read(src_file, filebuf,src_file->size,0);
+			fs_file_write(dst_file, filebuf, src_file->size, 0);
+			kfree(filebuf);
+			fs_file_close(src_file);
+			fs_file_close(dst_file);
+		} else { // directory
+			fs_dirent_mkdir(dst,name);
+			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			fs_dirent_dup(new_src, new_dst);
+		}
+		fs_dirent_close(new_dst);
+		fs_dirent_close(new_src);
+		printf("Done.\n");
+
+		name = strtok(0, "\t");
+	}
+	kfree(buffer);
+	return 1;
+}

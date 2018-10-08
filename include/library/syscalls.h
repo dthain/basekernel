@@ -24,6 +24,7 @@ int process_wait( struct process_info* info, int timeout );
 int process_sleep( unsigned int ms );
 int open( const char *path, int mode, int flags );
 int dup( int fd1, int fd2 );
+int dup_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs);
 int read( int fd, void *data, int length );
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
