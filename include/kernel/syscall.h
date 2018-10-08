@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define KERNEL_SYSCALL_H
 
 #include "kernel/types.h"
+#include "kernel/error.h"
 
 typedef enum {
 	SYSCALL_DEBUG,
@@ -25,10 +26,11 @@ typedef enum {
 	SYSCALL_OPEN,
 	SYSCALL_DUP,
 	SYSCALL_READ,
+	SYSCALL_READ_NONBLOCK,
 	SYSCALL_WRITE,
 	SYSCALL_LSEEK,
 	SYSCALL_CLOSE,
-  SYSCALL_FILE_DESCRIBE,
+	SYSCALL_FILE_DESCRIBE,
 	SYSCALL_KEYBOARD_READ_CHAR,
 	SYSCALL_OPEN_CONSOLE,
 	SYSCALL_OPEN_PIPE,
@@ -41,18 +43,10 @@ typedef enum {
 	SYSCALL_RMDIR,
 	SYSCALL_READDIR,
 	SYSCALL_PWD,
+	SYSCALL_SYS_STATS,
+	SYSCALL_PROCESS_STATS,
+	MAX_SYSCALL // must be the last element in the enum
 } syscall_t;
-
-typedef enum {
-	KERROR_NOT_FOUND = -1,
-	KERROR_INVALID_REQUEST = -2,
-	KERROR_PERMISSION_DENIED = -3,
-	KERROR_NOT_IMPLEMENTED = -4,
-	KERROR_NOT_EXECUTABLE = -5,
-	KERROR_EXECUTION_FAILED = -6,
-	KERROR_NOT_SUPPORTED = -7,
-	KERROR_NOT_A_DIRECTORY = -8
-} syscall_error_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);
 

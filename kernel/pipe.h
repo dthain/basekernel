@@ -13,12 +13,12 @@
 #define PIPE_SIZE (1024)
 
 struct pipe {
-    char *buffer;
-    int read_pos;
-    int write_pos;
-    int blocking;
-    int flushed;
-    struct list queue;
+	char *buffer;
+	int read_pos;
+	int write_pos;
+	int blocking;
+	int flushed;
+	struct list queue;
 };
 
 struct pipe *pipe_open();

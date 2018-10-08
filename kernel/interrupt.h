@@ -7,12 +7,12 @@ See the file LICENSE for details.
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-typedef void (*interrupt_handler_t) ( int intr, int code );
+typedef void (*interrupt_handler_t) (int intr, int code);
 
 void interrupt_init();
-void interrupt_register( int i, interrupt_handler_t handler );
-void interrupt_enable( int i );
-void interrupt_disable( int i );
+void interrupt_register(int i, interrupt_handler_t handler);
+void interrupt_enable(int i);
+void interrupt_disable(int i);
 void interrupt_block();
 void interrupt_unblock();
 void interrupt_wait();
