@@ -28,7 +28,7 @@ int open(const char *path, int mode, int flags)
 	return syscall(SYSCALL_OPEN, (uint32_t) path, mode, flags, 0, 0);
 }
 
-int file_describe(int fd)
+int object_type(int fd)
 {
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }

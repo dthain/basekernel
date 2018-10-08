@@ -230,7 +230,7 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
-int sys_file_describe(int fd)
+int sys_object_type(int fd)
 {
 	int fd_type = kobject_get_type(current->ktable[fd]);
 	if(!fd_type)
@@ -445,7 +445,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_CLOSE:
 		return sys_close(a);
 	case SYSCALL_OBJECT_TYPE:
-		return sys_file_describe(a);
+		return sys_object_type(a);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:
