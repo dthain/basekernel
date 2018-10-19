@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "pic.h"
 #include "process.h"
 #include "kernelcore.h"
+#include "x86.h"
 
 static interrupt_handler_t interrupt_handler_table[48];
 static uint32_t interrupt_count[48];
@@ -36,20 +37,29 @@ static const char *exception_names[] = {
 
 static void unknown_exception(int i, int code)
 {
-	unsigned vaddr, paddr;
+	unsigned vaddr; // virtual address trying to be accessed
+	unsigned paddr; // physical address
+	unsigned esp; // stack pointer
 
-	if(i == 14) {
-	      asm("mov %%cr2, %0":"=r"(vaddr));
+	if(i==14) {
+		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed		
+		esp  = ((struct x86_stack *)(current->kstack_top - sizeof(struct x86_stack)))->esp; // stack pointer of the process that raised the exception
+		// Check if the requested memory is in the stack or data
+		int data_access = vaddr < current->vm_data_size;
 
-		// XXX Now that the process tracks the current data/stack size, we can more easily distinguish the reason for the fault.
-		int data = vaddr < (int) current->vm_data_size;
-		int stack = current->vm_data_size && pagetable_getmap(current->pagetable, vaddr + PAGE_SIZE, &paddr, 0);
+		// Subtract 128 from esp because of the red-zone 
+		// According to https:gcc.gnu.org, the red zone is a 128-byte area beyond 
+		// the stack pointer that will not be modified by signal or interrupt handlers 
+		// and therefore can be used for temporary data without adjusting the stack pointer.
+		int stack_access = vaddr >= esp - 128; 
 
-		//Check for a valid mapping (which will result from violating the permissions on page), or that
-		//we are either accessing neither the stack nor the heap, or somehow both, and error if so
-
-		if(pagetable_getmap(current->pagetable, vaddr, &paddr, 0) || !(data ^ stack)) {
-			console_printf("interrupt: illegal page access at vaddr %x\n", vaddr);
+		// Check if the requested memory is already in use
+		int page_already_present = pagetable_getmap(current->pagetable,vaddr,&paddr,0);
+		
+		// Check if page is already mapped (which will result from violating the permissions on page) or that
+		// we are accessing neither the stack nor the heap, or we are accessing both. If so, error
+		if (page_already_present || !(data_access ^ stack_access)) {
+			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
 		} else {
