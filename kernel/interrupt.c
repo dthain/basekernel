@@ -37,7 +37,9 @@ static const char * exception_names[] = {
 
 static void unknown_exception( int i, int code )
 {
-	unsigned vaddr, paddr, esp;
+	unsigned vaddr; // virtual address trying to be accessed
+	unsigned paddr; // physical address
+	unsigned esp; // stack pointer
 
 	if(i==14) {
 		asm("mov %%cr2, %0" : "=r" (vaddr) ); // virtual address trying to be accessed		
