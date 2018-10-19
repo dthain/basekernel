@@ -79,11 +79,6 @@ int open_window(int wd, int x, int y, int w, int h)
 	return syscall(SYSCALL_OPEN_WINDOW, wd, x, y, w, h);
 }
 
-int get_window_properties(int wd, uint32_t * properties)
-{
-	return syscall(SYSCALL_GET_WINDOW_PROPERTIES, wd, (uint32_t) properties, 0, 0, 0);
-}
-
 int process_sleep(unsigned int ms)
 {
 	return syscall(SYSCALL_PROCESS_SLEEP, ms, 0, 0, 0, 0);
@@ -172,4 +167,9 @@ int sys_stats(struct sys_stats *s)
 int process_stats(struct proc_stats *s, unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
+}
+
+int get_dimensions(int fd, void * dimensions)
+{
+	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dimensions, 0, 0, 0);
 }
