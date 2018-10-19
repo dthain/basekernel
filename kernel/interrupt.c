@@ -58,7 +58,6 @@ static void unknown_exception( int i, int code )
 		// we are accessing neither the stack nor the heap, or we are accessing both. If so, error
 		if (page_already_present || !(data_access ^ stack_access)) {
 			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
-			console_printf("interrupt: illegal page access at esp %x\n",esp);
 			process_dump(current);
 			process_exit(0);
 		} else {
