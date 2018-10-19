@@ -34,7 +34,6 @@ int close(int fd);
 extern void *sbrk(int a);
 
 int open_window(int wd, int x, int y, int w, int h);
-int get_window_properties(int wd, uint32_t * properties);
 int set_blocking(int fd, int b);
 int console_open(int fd);
 int pipe_open();
@@ -46,5 +45,6 @@ int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
+int get_dimensions(int fd, void * dimensions);
 
 #endif
