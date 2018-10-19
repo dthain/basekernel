@@ -278,15 +278,6 @@ int sys_close(int fd)
 {
 	struct kobject *p = current->ktable[fd];
 	kobject_close(p);
-	if (current->ktable[fd]->type == KOBJECT_GRAPHICS)
-	{
-		// Take window out of open windows
-		for (int i = 0; i < 20; ++i) {
-			if (current->open_windows[i] == fd) {
-				current->open_windows[i] = 0;
-			}
-		}
-	}
 	current->ktable[fd] = 0;
 	return 0;
 }
@@ -367,16 +358,6 @@ int sys_open_console(int wd)
 
 int sys_open_window(int wd, int x, int y, int w, int h)
 {
-	// Check if wd is in the available window descriptors for current process
-	for (int i = 0; i < 20; ++i) {
-		if (wd == current->window_descriptors[i]) {
-			break;
-		} else if (i == 19) {
-			printf("ERROR: Window not allowed to be accessed\n");
-			return KERROR_NOT_FOUND;
-		}
-	}
-
 	int fd = process_available_fd(current);
 	if(fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
 		return KERROR_NOT_FOUND;
@@ -393,32 +374,12 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	current->ktable[fd]->data.graphics->clip.w = w;
 	current->ktable[fd]->data.graphics->clip.h = h;
 
-	// Add fd to open windows
-	for (int i = 0; i < 20; ++i)
-	{
-		if (current->open_windows[i] == 0) {
-			current->open_windows[i] = fd;
-			break;
-		} else if (i == 19) {
-			printf("ERROR: Cannot open up more windows\n");
-			return KERROR_NOT_FOUND;	
-		}
-	}
-
 	return fd;
 }
 
-int sys_get_window_properties(int wd, uint32_t * properties) {
-	if(wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS)
-	{
-		return KERROR_NOT_FOUND;
-	}
-	properties[0] = current->ktable[wd]->data.graphics->clip.x;
-	properties[1] = current->ktable[wd]->data.graphics->clip.y;
-	properties[2] = current->ktable[wd]->data.graphics->clip.w;
-	properties[3] = current->ktable[wd]->data.graphics->clip.h;
-
-	return 0;
+int sys_get_dimensions(int fd, uint32_t * dimensions) {
+	struct kobject *p = current->ktable[fd];
+	return kobject_get_dimensions(p, dimensions);
 }
 
 
@@ -490,8 +451,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
-	case SYSCALL_GET_WINDOW_PROPERTIES:
-		return sys_get_window_properties(a, (uint32_t *) b);
+	case SYSCALL_GET_DIMENSIONS:
+		return sys_get_dimensions(a, (uint32_t *) b);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_SBRK:
