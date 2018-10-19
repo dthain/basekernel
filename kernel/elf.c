@@ -84,7 +84,7 @@ struct elf_section {
 #define ELF_SECTION_FLAGS_TLS 1024
 
 
-int elf_load( struct process *p, const char *filename, addr_t *entry )
+int elf_load(struct process *p, const char *filename, addr_t * entry)
 {
 	struct elf_header header;
 	struct elf_program program;
@@ -92,38 +92,46 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 	int i;
 	uint32_t actual;
 
-	struct fs_dirent *d = fs_dirent_namei(p->current_dir,filename);
-	if(!d) return KERROR_NOT_FOUND;
+	struct fs_dirent *d = fs_dirent_namei(p->current_dir, filename);
+	if(!d)
+		return KERROR_NOT_FOUND;
 
-	struct fs_file *file = fs_file_open(d,FS_FILE_READ);
-	if(!file) return KERROR_NOT_FOUND;
+	struct fs_file *file = fs_file_open(d, FS_FILE_READ);
+	if(!file)
+		return KERROR_NOT_FOUND;
 
-	actual = fs_file_read(file,(char*)&header,sizeof(header),0);
-	if(actual!=sizeof(header)) goto noload;
+	actual = fs_file_read(file, (char *) &header, sizeof(header), 0);
+	if(actual != sizeof(header))
+		goto noload;
 
-	if(strncmp(header.ident,"\177ELF",4) || header.machine!=ELF_HEADER_MACHINE_I386 || header.version!=ELF_HEADER_VERSION) goto noexec;
+	if(strncmp(header.ident, "\177ELF", 4) || header.machine != ELF_HEADER_MACHINE_I386 || header.version != ELF_HEADER_VERSION)
+		goto noexec;
 
-	actual = fs_file_read(file,(char*)&program,sizeof(program),header.program_offset);
-	if(actual!=sizeof(program)) goto noload;
+	actual = fs_file_read(file, (char *) &program, sizeof(program), header.program_offset);
+	if(actual != sizeof(program))
+		goto noload;
 
 	//printf("elf: text %x bytes from offset %x at address %x length %x\n",program.file_size,program.offset,program.vaddr,program.memory_size);
 
-	if( program.type!=ELF_PROGRAM_TYPE_LOADABLE || program.vaddr<PROCESS_ENTRY_POINT || program.memory_size>0x8000000 || program.memory_size!=program.file_size ) goto noexec;
+	if(program.type != ELF_PROGRAM_TYPE_LOADABLE || program.vaddr < PROCESS_ENTRY_POINT || program.memory_size > 0x8000000 || program.memory_size != program.file_size)
+		goto noexec;
 
-	process_data_size_set(p,program.memory_size);
+	process_data_size_set(p, program.memory_size);
 
-	actual = fs_file_read(file,(char*)program.vaddr,program.memory_size,program.offset);
-	if(actual!=program.memory_size) goto mustdie;
+	actual = fs_file_read(file, (char *) program.vaddr, program.memory_size, program.offset);
+	if(actual != program.memory_size)
+		goto mustdie;
 
-	for(i=0;i<header.shnum;i++) {
-		actual = fs_file_read(file,(char*)&section,sizeof(section),header.section_offset+i*header.shentsize);
-		if(actual!=sizeof(section)) goto mustdie;
+	for(i = 0; i < header.shnum; i++) {
+		actual = fs_file_read(file, (char *) &section, sizeof(section), header.section_offset + i * header.shentsize);
+		if(actual != sizeof(section))
+			goto mustdie;
 
-		if(section.type==ELF_SECTION_TYPE_BSS) {
+		if(section.type == ELF_SECTION_TYPE_BSS) {
 			uint32_t limit = section.address + section.size - PROCESS_ENTRY_POINT;
-			if(limit>p->vm_data_size) {
-				process_data_size_set(p,section.address+section.size-PROCESS_ENTRY_POINT);
-				memset((void*)section.address,section.size,0);
+			if(limit > p->vm_data_size) {
+				process_data_size_set(p, section.address + section.size - PROCESS_ENTRY_POINT);
+				memset((void *) section.address, section.size, 0);
 			}
 		} else {
 			/* skip all other section types */
@@ -136,18 +144,18 @@ int elf_load( struct process *p, const char *filename, addr_t *entry )
 
 	return 0;
 
-	noload:
-	printf("elf: %s failed to load correctly!\n",filename);
+      noload:
+	printf("elf: %s failed to load correctly!\n", filename);
 	fs_file_close(file);
 	return KERROR_NOT_FOUND;
 
-	noexec:
-	printf("elf: %s is not a valid i386 ELF executable\n",filename);
+      noexec:
+	printf("elf: %s is not a valid i386 ELF executable\n", filename);
 	fs_file_close(file);
 	return KERROR_NOT_EXECUTABLE;
 
-	mustdie:
-	printf("elf: %s did not load correctly\n",filename);
+      mustdie:
+	printf("elf: %s did not load correctly\n", filename);
 	fs_file_close(file);
 	return KERROR_EXECUTION_FAILED;
 }

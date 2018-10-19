@@ -27,24 +27,24 @@
 extern "C" {
 #endif
 
-#include <stddef.h>   /* for size_t */
+#include <stddef.h>		/* for size_t */
 
 #ifndef ONLY_MSPACES
-#define ONLY_MSPACES 0     /* define to a value */
+#define ONLY_MSPACES 0		/* define to a value */
 #elif ONLY_MSPACES != 0
 #define ONLY_MSPACES 1
-#endif  /* ONLY_MSPACES */
+#endif				/* ONLY_MSPACES */
 #ifndef NO_MALLINFO
 #define NO_MALLINFO 0
-#endif  /* NO_MALLINFO */
+#endif				/* NO_MALLINFO */
 
 #ifndef MSPACES
 #if ONLY_MSPACES
 #define MSPACES 1
-#else   /* ONLY_MSPACES */
+#else				/* ONLY_MSPACES */
 #define MSPACES 0
-#endif  /* ONLY_MSPACES */
-#endif  /* MSPACES */
+#endif				/* ONLY_MSPACES */
+#endif				/* MSPACES */
 
 #if !ONLY_MSPACES
 
@@ -70,32 +70,32 @@ extern "C" {
 #define dlindependent_calloc   independent_calloc
 #define dlindependent_comalloc independent_comalloc
 #define dlbulk_free            bulk_free
-#endif /* USE_DL_PREFIX */
+#endif				/* USE_DL_PREFIX */
 
-#if !NO_MALLINFO 
+#if !NO_MALLINFO
 #ifndef HAVE_USR_INCLUDE_MALLOC_H
 #ifndef _MALLOC_H
 #ifndef MALLINFO_FIELD_TYPE
 #define MALLINFO_FIELD_TYPE size_t
-#endif /* MALLINFO_FIELD_TYPE */
+#endif				/* MALLINFO_FIELD_TYPE */
 #ifndef STRUCT_MALLINFO_DECLARED
 #define STRUCT_MALLINFO_DECLARED 1
-struct mallinfo {
-  MALLINFO_FIELD_TYPE arena;    /* non-mmapped space allocated from system */
-  MALLINFO_FIELD_TYPE ordblks;  /* number of free chunks */
-  MALLINFO_FIELD_TYPE smblks;   /* always 0 */
-  MALLINFO_FIELD_TYPE hblks;    /* always 0 */
-  MALLINFO_FIELD_TYPE hblkhd;   /* space in mmapped regions */
-  MALLINFO_FIELD_TYPE usmblks;  /* maximum total allocated space */
-  MALLINFO_FIELD_TYPE fsmblks;  /* always 0 */
-  MALLINFO_FIELD_TYPE uordblks; /* total allocated space */
-  MALLINFO_FIELD_TYPE fordblks; /* total free space */
-  MALLINFO_FIELD_TYPE keepcost; /* releasable (via malloc_trim) space */
-};
-#endif /* STRUCT_MALLINFO_DECLARED */
-#endif  /* _MALLOC_H */
-#endif  /* HAVE_USR_INCLUDE_MALLOC_H */
-#endif  /* !NO_MALLINFO */
+	struct mallinfo {
+		MALLINFO_FIELD_TYPE arena;	/* non-mmapped space allocated from system */
+		MALLINFO_FIELD_TYPE ordblks;	/* number of free chunks */
+		MALLINFO_FIELD_TYPE smblks;	/* always 0 */
+		MALLINFO_FIELD_TYPE hblks;	/* always 0 */
+		MALLINFO_FIELD_TYPE hblkhd;	/* space in mmapped regions */
+		MALLINFO_FIELD_TYPE usmblks;	/* maximum total allocated space */
+		MALLINFO_FIELD_TYPE fsmblks;	/* always 0 */
+		MALLINFO_FIELD_TYPE uordblks;	/* total allocated space */
+		MALLINFO_FIELD_TYPE fordblks;	/* total free space */
+		MALLINFO_FIELD_TYPE keepcost;	/* releasable (via malloc_trim) space */
+	};
+#endif				/* STRUCT_MALLINFO_DECLARED */
+#endif				/* _MALLOC_H */
+#endif				/* HAVE_USR_INCLUDE_MALLOC_H */
+#endif				/* !NO_MALLINFO */
 
 /*
   malloc(size_t n)
@@ -111,7 +111,7 @@ struct mallinfo {
   maximum supported value of n differs across systems, but is in all
   cases less than the maximum representable value of a size_t.
 */
-void* dlmalloc(size_t);
+	void *dlmalloc(size_t);
 
 /*
   free(void* p)
@@ -120,14 +120,14 @@ void* dlmalloc(size_t);
   It has no effect if p is null. If p was not malloced or already
   freed, free(p) will by default cuase the current program to abort.
 */
-void  dlfree(void*);
+	void dlfree(void *);
 
 /*
   calloc(size_t n_elements, size_t element_size);
   Returns a pointer to n_elements * element_size bytes, with all locations
   set to zero.
 */
-void* dlcalloc(size_t, size_t);
+	void *dlcalloc(size_t, size_t);
 
 /*
   realloc(void* p, size_t n)
@@ -151,7 +151,7 @@ void* dlcalloc(size_t, size_t);
   The old unix realloc convention of allowing the last-free'd chunk
   to be used as an argument to realloc is not supported.
 */
-void* dlrealloc(void*, size_t);
+	void *dlrealloc(void *, size_t);
 
 /*
   realloc_in_place(void* p, size_t n)
@@ -166,7 +166,7 @@ void* dlrealloc(void*, size_t);
 
   Returns p if successful; otherwise null.
 */
-void* dlrealloc_in_place(void*, size_t);
+	void *dlrealloc_in_place(void *, size_t);
 
 /*
   memalign(size_t alignment, size_t n);
@@ -180,7 +180,7 @@ void* dlrealloc_in_place(void*, size_t);
 
   Overreliance on memalign is a sure way to fragment space.
 */
-void* dlmemalign(size_t, size_t);
+	void *dlmemalign(size_t, size_t);
 
 /*
   int posix_memalign(void** pp, size_t alignment, size_t n);
@@ -190,14 +190,14 @@ void* dlmemalign(size_t, size_t);
   returns KERROR_INVALID_REQUEST if the alignment is not a power of two (3) fails and
   returns ENOMEM if memory cannot be allocated.
 */
-int dlposix_memalign(void**, size_t, size_t);
+	int dlposix_memalign(void **, size_t, size_t);
 
 /*
   valloc(size_t n);
   Equivalent to memalign(pagesize, n), where pagesize is the page
   size of the system. If the pagesize is unknown, 4096 is used.
 */
-void* dlvalloc(size_t);
+	void *dlvalloc(size_t);
 
 /*
   mallopt(int parameter_number, int parameter_value)
@@ -215,7 +215,7 @@ void* dlvalloc(size_t);
   M_GRANULARITY        -2     page size   any power of 2 >= page size
   M_MMAP_THRESHOLD     -3      256*1024   any   (or 0 if no MMAP support)
 */
-int dlmallopt(int, int);
+	int dlmallopt(int, int);
 
 #define M_TRIM_THRESHOLD     (-1)
 #define M_GRANULARITY        (-2)
@@ -231,7 +231,7 @@ int dlmallopt(int, int);
   Even if locks are otherwise defined, this function does not use them,
   so results might not be up to date.
 */
-size_t dlmalloc_footprint(void);
+	size_t dlmalloc_footprint(void);
 
 /*
   malloc_max_footprint();
@@ -244,7 +244,7 @@ size_t dlmalloc_footprint(void);
   otherwise defined, this function does not use them, so results might
   not be up to date.
 */
-size_t dlmalloc_max_footprint(void);
+	size_t dlmalloc_max_footprint(void);
 
 /*
   malloc_footprint_limit();
@@ -255,7 +255,7 @@ size_t dlmalloc_max_footprint(void);
   guarantee that this number of bytes can actually be obtained from
   the system.  
 */
-size_t dlmalloc_footprint_limit(void);
+	size_t dlmalloc_footprint_limit(void);
 
 /*
   malloc_set_footprint_limit();
@@ -269,7 +269,7 @@ size_t dlmalloc_footprint_limit(void);
   additional system memory will fail. However, invocation cannot
   retroactively deallocate existing used memory.
 */
-size_t dlmalloc_set_footprint_limit(size_t bytes);
+	size_t dlmalloc_set_footprint_limit(size_t bytes);
 
 /*
   malloc_inspect_all(void(*handler)(void *start,
@@ -299,8 +299,7 @@ size_t dlmalloc_set_footprint_limit(size_t bytes);
 
   malloc_inspect_all is compiled only if MALLOC_INSPECT_ALL is defined.
 */
-void dlmalloc_inspect_all(void(*handler)(void*, void *, size_t, void*),
-                           void* arg);
+	void dlmalloc_inspect_all(void (*handler) (void *, void *, size_t, void *), void *arg);
 
 #if !NO_MALLINFO
 /*
@@ -326,8 +325,8 @@ void dlmalloc_inspect_all(void(*handler)(void*, void *, size_t, void*),
   thus be inaccurate.
 */
 
-struct mallinfo dlmallinfo(void);
-#endif  /* NO_MALLINFO */
+	struct mallinfo dlmallinfo(void);
+#endif				/* NO_MALLINFO */
 
 /*
   independent_calloc(size_t n_elements, size_t element_size, void* chunks[]);
@@ -378,7 +377,7 @@ struct mallinfo dlmallinfo(void);
     return first;
   }
 */
-void** dlindependent_calloc(size_t, size_t, void**);
+	void **dlindependent_calloc(size_t, size_t, void **);
 
 /*
   independent_comalloc(size_t n_elements, size_t sizes[], void* chunks[]);
@@ -436,7 +435,7 @@ void** dlindependent_calloc(size_t, size_t, void**);
   since it cannot reuse existing noncontiguous small chunks that
   might be available for some of the elements.
 */
-void** dlindependent_comalloc(size_t, size_t*, void**);
+	void **dlindependent_comalloc(size_t, size_t *, void **);
 
 /*
   bulk_free(void* array[], size_t n_elements)
@@ -447,14 +446,14 @@ void** dlindependent_comalloc(size_t, size_t*, void**);
   is returned.  For large arrays of pointers with poor locality, it
   may be worthwhile to sort this array before calling bulk_free.
 */
-size_t  dlbulk_free(void**, size_t n_elements);
+	size_t dlbulk_free(void **, size_t n_elements);
 
 /*
   pvalloc(size_t n);
   Equivalent to valloc(minimum-page-that-holds(n)), that is,
   round up n to nearest pagesize.
  */
-void*  dlpvalloc(size_t);
+	void *dlpvalloc(size_t);
 
 /*
   malloc_trim(size_t pad);
@@ -477,7 +476,7 @@ void*  dlpvalloc(size_t);
 
   Malloc_trim returns 1 if it actually released any memory, else 0.
 */
-int  dlmalloc_trim(size_t);
+	int dlmalloc_trim(size_t);
 
 /*
   malloc_stats();
@@ -500,9 +499,9 @@ int  dlmalloc_trim(size_t);
   
   malloc_stats is not compiled if NO_MALLOC_STATS is defined.
 */
-void  dlmalloc_stats(void);
+	void dlmalloc_stats(void);
 
-#endif /* !ONLY_MSPACES */
+#endif				/* !ONLY_MSPACES */
 
 /*
   malloc_usable_size(void* p);
@@ -518,7 +517,7 @@ void  dlmalloc_stats(void);
   p = malloc(n);
   assert(malloc_usable_size(p) >= 256);
 */
-size_t dlmalloc_usable_size(const void*);
+	size_t dlmalloc_usable_size(const void *);
 
 #if MSPACES
 
@@ -526,7 +525,7 @@ size_t dlmalloc_usable_size(const void*);
   mspace is an opaque type representing an independent
   region of space that supports mspace_malloc, etc.
 */
-typedef void* mspace;
+	typedef void *mspace;
 
 /*
   create_mspace creates and returns a new independent space with the
@@ -539,7 +538,7 @@ typedef void* mspace;
   compiling with a different DEFAULT_GRANULARITY or dynamically
   setting with mallopt(M_GRANULARITY, value).
 */
-mspace create_mspace(size_t capacity, int locked);
+	mspace create_mspace(size_t capacity, int locked);
 
 /*
   destroy_mspace destroys the given space, and attempts to return all
@@ -547,7 +546,7 @@ mspace create_mspace(size_t capacity, int locked);
   bytes freed. After destruction, the results of access to all memory
   used by the space become undefined.
 */
-size_t destroy_mspace(mspace msp);
+	size_t destroy_mspace(mspace msp);
 
 /*
   create_mspace_with_base uses the memory supplied as the initial base
@@ -558,7 +557,7 @@ size_t destroy_mspace(mspace msp);
   Destroying this space will deallocate all additionally allocated
   space (if possible) but not the initial base.
 */
-mspace create_mspace_with_base(void* base, size_t capacity, int locked);
+	mspace create_mspace_with_base(void *base, size_t capacity, int locked);
 
 /*
   mspace_track_large_chunks controls whether requests for large chunks
@@ -571,50 +570,46 @@ mspace create_mspace_with_base(void* base, size_t capacity, int locked);
   allocated using this space.  The function returns the previous
   setting.
 */
-int mspace_track_large_chunks(mspace msp, int enable);
+	int mspace_track_large_chunks(mspace msp, int enable);
 
 #if !NO_MALLINFO
 /*
   mspace_mallinfo behaves as mallinfo, but reports properties of
   the given space.
 */
-struct mallinfo mspace_mallinfo(mspace msp);
-#endif /* NO_MALLINFO */
+	struct mallinfo mspace_mallinfo(mspace msp);
+#endif				/* NO_MALLINFO */
 
 /*
   An alias for mallopt.
 */
-int mspace_mallopt(int, int);
+	int mspace_mallopt(int, int);
 
 /*
   The following operate identically to their malloc counterparts
   but operate only for the given mspace argument
 */
-void* mspace_malloc(mspace msp, size_t bytes);
-void mspace_free(mspace msp, void* mem);
-void* mspace_calloc(mspace msp, size_t n_elements, size_t elem_size);
-void* mspace_realloc(mspace msp, void* mem, size_t newsize);
-void* mspace_realloc_in_place(mspace msp, void* mem, size_t newsize);
-void* mspace_memalign(mspace msp, size_t alignment, size_t bytes);
-void** mspace_independent_calloc(mspace msp, size_t n_elements,
-                                 size_t elem_size, void* chunks[]);
-void** mspace_independent_comalloc(mspace msp, size_t n_elements,
-                                   size_t sizes[], void* chunks[]);
-size_t mspace_bulk_free(mspace msp, void**, size_t n_elements);
-size_t mspace_usable_size(const void* mem);
-void mspace_malloc_stats(mspace msp);
-int mspace_trim(mspace msp, size_t pad);
-size_t mspace_footprint(mspace msp);
-size_t mspace_max_footprint(mspace msp);
-size_t mspace_footprint_limit(mspace msp);
-size_t mspace_set_footprint_limit(mspace msp, size_t bytes);
-void mspace_inspect_all(mspace msp, 
-                        void(*handler)(void *, void *, size_t, void*),
-                        void* arg);
-#endif  /* MSPACES */
+	void *mspace_malloc(mspace msp, size_t bytes);
+	void mspace_free(mspace msp, void *mem);
+	void *mspace_calloc(mspace msp, size_t n_elements, size_t elem_size);
+	void *mspace_realloc(mspace msp, void *mem, size_t newsize);
+	void *mspace_realloc_in_place(mspace msp, void *mem, size_t newsize);
+	void *mspace_memalign(mspace msp, size_t alignment, size_t bytes);
+	void **mspace_independent_calloc(mspace msp, size_t n_elements, size_t elem_size, void *chunks[]);
+	void **mspace_independent_comalloc(mspace msp, size_t n_elements, size_t sizes[], void *chunks[]);
+	size_t mspace_bulk_free(mspace msp, void **, size_t n_elements);
+	size_t mspace_usable_size(const void *mem);
+	void mspace_malloc_stats(mspace msp);
+	int mspace_trim(mspace msp, size_t pad);
+	size_t mspace_footprint(mspace msp);
+	size_t mspace_max_footprint(mspace msp);
+	size_t mspace_footprint_limit(mspace msp);
+	size_t mspace_set_footprint_limit(mspace msp, size_t bytes);
+	void mspace_inspect_all(mspace msp, void (*handler) (void *, void *, size_t, void *), void *arg);
+#endif				/* MSPACES */
 
 #ifdef __cplusplus
-};  /* end of extern "C" */
+};				/* end of extern "C" */
 #endif
 
 #endif /* MALLOC_280_H */

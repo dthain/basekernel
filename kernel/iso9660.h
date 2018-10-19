@@ -49,15 +49,15 @@ struct iso_9660_time {
 #define ISO_9660_VOLUME_TYPE_TERMINATOR 255
 
 struct iso_9660_volume_descriptor {
-	uint8_t  type;
-	char   magic[5];
-	char   other[2];
-	char   system[32];
-	char   volume[32];
-	char   reserved1[8];
+	uint8_t type;
+	char magic[5];
+	char other[2];
+	char system[32];
+	char volume[32];
+	char reserved1[8];
 	uint32_t nsectors_little;
 	uint32_t nsectors_big;
-	char   reserved2[32];
+	char reserved2[32];
 	uint16_t volume_set_size_little;
 	uint16_t volume_set_size_big;
 	uint16_t volume_sequence_number_little;
@@ -67,7 +67,7 @@ struct iso_9660_volume_descriptor {
 	uint32_t path_table_size_little;
 	uint32_t path_table_size_big;
 	uint32_t first_path_table_start_little;
-	uint32_t second_path_table_start_little;	
+	uint32_t second_path_table_start_little;
 	uint32_t first_path_table_start_big;
 	uint32_t second_path_table_start_big;
 	struct iso_9660_directory_entry root;
