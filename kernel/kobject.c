@@ -173,7 +173,7 @@ int kobject_get_dimensions(struct kobject *kobject, uint32_t * dimensions)
 	case KOBJECT_GRAPHICS:
 		return graphics_get_dimensions(kobject->data.graphics, dimensions);
 	case KOBJECT_FILE:
-		return 0;
+		return fs_file_get_dimensions(kobject->data.file, dimensions);
 	case KOBJECT_DEVICE:
 		return 0;
 	case KOBJECT_PIPE:
