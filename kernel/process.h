@@ -34,8 +34,6 @@ struct process {
 	int exitreason;
 	struct pagetable *pagetable;
 	char *kstack;
-	uint32_t window_descriptors[20];
-	uint32_t open_windows[20];
 	char *kstack_top;
 	char *kstack_ptr;
 	struct kobject *ktable[PROCESS_MAX_OBJECTS];
@@ -72,7 +70,6 @@ void process_dump(struct process *p);
 
 void process_wait(struct list *q);
 void process_wakeup(struct list *q);
-void process_wakeup_parent(struct list *q, uint32_t ppid, uint32_t pid);
 void process_wakeup_all(struct list *q);
 void process_reap_all();
 
