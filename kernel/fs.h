@@ -51,6 +51,9 @@ int fs_file_read(struct fs_file *f, char *buffer, uint32_t length, uint32_t offs
 int fs_file_write(struct fs_file *f, const char *buffer, uint32_t length, uint32_t offset);
 int fs_file_close(struct fs_file *f);
 
+// Sets dimensions[0] to the file size and dimensions[1] to refcount
+int fs_file_get_dimensions(struct fs_file *f, uint32_t * dimensions);
+
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
 struct fs_dirent *fs_dirent_addref(struct fs_dirent *d);
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length);
