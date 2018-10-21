@@ -28,6 +28,11 @@ int open(const char *path, int mode, int flags)
 	return syscall(SYSCALL_OPEN, (uint32_t) path, mode, flags, 0, 0);
 }
 
+int object_type(int fd)
+{
+	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
+}
+
 int dup(int fd1, int fd2)
 {
 	return syscall(SYSCALL_DUP, fd1, fd2, 0, 0, 0);
