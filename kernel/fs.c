@@ -367,7 +367,7 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 		struct fs_dirent *new_src, *new_dst;
 		new_src = fs_dirent_lookup(src, name);
 		char temp[1];
-		if (fs_dirent_readdir(src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
+		if (fs_dirent_readdir(new_src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
 			fs_dirent_mkfile(dst, name);
 			new_dst = fs_dirent_lookup(dst, name);
 			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
