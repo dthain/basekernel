@@ -147,7 +147,6 @@ int kobject_close(struct kobject *kobject)
 	return 0;
 }
 
-
 int kobject_set_blocking(struct kobject *kobject, int b)
 {
 	switch (kobject->type) {
@@ -165,3 +164,7 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
+int kobject_get_type(struct kobject *kobject)
+{
+	return kobject->type;
+}
