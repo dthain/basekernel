@@ -505,7 +505,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 			return 0;
 		}
 		for(i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
-			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
+			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + (i + FS_DIRECT_MAXBLOCKS) * FS_BLOCKSIZE) < 0) {
 				kevinfs_dir_dealloc(res);
 				return 0;
 			}
@@ -614,6 +614,8 @@ static int kevinfs_dirent_resize(struct fs_dirent *d, uint32_t size)
 static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
 	struct kevinfs_dir_record *iter = dir_list->list, *prev = 0;
+	if (!dir_list->list_len)
+		return 0;
 	while(strcmp(iter->filename, filename) < 0) {
 		prev = iter;
 		if(iter->offset_to_next == 0)
@@ -626,6 +628,8 @@ static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, 
 static struct kevinfs_dir_record *kevinfs_lookup_dir_exact(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
 	struct kevinfs_dir_record *iter = dir_list->list, *prev = 0;
+	if (!dir_list->list_len)
+		return 0;
 	while(strcmp(iter->filename, filename) <= 0) {
 		prev = iter;
 		if(iter->offset_to_next == 0)
