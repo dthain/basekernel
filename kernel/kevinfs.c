@@ -474,13 +474,11 @@ static int kevinfs_read_dir(struct fs_dirent *d, char *buffer, int buffer_len)
 	if(list) {
 		struct kevinfs_dir_record *r = list->list;
 		while(buffer_len > strlen(r->filename)) {
-			int len = strlen(r->filename);
+			int len = strlen(r->filename) + 1;
 			strcpy(buffer, r->filename);
 			buffer += len;
-			*buffer = ' ';
-			buffer++;
-			buffer_len -= len + 1;
-			total += len + 1;
+			buffer_len -= len;
+			total += len;
 
 			if(r->offset_to_next == 0)
 				break;
