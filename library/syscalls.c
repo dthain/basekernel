@@ -33,6 +33,21 @@ int object_type(int fd)
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
+int process_highest_fd()
+{
+	return syscall(SYSCALL_PROCESS_HIGHEST_FD, 0, 0, 0, 0, 0);
+}
+
+int object_set_intent(int fd, int intent)
+{
+	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, intent, 0, 0, 0);
+}
+
+int object_get_intent(int fd)
+{
+	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, 0, 0, 0, 0);
+}
+
 int dup(int fd1, int fd2)
 {
 	return syscall(SYSCALL_DUP, fd1, fd2, 0, 0, 0);

@@ -2,24 +2,30 @@
 #include "library/string.h"
 #include "library/user-io.h"
 
-enum {
-	KOBJECT_INVALID = 0,
-	KOBJECT_FILE,
-	KOBJECT_DEVICE,
-	KOBJECT_GRPAHICS,
-	KOBJECT_PIPE
-};
 
 int main(const char **argv, int argc)
 {
 	printf("Generating/typing all file descriptors.\n");
 	int type = -2;
+	int intent = -3;
+
 	int window_descriptor = open_window(KNO_STDWIN, 1, 1, 1, 1);
 	if(!window_descriptor) {
 		return 1;
 	}
-	type = object_type(window_descriptor);
-	printf("Window file %d is of type: %d\n", window_descriptor, type);
+	object_set_intent(window_descriptor, 1);
+
+	int last_descriptor = process_highest_fd();
+	// First a test of highest_fd()
+	printf("Highest allocated FD: %d\nLast Descriptor: %d\n",
+			window_descriptor, last_descriptor);
+
+	for (int descriptor = 0; descriptor <= last_descriptor; descriptor++) 
+	{
+		type = object_type(descriptor);
+		intent = object_get_intent(descriptor);
+		printf("FD: %d is of type: %d, with intent %d\n", descriptor, type, intent);
+	}
 
 	/*
 	 * Presently, the following code returns the same error as the file open
