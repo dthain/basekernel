@@ -2,6 +2,7 @@
 
 GCC="gcc-8.2.0"
 BINUTILS="binutils-2.31.1"
+GDB="gdb-8.2"
 
 CURRDIR=`pwd`
 PREFIX=$CURRDIR/cross
@@ -26,6 +27,12 @@ then
 	tar -zxf $GCC.tar.gz
 fi
 
+if [ ! -d $GDB ]
+then
+	curl -O http://ftp.gnu.org/gnu/gdb/$GDB.tar.gz
+	tar -zxf $GDB.tar.gz
+fi
+
 # build and install libtools
 cd $BINUTILS
 ./configure --prefix="$PREFIX" --target=i686-elf --disable-nls --disable-werror --with-sysroot
@@ -42,6 +49,12 @@ mkdir $GCC-elf-objs
 cd $GCC-elf-objs
 ../$GCC/configure --prefix="$PREFIX" --target=i686-elf --disable-nls --enable-languages=c --without-headers
 make all-gcc && make all-target-libgcc && make install-gcc && make install-target-libgcc
+cd ..
+
+# build and install GDB
+cd $GDB
+./configure --prefix="$PREFIX" --target=i686-elf
+make && make install
 cd ..
 
 cd "$CURRDIR"
