@@ -4,7 +4,8 @@
 #include "kernel/types.h"
 #include "fs.h"
 
-void test_mount() {
+void test_mount()
+{
 	printf("test_mount\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
@@ -12,7 +13,8 @@ void test_mount() {
 	printf("root fs_dirent size: %d\n", d->size);
 }
 
-void test_lsdir_empty() {
+void test_lsdir_empty()
+{
 	printf("test_lsdir_empty\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
@@ -23,7 +25,8 @@ void test_lsdir_empty() {
 	printf("%s\n", buffer);
 }
 
-void test_mkdir() {
+void test_mkdir()
+{
 	printf("test_mkdir\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
@@ -35,7 +38,8 @@ void test_mkdir() {
 	printf("%s\n", buffer);
 }
 
-void test_rmdir() {
+void test_rmdir()
+{
 	printf("test_rmdir\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
@@ -47,13 +51,14 @@ void test_rmdir() {
 	printf("%s\n", buffer);
 }
 
-void test_mkdir_to_max() {
+void test_mkdir_to_max()
+{
 	printf("test_mkdir_to_max\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	uint32_t i;
-	for (i = 0;; i++) {
+	for(i = 0;; i++) {
 		char filename[30] = "example";
 		char id[4];
 		strcat(filename, uint_to_string(i, id));
@@ -67,13 +72,14 @@ void test_mkdir_to_max() {
 	printf("%s\n", buffer);
 }
 
-void test_rmdir_to_min() {
+void test_rmdir_to_min()
+{
 	printf("test_rmdir_to_min\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
 	struct fs_dirent *d = fs_volume_root(v);
 	uint32_t i;
-	for (i = 0;; i++) {
+	for(i = 0;; i++) {
 		char filename[30] = "example";
 		char id[4];
 		strcat(filename, uint_to_string(i, id));
@@ -86,7 +92,8 @@ void test_rmdir_to_min() {
 	printf("%s\n", buffer);
 }
 
-void test_write_file() {
+void test_write_file()
+{
 	printf("test_file_read_write\n");
 	struct fs *f = fs_lookup("kevin");
 	struct fs_volume *v = fs_volume_open(f, 0);
@@ -101,14 +108,14 @@ void test_write_file() {
 	struct fs_dirent *d_f = fs_dirent_namei(d, "read_write_file");
 	struct fs_file *fp = fs_file_open(d_f, FILE_MODE_WRITE);
 	printf("opened read_write_file for writing\n");
-	int result = fs_file_write(fp, wbuffer, sizeof(wbuffer),0);
+	int result = fs_file_write(fp, wbuffer, sizeof(wbuffer), 0);
 	printf("wrote %d bytes\n", result);
 	fs_file_close(fp);
 	printf("closed read_write_file\n");
 	printf("opened read_write_file for reading\n");
 	fp = fs_file_open(d_f, FILE_MODE_READ);
 	printf("read %d bytes:\n", result);
-	result = fs_file_read(fp, buffer, sizeof(wbuffer),0);
+	result = fs_file_read(fp, buffer, sizeof(wbuffer), 0);
 	printf("%s\n", buffer);
 	fs_file_close(fp);
 	printf("closed read_write_file\n");
@@ -119,7 +126,8 @@ void test_write_file() {
 	printf("%s\n", buffer);
 }
 
-int kevinfs_test() {
+int kevinfs_test()
+{
 	test_mount();
 	test_lsdir_empty();
 	test_mkdir();

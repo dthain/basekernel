@@ -12,9 +12,11 @@ See the file LICENSE for details.
 #include "stdarg.h"
 
 static char stdio_buffer[PAGE_SIZE] = { 0 };
+
 static uint32_t stdio_buffer_index = 0;
 
 static struct graphics_command graphics_buffer[PAGE_SIZE] = { {0} };
+
 static uint32_t graphics_buffer_index = 0;
 
 static int window_fd = KNO_STDWIN;
@@ -61,7 +63,7 @@ static void draw_set_buffer(int t, int a0, int a1, int a2, int a3)
 void draw_flush()
 {
 	draw_set_buffer(GRAPHICS_END, 0, 0, 0, 0);
-	write(window_fd,graphics_buffer,graphics_buffer_index);
+	write(window_fd, graphics_buffer, graphics_buffer_index);
 	graphics_buffer_index = 0;
 }
 
