@@ -319,21 +319,19 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 	char *buffer = kmalloc(4096);
-	memset(buffer,'\t',4096);
+	memset(buffer,0,4096);
 	printf("Reading directory... ");
 	int length = fs_dirent_readdir(src, buffer, 4096);
-	printf("Done.\n");
+	printf("Done. Found %d entries.\n", length);
 	if (length <= 0) {
 		return length;
 	}
-	buffer[MIN(length, 4095)] = 0;
-	char *name = strtok(buffer, "\t");
-	while (name) {
+	char *name = buffer;
+	for (int i = 0; name && i < length; i++) {
 		printf("%x: ",name);
 		printf("%s\n",name);
-		if (name > buffer + length) break;
 		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
-			name = strtok(0, "\t");
+			name += strlen(name) + 1;
 			continue;
 		}
 		printf("Copying %s... ", name);
@@ -360,8 +358,8 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 		fs_dirent_close(new_src);
 		printf("Done.\n");
 
-		name = strtok(0, "\t");
+		name += strlen(name) + 1;
 	}
 	kfree(buffer);
-	return 1;
+	return 0;
 }
