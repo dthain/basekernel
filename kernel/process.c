@@ -345,25 +345,17 @@ void process_reap_all()
 /* Wakes up parent off of the corresponding list*/
 void process_wakeup_parent(struct list *q)
 {
-	struct process *top_p;
-	struct process *p;
-	uint32_t first = 1;
+	struct process *p = (struct process *) q->head;
 	// Loop through all the waiting parents to see if one needs to be woken up
-	while((p = (struct process *) list_pop_head(q))) {
-		if (first) {
-			top_p = p;
-			first = 0;
-		} else if (top_p == p) {
-			break;
-		}
-
+	while(p) {
 		if (p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
 			p->state = PROCESS_STATE_READY;
 			p->waiting_for_child_pid = 0;
+			list_remove(&p->node);
 			list_push_tail(&ready_list, &p->node);
 			break;
 		}
-		list_push_tail(q, &p->node); // add item back on the list
+		p = (struct process *) (&p->node)->next;
 	}
 }
 
