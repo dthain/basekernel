@@ -169,7 +169,7 @@ int process_stats(struct proc_stats *s, unsigned int pid)
 	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
 }
 
-int get_dimensions(int fd, void * dimensions)
+int get_dimensions(int fd, void * dimensions, int num_dims)
 {
-	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dimensions, 0, 0, 0);
+	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dimensions, num_dims, 0, 0);
 }
