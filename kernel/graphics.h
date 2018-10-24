@@ -51,7 +51,7 @@ void graphics_char(struct graphics *g, int32_t x, int32_t y, char c);
 
 int graphics_write(struct graphics *g, struct graphics_command *command);
 
-int graphics_get_dimensions(struct graphics *g, uint32_t * dimensions);
+int graphics_get_dimensions(struct graphics *g, uint32_t * dimensions, int num_dims);
 
 extern struct graphics graphics_root;
 #endif

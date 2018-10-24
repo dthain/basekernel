@@ -336,11 +336,14 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	return total;
 }
 
-int fs_file_get_dimensions(struct fs_file *f, uint32_t * dimensions) 
+int fs_file_get_dimensions(struct fs_file *f, uint32_t * dimensions, int num_dims) 
 {
+	if (num_dims != 1)
+		return 0;
+
 	dimensions[0] = f->size;
-	dimensions[1] = f->refcount;
-	return 0;
+	
+	return 1;
 }
 
 

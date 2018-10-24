@@ -26,7 +26,6 @@ int process_sleep(unsigned int ms);
 int open(const char *path, int mode, int flags);
 int dup(int fd1, int fd2);
 int read(int fd, void *data, int length);
-
 int read_nonblock(int fd, void *data, int length);
 int write(int fd, void *data, int length);
 int lseek(int fd, int offset, int whence);
@@ -45,6 +44,6 @@ int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
-int get_dimensions(int fd, void * dimensions);
+int get_dimensions(int fd, void * dimensions, int num_dims);
 
 #endif
