@@ -42,5 +42,6 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);
 int kobject_set_blocking(struct kobject *kobject, int b);
+int kobject_get_type(struct kobject *kobject);
 
 #endif
