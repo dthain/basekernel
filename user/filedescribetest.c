@@ -5,6 +5,8 @@
 
 int main(const char **argv, int argc)
 {
+	char * type_string = "A simple type string";
+
 	printf("Generating/typing all file descriptors.\n");
 	int type = -2;
 	int intent = -3;
@@ -13,6 +15,9 @@ int main(const char **argv, int argc)
 	if(!window_descriptor) {
 		return 1;
 	}
+
+	printf("This object is: %s\n", type_string);
+
 	object_set_intent(window_descriptor, 1);
 
 	int last_descriptor = process_highest_fd();
@@ -26,6 +31,7 @@ int main(const char **argv, int argc)
 		intent = object_get_intent(descriptor);
 		printf("FD: %d is of type: %d, with intent %d\n", descriptor, type, intent);
 	}
+	printf("This object is: %s\n", type_string);
 
 	/*
 	 * Presently, the following code returns the same error as the file open
