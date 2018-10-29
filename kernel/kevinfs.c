@@ -1067,7 +1067,7 @@ static int kevinfs_mkfs(int unit_no)
 	kd = kevinfs_inode_as_kevinfs_dirent(kv, first_node);
 
 	if(kd && top_dir) {
-		ret = !kevinfs_writedir(kd, top_dir) && !kevinfs_save_dirent(kd);
+		ret = kevinfs_writedir(kd, top_dir) <= 0 || kevinfs_save_dirent(kd);
 	}
 
 	if(kd)
