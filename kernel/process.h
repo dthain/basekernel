@@ -44,6 +44,7 @@ struct process {
 	uint32_t ppid;
 	uint32_t vm_data_size;
 	uint32_t vm_stack_size;
+	uint32_t waiting_for_child_pid;
 };
 
 void process_init();
@@ -70,6 +71,7 @@ void process_dump(struct process *p);
 
 void process_wait(struct list *q);
 void process_wakeup(struct list *q);
+void process_wakeup_parent(struct list *q);
 void process_wakeup_all(struct list *q);
 void process_reap_all();
 

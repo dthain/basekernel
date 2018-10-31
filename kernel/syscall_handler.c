@@ -25,6 +25,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "memory.h"
 #include "ata.h"
+#include "graphics.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -230,6 +231,14 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
+int sys_object_type(int fd)
+{
+	int fd_type = kobject_get_type(current->ktable[fd]);
+	if(!fd_type)
+		return 0;
+	return fd_type;
+}
+
 int sys_dup(int fd1, int fd2)
 {
 	if(fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS) {
@@ -390,6 +399,11 @@ int sys_dup_volume(int src, int dst, char *srcfstype, char*dstfstype) {
 	return 0;
 }
 
+int sys_get_dimensions(int fd, int * dims, int n) {
+	struct kobject *p = current->ktable[fd];
+	return kobject_get_dimensions(p, dims, n);
+}
+
 int sys_sys_stats(struct sys_stats *s) {
 	struct rtc_time t = {0};
 	rtc_read(&t);
@@ -450,6 +464,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_lseek(a, b, c);
 	case SYSCALL_CLOSE:
 		return sys_close(a);
+	case SYSCALL_OBJECT_TYPE:
+		return sys_object_type(a);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:
@@ -458,6 +474,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
+	case SYSCALL_GET_DIMENSIONS:
+		return sys_get_dimensions(a, (int *) b, c);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_SBRK:

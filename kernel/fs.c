@@ -382,3 +382,13 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 	kfree(buffer);
 	return 0;
 }
+
+int fs_file_get_dimensions(struct fs_file *f, int * dims, int n)
+{
+	if (n <= 0)
+		return 0;
+
+	dims[0] = f->size;
+
+	return 1;
+}
