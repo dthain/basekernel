@@ -24,6 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
+struct list grave_watcher_list = { 0, 0 }; // parent processes are put here to wait for their children
 struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
 void process_init()
@@ -41,6 +42,8 @@ void process_init()
 	graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
+
+	current->waiting_for_child_pid = 0;
 
 	console_printf("process: ready\n");
 }
@@ -311,6 +314,7 @@ void process_exit(int code)
 	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
+	process_wakeup_parent(&grave_watcher_list); // On exit, wake up parent if need be
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -335,6 +339,23 @@ void process_reap_all()
 	struct process *p;
 	while((p = (struct process *) list_pop_head(&grave_list))) {
 		process_delete(p);
+	}
+}
+
+/* Wakes up parent off of the corresponding list*/
+void process_wakeup_parent(struct list *q)
+{
+	struct process *p = (struct process *) q->head;
+	// Loop through all the waiting parents to see if one needs to be woken up
+	while(p) {
+		if (p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
+			p->state = PROCESS_STATE_READY;
+			p->waiting_for_child_pid = 0;
+			list_remove(&p->node);
+			list_push_tail(&ready_list, &p->node);
+			break;
+		}
+		p = (struct process *) (&p->node)->next;
 	}
 }
 
@@ -430,7 +451,10 @@ int process_wait_child(uint32_t pid, struct process_info *info, int timeout)
 			}
 			p = next;
 		}
-		process_wait(&ready_list);
+
+		current->waiting_for_child_pid = pid;
+		process_wait(&grave_watcher_list);
+
 		elapsed = clock_diff(start, clock_read());
 		total = elapsed.millis + elapsed.seconds * 1000;
 	} while(total < timeout || timeout < 0);

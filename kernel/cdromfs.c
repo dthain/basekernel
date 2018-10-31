@@ -141,22 +141,34 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 
 	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
 
-	while(data_length > 0 && d->descriptor_length > 0) {
+	while(data_length > 0 && d->descriptor_length > 0 && buffer_length > 0) {
 		fix_filename(d->ident, d->ident_length);
 
 		if(d->ident[0] == 0) {
+			if (buffer_length < 2) {
+				buffer_length = 0;
+				continue;
+			}
 			strcpy(buffer, ".");
 			buffer += 2;
 			buffer_length -= 2;
 			total += 2;
 		} else if(d->ident[0] == 1) {
+			if (buffer_length < 3) {
+				buffer_length = 0;
+				continue;
+			}
 			strcpy(buffer, "..");
 			buffer += 3;
 			buffer_length -= 3;
 			total += 3;
 		} else {
-			strcpy(buffer, d->ident);
 			int len = strlen(d->ident) + 1;
+			if (buffer_length < len) {
+				buffer_length = 0;
+				continue;
+			}
+			strcpy(buffer, d->ident);
 			strtolower(buffer);
 			buffer += len;
 			buffer_length -= len;
