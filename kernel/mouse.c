@@ -78,7 +78,7 @@ uint8_t ps2_read_data()
 	uint8_t status;
 	do {
 		status = inb(PS2_COMMAND_PORT);
-	} while((status & PS2_STATUS_OBF) == 0);
+	} while(!(status & PS2_STATUS_OBF));
 	return inb(PS2_DATA_PORT);
 }
 
@@ -87,7 +87,7 @@ void ps2_write_data(uint8_t data)
 	uint8_t status;
 	do {
 		status = inb(PS2_COMMAND_PORT);
-	} while((status & PS2_STATUS_IBF) == 1);
+	} while(status & PS2_STATUS_IBF);
 	return outb(data, PS2_DATA_PORT);
 }
 
@@ -101,7 +101,7 @@ void ps2_write_command(uint8_t data)
 	uint8_t status;
 	do {
 		status = inb(PS2_COMMAND_PORT);
-	} while((status & PS2_STATUS_IBF) == 1);
+	} while(status & PS2_STATUS_IBF);
 	return outb(data, PS2_COMMAND_PORT);
 }
 
