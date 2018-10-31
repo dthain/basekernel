@@ -45,5 +45,6 @@ int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
+int get_dimensions(int fd, int * dims, int n);
 
 #endif
