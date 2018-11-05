@@ -1,14 +1,8 @@
+#include "library/errno.h"
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
 
-enum {
-	KOBJECT_INVALID = 0,
-	KOBJECT_FILE,
-	KOBJECT_DEVICE,
-	KOBJECT_GRPAHICS,
-	KOBJECT_PIPE
-};
 
 int main(const char **argv, int argc)
 {
@@ -20,6 +14,11 @@ int main(const char **argv, int argc)
 	}
 	type = object_type(window_descriptor);
 	printf("Window file %d is of type: %d\n", window_descriptor, type);
+	
+	const char * type_string = "A type string\n";
+	printf("Displaying all type strings\n");
+	type_string = strerror(-1);
+	printf("%s\n", type_string);
 
 	/*
 	 * Presently, the following code returns the same error as the file open
