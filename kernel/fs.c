@@ -335,3 +335,15 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 		return -1;
 	return total;
 }
+
+int fs_file_get_dimensions(struct fs_file *f, int * dims, int n) 
+{
+	if (n <= 0)
+		return 0;
+
+	dims[0] = f->size;
+	
+	return 1;
+}
+
+
