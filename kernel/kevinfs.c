@@ -789,7 +789,6 @@ static int kevinfs_writedir(struct kevinfs_dirent *kd, struct kevinfs_dir_record
 				goto cleanup;
 		}
 	}
-	struct kevinfs_dir_record_list *newlist = kevinfs_readdir(kd);
 	node->size = new_len * sizeof(struct kevinfs_dir_record);
       cleanup:
 	kfree(buffer);
