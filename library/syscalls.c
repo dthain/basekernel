@@ -38,12 +38,12 @@ int process_highest_fd()
 	return syscall(SYSCALL_PROCESS_HIGHEST_FD, 0, 0, 0, 0, 0);
 }
 
-int object_set_intent(int fd, int intent)
+char * object_set_intent(int fd, char * intent)
 {
 	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, intent, 0, 0, 0);
 }
 
-int object_get_intent(int fd)
+char * object_get_intent(int fd)
 {
 	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, 0, 0, 0, 0);
 }

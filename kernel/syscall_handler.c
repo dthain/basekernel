@@ -230,7 +230,7 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
-int sys_object_set_intent(int fd, int intent)
+int sys_object_set_intent(int fd, char * intent)
 {
 	current->ktable[fd]->intent = intent;
 	return 0;

@@ -9,6 +9,7 @@
 #include "kmalloc.h"
 #include "fs.h"
 #include "device.h"
+#include "library/string.h"
 
 struct kobject *kobject_create_file(struct fs_file *f)
 {
@@ -17,6 +18,7 @@ struct kobject *kobject_create_file(struct fs_file *f)
 	k->refcount = 1;
 	k->data.file = f;
 	k->offset = 0;
+	k->intent = 0;
 	return k;
 }
 
@@ -169,12 +171,16 @@ int kobject_get_type(struct kobject *kobject)
 	return kobject->type;
 }
 
-void kobject_set_intent(struct kobject *kobject, int new_intent)
+void kobject_set_intent(struct kobject *kobject, char * new_intent)
 {
-	kobject->intent = new_intent;
+	if (kobject->intent != 0) {
+		kfree(kobject->intent);
+	}
+	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
+	strcpy(kobject->intent, new_intent);
 }
 
-int kobject_get_intent(struct kobject *kobject)
+char * kobject_get_intent(struct kobject *kobject)
 {
 	return kobject->intent;
 }

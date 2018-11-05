@@ -17,8 +17,8 @@ int main(const char **argv, int argc)
 	}
 
 	printf("This object is: %s\n", type_string);
-
-	object_set_intent(window_descriptor, 1);
+	
+	object_set_intent(window_descriptor, type_string);
 
 	int last_descriptor = process_highest_fd();
 	// First a test of highest_fd()
@@ -29,7 +29,12 @@ int main(const char **argv, int argc)
 	{
 		type = object_type(descriptor);
 		intent = object_get_intent(descriptor);
-		printf("FD: %d is of type: %d, with intent %d\n", descriptor, type, intent);
+		if (intent != 0) {
+			printf("FD: %d is of type: %d, with intent: \"%s\"\n", descriptor, type, intent);
+		}
+		if (intent == 0) {
+			printf("FD: %d is of type: %d, with intent %d\n", descriptor, type, intent);
+		}
 	}
 	printf("This object is: %s\n", type_string);
 
