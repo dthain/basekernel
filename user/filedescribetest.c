@@ -3,11 +3,9 @@
 #include "library/string.h"
 #include "library/user-io.h"
 
-
 int main(const char **argv, int argc)
 {
-	printf("Generating/typing all file descriptors.\n");
-	int type = -2;
+	int type = -1;
 	int window_descriptor = open_window(KNO_STDWIN, 1, 1, 1, 1);
 	if(!window_descriptor) {
 		return 1;
@@ -15,9 +13,13 @@ int main(const char **argv, int argc)
 	type = object_type(window_descriptor);
 	printf("Window file %d is of type: %d\n", window_descriptor, type);
 	
-	const char * type_string = "A type string\n";
+	char * type_string = malloc(256);
+	char * type_default = "a type string";
+
 	printf("Displaying all type strings\n");
-	type_string = strerror(-1);
+	//strerror(-1, type_string);
+	printf("%s\n", type_default);
+	strcpy(type_string, type_default);
 	printf("%s\n", type_string);
 
 	/*
