@@ -25,6 +25,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "memory.h"
 #include "ata.h"
+#include "graphics.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -384,6 +385,12 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
+int sys_get_dimensions(int fd, int * dims, int n) {
+	struct kobject *p = current->ktable[fd];
+	return kobject_get_dimensions(p, dims, n);
+}
+
+
 int sys_sys_stats(struct sys_stats *s) {
 	struct rtc_time t = {0};
 	rtc_read(&t);
@@ -454,6 +461,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
+	case SYSCALL_GET_DIMENSIONS:
+		return sys_get_dimensions(a, (int *) b, c);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_SBRK:
