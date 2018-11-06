@@ -81,7 +81,7 @@ static struct list queue = { 0, 0 };
 static struct mutex ata_mutex = MUTEX_INIT;
 static int identify_in_progress = 0;
 
-static struct ata_count counters = {0};
+static struct ata_count counters = {{0}};
 
 struct ata_count ata_stats()
 {
