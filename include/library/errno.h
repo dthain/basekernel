@@ -15,6 +15,6 @@ static const char KERROR_NOT_A_DEVICE_STRING[] = "KERROR: Not a Device";
 static const char KERROR_NO_MEMORY_STRING[] = "KERROR: No Memory";
 static const char KERROR_IO_FAILURE_STRING[] = "KERROR: IO Failure";
 
-const char * strerror(int err_code);
+const char *strerror(int err_code);
 
 #endif

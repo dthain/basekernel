@@ -27,4 +27,4 @@ See the file LICENSE for details.
 struct list_node *list_pop_tail(struct list *list);
 void list_remove(struct list_node *n);
  
-#endif	/*  */
+#endif /*  */
