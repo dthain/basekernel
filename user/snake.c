@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2018 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -186,7 +186,7 @@ uint16_t randint(uint16_t min, uint16_t max)
 
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
 {
-	int wd = open_window(KNO_STDWIN, 10, 10, w_b, h_b);
+	int wd = open_window(KNO_STDWIN, 0, 0, w_b, h_b);
 	if(wd < 0) {
 		debug("Window create failed!\n");
 		return -1;
