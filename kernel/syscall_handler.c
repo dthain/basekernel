@@ -128,6 +128,65 @@ int sys_process_run(const char *path, const char **argv, int argc )
 	return p->pid;
 }
 
+/*
+	Function creates a child process with the standard window replaced by
+	a window of size w and h
+*/
+int sys_process_wrun(const char *path, const char **argv, int argc, int * window_desc, int wd_parent )
+{
+	/* Copy argv array into kernel memory. */
+	char **copy_argv = argv_copy(argc,argv);
+
+	/* Open new window in parrent */
+	int wd_child = sys_open_window(wd_parent, window_desc[0], window_desc[1], window_desc[2], window_desc[3]);
+
+	/* Create the child process */
+	struct process *p = process_create();
+	process_inherit(current, p);
+
+	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
+	struct pagetable *old_pagetable = current->pagetable;
+	current->pagetable = p->pagetable;
+	pagetable_load(p->pagetable);
+
+	/* Attempt to load the program image. */
+	addr_t entry;
+	int r = elf_load(p, path, &entry);
+	if(r >= 0) {
+		/* If load succeeded, reset stack and pass arguments */
+		process_stack_reset(p, PAGE_SIZE);
+		process_kstack_reset(p, entry);
+		process_pass_arguments(p,argc,copy_argv);
+	}
+
+	/* SWITCH BACK TO ADDRESS SPACE OF PARENT PROCESS */
+	current->pagetable = old_pagetable;
+	pagetable_load(old_pagetable);
+
+	/* Delete the argument copy. */
+	argv_delete(argc,copy_argv);
+
+	/* Make wd child's std window */
+	if(p->ktable[wd_parent]) {
+		kobject_close(p->ktable[wd_parent]);
+	}
+	p->ktable[wd_parent] = kobject_addref(p->ktable[wd_child]);
+	kobject_close(p->ktable[wd_child]);
+
+
+	/* If any error happened, return in the context of the parent */
+	if(r < 0) {
+		if(r == KERROR_EXECUTION_FAILED) {
+			process_delete(p);
+		}
+		return r;
+	}
+
+	/* Otherwise, launch the new child process. */
+	process_launch(p);
+	return p->pid;
+}
+
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	addr_t entry;
@@ -475,6 +534,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_parent();
 	case SYSCALL_PROCESS_RUN:
 		return sys_process_run((const char *) a, (const char **) b, c);
+	case SYSCALL_PROCESS_WRUN:
+		return sys_process_wrun((const char *) a, (const char **) b, c, (int *) d, e);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
