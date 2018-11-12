@@ -171,8 +171,14 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * window
 		kobject_close(p->ktable[wd_parent]);
 	}
 	p->ktable[wd_parent] = kobject_addref(p->ktable[wd_child]);
+	
+	/* 
+		Close the new windows old descriptor for both the child and the parent.
+		This way, one process doesnt have any duplicates and other children wont 
+		accidentally inherit another siblings standard window.
+	*/
 	kobject_close(p->ktable[wd_child]);
-
+	kobject_close(current->ktable[wd_child]);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
