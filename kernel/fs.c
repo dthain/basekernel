@@ -354,9 +354,9 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 	printf("Done. Found %d entries.\n", length);
 	if (length <= 0) {
 		return length;
-	}
+	} 
 	char *name = buffer;
-	for (int i = 0; name && i < length; i++) {
+	while (name && (name - buffer) < length) {
 		printf("%x: ",name);
 		printf("%s\n",name);
 		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
