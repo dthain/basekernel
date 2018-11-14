@@ -381,7 +381,7 @@ static int kevinfs_read_block(struct fs_dirent *d, char *buffer, uint32_t addres
 	uint32_t address = 0;
 	if (address_no >= FS_DIRECT_MAXBLOCKS) {
 		address_no -= FS_DIRECT_MAXBLOCKS;
-		struct kevinfs_indirect_block indirect_struct = {0};
+		struct kevinfs_indirect_block indirect_struct = {{0}};
 		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
 			return -1;
 		}
@@ -400,7 +400,7 @@ static int kevinfs_write_data_block(struct kevinfs_dirent *kd, uint32_t address_
 	uint32_t address = 0;
 	if (address_no >= FS_DIRECT_MAXBLOCKS) {
 		address_no -= FS_DIRECT_MAXBLOCKS;
-		struct kevinfs_indirect_block indirect_struct = {0};
+		struct kevinfs_indirect_block indirect_struct ={{0}};
 		if (kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
 			return -1;
 		}
@@ -449,7 +449,7 @@ static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
 		return -1;
 	uint32_t num_blocks = node->size / FS_BLOCKSIZE + (node->size % FS_BLOCKSIZE ? 1:0);
 	if (num_blocks > FS_DIRECT_MAXBLOCKS) {
-		struct kevinfs_indirect_block indirect_struct = {0};
+		struct kevinfs_indirect_block indirect_struct = {{0}};
 		if (kevinfs_read_data_block(kd->kv, node->indirect_block_address, (uint8_t *) &indirect_struct) < 0) {
 			return 0;
 		}
@@ -564,7 +564,7 @@ static int kevinfs_internal_dirent_resize(struct kevinfs_dirent *kd, uint32_t nu
 		num_blocks -= FS_DIRECT_MAXBLOCKS;
 		if (num_blocks > FS_INDIRECT_MAXBLOCKS)
 			return -1;
-		struct kevinfs_indirect_block indirect_struct = {0};
+		struct kevinfs_indirect_block indirect_struct = {{0}};
 		if (!node->indirect_block_address) {
 			if(kevinfs_lookup_available_block(kv, &(node->indirect_block_address)) < 0) {
 				return -1;
