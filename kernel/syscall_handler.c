@@ -86,8 +86,9 @@ the memory state, then loading
 
 int sys_process_run(const char *path, const char **argv, int argc )
 {
-	/* Copy argv array into kernel memory. */
+	/* Copy argv and path into kernel memory. */
 	char **copy_argv = argv_copy(argc,argv);
+	char *copy_path = strdup(path);
 
 	/* Create the child process */
 	struct process *p = process_create();
@@ -100,7 +101,7 @@ int sys_process_run(const char *path, const char **argv, int argc )
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, path, &entry);
+	int r = elf_load(p, copy_path, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -112,8 +113,9 @@ int sys_process_run(const char *path, const char **argv, int argc )
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
-	/* Delete the argument copy. */
+	/* Delete the argument and path copies. */
 	argv_delete(argc,copy_argv);
+	kfree(copy_path);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
