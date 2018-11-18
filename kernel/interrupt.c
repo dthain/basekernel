@@ -68,7 +68,7 @@ static void unknown_exception(int i, int code)
 			return;
 		}
 	} else {
-		console_printf("\finterrupt: exception %d: %s (code %x)\n", i, exception_names[i], code);
+		console_printf("interrupt: exception %d: %s (code %x)\n", i, exception_names[i], code);
 		process_dump(current);
 	}
 
