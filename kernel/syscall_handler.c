@@ -138,8 +138,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * window
 {
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc,argv);
-	char *copy_path = strdup(path);
-	
+
 	/* Open new window in parrent */
 	int wd_child = sys_open_window(wd_parent, window_desc[0], window_desc[1], window_desc[2], window_desc[3]);
 
@@ -154,7 +153,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * window
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, copy_path, &entry);
+	int r = elf_load(p, path, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -168,7 +167,6 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * window
 
 	/* Delete the argument copy. */
 	argv_delete(argc,copy_argv);
-	kfree(copy_path);
 
 	/* Make wd child's std window */
 	if(p->ktable[wd_parent]) {
