@@ -286,6 +286,10 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 	char *temp = memory_alloc_page(0);
 
+	if (offset + length > file->size) {
+		ops->resize(file->d, offset+length);
+	}
+
 	while(length > 0) {
 
 		int blocknum = offset / bs;
@@ -351,19 +355,17 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 	memset(buffer,0,4096);
 	printf("Reading directory... ");
 	int length = fs_dirent_readdir(src, buffer, 4096);
-	printf("Done. Found %d entries.\n", length);
+	printf("Done.\n");
 	if (length <= 0) {
 		return length;
-	} 
+	}
 	char *name = buffer;
 	while (name && (name - buffer) < length) {
-		printf("%x: ",name);
-		printf("%s\n",name);
 		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
 			name += strlen(name) + 1;
 			continue;
 		}
-		printf("Copying %s... ", name);
+		printf("Copying %s...\n", name);
 		struct fs_dirent *new_src, *new_dst;
 		new_src = fs_dirent_lookup(src, name);
 		char temp[1];
