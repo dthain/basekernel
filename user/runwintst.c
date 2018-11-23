@@ -18,14 +18,15 @@ See the file LICENSE for details.
 int main(const char ** argv, int argc)
 {
 	/* Description of the Window the parent wants the child to have (x,y,w,h) */
-	int window_description[4];
-	window_description[0] = 0;
-	window_description[1] = 0;
-	window_description[2] = 300;
-	window_description[3] = 300;
+	int wd = open_window(KNO_STDWIN, 0, 0, 300, 300);
 
 	const char *args[] = { "snake.exe" };
-	process_wrun("snake.exe", args, 1, window_description, KNO_STDWIN);
+	process_wrun("snake.exe", args, 1, wd);
 	
+	close(wd);
+
+	struct process_info info;
+	process_wait(&info, -1);
+
 	return 0;
 }
