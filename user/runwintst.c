@@ -21,7 +21,7 @@ int main(const char ** argv, int argc)
 	int wd = open_window(KNO_STDWIN, 0, 0, 300, 300);
 
 	const char *args[] = { "snake.exe" };
-	process_wrun("snake.exe", args, 1, wd);
+	process_wrun("snake.exe", args, 1, wd, KNO_STDIN);
 	
 	close(wd);
 
