@@ -24,15 +24,14 @@ typedef struct program {
 	int argc;
 } program;
 
-/* Func declarations */
+/* Function declarations */
 void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b);
 void mergeSort(program * programs, int l, int r);
 void merge(program * arr, int l, int m, int r);
 
 
-int main(const char ** argv, int argc)
-{
-
+int main(const char ** argv, int argc) {
+	/* Eventually, programs wont be hardcoded */
 	const char *args1[] = { "/bin/snake.exe" };
 
 	program programs[] = {
@@ -43,7 +42,7 @@ int main(const char ** argv, int argc)
 	};
 
 
-	/* Need to first clear the window*/
+	/* Setup the window */
 	int std_dims[2];
 	get_dimensions(KNO_STDWIN, std_dims, 2);
 	draw_window(KNO_STDWIN);
@@ -52,9 +51,8 @@ int main(const char ** argv, int argc)
 
 	/* Sort programs in order of biggest height to smallest with smaller width being tie breaker */
 	int left = 0;
-	int right = 3;
+	int right = num_programs-1;
 	mergeSort(programs, left, right);
-
 
 	/* Packing algorithm - First fit decreasing height - doesnt fit, skip it */
 	int spacing = 6;
@@ -90,17 +88,11 @@ int main(const char ** argv, int argc)
 		}
 	}
 
-	for (p_i = 0; p_i < num_programs; ++p_i)
-	{
-		// printf("Program1: %d x: %d y: %d w: %d h: %d\n", p_i, placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h);
-	}
-
-	/* Create windows for each program */
+	/* Wrun each program */
 	int window_description[4];
-	for (p_i = 0; p_i < num_programs; ++p_i)
-	{
-		if (placement[p_i][2] == 0)
-		{
+	int pids[num_programs] = { 0 };
+	for (p_i = 0; p_i < num_programs; ++p_i) {
+		if (placement[p_i][2] == 0) {
 			printf("INVALID\n");
 			continue;
 		}
@@ -111,58 +103,71 @@ int main(const char ** argv, int argc)
 		window_description[2] = programs[0].w;
 		window_description[3] = programs[0].h;
 
-		process_wrun(programs[0].exec, programs[0].args, 1, window_description, KNO_STDWIN);
+		//XXX Open window here and pass in the FD
+		// Process run needs to be changed, the window should be opened in the parent and then
+		// passed to the child
+		pids[p_i] = process_wrun(programs[0].exec, programs[0].args, 1, window_description, KNO_STDWIN);
 
-		// wd = open_window(KNO_STDWIN, x, y, w, h);
-		// if(wd < 0) {
-		// 	debug("Window create failed!\n");
-		// 	return -1;
-		// }
-		// // draw initial window
+		// Use pipes IO - not processes - for the active process
+		
+
 		draw_window(KNO_STDWIN);
-		// draw_clear(0, 0, w, h);
 		draw_border(placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h, 4, 255, 255, 255);
 		draw_flush();
 	}
+
+	/* Finally, allow the user to switch between programs*/
+	int p_act = 0;
 	char tin;
-	while(tin != 'e')
-	{
+	while (tin != 'q') {
+		if (pids[p_act] == 0) {
+			p_act = (p_act + 1) % num_programs;
+			continue;
+		}
+		/* Draw green window around active process and start it */
+		draw_window(KNO_STDWIN);
+		draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
+		draw_flush();
+		//XXX Pipes
+
+		/* If tab entered, go to the next process */
 		read(0, &tin, 1);
+		if (tin == '\t') {
+			draw_window(KNO_STDWIN);
+			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 255, 255, 255);
+			draw_flush();
+			//XXX Pipes
+			p_act = (p_act + 1) % num_programs;
+		}
 	}
 
-	// struct process_info info;
-	// process_wait(&info, -1);
-	// process_reap(info.pid);
-
-	// draw_window(KNO_STDWIN);
-	// draw_clear(0, 0, std_dims[0], std_dims[1]);
-	// draw_flush();
-
+	/* Clean up the window */
+	draw_color(255, 255, 255);
+	draw_clear(0, 0, std_dims[0], std_dims[1]);
+	draw_flush();
 	return 0;
 }
 
-/* Code taken from https://www.geeksforgeeks.org/merge-sort/ */
-void mergeSort(program * arr, int l, int r)
-{
-	if (l < r)
-	{
+
+/** HELPER FUNCTIONS **/
+// Code for mergesort taken from https://www.geeksforgeeks.org/merge-sort/
+void mergeSort(program * arr, int l, int r) {
+	if (l < r) {
 		int m = l+(r-l)/2;
 		mergeSort(arr, l, m);
 		mergeSort(arr, m+1, r);
-
 		merge(arr, l, m, r);
 	}
 }
 
-void merge(program * arr, int l, int m, int r)
-{
+
+void merge(program * arr, int l, int m, int r) {
 	int i, j, k;
 	int n1 = m - l + 1;
 	int n2 = r - m;
 
 	program L[n1], R[n2];
 
-	/* Copy data from programs to temp arrays */
 	for (i = 0; i < n1; ++i)
 		L[i] = arr[l + i];
 	for (j = 0; j < n2; ++j)
@@ -172,40 +177,30 @@ void merge(program * arr, int l, int m, int r)
 	j = 0;
 	k = l;
 
-	while (i < n1 && j < n2)
-	{
-		if (L[i].h > R[j].h)
-		{
+	while (i < n1 && j < n2) {
+		if (L[i].h > R[j].h) {
 			arr[k] = L[i];
 			i++;
-		}
-		else if (R[j].h > L[i].h)
-		{
+		} else if (R[j].h > L[i].h) {
 			arr[k] = R[j];
 			j++;
-		}
-		else if (L[i].w < R[j].w)
-		{
+		} else if (L[i].w < R[j].w) {
 			arr[k] = L[i];
 			i++;
-		}
-		else
-		{
+		} else {
 			arr[k] = R[j];
 			j++;
 		}
 		k++;
 	}
 
-	while (i < n1)
-	{
+	while (i < n1) {
 		arr[k] = L[i];
 		i++;
 		k++;
 	}
 
-	while (j < n2)
-	{
+	while (j < n2) {
 		arr[k] = R[j];
 		j++;
 		k++;
@@ -213,10 +208,8 @@ void merge(program * arr, int l, int m, int r)
 }
 
 
-void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b)
-{
+void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b) {
 	draw_color(r, b, g);
-
 	draw_rect(x, y, w, thickness);
 	draw_rect(x, y, thickness, h);
 	draw_rect(x + w - thickness, y, thickness, h);
