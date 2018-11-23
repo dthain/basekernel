@@ -179,7 +179,7 @@ int get_dimensions(int fd, int * dims, int n)
 	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dims, n, 0, 0);
 }
 
-int process_wrun(const char *cmd, const char **argv, int argc, int window_description[4], int wd)
+int process_wrun(const char *cmd, const char **argv, int argc, int wd)
 {
-	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) window_description, wd);
+	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, wd, 0);
 }

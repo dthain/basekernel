@@ -130,18 +130,12 @@ int sys_process_run(const char *path, const char **argv, int argc )
 	return p->pid;
 }
 
-/*
-	Function creates a child process with the standard window replaced by
-	a window of size w and h
-*/
-int sys_process_wrun(const char *path, const char **argv, int argc, int * window_desc, int wd_parent )
+/* Function creates a child process with the standard window replaced by wd */
+int sys_process_wrun(const char *path, const char **argv, int argc, int wd )
 {
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc,argv);
 	char *copy_path = strdup(path);
-	
-	/* Open new window in parrent */
-	int wd_child = sys_open_window(wd_parent, window_desc[0], window_desc[1], window_desc[2], window_desc[3]);
 
 	/* Create the child process */
 	struct process *p = process_create();
@@ -170,19 +164,14 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * window
 	argv_delete(argc,copy_argv);
 	kfree(copy_path);
 
-	/* Make wd child's std window */
-	if(p->ktable[wd_parent]) {
-		kobject_close(p->ktable[wd_parent]);
+	/* Close wd child's std window and set the new table to it */
+	if(p->ktable[3]) {
+		kobject_close(p->ktable[3]);
 	}
-	p->ktable[wd_parent] = kobject_addref(p->ktable[wd_child]);
+	p->ktable[3] = kobject_addref(p->ktable[wd]);
 	
-	/* 
-		Close the new windows old descriptor for both the child and the parent.
-		This way, one process doesnt have any duplicates and other children wont 
-		accidentally inherit another siblings standard window.
-	*/
-	kobject_close(p->ktable[wd_child]);
-	kobject_close(current->ktable[wd_child]);
+	/* Close the child's old descriptor of the window. */
+	kobject_close(p->ktable[wd]);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
@@ -545,7 +534,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_RUN:
 		return sys_process_run((const char *) a, (const char **) b, c);
 	case SYSCALL_PROCESS_WRUN:
-		return sys_process_wrun((const char *) a, (const char **) b, c, (int *) d, e);
+		return sys_process_wrun((const char *) a, (const char **) b, c, d);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
