@@ -89,27 +89,19 @@ int main(const char ** argv, int argc) {
 	}
 
 	/* Wrun each program */
-	int window_description[4];
-	int pids[num_programs] = { 0 };
+	int pids[num_programs] = { 0 }, stdins[num_programs] = { 0 }, wd;
 	for (p_i = 0; p_i < num_programs; ++p_i) {
 		if (placement[p_i][2] == 0) {
 			printf("INVALID\n");
 			continue;
 		}
 
-		/* Description of the Window the parent wants the child to have (x,y,w,h) */
-		window_description[0] = placement[p_i][0];
-		window_description[1] = placement[p_i][1];
-		window_description[2] = programs[0].w;
-		window_description[3] = programs[0].h;
+		wd = open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[0].w, programs[0].h);
+		stdins[p_i] = pipe_open();
 
-		//XXX Open window here and pass in the FD
-		// Process run needs to be changed, the window should be opened in the parent and then
-		// passed to the child
-		pids[p_i] = process_wrun(programs[0].exec, programs[0].args, 1, window_description, KNO_STDWIN);
-
-		// Use pipes IO - not processes - for the active process
-		
+		// Set pipe'd fd to be stdin for child
+		pids[p_i] = process_wrun(programs[0].exec, programs[0].args, 1, wd, stdins[p_i]);
+		close(wd); // Closed because manager doesnt want children to have access to others windows
 
 		draw_window(KNO_STDWIN);
 		draw_border(placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h, 4, 255, 255, 255);
@@ -118,17 +110,18 @@ int main(const char ** argv, int argc) {
 
 	/* Finally, allow the user to switch between programs*/
 	int p_act = 0;
-	char tin;
+	char tin = 0;
+
+	/* Draw green window around active process and start it */
+	draw_window(KNO_STDWIN);
+	draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
+	draw_flush();
+
 	while (tin != 'q') {
 		if (pids[p_act] == 0) {
 			p_act = (p_act + 1) % num_programs;
 			continue;
 		}
-		/* Draw green window around active process and start it */
-		draw_window(KNO_STDWIN);
-		draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
-		draw_flush();
-		//XXX Pipes
 
 		/* If tab entered, go to the next process */
 		read(0, &tin, 1);
@@ -136,9 +129,15 @@ int main(const char ** argv, int argc) {
 			draw_window(KNO_STDWIN);
 			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 255, 255, 255);
 			draw_flush();
-			//XXX Pipes
 			p_act = (p_act + 1) % num_programs;
+			/* Draw green window around active process and start it */
+			draw_window(KNO_STDWIN);
+			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
+			draw_flush();
+			continue;
 		}
+		/* Write 1 character to the correct pipe */
+		write(stdins[p_act], &tin, 1);
 	}
 
 	/* Clean up the window */
