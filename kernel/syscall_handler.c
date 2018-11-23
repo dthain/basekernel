@@ -131,7 +131,7 @@ int sys_process_run(const char *path, const char **argv, int argc )
 }
 
 /* Function creates a child process with the standard window replaced by wd */
-int sys_process_wrun(const char *path, const char **argv, int argc, int wd )
+int sys_process_wrun(const char *path, const char **argv, int argc, int wd, int stdin_fd )
 {
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc,argv);
@@ -172,6 +172,15 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int wd )
 	
 	/* Close the child's old descriptor of the window. */
 	kobject_close(p->ktable[wd]);
+
+	/* Close child's std in and set new stdin to it */
+	if(p->ktable[0]) {
+		kobject_close(p->ktable[0]);
+	}
+	p->ktable[0] = kobject_addref(p->ktable[stdin_fd]);
+	
+	/* Close the child's old descriptor of stdin. */
+	kobject_close(p->ktable[stdin_fd]);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
@@ -534,7 +543,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_RUN:
 		return sys_process_run((const char *) a, (const char **) b, c);
 	case SYSCALL_PROCESS_WRUN:
-		return sys_process_wrun((const char *) a, (const char **) b, c, d);
+		return sys_process_wrun((const char *) a, (const char **) b, c, d, e);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
