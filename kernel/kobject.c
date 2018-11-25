@@ -166,6 +166,23 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
+int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
+{
+	switch (kobject->type) {
+	case KOBJECT_INVALID:
+		return 0;
+	case KOBJECT_GRAPHICS:
+		return graphics_get_dimensions(kobject->data.graphics, dims, n);
+	case KOBJECT_FILE:
+		return fs_file_get_dimensions(kobject->data.file, dims, n);
+	case KOBJECT_DEVICE:
+		return 0;
+	case KOBJECT_PIPE:
+		return 0; 
+	}
+	return 0;
+}
+
 int kobject_get_type(struct kobject *kobject)
 {
 	return kobject->type;

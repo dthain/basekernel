@@ -25,6 +25,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "memory.h"
 #include "ata.h"
+#include "graphics.h"
 
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
@@ -53,31 +54,70 @@ int sys_sbrk(int delta)
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
+/* Helper routines to duplicate/free an argv array locally */
+
+static char ** argv_copy( int argc, const char **argv )
+{
+	char ** pp;
+
+	pp = kmalloc(sizeof(char*)*argc);
+	int i;
+	for(i=0;i<argc;i++) {
+		pp[i] = strdup(argv[i]);
+	}
+
+	return pp;
+}
+
+static void argv_delete( int argc, char **argv )
+{
+	int i;
+	for(i=0;i<argc;i++) {
+		kfree(argv[i]);
+	}
+	kfree(argv);
+}
+
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
-int sys_process_run(const char *path, const char **argv, int argc)
+int sys_process_run(const char *path, const char **argv, int argc )
 {
-	struct process *p = process_create();
+	/* Copy argv and path into kernel memory. */
+	char **copy_argv = argv_copy(argc,argv);
+	char *copy_path = strdup(path);
 
+	/* Create the child process */
+	struct process *p = process_create();
 	process_inherit(current, p);
 
+	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
 	struct pagetable *old_pagetable = current->pagetable;
 	current->pagetable = p->pagetable;
 	pagetable_load(p->pagetable);
 
+	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, path, &entry);
+	int r = elf_load(p, copy_path, &entry);
 	if(r >= 0) {
+		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
+		process_kstack_reset(p, entry);
+		process_pass_arguments(p,argc,copy_argv);
 	}
 
+	/* SWITCH BACK TO ADDRESS SPACE OF PARENT PROCESS */
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
+	/* Delete the argument and path copies. */
+	argv_delete(argc,copy_argv);
+	kfree(copy_path);
+
+	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
 		if(r == KERROR_EXECUTION_FAILED) {
 			process_delete(p);
@@ -85,8 +125,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 		return r;
 	}
 
-	process_kstack_reset(p, entry);
-	process_pass_arguments(p, argv, argc);
+	/* Otherwise, launch the new child process. */
 	process_launch(p);
 	return p->pid;
 }
@@ -94,17 +133,29 @@ int sys_process_run(const char *path, const char **argv, int argc)
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	addr_t entry;
+
+	/* Duplicate the arguments into kernel space */
+	char **copy_argv = argv_copy(argc,argv);
+
+	/* Attempt to load the program image into this process. */
 	int r = elf_load(current, path, &entry);
+
+	/* On failure, return only if our address space is not corrupted. */
 	if(r < 0) {
 		if(r == KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
+		argv_delete(argc,copy_argv);
 		return r;
 	}
 
+	/* Reset the stack and pass in the program arguments */
 	process_stack_reset(current, PAGE_SIZE);
-	process_kstack_reset(current, entry);
-	process_pass_arguments(current, argv, argc);
+	process_kstack_reset(current, entry );
+	process_pass_arguments(current, argc, copy_argv );
+
+	/* Delete the local copy of the arguments. */
+	argv_delete(argc,copy_argv);
 
 	/*
 	   IMPORTANT: Following a successful exec, we cannot return via
@@ -401,6 +452,12 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
+int sys_get_dimensions(int fd, int * dims, int n) {
+	struct kobject *p = current->ktable[fd];
+	return kobject_get_dimensions(p, dims, n);
+}
+
+
 int sys_sys_stats(struct sys_stats *s) {
 	struct rtc_time t = {0};
 	rtc_read(&t);
@@ -477,6 +534,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
+	case SYSCALL_GET_DIMENSIONS:
+		return sys_get_dimensions(a, (int *) b, c);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_SBRK:

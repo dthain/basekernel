@@ -27,11 +27,10 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 	cp $(USER_PROGRAMS) image/bin
 
 basekernel.iso: image
-	${ISOGEN} -input-charset utf-8 -J -R -o $@ -b boot/basekernel.img image
+	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
 
 clean:
 	rm -rf basekernel.iso image
 	cd kernel && make clean
 	cd library && make clean
 	cd user && make clean
-

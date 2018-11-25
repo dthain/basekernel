@@ -48,7 +48,8 @@ typedef enum {
 	SYSCALL_PWD,
 	SYSCALL_SYS_STATS,
 	SYSCALL_PROCESS_STATS,
-	MAX_SYSCALL // must be the last element in the enum
+	SYSCALL_GET_DIMENSIONS,
+	MAX_SYSCALL		// must be the last element in the enum
 } syscall_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);
