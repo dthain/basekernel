@@ -63,7 +63,7 @@ int process_data_size_set(struct process *p, unsigned size);
 int process_stack_size_set(struct process *p, unsigned size);
 
 int process_available_fd(struct process *p);
-int process_highest_fd(struct process *p);
+int process_object_max(struct process *p);
 
 void process_yield();
 void process_preempt();

@@ -300,9 +300,9 @@ int sys_object_type(int fd)
 	return fd_type;
 }
 
-int sys_process_highest_fd()
+int sys_process_object_max()
 {
-	int max_fd = process_highest_fd(current);
+	int max_fd = process_object_max(current);
 	return max_fd;
 }
 
@@ -520,8 +520,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_close(a);
 	case SYSCALL_OBJECT_TYPE:
 		return sys_object_type(a);
-	case SYSCALL_PROCESS_HIGHEST_FD:
-		return sys_process_highest_fd(a);
+	case SYSCALL_PROCESS_OBJECT_MAX:
+		return sys_process_object_max(a);
 	case SYSCALL_OBJECT_SET_INTENT:
 		return sys_object_set_intent(a, b);
 	case SYSCALL_OBJECT_GET_INTENT:

@@ -33,9 +33,9 @@ int object_type(int fd)
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
-int process_highest_fd()
+int process_object_max()
 {
-	return syscall(SYSCALL_PROCESS_HIGHEST_FD, 0, 0, 0, 0, 0);
+	return syscall(SYSCALL_PROCESS_OBJECT_MAX, 0, 0, 0, 0, 0);
 }
 
 char * object_set_intent(int fd, char * intent)

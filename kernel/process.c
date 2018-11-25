@@ -395,7 +395,7 @@ int process_available_fd(struct process *p)
 	return -1;
 }
 
-int process_highest_fd(struct process *p)
+int process_object_max(struct process *p)
 {
 	struct kobject **fdtable = current->ktable;
 	int i;
