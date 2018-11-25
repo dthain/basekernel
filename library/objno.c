@@ -2,18 +2,21 @@
 #include "library/objno.h"
 #include "library/string.h"
 
+static const char KOBJECT_INVALID_STRING[] = "Invalid";
+static const char KOBJECT_FILE_STRING[] = "File";
+static const char KOBJECT_DEVICE_STRING[] = "Device";
+static const char KOBJECT_GRAPHICS_STRING[] = "Graphics";
+
 const char *strerror(int err_code)
 {
-	if(err_code == KOBJECT_INVALID) {
-		return KOBJECT_INVALID_STRING;
-	}
-	if(err_code == KOBJECT_FILE) {
-		return KOBJECT_FILE_STRING;
-	}
-	if(err_code == KOBJECT_DEVICE) {
-		return KOBJECT_DEVICE_STRING;
-	}
-	if(err_code == KOBJECT_GRAPHICS) {
-		return KOBJECT_GRAPHICS_STRING;
+	switch(err_code) {
+		case KOBJECT_INVALID:
+			return KOBJECT_INVALID_STRING;
+		case KOBJECT_FILE:
+			return KOBJECT_FILE_STRING;
+		case KOBJECT_DEVICE:
+			return KOBJECT_DEVICE_STRING;
+		case KOBJECT_GRAPHICS:
+			return KOBJECT_GRAPHICS_STRING;
 	}
 }
