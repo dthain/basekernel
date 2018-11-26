@@ -28,6 +28,7 @@ struct kobject *kobject_create_device(struct device *d)
 	k->type = KOBJECT_DEVICE;
 	k->refcount = 1;
 	k->data.device = d;
+	k->intent = 0;
 	return k;
 }
 
@@ -37,6 +38,10 @@ struct kobject *kobject_create_graphics(struct graphics *g)
 	k->type = KOBJECT_GRAPHICS;
 	k->refcount = 1;
 	k->data.graphics = g;
+	k->intent = 0;
+	printf("INTENT: %u\n", k->intent);
+	printf("SIZE: %d\n", sizeof(struct kobject));
+	printf("SIZE: %d\n", sizeof(*k));
 	return k;
 }
 
@@ -46,6 +51,7 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 	k->type = KOBJECT_PIPE;
 	k->refcount = 1;
 	k->data.pipe = p;
+	k->intent = 0;
 	return k;
 }
 
@@ -190,14 +196,20 @@ int kobject_get_type(struct kobject *kobject)
 
 void kobject_set_intent(struct kobject *kobject, char * new_intent)
 {
+	printf("INTENT: %u\n", kobject->intent);
 	if (kobject->intent != 0) {
-		kfree(kobject->intent);
+		printf("FREEING OLD INTENT\n");
+		//kfree(kobject->intent);
 	}
 	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
 	strcpy(kobject->intent, new_intent);
+	printf("INTENT: %u\n", kobject_get_intent(kobject,0,0));
 }
 
-char * kobject_get_intent(struct kobject *kobject)
+char * kobject_get_intent(struct kobject *kobject, char * buffer,
+				int buffer_size)
 {
+	printf("GET INTENT: %u\n", kobject->intent);
+	//strcpy(buffer, kobject->intent);
 	return kobject->intent;
 }

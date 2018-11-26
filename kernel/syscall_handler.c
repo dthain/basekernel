@@ -283,13 +283,13 @@ int sys_open(const char *path, int mode, int flags)
 
 int sys_object_set_intent(int fd, char * intent)
 {
-	current->ktable[fd]->intent = intent;
+	kobject_set_intent(fd, intent);
 	return 0;
 }
 
-int sys_object_get_intent(int fd)
+int sys_object_get_intent(int fd, char * buffer, int buffer_size)
 {
-	return current->ktable[fd]->intent;
+	return kobject_get_intent(fd, buffer, buffer_size);
 }
 
 int sys_object_type(int fd)
@@ -448,7 +448,6 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	current->ktable[fd]->data.graphics->clip.y = y + current->ktable[wd]->data.graphics->clip.y;
 	current->ktable[fd]->data.graphics->clip.w = w;
 	current->ktable[fd]->data.graphics->clip.h = h;
-
 	return fd;
 }
 
@@ -525,7 +524,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_OBJECT_SET_INTENT:
 		return sys_object_set_intent(a, b);
 	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a);
+		return sys_object_get_intent(a, b, c);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

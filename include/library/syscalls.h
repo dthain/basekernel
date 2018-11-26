@@ -33,7 +33,7 @@ int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );
 int close( int fd );
 void object_set_intent(int fd, char * intent);
-int object_get_intent(int fd);
+int object_get_intent(int fd, char * buffer, int buffer_size);
 extern void* sbrk( int a );
 char keyboard_read_char();
 int open_window(int wd, int x, int y, int w, int h);

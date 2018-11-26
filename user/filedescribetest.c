@@ -3,10 +3,11 @@
 #include "library/string.h"
 #include "library/user-io.h"
 
+#define INTENT_BUFFER_SIZE 256
 
 int main(const char **argv, int argc)
 {
-	char * type_string = "A simple type string";
+	char * intent_value = "A simple intent string";
 
 	printf("Generating/typing all file descriptors.\n");
 	int type = -2;
@@ -17,27 +18,42 @@ int main(const char **argv, int argc)
 		return 1;
 	}
 
-	printf("This object is: %s\n", type_string);
-	
-	object_set_intent(window_descriptor, type_string);
+	object_set_intent(window_descriptor, intent_value);
 
 	int last_descriptor = process_object_max();
-	// First a test of highest_fd()
 	printf("Highest allocated FD: %d\nLast Descriptor: %d\n",
 			window_descriptor, last_descriptor);
+
+	char * intent_string = malloc(sizeof(char) * INTENT_BUFFER_SIZE);
 
 	for (int descriptor = 0; descriptor <= last_descriptor; descriptor++) 
 	{
 		type = object_type(descriptor);
-		intent = object_get_intent(descriptor);
+		intent = object_get_intent(descriptor, intent_string,
+						INTENT_BUFFER_SIZE);
 		printf("FD: %d is of type: %d, with intent: ", descriptor, type);
 		if (intent != 0) {
-			printf("\"%s\"\n", intent);
+			printf("\"%s\"\n", intent_string);
 		}
 		if (intent == 0) {
-			printf("NULL\n");
+			printf("%d\n", intent);
 		}
 	}
 
+	printf("Highest allocated FD: %d\nLast Descriptor: %d\n",
+			window_descriptor, last_descriptor);
+	for (int descriptor = 0; descriptor <= last_descriptor; descriptor++) 
+	{
+		type = object_type(descriptor);
+		intent = object_get_intent(descriptor, intent_string,
+						INTENT_BUFFER_SIZE);
+		printf("FD: %d is of type: %d, with intent: ", descriptor, type);
+		if (intent != 0) {
+			printf("\"%s\"\n", intent_string);
+		}
+		if (intent == 0) {
+			printf("%d\n", intent);
+		}
+	}
 	return 0;
 }
