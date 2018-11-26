@@ -18,7 +18,7 @@ int main(const char **argv, int argc)
 		return 1;
 	}
 
-	object_set_intent(window_descriptor, intent_value);
+	//object_set_intent(window_descriptor, intent_value);
 
 	int last_descriptor = process_object_max();
 	printf("Highest allocated FD: %d\nLast Descriptor: %d\n",

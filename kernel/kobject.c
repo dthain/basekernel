@@ -39,9 +39,7 @@ struct kobject *kobject_create_graphics(struct graphics *g)
 	k->refcount = 1;
 	k->data.graphics = g;
 	k->intent = 0;
-	printf("INTENT: %u\n", k->intent);
-	printf("SIZE: %d\n", sizeof(struct kobject));
-	printf("SIZE: %d\n", sizeof(*k));
+	printf("GRAPHICS INTENT: %u\n", k->intent);
 	return k;
 }
 
