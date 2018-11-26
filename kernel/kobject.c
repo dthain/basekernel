@@ -48,7 +48,8 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 
 // Helper function for constant initializations across all types of Kobjects.
 // SHOULD NOT BE CALLED ON ITS OWN, IT DOESN'T GENERATE A VALID KOBJECT.
-struct kobject * kobject_init() {
+struct kobject *kobject_init()
+{
 	struct kobject *k = kmalloc(sizeof(*k));
 	k->refcount = 1;
 	k->intent = 0;
@@ -173,7 +174,7 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
-int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
+int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
 	case KOBJECT_INVALID:
@@ -185,7 +186,7 @@ int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
 	case KOBJECT_DEVICE:
 		return 0;
 	case KOBJECT_PIPE:
-		return 0; 
+		return 0;
 	}
 	return 0;
 }
@@ -195,18 +196,18 @@ int kobject_get_type(struct kobject *kobject)
 	return kobject->type;
 }
 
-void kobject_set_intent(struct kobject *kobject, char * new_intent)
+void kobject_set_intent(struct kobject *kobject, char *new_intent)
 {
-	if (kobject->intent != 0) {
+	if(kobject->intent != 0) {
 		kfree(kobject->intent);
 	}
 	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
 	strcpy(kobject->intent, new_intent);
 }
 
-char * kobject_get_intent(struct kobject *kobject, char * buffer,
-				int buffer_size)
+char *kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 {
-	if (kobject->intent != 0) strcpy(buffer, kobject->intent);
+	if(kobject->intent != 0)
+		strcpy(buffer, kobject->intent);
 	return kobject->intent;
 }

@@ -56,23 +56,23 @@ int sys_sbrk(int delta)
 
 /* Helper routines to duplicate/free an argv array locally */
 
-static char ** argv_copy( int argc, const char **argv )
+static char **argv_copy(int argc, const char **argv)
 {
-	char ** pp;
+	char **pp;
 
-	pp = kmalloc(sizeof(char*)*argc);
+	pp = kmalloc(sizeof(char *) * argc);
 	int i;
-	for(i=0;i<argc;i++) {
+	for(i = 0; i < argc; i++) {
 		pp[i] = strdup(argv[i]);
 	}
 
 	return pp;
 }
 
-static void argv_delete( int argc, char **argv )
+static void argv_delete(int argc, char **argv)
 {
 	int i;
-	for(i=0;i<argc;i++) {
+	for(i = 0; i < argc; i++) {
 		kfree(argv[i]);
 	}
 	kfree(argv);
@@ -84,10 +84,10 @@ way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
-int sys_process_run(const char *path, const char **argv, int argc )
+int sys_process_run(const char *path, const char **argv, int argc)
 {
 	/* Copy argv and path into kernel memory. */
-	char **copy_argv = argv_copy(argc,argv);
+	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
 
 	/* Create the child process */
@@ -106,7 +106,7 @@ int sys_process_run(const char *path, const char **argv, int argc )
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
 		process_kstack_reset(p, entry);
-		process_pass_arguments(p,argc,copy_argv);
+		process_pass_arguments(p, argc, copy_argv);
 	}
 
 	/* SWITCH BACK TO ADDRESS SPACE OF PARENT PROCESS */
@@ -114,7 +114,7 @@ int sys_process_run(const char *path, const char **argv, int argc )
 	pagetable_load(old_pagetable);
 
 	/* Delete the argument and path copies. */
-	argv_delete(argc,copy_argv);
+	argv_delete(argc, copy_argv);
 	kfree(copy_path);
 
 	/* If any error happened, return in the context of the parent */
@@ -135,7 +135,7 @@ int sys_process_exec(const char *path, const char **argv, int argc)
 	addr_t entry;
 
 	/* Duplicate the arguments into kernel space */
-	char **copy_argv = argv_copy(argc,argv);
+	char **copy_argv = argv_copy(argc, argv);
 
 	/* Attempt to load the program image into this process. */
 	int r = elf_load(current, path, &entry);
@@ -145,17 +145,17 @@ int sys_process_exec(const char *path, const char **argv, int argc)
 		if(r == KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
-		argv_delete(argc,copy_argv);
+		argv_delete(argc, copy_argv);
 		return r;
 	}
 
 	/* Reset the stack and pass in the program arguments */
 	process_stack_reset(current, PAGE_SIZE);
-	process_kstack_reset(current, entry );
-	process_pass_arguments(current, argc, copy_argv );
+	process_kstack_reset(current, entry);
+	process_pass_arguments(current, argc, copy_argv);
 
 	/* Delete the local copy of the arguments. */
-	argv_delete(argc,copy_argv);
+	argv_delete(argc, copy_argv);
 
 	/*
 	   IMPORTANT: Following a successful exec, we cannot return via
@@ -281,13 +281,13 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
-int sys_object_set_intent(int fd, char * intent)
+int sys_object_set_intent(int fd, char *intent)
 {
 	kobject_set_intent(current->ktable[fd], intent);
 	return 0;
 }
 
-int sys_object_get_intent(int fd, char * buffer, int buffer_size)
+int sys_object_get_intent(int fd, char *buffer, int buffer_size)
 {
 	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
 }
@@ -451,31 +451,34 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
-int sys_get_dimensions(int fd, int * dims, int n) {
+int sys_get_dimensions(int fd, int *dims, int n)
+{
 	struct kobject *p = current->ktable[fd];
 	return kobject_get_dimensions(p, dims, n);
 }
 
 
-int sys_sys_stats(struct sys_stats *s) {
-	struct rtc_time t = {0};
+int sys_sys_stats(struct sys_stats *s)
+{
+	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
 	struct ata_count a = ata_stats();
-	for (int i = 0; i < 4; i++) {
+	for(int i = 0; i < 4; i++) {
 		s->blocks_written[i] = a.blocks_written[i];
 		s->blocks_read[i] = a.blocks_read[i];
 	}
 	return 0;
 }
 
-int sys_process_stats(struct proc_stats *s, int pid) {
+int sys_process_stats(struct proc_stats *s, int pid)
+{
 	return process_stats(pid, s);
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
-	if ((n < MAX_SYSCALL) && current) {
+	if((n < MAX_SYSCALL) && current) {
 		current->stats.syscall_count[n]++;
 	}
 	switch (n) {

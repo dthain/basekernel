@@ -23,14 +23,14 @@ struct kobject {
 	kobject_type type;
 	int refcount;
 	int offset;
-	char * intent;
+	char *intent;
 };
 
 struct kobject *kobject_create_file(struct fs_file *f);
 struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_pipe(struct pipe *p);
-struct kobject * kobject_init();
+struct kobject *kobject_init();
 
 struct kobject *kobject_addref(struct kobject *k);
 
@@ -41,8 +41,7 @@ int kobject_close(struct kobject *kobject);
 int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_dimensions(struct kobject *kobject, int *dimensions, int n);
 int kobject_get_type(struct kobject *kobject);
-void kobject_set_intent(struct kobject *kobject, char * new_intent);
-char * kobject_get_intent(struct kobject *kobject, char * buffer,
-			int buffer_size);
+void kobject_set_intent(struct kobject *kobject, char *new_intent);
+char *kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size);
 
 #endif

@@ -24,7 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
-struct list grave_watcher_list = { 0, 0 }; // parent processes are put here to wait for their children
+struct list grave_watcher_list = { 0, 0 };	// parent processes are put here to wait for their children
 struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
 void process_init()
@@ -318,7 +318,7 @@ void process_exit(int code)
 	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
-	process_wakeup_parent(&grave_watcher_list); // On exit, wake up parent if need be
+	process_wakeup_parent(&grave_watcher_list);	// On exit, wake up parent if need be
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -352,7 +352,7 @@ void process_wakeup_parent(struct list *q)
 	struct process *p = (struct process *) q->head;
 	// Loop through all the waiting parents to see if one needs to be woken up
 	while(p) {
-		if (p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
+		if(p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
 			p->state = PROCESS_STATE_READY;
 			p->waiting_for_child_pid = 0;
 			list_remove(&p->node);
@@ -503,31 +503,33 @@ void entry( const char *args, int args_length );
 
 #define PUSH_INTEGER( value ) esp -= sizeof(int); *((int*)esp)=(int)(value);
 
-void process_pass_arguments( struct process *p, int argc, char **argv )
+void process_pass_arguments(struct process *p, int argc, char **argv)
 {
 	/* Get the default stack pointer position. */
-	char *esp = (char*) PROCESS_STACK_INIT;
+	char *esp = (char *) PROCESS_STACK_INIT;
 
 	/* Make a local array to keep track of user addresses. */
-	char **addr_of_argv = kmalloc(sizeof(char*)*argc);
+	char **addr_of_argv = kmalloc(sizeof(char *) * argc);
 
 	/* For each argument, in reverse order: */
 	int i;
-	for(i=(argc-1);i>=0;i--) {
+	for(i = (argc - 1); i >= 0; i--) {
 		/* Size is strlen plus null terminator, integer aligned. */
-		int length = strlen(argv[i])+1;
-		if(length%4) { length += (4-length%4); }
+		int length = strlen(argv[i]) + 1;
+		if(length % 4) {
+			length += (4 - length % 4);
+		}
 		esp -= length;
 
 		/* Push length bytes onto the stack. */
-		memcpy(esp,argv[i],length);
+		memcpy(esp, argv[i], length);
 
 		/* Remember that address for later */
 		addr_of_argv[i] = esp;
 	}
 
 	/* Push each item of argc, in reverse order. */
-	for(i=(argc-1);i>=0;i--) {
+	for(i = (argc - 1); i >= 0; i--) {
 		PUSH_INTEGER(addr_of_argv[i]);
 	}
 
@@ -543,15 +545,16 @@ void process_pass_arguments( struct process *p, int argc, char **argv )
 
 	/* Set the starting stack pointer on the kstack to this new value */
 	struct x86_stack *s = (struct x86_stack *) p->kstack_ptr;
-	s->esp = (int)(esp);
+	s->esp = (int) (esp);
 
 	kfree(addr_of_argv);
 }
 
-int process_stats(int pid, struct proc_stats *s) {
-	if (pid > PROCESS_MAX_PID || !process_table[pid]) {
+int process_stats(int pid, struct proc_stats *s)
+{
+	if(pid > PROCESS_MAX_PID || !process_table[pid]) {
 		return 1;
 	}
- *s = process_table[pid]->stats;
- return 0;
+	*s = process_table[pid]->stats;
+	return 0;
 }
