@@ -13,7 +13,7 @@
 
 struct kobject *kobject_create_file(struct fs_file *f)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_FILE;
 	k->refcount = 1;
 	k->data.file = f;
@@ -24,34 +24,37 @@ struct kobject *kobject_create_file(struct fs_file *f)
 
 struct kobject *kobject_create_device(struct device *d)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_DEVICE;
-	k->refcount = 1;
 	k->data.device = d;
-	k->intent = 0;
 	return k;
 }
 
 struct kobject *kobject_create_graphics(struct graphics *g)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_GRAPHICS;
-	k->refcount = 1;
 	k->data.graphics = g;
-	k->intent = 0;
-	printf("GRAPHICS INTENT: %u\n", k->intent);
 	return k;
 }
 
 struct kobject *kobject_create_pipe(struct pipe *p)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_PIPE;
-	k->refcount = 1;
 	k->data.pipe = p;
+	return k;
+}
+
+// Helper function for constant initializations across all types of Kobjects.
+// SHOULD NOT BE CALLED ON ITS OWN, IT DOESN'T GENERATE A VALID KOBJECT.
+struct kobject * kobject_init() {
+	struct kobject *k = kmalloc(sizeof(*k));
+	k->refcount = 1;
 	k->intent = 0;
 	return k;
 }
+
 
 struct kobject *kobject_addref(struct kobject *k)
 {
@@ -194,20 +197,16 @@ int kobject_get_type(struct kobject *kobject)
 
 void kobject_set_intent(struct kobject *kobject, char * new_intent)
 {
-	printf("INTENT: %u\n", kobject->intent);
 	if (kobject->intent != 0) {
-		printf("FREEING OLD INTENT\n");
-		//kfree(kobject->intent);
+		kfree(kobject->intent);
 	}
 	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
 	strcpy(kobject->intent, new_intent);
-	printf("INTENT: %u\n", kobject_get_intent(kobject,0,0));
 }
 
 char * kobject_get_intent(struct kobject *kobject, char * buffer,
 				int buffer_size)
 {
-	printf("GET INTENT: %u\n", kobject->intent);
-	//strcpy(buffer, kobject->intent);
+	if (kobject->intent != 0) strcpy(buffer, kobject->intent);
 	return kobject->intent;
 }

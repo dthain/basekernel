@@ -30,6 +30,7 @@ struct kobject *kobject_create_file(struct fs_file *f);
 struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_pipe(struct pipe *p);
+struct kobject * kobject_init();
 
 struct kobject *kobject_addref(struct kobject *k);
 

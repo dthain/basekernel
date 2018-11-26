@@ -283,13 +283,13 @@ int sys_open(const char *path, int mode, int flags)
 
 int sys_object_set_intent(int fd, char * intent)
 {
-	kobject_set_intent(fd, intent);
+	kobject_set_intent(current->ktable[fd], intent);
 	return 0;
 }
 
 int sys_object_get_intent(int fd, char * buffer, int buffer_size)
 {
-	return kobject_get_intent(fd, buffer, buffer_size);
+	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
 }
 
 int sys_object_type(int fd)
