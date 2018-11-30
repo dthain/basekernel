@@ -42,6 +42,6 @@ int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_dimensions(struct kobject *kobject, int *dimensions, int n);
 int kobject_get_type(struct kobject *kobject);
 void kobject_set_intent(struct kobject *kobject, char *new_intent);
-char *kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size);
+int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size);
 
 #endif

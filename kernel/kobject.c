@@ -205,9 +205,11 @@ void kobject_set_intent(struct kobject *kobject, char *new_intent)
 	strcpy(kobject->intent, new_intent);
 }
 
-char *kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
+int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 {
-	if(kobject->intent != 0)
+	if(kobject->intent != 0) {
 		strcpy(buffer, kobject->intent);
-	return kobject->intent;
+		return 1;
+	}
+	return 0;
 }

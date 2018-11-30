@@ -17,6 +17,7 @@ typedef enum {
 	KERROR_NOT_A_DEVICE = -11,
 	KERROR_NO_MEMORY = -12,
 	KERROR_IO_FAILURE = -13,
+	KERROR_INVALID_KOBJECT = -14,
 } kernel_error_t;
 
 #endif
