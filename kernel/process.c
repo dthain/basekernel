@@ -41,15 +41,9 @@ void process_init()
 	current->ktable[3] = kobject_create_graphics(&graphics_root);
 	graphics_root.count++;
 
-	printf("KOBJECT 0 INTENT: %u\n", current->ktable[0]->intent);
-	printf("KOBJECT 1 INTENT: %u\n", current->ktable[1]->intent);
-	printf("KOBJECT 3 INTENT: %u\n", current->ktable[3]->intent);
-
 	current->state = PROCESS_STATE_READY;
 
 	current->waiting_for_child_pid = 0;
-
-	console_printf("process: ready\n");
 }
 
 void process_kstack_reset(struct process *p, unsigned entry_point)
