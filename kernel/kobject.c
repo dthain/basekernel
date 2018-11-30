@@ -196,13 +196,14 @@ int kobject_get_type(struct kobject *kobject)
 	return kobject->type;
 }
 
-void kobject_set_intent(struct kobject *kobject, char *new_intent)
+int kobject_set_intent(struct kobject *kobject, char *new_intent)
 {
 	if(kobject->intent != 0) {
 		kfree(kobject->intent);
 	}
 	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
 	strcpy(kobject->intent, new_intent);
+	return 1;
 }
 
 int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)

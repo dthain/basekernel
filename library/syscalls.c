@@ -38,12 +38,12 @@ int process_object_max()
 	return syscall(SYSCALL_PROCESS_OBJECT_MAX, 0, 0, 0, 0, 0);
 }
 
-char *object_set_intent(int fd, char *intent)
+int object_set_intent(int fd, char *intent)
 {
 	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, intent, 0, 0, 0);
 }
 
-char *object_get_intent(int fd, char *buffer, int buffer_size)
+int object_get_intent(int fd, char *buffer, int buffer_size)
 {
 	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, buffer, buffer_size, 0, 0);
 }
