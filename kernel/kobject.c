@@ -11,6 +11,8 @@
 #include "device.h"
 #include "library/string.h"
 
+static struct kobject *kobject_init();
+
 struct kobject *kobject_create_file(struct fs_file *f)
 {
 	struct kobject *k = kobject_init();
@@ -48,7 +50,7 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 
 // Helper function for constant initializations across all types of Kobjects.
 // SHOULD NOT BE CALLED ON ITS OWN, IT DOESN'T GENERATE A VALID KOBJECT.
-struct kobject *kobject_init()
+static struct kobject *kobject_init()
 {
 	struct kobject *k = kmalloc(sizeof(*k));
 	k->refcount = 1;
