@@ -311,7 +311,7 @@ void process_yield()
 
 void process_exit(int code)
 {
-	console_printf("process %d exiting with status %d...\n", current->pid, code);
+	// console_printf("process %d exiting with status %d...\n", current->pid, code); --> transport to kshell run
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
 	process_wakeup_parent(&grave_watcher_list); // On exit, wake up parent if need be
