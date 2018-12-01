@@ -12,4 +12,6 @@ int sys_mkdir(const char *path);
 int sys_chdir(const char *path);
 int sys_rmdir(const char *path);
 
+int sys_process_object_max();
+
 #endif

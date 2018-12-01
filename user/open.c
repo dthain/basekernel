@@ -17,7 +17,7 @@ int main(const char *argv[], int argc)
 	uint32_t j = 0;
 	chdir("/");
 	printf("got root\n");
-	int fd = open("kevin", 1, 0);
+	int fd = open("/bin/open.exe", 1, 0);
 	char buffer[1000];
 	int n;
 	printf("reading file...\n");

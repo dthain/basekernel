@@ -281,6 +281,50 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
+int sys_open_intent(const char *path, int mode, int flags)
+{
+	// Most simple sanity-check for path.
+	if (strlen(path)<3) return -1;
+
+	int fd = process_available_fd(current);
+	if(fd < 0)
+		return -1;
+
+	char * mutable_path = kmalloc((strlen(path)+1) * sizeof(char));
+	strcpy(mutable_path, path);
+
+	struct fs_dirent * d;
+
+	char * intent;
+	char * base_path;
+	intent = strtok(mutable_path, ":");
+	base_path = strtok(0, ":");
+	// Check if intent is index-specified.
+	if (intent[0] == "#")
+	{
+		int target_index = atoi(++intent);
+		if(current->ktable[target_index]  < 0) return -1;
+		d = (struct dirent *) current->ktable[target_index];	
+	} else {
+	// Find an intent matching the tag.
+		for (int i = sys_process_object_max(); i >= 0; i--)
+		{
+			if (!strcmp(current->ktable[i]->intent, intent))
+			{
+				d = (struct dirent *) current->ktable[i];
+				break;
+			}
+		}
+	}
+	d = fs_dirent_namei(d, base_path);
+	if (!d) return -1;
+
+	// Resolve the directory from the intent through the tag.
+	struct fs_file *fp = fs_file_open(d, mode);
+	current->ktable[fd] = kobject_create_file(fp);
+	return fd;
+}
+
 int sys_object_set_intent(int fd, char *intent)
 {
 	kobject_set_intent(current->ktable[fd], intent);
@@ -508,6 +552,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_reap(a);
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
+	case SYSCALL_OPEN_INTENT:
+		return sys_open_intent((const char *) a, b, c);
 	case SYSCALL_DUP:
 		return sys_dup(a, b);
 	case SYSCALL_READ:
@@ -525,9 +571,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_OBJECT_MAX:
 		return sys_process_object_max(a);
 	case SYSCALL_OBJECT_SET_INTENT:
-		return sys_object_set_intent(a, b);
+		return sys_object_set_intent(a, (char *) b);
 	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a, b, c);
+		return sys_object_get_intent(a, (char *) b, c);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:
