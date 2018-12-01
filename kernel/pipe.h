@@ -27,6 +27,7 @@ void pipe_flush(struct pipe *p);
 int pipe_set_blocking(struct pipe *p, int b);
 
 int pipe_write(struct pipe *p, char *buffer, int size);
-int pipe_read_internal(struct pipe *p, char *buffer, int size, int block);
+int pipe_read(struct pipe *p, char *buffer, int size);
+int pipe_read_nonblock(struct pipe *p, char *buffer, int size);
 
 #endif
