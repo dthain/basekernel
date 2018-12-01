@@ -302,7 +302,8 @@ int sys_open_intent(const char *path, int mode, int flags)
 	// Check if intent is index-specified.
 	if (intent[0] == "#")
 	{
-		int target_index = atoi(++intent);
+		int target_index;
+		str2int(++intent, &target_index);
 		if(current->ktable[target_index]  < 0) return -1;
 		d = (struct dirent *) current->ktable[target_index];	
 	} else {
