@@ -111,3 +111,14 @@ int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 	p->flushed = 0;
 	return read;
 }
+
+
+int pipe_read(struct pipe *p, char *buffer, int size)
+{
+	return pipe_read_internal(p, buffer, size, 1);
+}
+
+int pipe_read_nonblock(struct pipe *p, char *buffer, int size)
+{
+	return pipe_read_internal(p, buffer, size, 0);
+}
