@@ -68,7 +68,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_DEVICE:
 		return device_read(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
 	case KOBJECT_PIPE:
-		return pipe_read(kobject->data.pipe, buffer, size);
+		return pipe_read_internal(kobject->data.pipe, buffer, size, 1);
 	}
 	return 0;
 }
@@ -85,7 +85,7 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_DEVICE:
 		return device_read_nonblock(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
 	case KOBJECT_PIPE:
-		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
+		return pipe_read_internal(kobject->data.pipe, buffer, size, 0);
 	}
 	return 0;
 }
