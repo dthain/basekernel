@@ -46,6 +46,6 @@ int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
 int get_dimensions(int fd, int * dims, int n);
-int process_wrun(const char *cmd, const char **argv, int argc, int wd, int stdin_fd);
+int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
 
 #endif
