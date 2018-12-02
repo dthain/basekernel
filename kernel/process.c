@@ -133,6 +133,26 @@ void process_inherit(struct process *parent, struct process *child)
 	child->ppid = parent->pid;
 }
 
+void process_selective_inherit(struct process *parent, struct process *child, int * fds, int fd_len)
+{
+	/* Copy kernel objects */
+	int i;
+
+	for (i = 0; i < fd_len; i++)
+	{
+		if(fds[i]) {
+			child->ktable[i] = kobject_addref(parent->ktable[fds[i]]);
+		}
+	}
+
+	/* Inherit current and root directories */
+	child->current_dir = fs_dirent_addref(parent->current_dir);
+	child->root_dir = fs_dirent_addref(parent->root_dir);
+
+	/* Set the parent of the new process to the calling process */
+	child->ppid = parent->pid;
+}
+
 int process_data_size_set(struct process *p, unsigned size)
 {
 	// XXX check valid ranges
