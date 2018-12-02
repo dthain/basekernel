@@ -134,9 +134,6 @@ int main(const char *argv[], int argc)
 			{
 				return 1;
 			}
-			while(tin == '\t') {
-				read(0, &tin, 1);
-			}
 			if(tin != 'm' && tin != 'n') {
 				tin = 'm';
 			}
