@@ -42,8 +42,8 @@ int main(const char *argv[], int argc)
 	uint16_t thick = 4;
 
 	// Snake values
-	uint16_t x = 12;
-	uint16_t y = 12;
+	uint16_t x = 0;
+	uint16_t y = 0;
 
 	// Board dimensions in pixels
 	uint16_t game_width = WIDTH - thick * 2;
@@ -115,9 +115,38 @@ int main(const char *argv[], int argc)
 		// Try to move the snake
 		status = move_snake(snake_coords, &apple, x_steps, y_steps, (uint8_t *) board, in);
 		if(status == -1) {
-			printf_putstring("You lose!\n");
-			flush();
-			return 0;
+			for(int i = 0; i < y_steps; i++) {
+				for(int j = 0; j < x_steps; j++) {
+					board[i][j] = 0;
+				}
+			}
+			board[0][0] = 1;
+			init_snake_coords(snake_coords, x_steps, y_steps, x, y);
+
+			draw_flush();
+			draw_color(255, 255, 255);
+			draw_string(thick * 3, thick * 4, "You lose!");
+			draw_string(thick * 3, thick * 8, "Enter q to quit");
+			draw_string(thick * 3, thick * 12, "Press any key to start");
+			draw_flush();
+			read(0, &tin, 1);
+			if (tin == 'q')
+			{
+				return 1;
+			}
+			while(tin == '\t') {
+				read(0, &tin, 1);
+			}
+			if(tin != 'm' && tin != 'n') {
+				tin = 'm';
+			}
+			in = tin;
+			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
+			draw_clear(0, 0, game_width, game_height);
+			if(draw_border(0, 0, game_width, game_height, thick, 255, 255, 255) < 0) {
+				debug("Border create failed!\n");
+				return -1;
+			}
 		}
 	}
 }
