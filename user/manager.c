@@ -33,12 +33,17 @@ void merge(program * arr, int l, int m, int r);
 int main(const char ** argv, int argc) {
 	/* Eventually, programs wont be hardcoded */
 	const char *args1[] = { "/bin/snake.exe" };
+	const char *args2[] = { "/bin/clock.exe", "08:40" };
+	const char *args3[] = { "/bin/shell.exe" };
+	const char *args4[] = { "/bin/mandelbrot.exe" };
 
+
+	int padding = 4;
 	program programs[] = {
-			{ .w = 400, .h = 300, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 330, .h = 320, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 305, .h = 290, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 308, .h = 300, .exec = "bin/snake.exe", .args = args1, .argc = 1 }
+			{ .w = 55 +  4*padding, .h = 25 + 4*padding, .exec = "bin/clock.exe", .args = args2, .argc = 2 },
+			{ .w = 500 + 4*padding, .h = 400 + 4*padding, .exec = "bin/shell.exe", .args = args3, .argc = 3 },
+			{ .w = 200 + 4*padding, .h = 200 + 4*padding, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
+			{ .w = 400 + 4*padding, .h = 400 + 4*padding, .exec = "bin/mandelbrot.exe", .args = args4, .argc = 1 }
 	};
 
 
@@ -63,8 +68,7 @@ int main(const char ** argv, int argc) {
 	for (p_i = 0; p_i < num_programs; ++p_i) {
 		for (row = 0; row < num_programs; ++row) {
 			if (current_pos[row][0] + programs[p_i].w <= std_dims[0]) {
-				// Looks like the program can be placed
-
+				// Program can be placed
 				// If it is the first element in the row, x == 0
 				// And, all of the rows havent been set, set the val of the next row
 				if (current_pos[row][0] == 0) {
@@ -89,22 +93,24 @@ int main(const char ** argv, int argc) {
 	}
 
 	/* Wrun each program */
-	int pids[num_programs] = { 0 }, stdins[num_programs] = { 0 }, wd;
+	int pids[num_programs] = { 0 }, fds[num_programs][4] = { 0 };
 	for (p_i = 0; p_i < num_programs; ++p_i) {
 		if (placement[p_i][2] == 0) {
 			printf("INVALID\n");
 			continue;
 		}
 
-		wd = open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[0].w, programs[0].h);
-		stdins[p_i] = pipe_open();
+		fds[p_i][0] = pipe_open();
+		fds[p_i][3] = open_window(KNO_STDWIN, placement[p_i][0]+2*padding, placement[p_i][1]+2*padding, programs[p_i].w-2*padding, programs[p_i].h-2*padding);
 
-		// Set pipe'd fd to be stdin for child
-		pids[p_i] = process_wrun(programs[0].exec, programs[0].args, 1, wd, stdins[p_i]);
-		close(wd); // Closed because manager doesnt want children to have access to others windows
+		// Standard output and error get console
+		fds[p_i][1] = console_open(fds[p_i][3]);
+		fds[p_i][2] = fds[p_i][1];
 
+		// Take in an array of FD's
+		pids[p_i] = process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
 		draw_window(KNO_STDWIN);
-		draw_border(placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h, 4, 255, 255, 255);
+		draw_border(placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h, padding, 255, 255, 255);
 		draw_flush();
 	}
 
@@ -117,7 +123,7 @@ int main(const char ** argv, int argc) {
 	draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
 	draw_flush();
 
-	while (tin != 'q') {
+	while (tin != '~') {
 		if (pids[p_act] == 0) {
 			p_act = (p_act + 1) % num_programs;
 			continue;
@@ -134,10 +140,17 @@ int main(const char ** argv, int argc) {
 			draw_window(KNO_STDWIN);
 			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
 			draw_flush();
+			draw_color(255, 255, 255);
 			continue;
 		}
 		/* Write 1 character to the correct pipe */
-		write(stdins[p_act], &tin, 1);
+		write(fds[p_act][0], &tin, 1);
+	}
+
+	/* Reap all children processes */
+	for (int i = 0; i < num_programs; ++i)
+	{
+		process_reap(pids[i]);
 	}
 
 	/* Clean up the window */
