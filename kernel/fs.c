@@ -286,6 +286,7 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 	char *temp = memory_alloc_page(0);
 
+	// if writing past the (current) end of the file, resize the file first
 	if (offset + length > file->size) {
 		ops->resize(file->d, offset+length);
 	}
