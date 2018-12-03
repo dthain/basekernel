@@ -65,7 +65,7 @@ int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 int fs_dirent_close(struct fs_dirent *d);
 
-int fs_dirent_dup(struct fs_dirent* src, struct fs_dirent* dst);
+int fs_dirent_copy(struct fs_dirent* src, struct fs_dirent* dst);
 
 struct fs_ops {
 	struct fs_dirent *(*root) (struct fs_volume * d);

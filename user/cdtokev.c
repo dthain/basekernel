@@ -10,7 +10,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 
 int main(int argc, char const *argv[]) {
-	dup_volume(2,0,"cdrom","kevinfs");
+	copy_volume(2,0,"cdrom","kevinfs");
 	printf("syscall finished\n");
 	return 0;
 }
