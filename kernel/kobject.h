@@ -10,6 +10,7 @@
 #include "fs.h"
 #include "device.h"
 #include "graphics.h"
+#include "kernel/ktypes.h"
 #include "pipe.h"
 
 struct kobject {
@@ -19,13 +20,7 @@ struct kobject {
 		struct graphics *graphics;
 		struct pipe *pipe;
 	} data;
-	enum {
-		KOBJECT_INVALID = 0,
-		KOBJECT_FILE,
-		KOBJECT_DEVICE,
-		KOBJECT_GRAPHICS,
-		KOBJECT_PIPE
-	} type;
+	kobject_type type;
 	int refcount;
 	int offset;
 };
@@ -42,7 +37,7 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);
 int kobject_set_blocking(struct kobject *kobject, int b);
-int kobject_get_dimensions(struct kobject *kobject, int * dimensions, int n);
+int kobject_get_dimensions(struct kobject *kobject, int *dimensions, int n);
 int kobject_get_type(struct kobject *kobject);
 
 #endif
