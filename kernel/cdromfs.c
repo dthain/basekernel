@@ -50,7 +50,7 @@ static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int
 static char *cdrom_dirent_load(struct fs_dirent *d)
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	int nsectors = cdd->length / ATAPI_BLOCKSIZE + (cdd->length % ATAPI_BLOCKSIZE) ? 1 : 0;
+	int nsectors = cdd->length / ATAPI_BLOCKSIZE + ((cdd->length % ATAPI_BLOCKSIZE) ? 1 : 0);
 	char *data = kmalloc(nsectors * ATAPI_BLOCKSIZE);
 	if(!data)
 		return 0;
