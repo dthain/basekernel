@@ -10,7 +10,12 @@ See the file LICENSE for details.
 #include "library/string.h"
 
 int main(int argc, char const *argv[]) {
-	copy_volume(2,0,"cdrom","kevinfs");
-	printf("syscall finished\n");
+	int result = copy_volume(2,0,"cdrom","kevinfs");
+	if (result) {
+			printf("syscall finished, error: %d\n", result);
+	}
+	else {
+		printf("syscall finished, success\n");
+	}
 	return 0;
 }
