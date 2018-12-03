@@ -360,7 +360,13 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
 		struct fs_dirent *new_src, *new_dst;
 		new_src = fs_dirent_lookup(src, name);
 		char temp[1];
-		if (fs_dirent_readdir(new_src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
+		int isdir = fs_dirent_readdir(new_src, temp, 1);
+		if (isdir >= 0) { // directory
+			fs_dirent_mkdir(dst,name);
+			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			fs_dirent_copy(new_src, new_dst);
+		}
+		else if (fs_dirent_readdir(new_src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
 			fs_dirent_mkfile(dst, name);
 			new_dst = fs_dirent_lookup(dst, name);
 			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
@@ -371,10 +377,9 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
 			kfree(filebuf);
 			fs_file_close(src_file);
 			fs_file_close(dst_file);
-		} else { // directory
-			fs_dirent_mkdir(dst,name);
-			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
-			fs_dirent_copy(new_src, new_dst);
+		} else { // failure
+			kfree(buffer);
+			return isdir;
 		}
 		fs_dirent_close(new_dst);
 		fs_dirent_close(new_src);
