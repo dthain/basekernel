@@ -27,7 +27,7 @@ int open(const char *path, int mode, int flags);
 int object_type( int fd );
 int dup(int fd1, int fd2);
 int read(int fd, void *data, int length);
-int dup_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs);
+int copy_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs);
 int read_nonblock(int fd, void *data, int length);
 int write( int fd, void *data, int length );
 int lseek( int fd, int offset, int whence );

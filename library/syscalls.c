@@ -164,9 +164,9 @@ int process_wait(struct process_info *info, int timeout)
 	return syscall(SYSCALL_PROCESS_WAIT, (uint32_t) info, timeout, 0, 0, 0);
 }
 
-int dup_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs)
+int copy_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs)
 {
-	return syscall(SYSCALL_DUP_VOLUME, srcdisk, dstdisk, (uint32_t) srcfs, (uint32_t) destfs, 0);
+	return syscall(SYSCALL_COPY_VOLUME, srcdisk, dstdisk, (uint32_t) srcfs, (uint32_t) destfs, 0);
 }
 int sys_stats(struct sys_stats *s)
 {

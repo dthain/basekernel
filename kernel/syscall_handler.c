@@ -385,7 +385,7 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
-int sys_dup_volume(int src, int dst, char *srcfstype, char*dstfstype) {
+int sys_copy_volume(int src, int dst, char *srcfstype, char*dstfstype) {
 	struct fs *srcfs = fs_lookup(srcfstype);
 	struct fs *dstfs = fs_lookup(dstfstype);
 
@@ -393,7 +393,7 @@ int sys_dup_volume(int src, int dst, char *srcfstype, char*dstfstype) {
 	struct fs_volume *dstv = fs_volume_open(dstfs,dst);
 	struct fs_dirent *srcroot = fs_volume_root(srcv);
 	struct fs_dirent *dstroot = fs_volume_root(dstv);
-	fs_dirent_dup(srcroot, dstroot);
+	fs_dirent_copy(srcroot, dstroot);
 	printf("Dup finished\n");
 
 	return 0;
@@ -490,8 +490,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_rmdir((const char *) a);
 	case SYSCALL_PWD:
 		return sys_pwd((char *) a);
-	case SYSCALL_DUP_VOLUME:
-		return(sys_dup_volume((int) a, (int) b, (char *) c, (char *) d));
+	case SYSCALL_COPY_VOLUME:
+		return(sys_copy_volume((int) a, (int) b, (char *) c, (char *) d));
 	case SYSCALL_SYS_STATS:
 		return sys_sys_stats((struct sys_stats *) a);
 	case SYSCALL_PROCESS_STATS:

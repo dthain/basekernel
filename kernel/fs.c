@@ -340,9 +340,9 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	return total;
 }
 
-int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
-	char *buffer = kmalloc(4096);
-	memset(buffer,0,4096);
+int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
+	char *buffer = kmalloc(PAGE_SIZE);
+	memset(buffer,0,PAGE_SIZE);
 	printf("Reading directory... ");
 	int length = fs_dirent_readdir(src, buffer, 4096);
 	printf("Done.\n");
@@ -373,7 +373,7 @@ int fs_dirent_dup(struct fs_dirent *src, struct fs_dirent *dst) {
 		} else { // directory
 			fs_dirent_mkdir(dst,name);
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
-			fs_dirent_dup(new_src, new_dst);
+			fs_dirent_copy(new_src, new_dst);
 		}
 		fs_dirent_close(new_dst);
 		fs_dirent_close(new_src);
