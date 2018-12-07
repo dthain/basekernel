@@ -40,10 +40,10 @@ int main(const char ** argv, int argc) {
 
 	int padding = 4;
 	program programs[] = {
-			{ .w = 55 +  4*padding, .h = 25 + 4*padding, .exec = "bin/clock.exe", .args = args2, .argc = 2 },
-			{ .w = 500 + 4*padding, .h = 400 + 4*padding, .exec = "bin/shell.exe", .args = args3, .argc = 3 },
-			{ .w = 200 + 4*padding, .h = 200 + 4*padding, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 400 + 4*padding, .h = 400 + 4*padding, .exec = "bin/mandelbrot.exe", .args = args4, .argc = 1 }
+			{ .w = 55 , .h = 25 , .exec = "bin/clock.exe", .args = args2, .argc = 2 },
+			{ .w = 500, .h = 400, .exec = "bin/shell.exe", .args = args3, .argc = 3 },
+			{ .w = 200, .h = 200, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
+			{ .w = 400, .h = 400, .exec = "bin/mandelbrot.exe", .args = args4, .argc = 1 }
 	};
 
 
@@ -67,26 +67,26 @@ int main(const char ** argv, int argc) {
 
 	for (p_i = 0; p_i < num_programs; ++p_i) {
 		for (row = 0; row < num_programs; ++row) {
-			if (current_pos[row][0] + programs[p_i].w <= std_dims[0]) {
+			if (current_pos[row][0] + programs[p_i].w + 4*padding <= std_dims[0]) {
 				// Program can be placed
 				// If it is the first element in the row, x == 0
 				// And, all of the rows havent been set, set the val of the next row
 				if (current_pos[row][0] == 0) {
 					// Probably need to keep track of y coords
 					// If the program overlaps, we cant place it
-					if (current_pos[row][1] + programs[p_i].h > std_dims[1]) {
+					if (current_pos[row][1] + programs[p_i].h + 4*padding > std_dims[1]) {
 						break;
 					} else if (row < num_programs - 1) {
 						// Otherwise, we can place that element in that row and we can
 						// Set the y position of the next row
-						current_pos[row+1][1] = current_pos[row][1] + spacing + programs[p_i].h;
+						current_pos[row+1][1] = current_pos[row][1] + spacing + programs[p_i].h + 4*padding;
 					}
 				}
 				// Now, set the placement of this object
-				placement[p_i][0] = current_pos[row][0]; // x coord
-				placement[p_i][1] = current_pos[row][1]; // y coord
+				placement[p_i][0] = current_pos[row][0] + 2*padding; // x coord
+				placement[p_i][1] = current_pos[row][1] + 2*padding; // y coord
 				placement[p_i][2] = 1; // program is validly placed
-				current_pos[row][0] = current_pos[row][0] + spacing + programs[p_i].w;
+				current_pos[row][0] = current_pos[row][0] + spacing + programs[p_i].w + 4*padding;;
 				break;
 			}
 		}
@@ -101,7 +101,7 @@ int main(const char ** argv, int argc) {
 		}
 
 		fds[p_i][0] = pipe_open();
-		fds[p_i][3] = open_window(KNO_STDWIN, placement[p_i][0]+2*padding, placement[p_i][1]+2*padding, programs[p_i].w-2*padding, programs[p_i].h-2*padding);
+		fds[p_i][3] = open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h);
 
 		// Standard output and error get console
 		fds[p_i][1] = console_open(fds[p_i][3]);
@@ -110,7 +110,7 @@ int main(const char ** argv, int argc) {
 		// Take in an array of FD's
 		pids[p_i] = process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
 		draw_window(KNO_STDWIN);
-		draw_border(placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h, padding, 255, 255, 255);
+		draw_border(placement[p_i][0] - 2*padding, placement[p_i][1] - 2*padding, programs[p_i].w + 4*padding, programs[p_i].h + 4*padding, padding, 255, 255, 255);
 		draw_flush();
 	}
 
@@ -120,7 +120,7 @@ int main(const char ** argv, int argc) {
 
 	/* Draw green window around active process and start it */
 	draw_window(KNO_STDWIN);
-	draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
+	draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 0, 0, 255);
 	draw_flush();
 
 	while (tin != '~') {
@@ -133,12 +133,12 @@ int main(const char ** argv, int argc) {
 		read(0, &tin, 1);
 		if (tin == '\t') {
 			draw_window(KNO_STDWIN);
-			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 255, 255, 255);
+			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 255, 255, 255);
 			draw_flush();
 			p_act = (p_act + 1) % num_programs;
 			/* Draw green window around active process and start it */
 			draw_window(KNO_STDWIN);
-			draw_border(placement[p_act][0], placement[p_act][1], programs[p_act].w, programs[p_act].h, 4, 0, 0, 255);
+			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 0, 0, 255);
 			draw_flush();
 			draw_color(255, 255, 255);
 			continue;
