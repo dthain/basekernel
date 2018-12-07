@@ -269,6 +269,12 @@ uint32_t sys_gettimeofday()
 	return rtc_time_to_timestamp(&t);
 }
 
+uint32_t sys_gettimeofday_rtc(struct rtc_time * t)
+{
+	rtc_read(t);
+	return 0;
+}
+
 int sys_chdir(const char *path)
 {
 	struct fs_dirent *d = fs_resolve(path);
@@ -566,6 +572,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_get_dimensions(a, (int *) b, c);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
+	case SYSCALL_GETTIMEOFDAY_RTC:
+		return sys_gettimeofday_rtc((struct rtc_time *) a);
 	case SYSCALL_SBRK:
 		return sys_sbrk(a);
 	case SYSCALL_CHDIR:
