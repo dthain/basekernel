@@ -41,6 +41,27 @@ int process_command(char *line)
 			printf("start: missing argument\n");
 	} else if(pch && !strcmp(pch, "run")) {
 		pch = strtok(0, " ");
+		// if(pch) {
+		// 	const char *argv[20];
+		// 	argv[0] = pch;
+		// 	int i = 1;
+		// 	char *next;
+		// 	while((next = strtok(0, " "))) {
+		// 		argv[i++] = next;
+		// 	}
+		// 	int pid = process_fork();
+		// 	if(pid != 0) {
+		// 		printf("started process %d\n", pid);
+		// 		struct process_info info;
+		// 		process_wait(&info, -1);
+		// 		printf("process %d exited with status %d\n", info.pid, info.exitcode);
+		// 		process_reap(info.pid);
+		// 	} else {
+		// 		process_exec(pch, argv, i);
+		// 	}
+		// } else
+		// 	printf("run: missing argument\n");
+
 		if(pch) {
 			const char *argv[20];
 			argv[0] = pch;
@@ -49,18 +70,20 @@ int process_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = process_fork();
-			if(pid != 0) {
+			int pid = process_run(argv[0], &argv[0], i);
+			if(pid > 0) {
 				printf("started process %d\n", pid);
+				process_yield();
 				struct process_info info;
 				process_wait(&info, -1);
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 				process_reap(info.pid);
 			} else {
-				process_exec(pch, argv, i);
+				printf("Couldn't start %s\n", argv[1]);
 			}
-		} else
-			printf("run: missing argument\n");
+		} else {
+			printf("run: requires argument\n");
+		}
 	} else if(pch && !strcmp(pch, "reap")) {
 		pch = strtok(0, " ");
 		int pid;
