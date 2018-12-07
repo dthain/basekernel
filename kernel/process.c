@@ -114,14 +114,15 @@ static int process_allocate_pid()
 	return 0;
 }
 
-void process_inherit(struct process *parent, struct process *child)
+void process_selective_inherit(struct process *parent, struct process *child, int * fds, int fd_len)
 {
 	/* Copy kernel objects */
-	memcpy(child->ktable, parent->ktable, sizeof(parent->ktable));
 	int i;
-	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
-		if(child->ktable[i]) {
-			child->ktable[i] = kobject_addref(parent->ktable[i]);
+
+	for (i = 0; i < fd_len; i++)
+	{
+		if(fds[i] > -1) {
+			child->ktable[i] = kobject_addref(parent->ktable[fds[i]]);
 		}
 	}
 
@@ -133,24 +134,19 @@ void process_inherit(struct process *parent, struct process *child)
 	child->ppid = parent->pid;
 }
 
-void process_selective_inherit(struct process *parent, struct process *child, int * fds, int fd_len)
+void process_inherit(struct process *parent, struct process *child)
 {
-	/* Copy kernel objects */
-	int i;
-
-	for (i = 0; i < fd_len; i++)
+	/* Child inherits everything parent inherits */
+	int i, fds[PROCESS_MAX_OBJECTS];
+	for (i = 0; i < PROCESS_MAX_OBJECTS; i++)
 	{
-		if(fds[i]) {
-			child->ktable[i] = kobject_addref(parent->ktable[fds[i]]);
-		}
+		if (parent->ktable[i]) {
+			fds[i] = i;
+		} else {
+			fds[i] = -1;
+		}	
 	}
-
-	/* Inherit current and root directories */
-	child->current_dir = fs_dirent_addref(parent->current_dir);
-	child->root_dir = fs_dirent_addref(parent->root_dir);
-
-	/* Set the parent of the new process to the calling process */
-	child->ppid = parent->pid;
+	process_selective_inherit(parent, child, fds, PROCESS_MAX_OBJECTS);
 }
 
 int process_data_size_set(struct process *p, unsigned size)
