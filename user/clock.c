@@ -73,7 +73,9 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 
 	char h_str[100];
 	char m_str[100];
+	char time[100] = "";
 
+	/* Configure time */
 	int tz_hour = (int)hour - timezone;
 	if (tz_hour < 0) 
 	{
@@ -88,7 +90,7 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 	uint_to_string((uint32_t) tz_hour, h_str);
 	uint_to_string(minute, m_str);
 
-	char time[100] = "";
+	/* Format time string */
 	if (strlen(h_str) == 1) 
 	{
 		strcat(time, " ");
