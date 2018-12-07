@@ -94,6 +94,11 @@ uint32_t gettimeofday()
 	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
 }
 
+uint32_t gettimeofday_rtc(struct rtc_time * time)
+{
+	return syscall(SYSCALL_GETTIMEOFDAY_RTC, (uint32_t)time, 0, 0, 0, 0);
+}
+
 int process_self()
 {
 	return syscall(SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0);
