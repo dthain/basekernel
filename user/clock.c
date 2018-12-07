@@ -89,14 +89,16 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 	uint_to_string(minute, m_str);
 
 	char time[100] = "";
-
 	if (strlen(h_str) == 1) 
 	{
 		strcat(time, " ");
 	}
-
 	strcat(time, (const char *) h_str);
 	strcat(time, ":");
+	if (strlen(m_str) == 1) 
+	{
+		strcat(time, "0");
+	}
 	strcat(time, (const char *) m_str);
 
 	draw_string(x + padding, y + padding, time);
