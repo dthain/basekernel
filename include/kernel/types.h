@@ -28,6 +28,15 @@ typedef uint8_t bool;
 
 typedef uint32_t addr_t;
 
+struct rtc_time {
+	uint8_t second;
+	uint8_t minute;
+	uint8_t hour;
+	uint8_t day;
+	uint8_t month;
+	uint16_t year;
+};
+
 struct process_info {
 	int pid;
 	int exitcode;
