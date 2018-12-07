@@ -136,6 +136,7 @@ int main(const char ** argv, int argc) {
 			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 255, 255, 255);
 			draw_flush();
 			p_act = (p_act + 1) % num_programs;
+			
 			/* Draw green window around active process and start it */
 			draw_window(KNO_STDWIN);
 			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 0, 0, 255);
