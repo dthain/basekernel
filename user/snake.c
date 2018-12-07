@@ -132,6 +132,7 @@ int main(const char *argv[], int argc)
 			read(0, &tin, 1);
 			if (tin == 'q')
 			{
+				printf("Snake exiting\n");
 				return 1;
 			}
 			if(tin != 'm' && tin != 'n') {
@@ -146,6 +147,7 @@ int main(const char *argv[], int argc)
 			}
 		}
 	}
+
 }
 
 
