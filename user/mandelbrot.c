@@ -62,6 +62,11 @@ int main(const char ** argv, int argc)
 
 int in_set(Complex c)
 {
+	/* 
+		Checks if the number is in the set
+		Returns iteration it exceeded the threshold
+		If it does not, return one greater than Threshold
+	*/
 	Complex z = { .r = 0, .i = 0};
 	int i = 0;
 	for (i = 0; i < ITER_THRES; ++i)
@@ -74,11 +79,12 @@ int in_set(Complex c)
 		}
 	}
 
-	return i + 1;
+	return ITER_THRES + 1;
 }
 
 void plot_point(int iter_val, int j, int k)
 {
+	/* Plot the point based on the color */
 	int step_size = ITER_THRES/STEPS;
 	int colors[STEPS][3] = {{255,255,0},{255,215,0},{50,205,50},{0,0,205},{165,42,42}};
 
