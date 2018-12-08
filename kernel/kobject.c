@@ -57,13 +57,14 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
 	case KOBJECT_INVALID:
-		return 0;
+		break;
 	case KOBJECT_GRAPHICS:
-		return 0;
+		break;
 	case KOBJECT_FILE:{
 			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			break;
 		}
 	case KOBJECT_DEVICE:
 		return device_read(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
@@ -164,7 +165,7 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
-int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
+int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
 	case KOBJECT_INVALID:
@@ -176,7 +177,7 @@ int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
 	case KOBJECT_DEVICE:
 		return 0;
 	case KOBJECT_PIPE:
-		return 0; 
+		return 0;
 	}
 	return 0;
 }
