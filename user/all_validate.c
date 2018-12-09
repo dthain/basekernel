@@ -40,6 +40,12 @@ int main(const char *argv[], int argc) {
 	s = "HOME:path/to/root/dir";
 	if (!is_valid_location(s))
 		printf("ERROR: Did not validate %s\n", s);
+	s = "TAG";
+	if (!is_valid_tag(s))
+		printf("ERROR: Did not validate %s\n", s);
+	s = "/root/is-valid.path";
+	if (!is_valid_path(s))
+		printf("ERROR: Did not validate %s\n", s);
 	s = "BAD-INTENT:p@th/:/root/dir";
 	if (is_valid_location(s))
 		printf("ERROR: Did not invalidate %s\n", s);
