@@ -263,67 +263,70 @@ int sys_rmdir(const char *path)
 	}
 }
 
-int sys_open(const char *path, int mode, int flags)
+int sys_open_dirent(struct fs_dirent * d, const char * path, int mode, int flags)
 {
-	int fd = process_available_fd(current);
-	if(fd < 0)
+	if(!d)
+		return 0;
+	
+	int new_fd = process_available_fd(current);
+	if(new_fd < 0)
 		return -1;
 
-	struct fs_dirent *d = fs_resolve(path);
-	if(!d) {
-		// XXX creating in current_dir, not parent dir!
-		fs_dirent_mkfile(current->current_dir, path);
-		// XXX return value not checked!
-		d = fs_dirent_namei(current->current_dir, path);
-	}
+	d = fs_dirent_namei(current->current_dir, path);
+
 	struct fs_file *fp = fs_file_open(d, mode);
-	current->ktable[fd] = kobject_create_file(fp);
-	return fd;
+	current->ktable[new_fd] = kobject_create_file(fp);
+	return new_fd;
 }
 
-int sys_open_intent(const char *path, int mode, int flags)
+int sys_open_intent(int fd, const char * path, int mode, int flags)
 {
-	// Most simple sanity-check for path.
-	if (strlen(path)<3) return -1;
+	struct fs_dirent * d = current->ktable[fd];
+	return sys_open_dirent(d, path, mode, flags);
+}
 
-	int fd = process_available_fd(current);
-	if(fd < 0)
+int sys_open(const char *path, int mode, int flags)
+{
+	int path_length = strlen(path);
+	int i = 0;
+	char * lpath = kmalloc(sizeof(char) * (path_length+1));
+	while (i < path_length && path[i] != 58) {
+		i += 1;
+	}
+	// If we have no path, do nothing.
+	if (i == path_length && path[i] == 58) {
 		return -1;
+	}
 
-	char * mutable_path = kmalloc((strlen(path)+1) * sizeof(char));
-	strcpy(mutable_path, path);
-
-	struct fs_dirent * d;
-
-	char * intent;
-	char * base_path;
-	intent = strtok(mutable_path, ":");
-	base_path = strtok(0, ":");
+	// If we have no tag, use everything as a path.
+	if (i == path_length) {
+		return sys_open_dirent(current->current_dir, path,
+					mode, flags);
+	}
+	// If we have a tag and a path, use both.
+	strcpy(lpath, path);
+	const char * intent = strtok(lpath, ":");
+	const char * base_path = strtok(0, ":");
+	printf("Opening via intent:\n\tIntent: %s\n\tPath: %s\n",
+			intent, base_path);
+	int intent_value = 0;
 	// Check if intent is index-specified.
 	if (intent[0] == "#")
 	{
-		int target_index;
-		str2int(++intent, &target_index);
-		if(current->ktable[target_index]  < 0) return -1;
-		d = (struct dirent *) current->ktable[target_index];	
+		str2int(++intent, &intent_value);
 	} else {
 	// Find an intent matching the tag.
 		for (int i = sys_process_object_max(); i >= 0; i--)
 		{
 			if (!strcmp(current->ktable[i]->intent, intent))
 			{
-				d = (struct dirent *) current->ktable[i];
+				intent_value = i;
 				break;
 			}
 		}
 	}
-	d = fs_dirent_namei(d, base_path);
-	if (!d) return -1;
-
-	// Resolve the directory from the intent through the tag.
-	struct fs_file *fp = fs_file_open(d, mode);
-	current->ktable[fd] = kobject_create_file(fp);
-	return fd;
+	if(current->ktable[intent_value]  < 0) return -1;
+	return sys_open_intent(intent_value, base_path, mode, flags);
 }
 
 int sys_object_set_intent(int fd, char *intent)
@@ -554,7 +557,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
 	case SYSCALL_OPEN_INTENT:
-		return sys_open_intent((const char *) a, b, c);
+		return sys_open_intent(a, (const char *) b, c, d);
 	case SYSCALL_DUP:
 		return sys_dup(a, b);
 	case SYSCALL_READ:
