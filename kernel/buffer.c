@@ -68,7 +68,7 @@ int buffer_drop_lru(struct buffer *buf)
 int buffer_add(struct buffer *buf, int block, const void *data)
 {
 	struct buffer_entry *write = 0;
-	if(buf->cache_map->num_entries == CACHE_SIZE)
+	if(hash_set_entries(buf->cache_map) >= CACHE_SIZE)
 		buffer_drop_lru(buf);
 	int exists = hash_set_lookup(buf->cache_map, block);
 	if(exists)

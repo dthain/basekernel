@@ -5,6 +5,19 @@
 #define HASHTABLE_PRIME 31
 #define HASHTABLE_GOLDEN_RATIO 0x61C88647
 
+struct hash_set {
+	uint32_t total_buckets;
+	uint32_t num_entries;
+	struct hash_set_node **head;
+};
+
+struct hash_set_node {
+	uint32_t data;
+	void *info;
+	uint32_t info_size;
+	struct hash_set_node *next;
+};
+
 uint32_t hash_string(char *string, uint32_t range_min, uint32_t range_max)
 {
 	uint32_t hash = HASHTABLE_PRIME;
@@ -152,6 +165,11 @@ int hash_set_remove(struct hash_set *set, uint32_t key)
 	if(result == 0)
 		set->num_entries--;
 	return result;
+}
+
+int hash_set_entries( struct hash_set *set )
+{
+	return set->num_entries;
 }
 
 void hash_set_print(struct hash_set *set)
