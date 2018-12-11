@@ -4,12 +4,16 @@
 //     http://www.webcitation.org/5ugQv5JOw
 
 #include "kernel/types.h"
-#include "ioports.h"
+#include "kernel/error.h"
 
-#define COM1 0x3f8
-#define COM2 0x2F8
-#define COM3 0x3E8
-#define COM4 0x2E8
+#include "interrupt.h"
+#include "ioports.h"
+#include "process.h"
+
+#define COM1 0x3f8 // irq 4
+#define COM2 0x2F8 // irq 3
+#define COM3 0x3E8 // irq 4
+#define COM4 0x2E8 // irq 3
 
 #define SERIAL_DATA 0		// If DLAB disabled in LCR
 
@@ -52,20 +56,36 @@
 
 static const int serial_ports[4] = { COM1, COM2, COM3, COM4 };
 
+struct list serial_queue = {0,0};
+
+static void serial_interrupt( int intr, int code )
+{
+	process_wakeup_all(&serial_queue);
+}
+
 static void serial_init_port(int port)
 {
+	interrupt_register(3,serial_interrupt);
+	interrupt_register(4,serial_interrupt);
+
 	//Disable iterrupts
 	outb(0x00, port + SERIAL_IRQ_ENABLE);
+
 	//Enable DLAB(set baud rate divisor)
 	outb(SERIAL_DLAB_ENABLE, port + SERIAL_LCR);
+
 	//Set divisor to 3(lo byte) 38400 baud
 	outb(0x03, port + SERIAL_DIVISOR_LO);
+
 	//(hi byte)
 	outb(0x00, port + SERIAL_DIVISOR_HI);
+
 	//8 bits, no parity, one stop bit
 	outb(SERIAL_CHARLEN_START * 3, port + SERIAL_LCR);
+
 	//Enable FIFO, clear them, with 14 - byte threshold
 	outb(SERIAL_FIFO_ENABLE | SERIAL_FIFO_CLEAR_RECIEVER | SERIAL_FIFO_CLEAR_TRANSMITTER | SERIAL_TRIGGER_LEVEL0 | SERIAL_TRIGGER_LEVEL1, port + SERIAL_FCR);
+
 	//IRQs enabled, RTS / DSR set
 	outb(SERIAL_DATA_TERMINAL_READY | SERIAL_REQUEST_TO_SEND | SERIAL_AUX_OUT2, port + SERIAL_MCR);
 }
@@ -80,9 +100,9 @@ static int is_transmit_empty(int port)
 	return inb(port + SERIAL_LSR) & SERIAL_TRANSMIT_EMPTY;
 }
 
-static int is_valid_port(uint8_t port_no)
+static int is_valid_port(int unit)
 {
-	return port_no < sizeof(serial_ports) / sizeof(int);
+	return unit < sizeof(serial_ports) / sizeof(int);
 }
 
 void serial_init()
@@ -93,33 +113,42 @@ void serial_init()
 	}
 }
 
-char serial_read(uint8_t port_no)
+int serial_read( int unit, char *data, int length )
 {
-	if(!is_valid_port(port_no))
-		return -1;
+	if(!is_valid_port(unit))
+		return KERROR_INVALID_DEVICE;
 
-	while(serial_received(serial_ports[port_no]) == 0);
-	inb(serial_ports[port_no]);
-	return 0;
-}
+	int total = 0;
 
-int serial_write(uint8_t port_no, char a)
-{
-	if(!is_valid_port(port_no))
-		return -1;
-
-	while(is_transmit_empty(serial_ports[port_no]) == 0);
-	outb(a, serial_ports[port_no]);
-	return 0;
-}
-
-int serial_write_string(uint8_t port_no, char *s)
-{
-	if(!is_valid_port(port_no))
-		return -1;
-
-	while(*s) {
-		serial_write(port_no, *s++);
+	while(length>0) {
+		while(serial_received(serial_ports[unit]) == 0) {
+			process_wait(&serial_queue);
+		}
+		*data = inb(serial_ports[unit]);
+		length--;
+		data++;
+		total++;
 	}
-	return 0;
+
+	return total;
+}
+
+int serial_write(int unit, const char *data, int length )
+{
+	if(!is_valid_port(unit))
+		return KERROR_INVALID_DEVICE;
+
+	int total = 0;
+
+	while(length>0) {
+		while(is_transmit_empty(serial_ports[unit]) == 0) {
+			process_wait(&serial_queue);
+		}
+		outb(*data, serial_ports[unit]);
+		length--;
+		data++;
+		total++;
+	}
+
+	return total;
 }
