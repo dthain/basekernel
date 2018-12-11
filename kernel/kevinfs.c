@@ -419,12 +419,12 @@ static struct kevinfs_dir_record_list *kevinfs_dir_alloc(uint32_t list_len)
 {
 	struct kevinfs_dir_record_list *ret = kmalloc(sizeof(struct kevinfs_dir_record_list));
 	if(ret) {
-		ret->changed = hash_set_init(19);
+		ret->changed = hash_set_create(19);
 		ret->list_len = list_len;
 		ret->list = kmalloc(sizeof(struct kevinfs_dir_record) * list_len);
 		if(!ret->list || !ret->changed) {
 			if(ret->changed)
-				hash_set_dealloc(ret->changed);
+				hash_set_delete(ret->changed);
 			if(ret->list)
 				kfree(ret->list);
 			kfree(ret);
@@ -466,7 +466,7 @@ static int kevinfs_delete_dirent_or_decrement_links(struct kevinfs_dirent *kd)
 static void kevinfs_dir_dealloc(struct kevinfs_dir_record_list *dir_list)
 {
 	kfree(dir_list->list);
-	hash_set_dealloc(dir_list->changed);
+	hash_set_delete(dir_list->changed);
 	kfree(dir_list);
 }
 

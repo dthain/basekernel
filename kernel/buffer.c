@@ -25,7 +25,7 @@ struct buffer *buffer_init(int block_size)
 {
 	struct buffer *ret = kmalloc(sizeof(struct buffer));
 	ret->block_size = block_size;
-	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
+	ret->cache_map = hash_set_create(CACHE_SIZE + 1);
 	return ret;
 }
 
@@ -52,7 +52,7 @@ int buffer_delete(struct buffer *buf, int block)
 	current_cache_data = *data;
 	memory_free_page(current_cache_data->data);
 	list_remove((struct list_node *) current_cache_data);
-	if(hash_set_delete(buf->cache_map, block) < 0) {
+	if(hash_set_remove(buf->cache_map, block) < 0) {
 		return -1;
 	}
 	return 0;
@@ -61,7 +61,7 @@ int buffer_delete(struct buffer *buf, int block)
 int buffer_drop_lru(struct buffer *buf)
 {
 	struct buffer_entry *current_cache_data = (struct buffer_entry *) list_pop_tail(&buf->cache);
-	hash_set_delete(buf->cache_map, current_cache_data->block_no);
+	hash_set_remove(buf->cache_map, current_cache_data->block_no);
 	return 0;
 }
 

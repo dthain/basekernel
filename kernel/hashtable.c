@@ -2,6 +2,9 @@
 #include "hashtable.h"
 #include "kmalloc.h"
 
+#define HASHTABLE_PRIME 31
+#define HASHTABLE_GOLDEN_RATIO 0x61C88647
+
 uint32_t hash_string(char *string, uint32_t range_min, uint32_t range_max)
 {
 	uint32_t hash = HASHTABLE_PRIME;
@@ -80,7 +83,7 @@ bool hash_set_lookup_info(struct hash_set * set, uint32_t key, void **data)
 	return result != 0;
 }
 
-struct hash_set *hash_set_init(uint32_t buckets)
+struct hash_set *hash_set_create(uint32_t buckets)
 {
 	struct hash_set_node **set_nodes = kmalloc(sizeof(struct hash_set_node *) * buckets);
 	struct hash_set *set = kmalloc(sizeof(struct hash_set));
@@ -91,7 +94,7 @@ struct hash_set *hash_set_init(uint32_t buckets)
 	set->num_entries = 0;
 
 	if(!set || !set_nodes) {
-		hash_set_dealloc(set);
+		hash_set_delete(set);
 		return 0;
 	}
 	return set;
@@ -108,7 +111,7 @@ static int hash_set_list_dealloc(struct hash_set_node *head)
 	return 0;
 }
 
-int hash_set_dealloc(struct hash_set *set)
+int hash_set_delete(struct hash_set *set)
 {
 	struct hash_set_node **set_nodes = set->head;
 	if(set)
@@ -142,7 +145,7 @@ bool hash_set_lookup(struct hash_set * set, uint32_t key)
 	return result != 0;
 }
 
-int hash_set_delete(struct hash_set *set, uint32_t key)
+int hash_set_remove(struct hash_set *set, uint32_t key)
 {
 	uint32_t hash_key = hash_uint(key, set->total_buckets);
 	int result = hash_set_list_delete(&(set->head[hash_key]), key);
@@ -151,7 +154,7 @@ int hash_set_delete(struct hash_set *set, uint32_t key)
 	return result;
 }
 
-void debug_print_hash_set(struct hash_set *set)
+void hash_set_print(struct hash_set *set)
 {
 	uint32_t i;
 	printf("printing hash set:\n");
