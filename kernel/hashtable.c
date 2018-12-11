@@ -87,15 +87,6 @@ static int hash_set_list_delete(struct hash_set_node **head, uint32_t key)
 	return -1;
 }
 
-bool hash_set_lookup_info(struct hash_set * set, uint32_t key, void **data)
-{
-	uint32_t hash_key = hash_uint(key, set->total_buckets);
-	struct hash_set_node *result = hash_set_list_lookup(set->head[hash_key], key);
-	if(result != 0)
-		*data = result->info;
-	return result != 0;
-}
-
 struct hash_set *hash_set_create(uint32_t buckets)
 {
 	struct hash_set_node **set_nodes = kmalloc(sizeof(struct hash_set_node *) * buckets);
@@ -151,11 +142,15 @@ int hash_set_add(struct hash_set *set, uint32_t key, void *info)
 	return ret;
 }
 
-bool hash_set_lookup(struct hash_set * set, uint32_t key)
+void * hash_set_lookup(struct hash_set * set, uint32_t key)
 {
 	uint32_t hash_key = hash_uint(key, set->total_buckets);
 	struct hash_set_node *result = hash_set_list_lookup(set->head[hash_key], key);
-	return result != 0;
+	if(result) {
+		return result->info;
+	} else {
+		return 0;
+	}
 }
 
 int hash_set_remove(struct hash_set *set, uint32_t key)
