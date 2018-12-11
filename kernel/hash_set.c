@@ -1,5 +1,5 @@
 #include "string.h"
-#include "hashtable.h"
+#include "hash_set.h"
 #include "kmalloc.h"
 
 #define HASHTABLE_PRIME 31

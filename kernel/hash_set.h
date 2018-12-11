@@ -1,5 +1,5 @@
-#ifndef HASHTABLE_H
-#define HASHTABLE_H
+#ifndef HASH_SET_H
+#define HASH_SET_H
 
 #include "kernel/types.h"
 

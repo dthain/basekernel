@@ -9,7 +9,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "kevinfs.h"
 #include "string.h"
-#include "hashtable.h"
+#include "hash_set.h"
 #include "fs.h"
 
 #define RESERVED_BIT_TABLE_LEN 1031
