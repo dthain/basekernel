@@ -14,7 +14,6 @@ struct hash_set {
 struct hash_set_node {
 	int data;
 	void *info;
-	int info_size;
 	struct hash_set_node *next;
 };
 
