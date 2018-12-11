@@ -12,8 +12,8 @@ struct hash_set {
 };
 
 struct hash_set_node {
-	int data;
-	void *info;
+	int key;
+	void *data;
 	struct hash_set_node *next;
 };
 
@@ -40,18 +40,18 @@ static int hash_set_list_add(struct hash_set_node **head, struct hash_set_node *
 		*head = node;
 		return 0;
 	}
-	while(curr && (curr->data < node->data)) {
+	while(curr && (curr->key < node->key)) {
 		prev = curr;
 		curr = curr->next;
 	}
-	if(!prev && curr->data != node->data) {
+	if(!prev && curr->key != node->key) {
 		node->next = *head;
 		*head = node;
 		return 0;
 	} else if(!curr) {
 		prev->next = node;
 		return 0;
-	} else if(curr->data != node->data) {
+	} else if(curr->key != node->key) {
 		node->next = curr->next;
 		curr->next = node;
 		return 0;
@@ -62,20 +62,20 @@ static int hash_set_list_add(struct hash_set_node **head, struct hash_set_node *
 static struct hash_set_node *hash_set_list_lookup(struct hash_set_node *head, int key)
 {
 	struct hash_set_node *curr = head;
-	while(curr && (curr->data < key)) {
+	while(curr && (curr->key < key)) {
 		curr = curr->next;
 	}
-	return (curr && (curr->data == key)) ? curr : 0;
+	return (curr && (curr->key == key)) ? curr : 0;
 }
 
 static int hash_set_list_delete(struct hash_set_node **head, int key)
 {
 	struct hash_set_node *prev = 0, *curr = *head;
-	while(curr && (curr->data < key)) {
+	while(curr && (curr->key < key)) {
 		prev = curr;
 		curr = curr->next;
 	}
-	if(curr && (curr->data == key)) {
+	if(curr && (curr->key == key)) {
 		if(prev)
 			prev->next = curr->next;
 		if(curr == *head)
@@ -128,12 +128,12 @@ int hash_set_delete(struct hash_set *set)
 	return 0;
 }
 
-int hash_set_add(struct hash_set *set, int key, void *info)
+int hash_set_add(struct hash_set *set, int key, void *data)
 {
 	int hash_key = hash_uint(key, set->total_buckets);
 	struct hash_set_node *node = kmalloc(sizeof(struct hash_set_node));
-	node->data = key;
-	node->info = info;
+	node->key = key;
+	node->data = data;
 	node->next = 0;
 	int ret = hash_set_list_add(&(set->head[hash_key]), node);
 	if(ret == 0)
@@ -146,7 +146,7 @@ void * hash_set_lookup(struct hash_set * set, int key)
 	int hash_key = hash_uint(key, set->total_buckets);
 	struct hash_set_node *result = hash_set_list_lookup(set->head[hash_key], key);
 	if(result) {
-		return result->info;
+		return result->data;
 	} else {
 		return 0;
 	}
@@ -173,7 +173,7 @@ void hash_set_print(struct hash_set *set)
 	for(i = 0; i < set->total_buckets; i++) {
 		struct hash_set_node *start = set->head[i];
 		while(start) {
-			printf("%u: %u\n", i, start->data);
+			printf("%u: %u\n", i, start->key);
 			start = start->next;
 		}
 	}
