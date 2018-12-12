@@ -132,7 +132,6 @@ struct device *console_init(struct graphics *g)
 	console.device.block_size = 1;
 	console.device.write = console_device_write;
 	console_reset(&console);
-	console.device.buffer = 0;
 	console_putstring("\nconsole: initialized\n");
 	return (struct device *) &console;
 }
@@ -147,7 +146,6 @@ struct device *console_create(struct graphics *g)
 	struct console_device *c = kmalloc(sizeof(*c));
 	c->gx = g;
 	c->device.block_size = 1;
-	c->device.buffer = 0;
 	c->device.write = console_device_write_debug;
 	console_reset(c);
 	return (struct device *) c;

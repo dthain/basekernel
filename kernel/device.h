@@ -8,9 +8,6 @@
 #define DEVICE_H
 
 #include "kernel/types.h"
-#include "graphics.h"
-#include "device.h"
-#include "buffer.h"
 
 struct device {
 	int (*read) (struct device * d, void *buffer, int size, int offset);
@@ -18,11 +15,10 @@ struct device {
 	int (*write) (struct device * d, const void *buffer, int size, int offset);
 	int unit;
 	int block_size;
-	int alloced;
-	struct buffer *buffer;
 };
 
 void device_init();
+
 struct device *device_open(char *type, int unit);
 int device_read(struct device *d, void *buffer, int size, int offset);
 int device_read_nonblock(struct device *d, void *buffer, int size, int offset);
