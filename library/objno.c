@@ -7,7 +7,7 @@ static const char KOBJECT_FILE_STRING[] = "File";
 static const char KOBJECT_DEVICE_STRING[] = "Device";
 static const char KOBJECT_GRAPHICS_STRING[] = "Graphics";
 
-const char *strerror(int err_code)
+const char *strobjno(int err_code)
 {
 	switch(err_code) {
 		case KOBJECT_INVALID:
@@ -18,5 +18,7 @@ const char *strerror(int err_code)
 			return KOBJECT_DEVICE_STRING;
 		case KOBJECT_GRAPHICS:
 			return KOBJECT_GRAPHICS_STRING;
+		default:
+			return "unknown";
 	}
 }

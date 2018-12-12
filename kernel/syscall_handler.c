@@ -525,9 +525,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_OBJECT_MAX:
 		return sys_process_object_max(a);
 	case SYSCALL_OBJECT_SET_INTENT:
-		return sys_object_set_intent(a, b);
+		return sys_object_set_intent(a,(char*)b);
 	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a, b, c);
+		return sys_object_get_intent(a,(char*)b, c);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

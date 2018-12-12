@@ -44,5 +44,7 @@ const char * strerror(int err_code) {
 			return KERROR_NO_MEMORY_STRING;
 		case KERROR_IO_FAILURE:
 			return KERROR_IO_FAILURE_STRING;
+		default:
+			return "unknown";
 	}
 }

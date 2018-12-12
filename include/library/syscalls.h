@@ -23,7 +23,7 @@ int process_kill(unsigned int pid);
 int process_reap(unsigned int pid);
 int process_wait(struct process_info *info, int timeout);
 int process_sleep(unsigned int ms);
-int process_highest_fd();
+int process_object_max();
 int open(const char *path, int mode, int flags);
 int object_type(int fd);
 int dup(int fd1, int fd2);

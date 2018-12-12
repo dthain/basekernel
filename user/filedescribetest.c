@@ -2,6 +2,7 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
+#include "library/malloc.h"
 
 #define INTENT_BUFFER_SIZE 256
 
