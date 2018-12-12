@@ -13,6 +13,7 @@ See the file LICENSE for details.
 #include "memory.h"
 #include "fs.h"
 #include "device.h"
+#include "bcache.h"
 #include "cdromfs.h"
 #include "kernel/syscall.h"
 
@@ -55,7 +56,7 @@ static char *cdrom_dirent_load(struct fs_dirent *d)
 	if(!data)
 		return 0;
 
-	device_read(cdd->volume->device, data, nsectors, cdd->sector);
+	bcache_read(cdd->volume->device, data, nsectors, cdd->sector);
 	// XXX check result
 
 	return data;
@@ -229,7 +230,7 @@ static struct fs_volume *cdrom_volume_open(int unit)
 	for(j = 0; j < 16; j++) {
 		printf("cdromfs: checking volume %d\n", j);
 
-		device_read(device, d, 1, j + 16);
+		bcache_read(device, (char*)d, 1, j + 16);
 		// XXX check reuslt
 
 		if(strncmp(d->magic, "CD001", 5))

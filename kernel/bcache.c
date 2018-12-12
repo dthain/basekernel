@@ -96,7 +96,7 @@ struct bcache_entry * bcache_find_or_create( struct device *device, int block )
 	return e;
 }
 
-int bcache_read( struct device *device, char *data, int block )
+int bcache_read_block( struct device *device, char *data, int block )
 {
 	struct bcache_entry *e = bcache_find_or_create(device,block);
 	if(!e) return KERROR_NO_MEMORY;
@@ -113,7 +113,27 @@ int bcache_read( struct device *device, char *data, int block )
 	return result;
 }
 
-int bcache_write( struct device *device, const char *data, int block )
+int bcache_read( struct device *device, char *data, int blocks, int offset )
+{
+	int i,r;
+	int count = 0;
+	int bs = device_block_size(device);
+
+	for(i=0;i<blocks;i++) {
+		r = bcache_read_block(device,&data[i*bs],offset+i);
+		if(r<1) break;
+		count++;
+	}
+
+	if(count>0) {
+		return count;
+	} else {
+		return r;
+	}
+}
+
+
+int bcache_write_block( struct device *device, const char *data, int block )
 {
 	struct bcache_entry *e = bcache_find_or_create(device,block);
 	if(!e) return KERROR_NO_MEMORY;
@@ -123,6 +143,26 @@ int bcache_write( struct device *device, const char *data, int block )
 
 	return 1;
 }
+
+int bcache_write( struct device *device, const char *data, int blocks, int offset )
+{
+	int i,r;
+	int count = 0;
+	int bs = device_block_size(device);
+
+	for(i=0;i<blocks;i++) {
+		r = bcache_write_block(device,&data[i*bs],offset+i);
+		if(r<1) break;
+		count++;
+	}
+
+	if(count>0) {
+		return count;
+	} else {
+		return r;
+	}
+}
+
 
 void bcache_flush_block( struct device *device, int block )
 {
