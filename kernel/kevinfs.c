@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "hash_set.h"
 #include "fs.h"
+#include "bcache.h"
 
 #define RESERVED_BIT_TABLE_LEN 1031
 #define CONTAINERS(total, container_size) \
@@ -75,13 +76,15 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	return device_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	index = index * FS_BLOCKSIZE / ATA_BLOCKSIZE;
+	return bcache_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
 int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
 	uint32_t num_blocks = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	return device_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	index = index * FS_BLOCKSIZE / ATA_BLOCKSIZE;
+	return bcache_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
@@ -137,7 +140,7 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	uint32_t counter = 0;
 	printf("Writing inode bitmap...\n");
 	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
-		if(!device_write(device, zeros, 1, i))
+		if(!bcache_write(device, zeros, 1, i))
 			return -1;
 		counter++;
 	}
@@ -145,12 +148,17 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	counter = 0;
 	printf("Writing free block bitmap...\n");
 	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
-		if(!device_write(device, zeros, 1, i))
+		if(!bcache_write(device, zeros, 1, i))
 			return -1;
 		counter++;
 	}
+	printf("writing superblock...\n");
+	kevinfs_ata_write_block(device, 0, wbuffer);
+	counter++;
+	printf("flushing dirty blocks...\n");
+	bcache_flush_device(device);
 	printf("%u blocks written\n", counter);
-	return kevinfs_ata_write_block(device, 0, wbuffer);
+	return counter;
 }
 
 int kevinfs_ata_format(struct device *device)
@@ -1096,6 +1104,7 @@ static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 static int kevinfs_umount(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
+	bcache_flush_device(kv->device);
 	struct kevinfs_inode *node = kevinfs_lookup_inode(kv, kv->root_inode_num);
 	kfree(node);
 	kfree(kv);
