@@ -15,6 +15,7 @@ struct bcache_entry {
 };
 
 static struct list cache = LIST_INIT;
+static struct bcache_stats stats = {0};
 static int max_cache_size = 100;
 
 struct bcache_entry * bcache_entry_create( struct device *device, int block )
@@ -46,8 +47,9 @@ void bcache_entry_clean( struct bcache_entry *e )
 {
 	if(e->dirty) {
 		device_write(e->device,e->data,1,e->block);
-		// XXX deal with failure!
+		// XXX How to deal with failure here?
 		e->dirty = 0;
+		stats.writebacks++;
 	}
 
 }
@@ -82,10 +84,13 @@ struct bcache_entry * bcache_find( struct device *device, int block )
 	return 0;
 }
 
-struct bcache_entry * bcache_find_or_create( struct device *device, int block )
+struct bcache_entry * bcache_find_or_create( struct device *device, int block, int *was_a_hit )
 {
 	struct bcache_entry *e = bcache_find(device,block);
-	if(!e) {
+	if(e) {
+		*was_a_hit = 1;
+	} else {
+		*was_a_hit = 0;
 		e = bcache_entry_create(device,block);
 		if(!e) return 0;
 		list_push_head(&cache,&e->node);
@@ -98,8 +103,16 @@ struct bcache_entry * bcache_find_or_create( struct device *device, int block )
 
 int bcache_read_block( struct device *device, char *data, int block )
 {
-	struct bcache_entry *e = bcache_find_or_create(device,block);
+	int hit=0;
+
+	struct bcache_entry *e = bcache_find_or_create(device,block,&hit);
 	if(!e) return KERROR_NO_MEMORY;
+
+	if(hit) {
+		stats.read_hits++;
+	} else {
+		stats.read_misses++;
+	}
 
 	int result = device_read(device,e->data,1,block);
 
@@ -135,8 +148,16 @@ int bcache_read( struct device *device, char *data, int blocks, int offset )
 
 int bcache_write_block( struct device *device, const char *data, int block )
 {
-	struct bcache_entry *e = bcache_find_or_create(device,block);
+	int hit;
+
+	struct bcache_entry *e = bcache_find_or_create(device,block,&hit);
 	if(!e) return KERROR_NO_MEMORY;
+
+	if(hit) {
+		stats.write_hits++;
+	} else {
+		stats.write_misses++;
+	}
 
 	memcpy(e->data,data,device_block_size(device));
 	e->dirty = 1;
@@ -182,4 +203,9 @@ void bcache_flush_device( struct device *device )
 			bcache_entry_clean(e);
 		}
 	}
+}
+
+void bcache_get_stats( struct bcache_stats *s )
+{
+	memcpy(s,&stats,sizeof(*s));
 }
