@@ -110,3 +110,8 @@ int device_write(struct device *d, const void *buffer, int size, int offset)
 	}
 	return -1;
 }
+
+int device_block_size( struct device *d )
+{
+	return d->block_size;
+}
