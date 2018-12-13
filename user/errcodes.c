@@ -8,6 +8,7 @@
 
 #include "kernel/error.h"
 #include "library/errno.h"
+#include "library/string.h"
 
 #define LOWEST_ENUM -13 
 

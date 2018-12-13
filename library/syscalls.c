@@ -40,12 +40,12 @@ int process_object_max()
 
 int object_set_intent(int fd, char *intent)
 {
-	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, intent, 0, 0, 0);
+	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, (uint32_t)intent, 0, 0, 0);
 }
 
 int object_get_intent(int fd, char *buffer, int buffer_size)
 {
-	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, buffer, buffer_size, 0, 0);
+	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, (uint32_t)buffer, buffer_size, 0, 0);
 }
 
 int dup(int fd1, int fd2)
