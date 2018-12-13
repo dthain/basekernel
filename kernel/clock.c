@@ -30,7 +30,7 @@ static void clock_interrupt(int i, int code)
 	if(clicks >= CLICKS_PER_SECOND) {
 		clicks = 0;
 		seconds++;
-		console_heartbeat();
+		console_heartbeat(&theconsole);
 		process_preempt();
 	}
 }

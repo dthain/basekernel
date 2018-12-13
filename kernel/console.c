@@ -7,51 +7,49 @@ See the file LICENSE for details.
 #include "console.h"
 #include "serial.h"
 #include "graphics.h"
-#include "device.h"
 #include "kmalloc.h"
+#include "string.h"
 
-struct console_device {
-	struct device device;
+struct console {
+	struct graphics *gx;
 	int xsize;
 	int ysize;
 	int xpos;
 	int ypos;
-	struct graphics *gx;
+	int onoff;
 };
 
-struct graphics_color bgcolor = { 0, 0, 0 };
-struct graphics_color fgcolor = { 255, 255, 255 };
-struct console_device console = { {0} };
+struct console theconsole = {0};
 
-static void console_reset(struct console_device *d)
+static struct graphics_color bgcolor = { 0, 0, 0 };
+static struct graphics_color fgcolor = { 255, 255, 255 };
+
+static void console_reset( struct console *d )
 {
+	if(!d || !d->gx) return;
 	d->xpos = d->ypos = 0;
 	d->xsize = graphics_width(d->gx) / 8;
 	d->ysize = graphics_height(d->gx) / 8;
+	d->onoff = 0;
 	graphics_fgcolor(d->gx, fgcolor);
 	graphics_bgcolor(d->gx, bgcolor);
 	graphics_clear(d->gx, 0, 0, graphics_width(d->gx), graphics_height(d->gx));
 }
 
-void console_heartbeat()
+void console_heartbeat( struct console *d )
 {
-	static int onoff = 0;
-	if(onoff) {
-		graphics_char(console.gx, console.xpos * 8, console.ypos * 8, ' ');
-	} else {
-		graphics_char(console.gx, console.xpos * 8, console.ypos * 8, '_');
-	}
-	onoff = !onoff;
+	char c = d->onoff ? ' ' : '_';
+	graphics_char(d->gx, d->xpos * 8, d->ypos * 8, c );
+	d->onoff = !d->onoff;
 }
 
-int console_device_write(struct device *device, const void *buffer, int size, int offset)
+int console_write( struct console *d, const char *data, int size )
 {
-	struct console_device *d = (struct console_device *) device;
 	graphics_char(d->gx, d->xpos * 8, d->ypos * 8, ' ');
 
 	int i;
 	for(i = 0; i < size; i++) {
-		char c = ((char *) buffer)[i];
+		char c = data[i];
 #ifdef TEST
 		serial_write(0, c);
 #endif
@@ -102,61 +100,43 @@ int console_device_write(struct device *device, const void *buffer, int size, in
 	return i;
 }
 
-void console_putchar(char c)
+void console_putchar( struct console *c, char ch )
 {
-	device_write((struct device *) &console, &c, 1, 0);
+	console_write(c,&ch,1);
 }
 
-void console_putstring(const char *s)
+void console_putstring( struct console *c, const char *str)
 {
-	while(*s) {
-		console_putchar(*s);
-		s++;
-	}
+	console_write(c,str,strlen(str));
 }
 
-int console_write(int unit, const void *buffer, int length, int offset)
+struct console *console_create(struct graphics *g)
 {
-	device_write((struct device *) &console, (void *) buffer, length, offset);
-	return 1;
-}
-
-struct device *console_get()
-{
-	return (struct device *) &console;
-}
-
-struct device *console_init(struct graphics *g)
-{
-	console.gx = g;
-	console.device.block_size = 1;
-	console.device.write = console_device_write;
-	console_reset(&console);
-	console_putstring("\nconsole: initialized\n");
-	return (struct device *) &console;
-}
-
-int console_device_write_debug(struct device *device, const void *buffer, int size, int offset)
-{
-	return console_device_write(device, buffer, size, offset);
-}
-
-struct device *console_create(struct graphics *g)
-{
-	struct console_device *c = kmalloc(sizeof(*c));
+	struct console *c = kmalloc(sizeof(*c));
 	c->gx = g;
-	c->device.block_size = 1;
-	c->device.write = console_device_write_debug;
 	console_reset(c);
-	return (struct device *) c;
+	return c;
 }
 
-void printf_putchar(char c)
+void console_delete( struct console *c )
 {
-	console_write(0, &c, 1, 0);
+	// XXX should we delete the underlying graphics object?
+	// XXX should we clear the area somehow to indicate unused?
+	kfree(c);
 }
 
-void printf_putstring(char *s)
+void console_size( struct console *c, int *xsize, int *ysize )
 {
-	console_write(0, s, strlen(s), 0);
+	*xsize = c->xsize;
+	*ysize = c->ysize;
 }
+
+struct console * console_init(struct graphics *g)
+{
+	theconsole.gx = g;
+	console_reset(&theconsole);
+	console_putstring(&theconsole,"\nconsole: initialized\n");
+	return &theconsole;
+}
+
+

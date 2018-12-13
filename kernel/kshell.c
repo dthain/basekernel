@@ -249,11 +249,11 @@ int kshell_readline(char *line, int length)
 			return 1;
 		} else if(c == ASCII_BS) {
 			if(i > 0) {
-				console_putchar(c);
+				console_putchar(&theconsole,c);
 				i--;
 			}
 		} else if(c >= 0x20 && c <= 0x7E) {
-			console_putchar(c);
+			console_putchar(&theconsole,c);
 			line[i] = c;
 			i++;
 		}

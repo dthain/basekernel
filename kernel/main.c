@@ -64,7 +64,7 @@ int kernel_main()
 	kshell_launch();
 
 	while(1)
-		console_putchar(keyboard_read(0));
+		console_putchar(&theconsole,keyboard_read(0));
 
 	return 0;
 }

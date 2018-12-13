@@ -18,6 +18,7 @@ struct kobject {
 		struct device *device;
 		struct fs_file *file;
 		struct graphics *graphics;
+		struct console *console;
 		struct pipe *pipe;
 	} data;
 	kobject_type type;
@@ -29,6 +30,7 @@ struct kobject {
 struct kobject *kobject_create_file(struct fs_file *f);
 struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
+struct kobject *kobject_create_console(struct console *c);
 struct kobject *kobject_create_pipe(struct pipe *p);
 
 struct kobject *kobject_addref(struct kobject *k);

@@ -10,6 +10,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 
 #include "stdarg.h"
+#include "console.h"
 
 void strcpy(char *d, const char *s)
 {
@@ -209,9 +210,15 @@ void memcpy(void *vd, const void *vs, unsigned length)
 	}
 }
 
-// XXX these are defined by the console module
-extern void printf_putstring(const char *str);
-extern void printf_putchar(char c);
+void printf_putchar( char c )
+{
+	console_putchar(&theconsole,c);
+}
+
+void printf_putstring(char *s)
+{
+	console_putstring(&theconsole,s);
+}
 
 static void printf_puthexdigit(uint8_t i)
 {
