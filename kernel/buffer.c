@@ -1,4 +1,4 @@
-#include "hashtable.h"
+#include "hash_set.h"
 #include "list.h"
 #include "kmalloc.h"
 #include "ata.h"
@@ -25,34 +25,33 @@ struct buffer *buffer_init(int block_size)
 {
 	struct buffer *ret = kmalloc(sizeof(struct buffer));
 	ret->block_size = block_size;
-	ret->cache_map = hash_set_init(CACHE_SIZE + 1);
+	ret->cache_map = hash_set_create(CACHE_SIZE + 1);
 	return ret;
 }
 
 int buffer_read(struct buffer *buf, int block, void *data)
 {
-	void *read;
-	struct buffer_entry *cache_entry = 0;
-	int exists = hash_set_lookup_info(buf->cache_map, block, &read);
-	if(exists) {
-		cache_entry = read;
+	struct buffer_entry *cache_entry =
+		hash_set_lookup(buf->cache_map, block);
+
+	if(cache_entry) {
 		memcpy(data, cache_entry->data, buf->block_size);
 		return 0;
+	} else {
+		return -1;
 	}
-	return -1;
 }
 
 int buffer_delete(struct buffer *buf, int block)
 {
-	void **data = 0;
-	struct buffer_entry *current_cache_data = 0;
-	if(!hash_set_lookup_info(buf->cache_map, block, data)) {
-		return -1;
-	}
-	current_cache_data = *data;
-	memory_free_page(current_cache_data->data);
-	list_remove((struct list_node *) current_cache_data);
-	if(hash_set_delete(buf->cache_map, block) < 0) {
+	struct buffer_entry *data =
+		hash_set_lookup(buf->cache_map, block);
+
+	if(!data) return -1;
+
+	memory_free_page(data->data);
+	list_remove((struct list_node *) data);
+	if(hash_set_remove(buf->cache_map, block) < 0) {
 		return -1;
 	}
 	return 0;
@@ -61,18 +60,18 @@ int buffer_delete(struct buffer *buf, int block)
 int buffer_drop_lru(struct buffer *buf)
 {
 	struct buffer_entry *current_cache_data = (struct buffer_entry *) list_pop_tail(&buf->cache);
-	hash_set_delete(buf->cache_map, current_cache_data->block_no);
+	hash_set_remove(buf->cache_map, current_cache_data->block_no);
 	return 0;
 }
 
 int buffer_add(struct buffer *buf, int block, const void *data)
 {
 	struct buffer_entry *write = 0;
-	if(buf->cache_map->num_entries == CACHE_SIZE)
+	if(hash_set_entries(buf->cache_map) >= CACHE_SIZE)
 		buffer_drop_lru(buf);
-	int exists = hash_set_lookup(buf->cache_map, block);
-	if(exists)
+	if(hash_set_lookup(buf->cache_map, block)) {
 		buffer_delete(buf, block);
+	}
 	write = kmalloc(sizeof(struct buffer_entry));
 	write->block_no = block;
 	write->data = memory_alloc_page(1);

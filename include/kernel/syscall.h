@@ -30,7 +30,10 @@ typedef enum {
 	SYSCALL_WRITE,
 	SYSCALL_LSEEK,
 	SYSCALL_CLOSE,
+	SYSCALL_PROCESS_OBJECT_MAX,
 	SYSCALL_OBJECT_TYPE,
+	SYSCALL_OBJECT_SET_INTENT,
+	SYSCALL_OBJECT_GET_INTENT,
 	SYSCALL_KEYBOARD_READ_CHAR,
 	SYSCALL_OPEN_CONSOLE,
 	SYSCALL_OPEN_PIPE,
@@ -48,7 +51,7 @@ typedef enum {
 	SYSCALL_PROCESS_STATS,
 	SYSCALL_GET_DIMENSIONS,
 	SYSCALL_PROCESS_WRUN,
-	MAX_SYSCALL // must be the last element in the enum
+	MAX_SYSCALL		// must be the last element in the enum
 } syscall_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);

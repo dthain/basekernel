@@ -52,7 +52,7 @@ void process_init();
 struct process *process_create();
 void process_delete(struct process *p);
 void process_launch(struct process *p);
-void process_pass_arguments(struct process *p, int argc, char **argv );
+void process_pass_arguments(struct process *p, int argc, char **argv);
 void process_inherit(struct process *parent, struct process *child);
 void process_selective_inherit(struct process *parent, struct process *child, int * fds, int fd_len);
 
@@ -64,6 +64,7 @@ int process_data_size_set(struct process *p, unsigned size);
 int process_stack_size_set(struct process *p, unsigned size);
 
 int process_available_fd(struct process *p);
+int process_object_max(struct process *p);
 
 void process_yield();
 void process_preempt();
