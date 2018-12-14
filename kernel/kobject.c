@@ -9,43 +9,55 @@
 #include "kmalloc.h"
 #include "fs.h"
 #include "device.h"
+#include "library/string.h"
+
+static struct kobject *kobject_init();
 
 struct kobject *kobject_create_file(struct fs_file *f)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_FILE;
 	k->refcount = 1;
 	k->data.file = f;
 	k->offset = 0;
+	k->intent = 0;
 	return k;
 }
 
 struct kobject *kobject_create_device(struct device *d)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_DEVICE;
-	k->refcount = 1;
 	k->data.device = d;
 	return k;
 }
 
 struct kobject *kobject_create_graphics(struct graphics *g)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_GRAPHICS;
-	k->refcount = 1;
 	k->data.graphics = g;
 	return k;
 }
 
 struct kobject *kobject_create_pipe(struct pipe *p)
 {
-	struct kobject *k = kmalloc(sizeof(*k));
+	struct kobject *k = kobject_init();
 	k->type = KOBJECT_PIPE;
-	k->refcount = 1;
 	k->data.pipe = p;
 	return k;
 }
+
+// Helper function for constant initializations across all types of Kobjects.
+// SHOULD NOT BE CALLED ON ITS OWN, IT DOESN'T GENERATE A VALID KOBJECT.
+static struct kobject *kobject_init()
+{
+	struct kobject *k = kmalloc(sizeof(*k));
+	k->refcount = 1;
+	k->intent = 0;
+	return k;
+}
+
 
 struct kobject *kobject_addref(struct kobject *k)
 {
@@ -57,13 +69,14 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
 	case KOBJECT_INVALID:
-		return 0;
+		break;
 	case KOBJECT_GRAPHICS:
-		return 0;
+		break;
 	case KOBJECT_FILE:{
 			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			break;
 		}
 	case KOBJECT_DEVICE:
 		return device_read(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
@@ -164,7 +177,7 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
-int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
+int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
 	case KOBJECT_INVALID:
@@ -176,7 +189,7 @@ int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
 	case KOBJECT_DEVICE:
 		return 0;
 	case KOBJECT_PIPE:
-		return 0; 
+		return 0;
 	}
 	return 0;
 }
@@ -184,4 +197,23 @@ int kobject_get_dimensions(struct kobject *kobject, int * dims, int n)
 int kobject_get_type(struct kobject *kobject)
 {
 	return kobject->type;
+}
+
+int kobject_set_intent(struct kobject *kobject, char *new_intent)
+{
+	if(kobject->intent != 0) {
+		kfree(kobject->intent);
+	}
+	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
+	strcpy(kobject->intent, new_intent);
+	return 1;
+}
+
+int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
+{
+	if(kobject->intent != 0) {
+		strcpy(buffer, kobject->intent);
+		return 1;
+	}
+	return 0;
 }

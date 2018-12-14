@@ -54,6 +54,30 @@ int sys_sbrk(int delta)
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
+/* Helper routines to duplicate/free an argv array locally */
+
+static char **argv_copy(int argc, const char **argv)
+{
+	char **pp;
+
+	pp = kmalloc(sizeof(char *) * argc);
+	int i;
+	for(i = 0; i < argc; i++) {
+		pp[i] = strdup(argv[i]);
+	}
+
+	return pp;
+}
+
+static void argv_delete(int argc, char **argv)
+{
+	int i;
+	for(i = 0; i < argc; i++) {
+		kfree(argv[i]);
+	}
+	kfree(argv);
+}
+
 /*
 process_run() creates a child process in a more efficient
 way than fork/exec by creating the child without duplicating
@@ -62,23 +86,38 @@ the memory state, then loading
 
 int sys_process_run(const char *path, const char **argv, int argc)
 {
-	struct process *p = process_create();
+	/* Copy argv and path into kernel memory. */
+	char **copy_argv = argv_copy(argc, argv);
+	char *copy_path = strdup(path);
 
+	/* Create the child process */
+	struct process *p = process_create();
 	process_inherit(current, p);
 
+	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
 	struct pagetable *old_pagetable = current->pagetable;
 	current->pagetable = p->pagetable;
 	pagetable_load(p->pagetable);
 
+	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, path, &entry);
+	int r = elf_load(p, copy_path, &entry);
 	if(r >= 0) {
+		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
+		process_kstack_reset(p, entry);
+		process_pass_arguments(p, argc, copy_argv);
 	}
 
+	/* SWITCH BACK TO ADDRESS SPACE OF PARENT PROCESS */
 	current->pagetable = old_pagetable;
 	pagetable_load(old_pagetable);
 
+	/* Delete the argument and path copies. */
+	argv_delete(argc, copy_argv);
+	kfree(copy_path);
+
+	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
 		if(r == KERROR_EXECUTION_FAILED) {
 			process_delete(p);
@@ -86,8 +125,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 		return r;
 	}
 
-	process_kstack_reset(p, entry);
-	process_pass_arguments(p, argv, argc);
+	/* Otherwise, launch the new child process. */
 	process_launch(p);
 	return p->pid;
 }
@@ -95,17 +133,29 @@ int sys_process_run(const char *path, const char **argv, int argc)
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
 	addr_t entry;
+
+	/* Duplicate the arguments into kernel space */
+	char **copy_argv = argv_copy(argc, argv);
+
+	/* Attempt to load the program image into this process. */
 	int r = elf_load(current, path, &entry);
+
+	/* On failure, return only if our address space is not corrupted. */
 	if(r < 0) {
 		if(r == KERROR_EXECUTION_FAILED) {
 			process_kill(current->pid);
 		}
+		argv_delete(argc, copy_argv);
 		return r;
 	}
 
+	/* Reset the stack and pass in the program arguments */
 	process_stack_reset(current, PAGE_SIZE);
 	process_kstack_reset(current, entry);
-	process_pass_arguments(current, argv, argc);
+	process_pass_arguments(current, argc, copy_argv);
+
+	/* Delete the local copy of the arguments. */
+	argv_delete(argc, copy_argv);
 
 	/*
 	   IMPORTANT: Following a successful exec, we cannot return via
@@ -231,12 +281,29 @@ int sys_open(const char *path, int mode, int flags)
 	return fd;
 }
 
+int sys_object_set_intent(int fd, char *intent)
+{
+	kobject_set_intent(current->ktable[fd], intent);
+	return 0;
+}
+
+int sys_object_get_intent(int fd, char *buffer, int buffer_size)
+{
+	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
+}
+
 int sys_object_type(int fd)
 {
 	int fd_type = kobject_get_type(current->ktable[fd]);
 	if(!fd_type)
 		return 0;
 	return fd_type;
+}
+
+int sys_process_object_max()
+{
+	int max_fd = process_object_max(current);
+	return max_fd;
 }
 
 int sys_dup(int fd1, int fd2)
@@ -381,35 +448,37 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	current->ktable[fd]->data.graphics->clip.y = y + current->ktable[wd]->data.graphics->clip.y;
 	current->ktable[fd]->data.graphics->clip.w = w;
 	current->ktable[fd]->data.graphics->clip.h = h;
-
 	return fd;
 }
 
-int sys_get_dimensions(int fd, int * dims, int n) {
+int sys_get_dimensions(int fd, int *dims, int n)
+{
 	struct kobject *p = current->ktable[fd];
 	return kobject_get_dimensions(p, dims, n);
 }
 
 
-int sys_sys_stats(struct sys_stats *s) {
-	struct rtc_time t = {0};
+int sys_sys_stats(struct sys_stats *s)
+{
+	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
 	struct ata_count a = ata_stats();
-	for (int i = 0; i < 4; i++) {
+	for(int i = 0; i < 4; i++) {
 		s->blocks_written[i] = a.blocks_written[i];
 		s->blocks_read[i] = a.blocks_read[i];
 	}
 	return 0;
 }
 
-int sys_process_stats(struct proc_stats *s, int pid) {
+int sys_process_stats(struct proc_stats *s, int pid)
+{
 	return process_stats(pid, s);
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
-	if ((n < MAX_SYSCALL) && current) {
+	if((n < MAX_SYSCALL) && current) {
 		current->stats.syscall_count[n]++;
 	}
 	switch (n) {
@@ -453,6 +522,12 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_close(a);
 	case SYSCALL_OBJECT_TYPE:
 		return sys_object_type(a);
+	case SYSCALL_PROCESS_OBJECT_MAX:
+		return sys_process_object_max(a);
+	case SYSCALL_OBJECT_SET_INTENT:
+		return sys_object_set_intent(a,(char*)b);
+	case SYSCALL_OBJECT_GET_INTENT:
+		return sys_object_get_intent(a,(char*)b, c);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

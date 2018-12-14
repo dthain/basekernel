@@ -1,34 +1,42 @@
+#include "library/errno.h"
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
+#include "library/malloc.h"
 
-enum {
-	KOBJECT_INVALID = 0,
-	KOBJECT_FILE,
-	KOBJECT_DEVICE,
-	KOBJECT_GRPAHICS,
-	KOBJECT_PIPE
-};
+#define INTENT_BUFFER_SIZE 256
 
 int main(const char **argv, int argc)
 {
+	char *intent_value = "A simple intent string";
+
 	printf("Generating/typing all file descriptors.\n");
 	int type = -2;
+	int intent = -3;
+
 	int window_descriptor = open_window(KNO_STDWIN, 1, 1, 1, 1);
 	if(!window_descriptor) {
 		return 1;
 	}
-	type = object_type(window_descriptor);
-	printf("Window file %d is of type: %d\n", window_descriptor, type);
 
-	/*
-	 * Presently, the following code returns the same error as the file open
-	 * demo.
-	 * Can't be used until that bug is addressed.
-	 int reg_file_descriptor = open("testfile.txt", 1, 0);
-	 type = object_type(reg_file_descriptor);
-	 printf("Text file %d is of type: %d\n", reg_file_descriptor, type);
-	 */
+	object_set_intent(window_descriptor, intent_value);
+
+	int last_descriptor = process_object_max();
+	printf("Highest allocated FD: %d\nLast Descriptor: %d\n", window_descriptor, last_descriptor);
+
+	char *intent_string = malloc(sizeof(char) * INTENT_BUFFER_SIZE);
+
+	for(int descriptor = 0; descriptor <= last_descriptor; descriptor++) {
+		type = object_type(descriptor);
+		intent = object_get_intent(descriptor, intent_string, INTENT_BUFFER_SIZE);
+		printf("FD: %d is of type: %d, with intent: ", descriptor, type);
+		if(intent != 0) {
+			printf("\"%s\"\n", intent_string);
+		}
+		if(intent == 0) {
+			printf("%d\n", intent);
+		}
+	}
 
 	return 0;
 }

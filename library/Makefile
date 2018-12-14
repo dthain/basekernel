@@ -1,6 +1,6 @@
 include ../Makefile.config
 
-LIBRARY_OBJECTS=syscall.o syscalls.o string.o user-io.o malloc.o
+LIBRARY_OBJECTS=errno.o objno.o syscall.o syscalls.o string.o user-io.o malloc.o validate.o
 
 all: user-start.o baselib.a
 

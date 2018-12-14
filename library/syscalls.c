@@ -33,6 +33,21 @@ int object_type(int fd)
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
+int process_object_max()
+{
+	return syscall(SYSCALL_PROCESS_OBJECT_MAX, 0, 0, 0, 0, 0);
+}
+
+int object_set_intent(int fd, char *intent)
+{
+	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, (uint32_t)intent, 0, 0, 0);
+}
+
+int object_get_intent(int fd, char *buffer, int buffer_size)
+{
+	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, (uint32_t)buffer, buffer_size, 0, 0);
+}
+
 int dup(int fd1, int fd2)
 {
 	return syscall(SYSCALL_DUP, fd1, fd2, 0, 0, 0);
@@ -174,7 +189,7 @@ int process_stats(struct proc_stats *s, unsigned int pid)
 	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
 }
 
-int get_dimensions(int fd, int * dims, int n)
+int get_dimensions(int fd, int *dims, int n)
 {
 	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dims, n, 0, 0);
 }

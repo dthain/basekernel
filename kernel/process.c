@@ -24,7 +24,7 @@ See the file LICENSE for details.
 struct process *current = 0;
 struct list ready_list = { 0, 0 };
 struct list grave_list = { 0, 0 };
-struct list grave_watcher_list = { 0, 0 }; // parent processes are put here to wait for their children
+struct list grave_watcher_list = { 0, 0 };	// parent processes are put here to wait for their children
 struct process *process_table[PROCESS_MAX_PID] = { 0 };
 
 void process_init()
@@ -44,8 +44,6 @@ void process_init()
 	current->state = PROCESS_STATE_READY;
 
 	current->waiting_for_child_pid = 0;
-
-	console_printf("process: ready\n");
 }
 
 void process_kstack_reset(struct process *p, unsigned entry_point)
@@ -314,7 +312,7 @@ void process_exit(int code)
 	console_printf("process %d exiting with status %d...\n", current->pid, code);
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
-	process_wakeup_parent(&grave_watcher_list); // On exit, wake up parent if need be
+	process_wakeup_parent(&grave_watcher_list);	// On exit, wake up parent if need be
 	process_switch(PROCESS_STATE_GRAVE);
 }
 
@@ -348,7 +346,7 @@ void process_wakeup_parent(struct list *q)
 	struct process *p = (struct process *) q->head;
 	// Loop through all the waiting parents to see if one needs to be woken up
 	while(p) {
-		if (p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
+		if(p->pid == current->ppid && (p->waiting_for_child_pid == 0 || p->waiting_for_child_pid == current->pid)) {
 			p->state = PROCESS_STATE_READY;
 			p->waiting_for_child_pid = 0;
 			list_remove(&p->node);
@@ -390,6 +388,19 @@ int process_available_fd(struct process *p)
 	int i;
 	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
 		if(fdtable[i] == 0)
+			return i;
+	}
+	return -1;
+}
+
+int process_object_max(struct process *p)
+{
+	struct kobject **fdtable = current->ktable;
+	int i;
+	// Because of 0-indexing, PROCESS_MAX_OBJECTS is the size and
+	// therefor 1 offset, don't look for 0 there.
+	for(i = PROCESS_MAX_OBJECTS - 1; i > -1; i--) {
+		if(fdtable[i] != 0)
 			return i;
 	}
 	return -1;
@@ -477,35 +488,67 @@ int process_reap(uint32_t pid)
 	return 1;
 }
 
-void process_pass_arguments(struct process *p, const char **argv, int argc)
+/*
+process_pass_arguments set up the current process stack
+so that it contains a copy of p->args and p->args_length
+at the very top, serving as the initial arguments to the entry function:
+void entry( const char *args, int args_length );
+*/
+
+#define PUSH_INTEGER( value ) esp -= sizeof(int); *((int*)esp)=(int)(value);
+
+void process_pass_arguments(struct process *p, int argc, char **argv)
 {
-	/* Copy command line arguments */
-	struct x86_stack *s = (struct x86_stack *) p->kstack_ptr;
-	unsigned paddr;
-	pagetable_getmap(p->pagetable, PROCESS_STACK_INIT - PAGE_SIZE + 0x10, &paddr, 0);
-	char *esp = (char *) paddr + PAGE_SIZE - 0x10;
-	char *ebp = esp;
-	/* Copy each argument */
+	/* Get the default stack pointer position. */
+	char *esp = (char *) PROCESS_STACK_INIT;
+
+	/* Make a local array to keep track of user addresses. */
+	char **addr_of_argv = kmalloc(sizeof(char *) * argc);
+
+	/* For each argument, in reverse order: */
 	int i;
-	for(i = 0; i < argc; i++) {
-		ebp -= MAX_ARGV_LENGTH;
-		strncpy(ebp, argv[i], MAX_ARGV_LENGTH - 1);
+	for(i = (argc - 1); i >= 0; i--) {
+		/* Size is strlen plus null terminator, integer aligned. */
+		int length = strlen(argv[i]) + 1;
+		if(length % 4) {
+			length += (4 - length % 4);
+		}
+		esp -= length;
+
+		/* Push length bytes onto the stack. */
+		memcpy(esp, argv[i], length);
+
+		/* Remember that address for later */
+		addr_of_argv[i] = esp;
 	}
-	/* Set pointers to each argument (argv) */
-	for(i = argc; i > 0; --i) {
-		ebp -= 4;
-		*((char **) (ebp)) = ((char *) (PROCESS_STACK_INIT - MAX_ARGV_LENGTH * i));
+
+	/* Push each item of argc, in reverse order. */
+	for(i = (argc - 1); i >= 0; i--) {
+		PUSH_INTEGER(addr_of_argv[i]);
 	}
-	/* Set argumetns for _start on the stack */
-	*((char **) (ebp - 12)) = (char *) (PROCESS_STACK_INIT - MAX_ARGV_LENGTH * argc - 4 * argc);
-	*((int *) (ebp - 8)) = argc;
-	s->esp -= (esp - ebp) + 16;
+
+	/* Keep the address of the array start. */
+	const char *addr_of_addr_of_argv = esp;
+
+	/* Push the arguments to main */
+	PUSH_INTEGER(argc);
+	PUSH_INTEGER(addr_of_addr_of_argv);
+
+	/* Final stack pointer should be below the last item. */
+	esp -= 4;
+
+	/* Set the starting stack pointer on the kstack to this new value */
+	struct x86_stack *s = (struct x86_stack *) p->kstack_ptr;
+	s->esp = (int) (esp);
+
+	kfree(addr_of_argv);
 }
 
-int process_stats(int pid, struct proc_stats *s) {
-	if (pid > PROCESS_MAX_PID || !process_table[pid]) {
+int process_stats(int pid, struct proc_stats *s)
+{
+	if(pid > PROCESS_MAX_PID || !process_table[pid]) {
 		return 1;
 	}
- *s = process_table[pid]->stats;
- return 0;
+	*s = process_table[pid]->stats;
+	return 0;
 }
