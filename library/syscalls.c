@@ -109,6 +109,11 @@ uint32_t gettimeofday()
 	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
 }
 
+uint32_t gettimeofday_rtc(struct rtc_time * time)
+{
+	return syscall(SYSCALL_GETTIMEOFDAY_RTC, (uint32_t)time, 0, 0, 0, 0);
+}
+
 int process_self()
 {
 	return syscall(SYSCALL_PROCESS_SELF, 0, 0, 0, 0, 0);
@@ -192,4 +197,9 @@ int process_stats(struct proc_stats *s, unsigned int pid)
 int get_dimensions(int fd, int *dims, int n)
 {
 	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dims, n, 0, 0);
+}
+
+int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len)
+{
+	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) fds, fd_len);
 }
