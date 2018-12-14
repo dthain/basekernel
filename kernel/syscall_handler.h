@@ -13,5 +13,6 @@ int sys_chdir(const char *path);
 int sys_rmdir(const char *path);
 
 int sys_open_window(int wd, int x, int y, int w, int h);
+int sys_process_object_max();
 
 #endif
