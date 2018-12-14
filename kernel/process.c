@@ -137,7 +137,8 @@ void process_selective_inherit(struct process *parent, struct process *child, in
 void process_inherit(struct process *parent, struct process *child)
 {
 	/* Child inherits everything parent inherits */
-	int i, fds[PROCESS_MAX_OBJECTS];
+	int i;
+	int * fds = kmalloc(sizeof(int)*PROCESS_MAX_OBJECTS);
 	for (i = 0; i < PROCESS_MAX_OBJECTS; i++)
 	{
 		if (parent->ktable[i]) {
@@ -147,6 +148,7 @@ void process_inherit(struct process *parent, struct process *child)
 		}	
 	}
 	process_selective_inherit(parent, child, fds, PROCESS_MAX_OBJECTS);
+	kfree(fds);
 }
 
 int process_data_size_set(struct process *p, unsigned size)
