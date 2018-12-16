@@ -89,10 +89,11 @@ int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *b
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
 {
 	struct kevinfs_superblock *check = kmalloc(sizeof(struct kevinfs_superblock));
-	uint8_t buffer[FS_BLOCKSIZE];
+	uint8_t * buffer = kmalloc(FS_BLOCKSIZE);
 	if(kevinfs_ata_read_block(device, 0, buffer) < 0)
 		return 0;
 	memcpy(check, buffer, sizeof(struct kevinfs_superblock));
+	kfree(buffer);
 	if(check->magic == FS_MAGIC)
 		return check;
 	kfree(check);

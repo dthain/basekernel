@@ -366,6 +366,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
 			int res = fs_dirent_copy(new_src, new_dst);
 			if (res) {
+				kfree(buffer);
 				return res;
 			}
 		}
