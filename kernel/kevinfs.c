@@ -893,24 +893,19 @@ static int kevinfs_mkdir(struct fs_dirent *d, const char *filename)
 		goto cleanup;
 	}
 
-	if (kevinfs_writedir(new_kd, new_dir_record_list) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_writedir(new_kd, new_dir_record_list)) < 0) {
 		goto cleanup;
 	}
-	if (kevinfs_dir_add(cwd_record_list, new_cwd_record, kd->node) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_dir_add(cwd_record_list, new_cwd_record, kd->node)) < 0) {
 		goto cleanup;
 	}
-	if (kevinfs_writedir(kd, cwd_record_list) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_writedir(kd, cwd_record_list)) < 0) {
 		goto cleanup;
 	}
-	if (kevinfs_save_dirent(new_kd) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_save_dirent(new_kd)) < 0) {
 		goto cleanup;
 	}
-	if (kevinfs_save_dirent(kd) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_save_dirent(kd)) < 0) {
 		goto cleanup;
 	}
 
