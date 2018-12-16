@@ -374,7 +374,10 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
 		if (isdir >= 0) { // directory
 			fs_dirent_mkdir(dst,name);
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
-			fs_dirent_copy(new_src, new_dst);
+			int res = fs_dirent_copy(new_src, new_dst);
+			if (res) {
+				return res;
+			}
 		}
 		else if (fs_dirent_readdir(new_src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
 			fs_dirent_mkfile(dst, name);
@@ -382,6 +385,10 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
 			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
 			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
 			char * filebuf = kmalloc(src_file->size);
+			if (!filebuf) {
+				kfree(buffer);
+				return -1;
+			}
 			fs_file_read(src_file, filebuf,src_file->size,0);
 			fs_file_write(dst_file, filebuf, src_file->size, 0);
 			kfree(filebuf);
