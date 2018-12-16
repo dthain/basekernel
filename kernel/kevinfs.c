@@ -485,18 +485,22 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_volume *kv = kd->kv;
 	uint32_t num_blocks = node->size / FS_BLOCKSIZE + (node->size % FS_BLOCKSIZE ? 1:0);
-	uint8_t buffer[node->size];
+	uint8_t * buffer = kmalloc(num_blocks*FS_BLOCKSIZE);
+	if (buffer == 0) return 0;
 	uint32_t num_files = node->size / sizeof(struct kevinfs_dir_record);
 	struct kevinfs_dir_record_list *res = kevinfs_dir_alloc(num_files);
 	struct kevinfs_dir_record *files = res->list;
 
-	if(!res)
+	if(!res) {
+		kfree(buffer);
 		return 0;
+	}
 
 	uint32_t i;
 	for(i = 0; i < MIN(num_blocks, FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_read_data_block(kv, node->direct_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
 			kevinfs_dir_dealloc(res);
+			kfree(buffer);
 			return 0;
 		}
 	}
@@ -504,11 +508,13 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 		struct kevinfs_indirect_block indirect;
 		if(kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *)&indirect) < 0) {
 			kevinfs_dir_dealloc(res);
+			kfree(buffer);
 			return 0;
 		}
 		for(i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
 			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + (i + FS_DIRECT_MAXBLOCKS) * FS_BLOCKSIZE) < 0) {
 				kevinfs_dir_dealloc(res);
+				kfree(buffer);
 				return 0;
 			}
 		}
@@ -517,7 +523,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 	for(i = 0; i < num_files; i++) {
 		memcpy(&files[i], buffer + sizeof(struct kevinfs_dir_record) * i, sizeof(struct kevinfs_dir_record));
 	}
-
+	kfree(buffer);
 	return res;
 }
 
