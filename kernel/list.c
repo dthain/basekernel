@@ -5,6 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "list.h"
+
 void list_push_head(struct list *list, struct list_node *node)
 {
 	node->next = list->head;
@@ -16,6 +17,7 @@ void list_push_head(struct list *list, struct list_node *node)
 	if(!list->tail)
 		list->tail = node;
 	node->list = list;
+	list->size++;
 }
 
 void list_push_tail(struct list *list, struct list_node *node)
@@ -29,6 +31,7 @@ void list_push_tail(struct list *list, struct list_node *node)
 	if(!list->head)
 		list->head = node;
 	node->list = list;
+	list->size++;
 }
 
 void list_push_priority(struct list *list, struct list_node *node, int pri)
@@ -51,6 +54,7 @@ void list_push_priority(struct list *list, struct list_node *node, int pri)
 			}
 			n->prev = node;
 			node->list = list;
+			list->size++;
 			return;
 		}
 		i++;
@@ -69,6 +73,7 @@ struct list_node *list_pop_head(struct list *list)
 			list->tail = 0;
 		result->next = result->prev = 0;
 		result->list = 0;
+		list->size--;
 	}
 	return result;
 }
@@ -84,6 +89,7 @@ struct list_node *list_pop_tail(struct list *list)
 			list->head = 0;
 		result->next = result->prev = 0;
 		result->list = 0;
+		list->size--;
 	}
 	return result;
 }
@@ -104,4 +110,10 @@ void list_remove(struct list_node *node)
 	node->prev->next = node->next;
 	node->next = node->prev = 0;
 	node->list = 0;
+	node->list->size--;
+}
+
+int list_size( struct list *list )
+{
+	return list->size;
 }

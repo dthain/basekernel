@@ -15,6 +15,7 @@
 #include "syscall_handler.h"
 #include "clock.h"
 #include "kernelcore.h"
+#include "bcache.h"
 
 static int kshell_mount(int unit, const char *fs_type)
 {
@@ -222,8 +223,15 @@ static int kshell_execute(const char **argv, int argc)
 		printf("%d-%d-%d %d:%d:%d\n", time.year, time.month, time.day, time.hour, time.minute, time.second);
 	} else if(!strcmp(cmd, "reboot")) {
 		reboot();
+	} else if(!strcmp(cmd, "bcache_stats")) {
+		struct bcache_stats stats;
+		bcache_get_stats(&stats);
+		printf("%d rhit %d rmiss %d whit %d wmiss %d wback\n",
+			stats.read_hits,stats.read_misses,
+			stats.write_hits,stats.write_misses,
+			stats.writebacks);
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <fstype>\nformat <device> <fstype\nchdir <path>\nmkdir <path>\nrmdir <path>time\n\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <fstype>\nformat <device> <fstype\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

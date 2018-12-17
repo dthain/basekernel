@@ -13,6 +13,7 @@ struct list_node;
 struct list {
 	struct list_node *head;
 	struct list_node *tail;
+	int size;
 };
 
 struct list_node {
@@ -30,5 +31,6 @@ void list_push_priority(struct list *list, struct list_node *node, int pri);
 struct list_node *list_pop_head(struct list *list);
 struct list_node *list_pop_tail(struct list *list);
 void list_remove(struct list_node *n);
+int  list_size(struct list *list);
 
 #endif
