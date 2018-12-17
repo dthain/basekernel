@@ -318,26 +318,28 @@ int sys_rmdir(const char *path)
 	}
 }
 
-int sys_open_dirent(struct fs_dirent *d, const char *path, int mode, int flags)
+static int open_from_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
 {
-	if(!d)
-		return 0;
-
 	int new_fd = process_available_fd(current);
-	if(new_fd < 0)
-		return -1;
+	if(new_fd<0) return KERROR_TOO_MANY_OBJECTS;
 
-	d = fs_dirent_namei(current->current_dir, path);
+	d = fs_dirent_namei(d,path);
+	if(!d) return KERROR_NOT_FOUND;
 
 	struct fs_file *fp = fs_file_open(d, mode);
 	current->ktable[new_fd] = kobject_create_file(fp);
+
 	return new_fd;
 }
 
-int sys_open_intent(int fd, const char *path, int mode, int flags)
+int sys_open_dirent( int fd, const char *path, int mode, int flags)
 {
-	struct fs_dirent *d = current->ktable[fd];
-	return sys_open_dirent(d, path, mode, flags);
+	if(!current->ktable[fd]) return KERROR_INVALID_REQUEST;
+
+	// XXX breaking abstraction, pass through kobject instead.
+	struct fs_dirent *d = current->ktable[fd]->data.file->d;
+
+	return open_from_dirent(d,path,mode,flags);
 }
 
 static int find_kobject_by_intent( const char *intent )
@@ -345,7 +347,7 @@ static int find_kobject_by_intent( const char *intent )
 	int i;
 
 	// Check if intent is index-specified.
-	if(intent[0] == "#") {
+	if(intent[0] == '#') {
 		str2int(&intent[1], &i);
 	} else {
 		// Find an intent matching the tag.
@@ -376,7 +378,7 @@ int sys_open(const char *path, int mode, int flags)
 
 	// If we have no tag, use everything as a path.
 	if(i == path_length) {
-		return sys_open_dirent(current->current_dir, path, mode, flags);
+		return open_from_dirent(current->current_dir, path, mode, flags);
 	}
 
 	// If we have a tag and a path, use both.
@@ -384,13 +386,10 @@ int sys_open(const char *path, int mode, int flags)
 	const char *intent = strtok(lpath, ":");
 	const char *base_path = strtok(0, ":");
 
-	int intent_value = find_kobject_by_intent(intent);
-	if(intent_value<0) return intent_value;
+	int fd = find_kobject_by_intent(intent);
+	if(fd<0) return fd;
 
-	if(!current->ktable[intent_value])
-		return KERROR_NOT_FOUND;
-
-	return sys_open_intent(intent_value, base_path, mode, flags);
+	return sys_open_dirent(fd, base_path, mode, flags);
 }
 
 int sys_object_set_intent(int fd, char *intent)
