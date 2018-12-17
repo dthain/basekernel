@@ -22,9 +22,10 @@ kernel/basekernel.img: $(KERNEL_SOURCES) $(LIBRARY_HEADERS)
 
 image: kernel/basekernel.img $(USER_PROGRAMS)
 	rm -rf image
-	mkdir image image/boot image/bin
+	mkdir image image/boot image/bin image/data
 	cp kernel/basekernel.img image/boot
 	cp $(USER_PROGRAMS) image/bin
+	cp /usr/share/dict/words image/data/words
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
