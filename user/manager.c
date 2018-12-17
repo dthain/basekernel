@@ -93,7 +93,8 @@ int main(const char ** argv, int argc) {
 	}
 
 	/* Wrun each program */
-	int pids[num_programs] = { 0 }, fds[num_programs][4] = { 0 };
+	int pids[num_programs] = { 0 };
+	int fds[num_programs][4] = {{ 0 }};
 	for (p_i = 0; p_i < num_programs; ++p_i) {
 		if (placement[p_i][2] == 0) {
 			printf("INVALID\n");

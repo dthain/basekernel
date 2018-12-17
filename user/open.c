@@ -4,17 +4,12 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-/*
-A trivial user level program to try out basic system calls.
-*/
-
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
 
 int main(const char *argv[], int argc)
 {
-	uint32_t j = 0;
 	chdir("/");
 	printf("got root\n");
 	int dir_fd = open("/", 0, 0);
