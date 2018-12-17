@@ -286,6 +286,11 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 	char *temp = memory_alloc_page(0);
 
+	// if writing past the (current) end of the file, resize the file first
+	if (offset + length > file->size) {
+		ops->resize(file->d, offset+length);
+	}
+
 	while(length > 0) {
 
 		int blocknum = offset / bs;
@@ -336,14 +341,70 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	return total;
 }
 
-int fs_file_get_dimensions(struct fs_file *f, int * dims, int n) 
+int fs_file_get_dimensions(struct fs_file *f, int * dims, int n)
 {
 	if (n <= 0)
 		return 0;
 
 	dims[0] = f->size;
-	
+
 	return 1;
 }
 
+int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst) {
+	char *buffer = kmalloc(PAGE_SIZE);
+	memset(buffer,0,PAGE_SIZE);
+	printf("Reading directory... ");
+	int length = fs_dirent_readdir(src, buffer, 4096);
+	printf("Done.\n");
+	if (length <= 0) {
+		return length;
+	}
+	char *name = buffer;
+	while (name && (name - buffer) < length) {
+		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
+			name += strlen(name) + 1;
+			continue;
+		}
+		printf("Copying %s...\n", name);
+		struct fs_dirent *new_src, *new_dst;
+		new_src = fs_dirent_lookup(src, name);
+		char temp[1];
+		int isdir = fs_dirent_readdir(new_src, temp, 1);
+		if (isdir >= 0) { // directory
+			fs_dirent_mkdir(dst,name);
+			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			int res = fs_dirent_copy(new_src, new_dst);
+			if (res) {
+				kfree(buffer);
+				return res;
+			}
+		}
+		else if (fs_dirent_readdir(new_src, temp, 1) == KERROR_NOT_A_DIRECTORY) { //file
+			fs_dirent_mkfile(dst, name);
+			new_dst = fs_dirent_lookup(dst, name);
+			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
+			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
+			char * filebuf = kmalloc(src_file->size);
+			if (!filebuf) {
+				kfree(buffer);
+				return -1;
+			}
+			fs_file_read(src_file, filebuf,src_file->size,0);
+			fs_file_write(dst_file, filebuf, src_file->size, 0);
+			kfree(filebuf);
+			fs_file_close(src_file);
+			fs_file_close(dst_file);
+		} else { // failure
+			kfree(buffer);
+			return isdir;
+		}
+		fs_dirent_close(new_dst);
+		fs_dirent_close(new_src);
+		printf("Done.\n");
 
+		name += strlen(name) + 1;
+	}
+	kfree(buffer);
+	return 0;
+}
