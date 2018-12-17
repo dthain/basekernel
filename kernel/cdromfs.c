@@ -133,16 +133,18 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 	if(!cddir->isdir)
 		return KERROR_NOT_A_DIRECTORY;
 
-	char *data = cdrom_dirent_load(dir);
-	if(!data)
-		return 0;
-
-	int data_length = cddir->length;
+	char *temp = memory_alloc_page(0);
+	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
 	int total = 0;
 
-	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
+	int i;
+	for(i=0;i<nsectors;i++) {
+		cdrom_dirent_read_block(dir,temp,i);
 
-	while(data_length > 0 && d->descriptor_length > 0 && buffer_length > 0) {
+	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) temp;
+
+	while(d->descriptor_length > 0 && buffer_length > 0) {
+
 		fix_filename(d->ident, d->ident_length);
 
 		if(d->ident[0] == 0) {
@@ -176,10 +178,10 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 			total += len;
 		}
 		d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
-		data_length -= d->descriptor_length;
+	}
 	}
 
-	kfree(data);
+	memory_free_page(temp);
 
 	return total;
 }
