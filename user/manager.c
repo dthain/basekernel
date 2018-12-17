@@ -61,8 +61,8 @@ int main(const char ** argv, int argc) {
 
 	/* Packing algorithm - First fit decreasing height - doesnt fit, skip it */
 	int spacing = 6;
-	int current_pos[num_programs][2] = { 0 }; // for each row, keep track of the current x position and height
-	int placement[num_programs][3] = { 0 }; // (x, y, valid) of specific program
+	int current_pos[num_programs][2] = {{ 0 }}; // for each row, keep track of the current x position and height
+	int placement[num_programs][3] = {{ 0 }}; // (x, y, valid) of specific program
 	int p_i, row;
 
 	for (p_i = 0; p_i < num_programs; ++p_i) {

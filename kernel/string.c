@@ -143,6 +143,16 @@ char *strdup(const char *s)
 	return new;
 }
 
+char *strndup(const char *s, unsigned length)
+{
+	char *new = kmalloc(length+1);
+	if(new) {
+		strncpy(new,s,length);
+		new[length] = 0;
+	}
+	return new;
+}
+
 void strtoupper(char *name)
 {
 	while(*name) {
