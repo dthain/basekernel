@@ -2,6 +2,7 @@
 #include "string.h"
 #include "console.h"
 #include "keyboard.h"
+#include <stdarg.h>
 
 static void printf_putchar( char c )
 {
@@ -10,12 +11,12 @@ static void printf_putchar( char c )
 
 char getchar()
 {
-	return keyboard_read();
+	return keyboard_read(0);
 }
 
 void putchar( char c)
 {
-	return printf_putchar(char c);
+	return printf_putchar(c);
 }
 
 static void printf_putstring(char *s)
