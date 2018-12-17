@@ -340,42 +340,56 @@ int sys_open_intent(int fd, const char *path, int mode, int flags)
 	return sys_open_dirent(d, path, mode, flags);
 }
 
+static int find_kobject_by_intent( const char *intent )
+{
+	int i;
+
+	// Check if intent is index-specified.
+	if(intent[0] == "#") {
+		str2int(&intent[1], &i);
+	} else {
+		// Find an intent matching the tag.
+		for(int i = sys_process_object_max(); i >= 0; i--) {
+			if(!strcmp(current->ktable[i]->intent, intent)) {
+				return i;
+			}
+		}
+	}
+
+	return KERROR_NOT_FOUND;
+}
+
 int sys_open(const char *path, int mode, int flags)
 {
 	int path_length = strlen(path);
 	int i = 0;
 	char *lpath = kmalloc(sizeof(char) * (path_length + 1));
-	while(i < path_length && path[i] != 58) {
+
+	while(i < path_length && path[i] != ':') {
 		i += 1;
 	}
+
 	// If we have no path, do nothing.
-	if(i == path_length && path[i] == 58) {
-		return -1;
+	if(i == path_length && path[i] == ':') {
+		return KERROR_INVALID_REQUEST;
 	}
+
 	// If we have no tag, use everything as a path.
 	if(i == path_length) {
 		return sys_open_dirent(current->current_dir, path, mode, flags);
 	}
+
 	// If we have a tag and a path, use both.
 	strcpy(lpath, path);
 	const char *intent = strtok(lpath, ":");
 	const char *base_path = strtok(0, ":");
-	printf("Opening via intent:\n\tIntent: %s\n\tPath: %s\n", intent, base_path);
-	int intent_value = 0;
-	// Check if intent is index-specified.
-	if(intent[0] == "#") {
-		str2int(++intent, &intent_value);
-	} else {
-		// Find an intent matching the tag.
-		for(int i = sys_process_object_max(); i >= 0; i--) {
-			if(!strcmp(current->ktable[i]->intent, intent)) {
-				intent_value = i;
-				break;
-			}
-		}
-	}
-	if(current->ktable[intent_value] < 0)
-		return -1;
+
+	int intent_value = find_kobject_by_intent(intent);
+	if(intent_value<0) return intent_value;
+
+	if(!current->ktable[intent_value])
+		return KERROR_NOT_FOUND;
+
 	return sys_open_intent(intent_value, base_path, mode, flags);
 }
 
