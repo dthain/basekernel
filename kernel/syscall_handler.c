@@ -131,10 +131,10 @@ int sys_process_run(const char *path, const char **argv, int argc)
 }
 
 /* Function creates a child process with the standard window replaced by wd */
-int sys_process_wrun(const char *path, const char **argv, int argc, int * fds, int fd_len)
+int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, int fd_len)
 {
 	/* Copy argv array into kernel memory. */
-	char **copy_argv = argv_copy(argc,argv);
+	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
 
 	/* Create the child process */
@@ -155,7 +155,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * fds, i
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
 		process_kstack_reset(p, entry);
-		process_pass_arguments(p,argc,copy_argv);
+		process_pass_arguments(p, argc, copy_argv);
 	}
 
 	/* SWITCH BACK TO ADDRESS SPACE OF PARENT PROCESS */
@@ -163,7 +163,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int * fds, i
 	pagetable_load(old_pagetable);
 
 	/* Delete the argument copy. */
-	argv_delete(argc,copy_argv);
+	argv_delete(argc, copy_argv);
 	kfree(copy_path);
 
 	/* If any error happened, return in the context of the parent */
@@ -318,22 +318,65 @@ int sys_rmdir(const char *path)
 	}
 }
 
-int sys_open(const char *path, int mode, int flags)
+int sys_open_dirent(struct fs_dirent *d, const char *path, int mode, int flags)
 {
-	int fd = process_available_fd(current);
-	if(fd < 0)
+	if(!d)
+		return 0;
+
+	int new_fd = process_available_fd(current);
+	if(new_fd < 0)
 		return -1;
 
-	struct fs_dirent *d = fs_resolve(path);
-	if(!d) {
-		// XXX creating in current_dir, not parent dir!
-		fs_dirent_mkfile(current->current_dir, path);
-		// XXX return value not checked!
-		d = fs_dirent_namei(current->current_dir, path);
-	}
+	d = fs_dirent_namei(current->current_dir, path);
+
 	struct fs_file *fp = fs_file_open(d, mode);
-	current->ktable[fd] = kobject_create_file(fp);
-	return fd;
+	current->ktable[new_fd] = kobject_create_file(fp);
+	return new_fd;
+}
+
+int sys_open_intent(int fd, const char *path, int mode, int flags)
+{
+	struct fs_dirent *d = current->ktable[fd];
+	return sys_open_dirent(d, path, mode, flags);
+}
+
+int sys_open(const char *path, int mode, int flags)
+{
+	int path_length = strlen(path);
+	int i = 0;
+	char *lpath = kmalloc(sizeof(char) * (path_length + 1));
+	while(i < path_length && path[i] != 58) {
+		i += 1;
+	}
+	// If we have no path, do nothing.
+	if(i == path_length && path[i] == 58) {
+		return -1;
+	}
+	// If we have no tag, use everything as a path.
+	if(i == path_length) {
+		return sys_open_dirent(current->current_dir, path, mode, flags);
+	}
+	// If we have a tag and a path, use both.
+	strcpy(lpath, path);
+	const char *intent = strtok(lpath, ":");
+	const char *base_path = strtok(0, ":");
+	printf("Opening via intent:\n\tIntent: %s\n\tPath: %s\n", intent, base_path);
+	int intent_value = 0;
+	// Check if intent is index-specified.
+	if(intent[0] == "#") {
+		str2int(++intent, &intent_value);
+	} else {
+		// Find an intent matching the tag.
+		for(int i = sys_process_object_max(); i >= 0; i--) {
+			if(!strcmp(current->ktable[i]->intent, intent)) {
+				intent_value = i;
+				break;
+			}
+		}
+	}
+	if(current->ktable[intent_value] < 0)
+		return -1;
+	return sys_open_intent(intent_value, base_path, mode, flags);
 }
 
 int sys_object_set_intent(int fd, char *intent)
@@ -565,6 +608,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_reap(a);
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
+	case SYSCALL_OPEN_INTENT:
+		return sys_open_intent(a, (const char *) b, c, d);
 	case SYSCALL_DUP:
 		return sys_dup(a, b);
 	case SYSCALL_READ:
@@ -582,9 +627,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_OBJECT_MAX:
 		return sys_process_object_max(a);
 	case SYSCALL_OBJECT_SET_INTENT:
-		return sys_object_set_intent(a,(char*)b);
+		return sys_object_set_intent(a, (char *) b);
 	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a,(char*)b, c);
+		return sys_object_get_intent(a, (char *) b, c);
 	case SYSCALL_SET_BLOCKING:
 		return sys_set_blocking(a, b);
 	case SYSCALL_OPEN_PIPE:

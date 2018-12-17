@@ -1,14 +1,12 @@
-include ../Makefile.config
+include.. / Makefile.config USER_PROGRAMS =
+	test.exe long.exe printer.exe frktst.exe errcodes.exe exctst.exe filedescribetest.exe saver.exe all_validate.exe ball.exe write.exe open.exe pwd.exe shell.exe piptst.exe snake.exe sysstat.exe procstat.exe writebig.exe manager.exe clock.
+	exe mandelbrot.exe all:$(USER_PROGRAMS)
 
-USER_PROGRAMS=test.exe long.exe printer.exe frktst.exe errcodes.exe exctst.exe filedescribetest.exe saver.exe all_validate.exe ball.exe write.exe pwd.exe shell.exe piptst.exe snake.exe sysstat.exe procstat.exe writebig.exe manager.exe clock.exe mandelbrot.exe
+%.o:%.c $
+{
+CC} $ {
+KERNEL_CCFLAGS} -I.. / include $ < -o $ @ %.exe:%.o.. / library / user - start.o.. / library / baselib.a $ {
+LD} $ {
+KERNEL_LDFLAGS} -Ttext 0x80000000.. / library / user - start.o $ <.. / library / baselib.a - o $ @ clean:
 
-all: $(USER_PROGRAMS)
-
-%.o: %.c
-	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
-
-%.exe: %.o ../library/user-start.o ../library/baselib.a
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 ../library/user-start.o $< ../library/baselib.a -o $@
-
-clean:
-	rm -rf *.exe *.o
+rm - rf *.exe *.o
