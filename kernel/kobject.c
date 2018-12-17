@@ -80,12 +80,9 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		}
 	case KOBJECT_DEVICE:
 		return device_read(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
-		break;
 	case KOBJECT_PIPE:
 		return pipe_read(kobject->data.pipe, buffer, size);
-		break;
 	}
-	printf("BUFFER: %s\n", buffer);
 	return 0;
 }
 
