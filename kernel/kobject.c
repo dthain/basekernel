@@ -150,7 +150,8 @@ int kobject_close(struct kobject *kobject)
 			// XXX delete graphics object?
 			return 0;
 		case KOBJECT_CONSOLE:
-		       console_delete(kobject->data.console);
+			console_delete(kobject->data.console);
+			return 0;
 		case KOBJECT_FILE:
 			ret = fs_file_close(kobject->data.file);
 			kfree(kobject);
