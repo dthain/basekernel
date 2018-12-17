@@ -3,8 +3,6 @@
 
 #include "device.h"
 
-void bcache_init();
-
 int  bcache_read( struct device *d, char *data, int blocks, int offset );
 int  bcache_write( struct device *d, const char *data, int blocks, int offset );
 

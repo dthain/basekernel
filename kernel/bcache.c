@@ -54,10 +54,6 @@ void bcache_entry_clean( struct bcache_entry *e )
 
 }
 
-void bcache_init()
-{
-}
-
 void bcache_trim()
 {
 	struct bcache_entry *e;

@@ -84,7 +84,7 @@ int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
 	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	uint32_t num_blocks = FS_BLOCKSIZE / ATA_BLOCKSIZE;
+	uint32_t num_blocks = factor;
 	index = index * factor;
 	return bcache_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
