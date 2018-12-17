@@ -76,6 +76,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 			break;
 		}
 	case KOBJECT_DEVICE:
@@ -114,6 +115,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 			int actual = fs_file_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 		}
 	case KOBJECT_DEVICE:
 		return device_write(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
