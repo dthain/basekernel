@@ -622,8 +622,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_reap(a);
 	case SYSCALL_OPEN:
 		return sys_open((const char *) a, b, c);
-	case SYSCALL_OPEN_INTENT:
-		return sys_open_intent(a, (const char *) b, c, d);
 	case SYSCALL_DUP:
 		return sys_dup(a, b);
 	case SYSCALL_READ:
