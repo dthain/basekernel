@@ -79,7 +79,7 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 	return written;
 }
 
-int pipe_read(struct pipe *p, char *buffer, int size)
+int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 {
 	if(!p || !buffer) {
 		return -1;
@@ -91,6 +91,9 @@ int pipe_read(struct pipe *p, char *buffer, int size)
 				if(p->flushed) {
 					p->flushed = 0;
 					return read;
+				}
+				if (block == 0) {
+					return -1;
 				}
 				process_wait(&p->queue);
 			}
@@ -107,4 +110,15 @@ int pipe_read(struct pipe *p, char *buffer, int size)
 	}
 	p->flushed = 0;
 	return read;
+}
+
+
+int pipe_read(struct pipe *p, char *buffer, int size)
+{
+	return pipe_read_internal(p, buffer, size, 1);
+}
+
+int pipe_read_nonblock(struct pipe *p, char *buffer, int size)
+{
+	return pipe_read_internal(p, buffer, size, 0);
 }

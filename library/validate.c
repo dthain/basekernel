@@ -4,9 +4,8 @@
  */
 
 #include "library/validate.h"
-
+#include "library/malloc.h"
 #include "library/string.h"
-#include "library/user-io.h"
 
 // Does this string comprise a valid path?
 // Valid paths are comprised of the following characters:

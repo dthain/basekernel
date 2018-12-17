@@ -76,6 +76,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 			break;
 		}
 	case KOBJECT_DEVICE:
@@ -95,10 +96,10 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 		return 0;
 	case KOBJECT_FILE:
 		return 0;
-	case KOBJECT_PIPE:
-		return 0;
 	case KOBJECT_DEVICE:
 		return device_read_nonblock(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
+	case KOBJECT_PIPE:
+		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
 	}
 	return 0;
 }
@@ -114,6 +115,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 			int actual = fs_file_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 		}
 	case KOBJECT_DEVICE:
 		return device_write(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);

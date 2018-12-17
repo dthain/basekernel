@@ -23,7 +23,7 @@ int process_kill(unsigned int pid);
 int process_reap(unsigned int pid);
 int process_wait(struct process_info *info, int timeout);
 int process_sleep(unsigned int ms);
-int process_highest_fd();
+int process_object_max();
 int open(const char *path, int mode, int flags);
 int object_type(int fd);
 int dup(int fd1, int fd2);
@@ -48,6 +48,8 @@ int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
-int get_dimensions(int fd, int *dims, int n);
+void gettimeofday_rtc(struct rtc_time * time);
+int get_dimensions(int fd, int * dims, int n);
+int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
 
 #endif

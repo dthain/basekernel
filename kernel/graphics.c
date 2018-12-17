@@ -325,7 +325,7 @@ void graphics_bitmap(struct graphics *g, int32_t x, int32_t y, int32_t width, in
 	}
 }
 
-void graphics_char(struct graphics *g, int32_t x, int32_t y, char c)
+void graphics_char(struct graphics *g, int32_t x, int32_t y, unsigned char c)
 {
 	uint32_t u = ((uint32_t) c) * FONT_WIDTH * FONT_HEIGHT / 8;
 	return graphics_bitmap(g, x, y, FONT_WIDTH, FONT_HEIGHT, &fontdata[u]);

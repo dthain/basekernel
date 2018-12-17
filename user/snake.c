@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2018 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -26,7 +26,7 @@ void init_snake_coords(struct coords *snake_coords, uint16_t x_steps, uint16_t y
 uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords *apple, uint8_t * board);
 uint16_t randint(uint16_t min, uint16_t max);
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b);
-int draw_border(int x, int y, int w, int h, int thickness, int screen_d_w, int screen_d_h, int r, int g, int b);
+int draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b);
 void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick);
 int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_steps, uint16_t y_steps, uint8_t * board, char in);
 int check_snake_collision(struct coords *snake_coords);
@@ -77,14 +77,14 @@ int main(const char *argv[], int argc)
 	char tin;
 
 	// Initialize the Window
-	if((wd = initialize_window(0, 0, WIDTH, HEIGHT, thick, 255, 255, 255)) < 0) {
+	if((wd = initialize_window(x, y, WIDTH, HEIGHT, thick, 255, 255, 255)) < 0) {
 		return 1;
 	}
-	draw_string(x + thick * 3, y + thick * 4, "Press any key to start");
-	draw_string(x + thick * 3, y + thick * 8, "j: up");
-	draw_string(x + thick * 3, y + thick * 12, "n: down");
-	draw_string(x + thick * 3, y + thick * 16, "m: right");
-	draw_string(x + thick * 3, y + thick * 20, "b: left");
+	draw_string(thick * 3, thick * 4, "Press any key to start");
+	draw_string(thick * 3, thick * 8, "j: up");
+	draw_string(thick * 3, thick * 12, "n: down");
+	draw_string(thick * 3, thick * 16, "m: right");
+	draw_string(thick * 3, thick * 20, "b: left");
 	draw_flush();
 
 
@@ -115,11 +115,39 @@ int main(const char *argv[], int argc)
 		// Try to move the snake
 		status = move_snake(snake_coords, &apple, x_steps, y_steps, (uint8_t *) board, in);
 		if(status == -1) {
-			printf_putstring("You lose!\n");
-			flush();
-			return 0;
+			for(int i = 0; i < y_steps; i++) {
+				for(int j = 0; j < x_steps; j++) {
+					board[i][j] = 0;
+				}
+			}
+			board[0][0] = 1;
+			init_snake_coords(snake_coords, x_steps, y_steps, x, y);
+
+			draw_flush();
+			draw_color(255, 255, 255);
+			draw_string(thick * 3, thick * 4, "You lose!");
+			draw_string(thick * 3, thick * 8, "Enter q to quit");
+			draw_string(thick * 3, thick * 12, "Press any key to start");
+			draw_flush();
+			read(0, &tin, 1);
+			if (tin == 'q')
+			{
+				printf("Snake exiting\n");
+				return 1;
+			}
+			if(tin != 'm' && tin != 'n') {
+				tin = 'm';
+			}
+			in = tin;
+			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
+			draw_clear(0, 0, game_width, game_height);
+			if(draw_border(0, 0, game_width, game_height, thick, 255, 255, 255) < 0) {
+				debug("Border create failed!\n");
+				return -1;
+			}
 		}
 	}
+
 }
 
 
@@ -186,7 +214,7 @@ uint16_t randint(uint16_t min, uint16_t max)
 
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
 {
-	int wd = open_window(KNO_STDWIN, 500, 500, w_b, h_b);
+	int wd = open_window(KNO_STDWIN, x_b, y_b, w_b, h_b);
 	if(wd < 0) {
 		debug("Window create failed!\n");
 		return -1;
@@ -194,7 +222,7 @@ int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, ui
 	// draw initial window
 	draw_window(wd);
 	draw_clear(0, 0, w_b, h_b);
-	if(draw_border(x_b, y_b, w_b, h_b, thick, w_b, h_b, r_b, g_b, b_b) < 0) {
+	if(draw_border(0, 0, w_b, h_b, thick, r_b, g_b, b_b) < 0) {
 		debug("Border create failed!\n");
 		return -1;
 	}
@@ -204,20 +232,16 @@ int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, ui
 }
 
 // Draws the border with the colors specified
-int draw_border(int x, int y, int w, int h, int thickness, int screen_d_w, int screen_d_h, int r, int g, int b)
+int draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b)
 {
-	// Check that dimensions line up 
-	if(x + w > screen_d_w || y + h > screen_d_h) {
-		return -1;
-	}
 	// Color the border appropriately
 	draw_color(r, b, g);
 
 	// Draw 4 rectangles to represent the border
-	draw_rect(0, 0, w, thickness);
-	draw_rect(0, 0, thickness, h);
-	draw_rect(w - thickness, 0, thickness, h);
-	draw_rect(0, h - thickness, w, 5);
+	draw_rect(x, y, w, thickness);
+	draw_rect(x, y, thickness, h);
+	draw_rect(x + w - thickness, y, thickness, h);
+	draw_rect(x, y + h - thickness, w, thickness);
 
 	return 0;
 }

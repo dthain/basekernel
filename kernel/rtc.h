@@ -9,15 +9,6 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 
-struct rtc_time {
-	uint8_t second;
-	uint8_t minute;
-	uint8_t hour;
-	uint8_t day;
-	uint8_t month;
-	uint16_t year;
-};
-
 uint32_t boottime;
 
 void rtc_init();

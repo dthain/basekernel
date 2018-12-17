@@ -40,12 +40,12 @@ int process_object_max()
 
 int object_set_intent(int fd, char *intent)
 {
-	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, intent, 0, 0, 0);
+	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, (uint32_t)intent, 0, 0, 0);
 }
 
 int object_get_intent(int fd, char *buffer, int buffer_size)
 {
-	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, buffer, buffer_size, 0, 0);
+	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, (uint32_t)buffer, buffer_size, 0, 0);
 }
 
 int dup(int fd1, int fd2)
@@ -107,6 +107,11 @@ int process_sleep(unsigned int ms)
 uint32_t gettimeofday()
 {
 	return syscall(SYSCALL_GETTIMEOFDAY, 0, 0, 0, 0, 0);
+}
+
+uint32_t gettimeofday_rtc(struct rtc_time * time)
+{
+	return syscall(SYSCALL_GETTIMEOFDAY_RTC, (uint32_t)time, 0, 0, 0, 0);
 }
 
 int process_self()
@@ -192,4 +197,9 @@ int process_stats(struct proc_stats *s, unsigned int pid)
 int get_dimensions(int fd, int *dims, int n)
 {
 	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dims, n, 0, 0);
+}
+
+int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len)
+{
+	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) fds, fd_len);
 }
