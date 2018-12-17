@@ -142,7 +142,7 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	uint32_t counter = 0;
 	printf("Writing inode bitmap...\n");
 	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
-		if(!bcache_write(device, zeros, 1, i))
+		if(!kevinfs_ata_write_block(device, i, zeros))
 			return -1;
 		counter++;
 	}
@@ -150,15 +150,13 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	counter = 0;
 	printf("Writing free block bitmap...\n");
 	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
-		if(!bcache_write(device, zeros, 1, i))
+		if(!kevinfs_ata_write_block(device, i, zeros))
 			return -1;
 		counter++;
 	}
 	printf("writing superblock...\n");
 	kevinfs_ata_write_block(device, 0, wbuffer);
 	counter++;
-	printf("flushing dirty blocks...\n");
-	bcache_flush_device(device);
 	printf("%u blocks written\n", counter);
 	return counter;
 }
@@ -1065,6 +1063,9 @@ static int kevinfs_mkfs(int unit_no)
 	if(kd && top_dir) {
 		ret = !kevinfs_writedir(kd, top_dir) && !kevinfs_save_dirent(kd);
 	}
+
+	printf("flushing dirty blocks...\n");
+	bcache_flush_device(kv->device);
 
 	if(kd)
 		kfree(kd);
