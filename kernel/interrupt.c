@@ -59,7 +59,7 @@ static void unknown_exception(int i, int code)
 		// Check if page is already mapped (which will result from violating the permissions on page) or that
 		// we are accessing neither the stack nor the heap, or we are accessing both. If so, error
 		if (page_already_present || !(data_access ^ stack_access)) {
-			console_printf("interrupt: illegal page access at vaddr %x\n",vaddr);
+			printf("interrupt: illegal page access at vaddr %x\n",vaddr);
 			process_dump(current);
 			process_exit(0);
 		} else {
@@ -68,14 +68,14 @@ static void unknown_exception(int i, int code)
 			return;
 		}
 	} else {
-		console_printf("interrupt: exception %d: %s (code %x)\n", i, exception_names[i], code);
+		printf("interrupt: exception %d: %s (code %x)\n", i, exception_names[i], code);
 		process_dump(current);
 	}
 
 	if(current) {
 		process_exit(0);
 	} else {
-		console_printf("interrupt: exception in kernel code!\n");
+		printf("interrupt: exception in kernel code!\n");
 		halt();
 	}
 }
@@ -83,7 +83,7 @@ static void unknown_exception(int i, int code)
 static void unknown_hardware(int i, int code)
 {
 	if(!interrupt_spurious[i]) {
-		console_printf("interrupt: spurious interrupt %d\n", i);
+		printf("interrupt: spurious interrupt %d\n", i);
 	}
 	interrupt_spurious[i]++;
 }
@@ -123,7 +123,7 @@ void interrupt_init()
 
 	interrupt_unblock();
 
-	console_printf("interrupt: ready\n");
+	printf("interrupt: ready\n");
 }
 
 void interrupt_handler(int i, int code)

@@ -117,7 +117,7 @@ static int ata_wait(int id, int mask, int state)
 			return 1;
 		}
 		if(t & ATA_STATUS_ERR) {
-			console_printf("ata: error\n");
+			printf("ata: error\n");
 			ata_reset(id);
 			return 0;
 		}
@@ -125,7 +125,7 @@ static int ata_wait(int id, int mask, int state)
 		int elapsed_millis = elapsed.seconds * 1000 + elapsed.millis;
 		if(elapsed_millis > timeout_millis) {
 			if(!identify_in_progress) {
-				console_printf("ata: timeout\n");
+				printf("ata: timeout\n");
 			}
 			ata_reset(id);
 			return 0;
@@ -437,7 +437,7 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 		*blocksize = ATAPI_BLOCKSIZE;
 
 	} else {
-		console_printf("ata unit %d: not connected\n", id);
+		printf("ata unit %d: not connected\n", id);
 		return 0;
 	}
 
@@ -457,7 +457,7 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	/* Get disk size in megabytes*/
 	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
-	console_printf("ata unit %d: %s %u blocks %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
+	printf("ata unit %d: %s %u blocks %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
 	return 1;
 }
 
@@ -474,7 +474,7 @@ void ata_init()
 		counters.blocks_written[i] = 0;
 	}
 
-	console_printf("ata: setting up interrupts\n");
+	printf("ata: setting up interrupts\n");
 
 	interrupt_register(ATA_IRQ0, ata_interrupt);
 	interrupt_enable(ATA_IRQ0);
@@ -482,7 +482,7 @@ void ata_init()
 	interrupt_register(ATA_IRQ1, ata_interrupt);
 	interrupt_enable(ATA_IRQ1);
 
-	console_printf("ata: probing devices\n");
+	printf("ata: probing devices\n");
 
 	for(i = 0; i < 4; i++) {
 		ata_probe(i, &nblocks, &blocksize, longname);

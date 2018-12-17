@@ -256,14 +256,14 @@ static struct fs_volume *cdrom_volume_open(int unit)
 	}
 
 	kfree(device);
-	console_printf("cdromfs: no filesystem found\n");
+	printf("cdromfs: no filesystem found\n");
 	return 0;
 }
 
 static int cdrom_volume_close(struct fs_volume *v)
 {
 	struct cdrom_volume *cdv = v->private_data;
-	console_printf("cdromfs: umounted filesystem from unit %d\n", cdv->device->unit);
+	printf("cdromfs: umounted filesystem from unit %d\n", cdv->device->unit);
 	kfree(v);
 	return 0;
 }

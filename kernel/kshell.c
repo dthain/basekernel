@@ -47,7 +47,7 @@ static int kshell_mount(int unit, const char *fs_type)
 static int kshell_printdir(const char *d, int length)
 {
 	while(length > 0) {
-		console_printf("%s\n", d);
+		printf("%s\n", d);
 		int len = strlen(d) + 1;
 		d += len;
 		length -= len;

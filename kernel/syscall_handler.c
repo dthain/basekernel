@@ -32,7 +32,7 @@ See the file LICENSE for details.
 
 int sys_debug(const char *str)
 {
-	console_printf("%s", str);
+	printf("%s", str);
 	return 0;
 }
 

@@ -35,6 +35,4 @@ void console_putstring( struct console *c, const char *str );
 void console_heartbeat( struct console *c );
 void console_size( struct console *c, int *xsize, int *ysize );
 
-#define console_printf printf
-
 #endif

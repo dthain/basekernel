@@ -44,8 +44,8 @@ int kernel_main()
 	serial_init();
 #endif
 
-	console_printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
-	console_printf("kernel: %d bytes\n", kernel_size);
+	printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
+	printf("kernel: %d bytes\n", kernel_size);
 
 	memory_init();
 	kmalloc_init((char *) KMALLOC_START, KMALLOC_LENGTH);
@@ -60,7 +60,7 @@ int kernel_main()
 	cdrom_init();
 	kevinfs_init();
 
-	console_printf("\nKERNEL SHELL READY:\n");
+	printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
 
 	while(1)
