@@ -19,7 +19,7 @@ struct console {
 	int onoff;
 };
 
-struct console theconsole = {0};
+struct console console_root = {0};
 
 static struct graphics_color bgcolor = { 0, 0, 0 };
 static struct graphics_color fgcolor = { 255, 255, 255 };
@@ -133,10 +133,10 @@ void console_size( struct console *c, int *xsize, int *ysize )
 
 struct console * console_init(struct graphics *g)
 {
-	theconsole.gx = g;
-	console_reset(&theconsole);
-	console_putstring(&theconsole,"\nconsole: initialized\n");
-	return &theconsole;
+	console_root.gx = g;
+	console_reset(&console_root);
+	console_putstring(&console_root,"\nconsole: initialized\n");
+	return &console_root;
 }
 
 

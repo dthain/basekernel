@@ -36,7 +36,7 @@ void process_init()
 
 	//set up initial kobject descriptors
 	current->ktable[0] = kobject_create_device(keyboard_get());
-	current->ktable[1] = kobject_create_console(&theconsole);
+	current->ktable[1] = kobject_create_console(&console_root);
 	current->ktable[2] = current->ktable[1];
 	current->ktable[3] = kobject_create_graphics(&graphics_root);
 	graphics_root.count++;

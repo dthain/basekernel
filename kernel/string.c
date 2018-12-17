@@ -212,12 +212,12 @@ void memcpy(void *vd, const void *vs, unsigned length)
 
 void printf_putchar( char c )
 {
-	console_putchar(&theconsole,c);
+	console_putchar(&console_root,c);
 }
 
 void printf_putstring(char *s)
 {
-	console_putstring(&theconsole,s);
+	console_putstring(&console_root,s);
 }
 
 static void printf_puthexdigit(uint8_t i)

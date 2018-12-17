@@ -14,12 +14,12 @@ See the file LICENSE for details.
 
 /*
 console_init creates the very first global console that
-is used for kernel debug output.  The singleton "theconsole"
+is used for kernel debug output.  The singleton "console_root"
 must be statically allocated so that is usable at early
 startup before memory allocation is available.
 */
 
-extern struct console theconsole;
+extern struct console console_root;
 struct console * console_init( struct graphics *g );
 
 /*
