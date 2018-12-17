@@ -63,8 +63,9 @@ int kernel_main()
 	printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();
 
-	while(1)
+	while(1) {
 		console_putchar(&console_root,keyboard_read(0));
+	}
 
 	return 0;
 }

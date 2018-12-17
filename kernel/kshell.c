@@ -16,6 +16,7 @@
 #include "clock.h"
 #include "kernelcore.h"
 #include "bcache.h"
+#include "printf.h"
 
 static int kshell_mount(int unit, const char *fs_type)
 {
@@ -249,11 +250,11 @@ int kshell_readline(char *line, int length)
 			return 1;
 		} else if(c == ASCII_BS) {
 			if(i > 0) {
-				console_putchar(&console_root,c);
+				putchar(c);
 				i--;
 			}
 		} else if(c >= 0x20 && c <= 0x7E) {
-			console_putchar(&console_root,c);
+			putchar(c);
 			line[i] = c;
 			i++;
 		}
