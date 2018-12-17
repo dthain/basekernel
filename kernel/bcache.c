@@ -100,17 +100,18 @@ struct bcache_entry * bcache_find_or_create( struct device *device, int block, i
 int bcache_read_block( struct device *device, char *data, int block )
 {
 	int hit=0;
+	int result;
 
 	struct bcache_entry *e = bcache_find_or_create(device,block,&hit);
 	if(!e) return KERROR_NO_MEMORY;
 
 	if(hit) {
 		stats.read_hits++;
+		result = 1;
 	} else {
 		stats.read_misses++;
+		result = device_read(device,e->data,1,block);
 	}
-
-	int result = device_read(device,e->data,1,block);
 
 	if(result>0) {
 		memcpy(data,e->data,device_block_size(device));
