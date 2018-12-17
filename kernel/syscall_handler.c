@@ -363,32 +363,31 @@ static int find_kobject_by_intent( const char *intent )
 
 int sys_open(const char *path, int mode, int flags)
 {
-	int path_length = strlen(path);
-	int i = 0;
-	char *lpath = kmalloc(sizeof(char) * (path_length + 1));
+	const char *colon = strchr(path,':');
 
-	while(i < path_length && path[i] != ':') {
-		i += 1;
-	}
-
-	// If we have no path, do nothing.
-	if(i == path_length && path[i] == ':') {
+	// If the colon comes at the end, then there is no path
+	if(colon && *(colon+1)==0 ) {
 		return KERROR_INVALID_REQUEST;
 	}
 
 	// If we have no tag, use everything as a path.
-	if(i == path_length) {
+	if(!colon) {
 		return open_from_dirent(current->current_dir, path, mode, flags);
 	}
 
-	// If we have a tag and a path, use both.
-	strcpy(lpath, path);
-	const char *intent = strtok(lpath, ":");
-	const char *base_path = strtok(0, ":");
+	// The base path is whatever comes after the colon
+	const char *base_path = colon+1;
 
+	// Duplicate the intent path into a null terminated string.
+	char *intent = strndup(path,colon-path);
+	if(!intent) return KERROR_NO_MEMORY;
+
+	// Look up the corresponding object by intent
 	int fd = find_kobject_by_intent(intent);
+	kfree(intent);
 	if(fd<0) return fd;
 
+	// Open the file relative to that object.
 	return sys_open_dirent(fd, base_path, mode, flags);
 }
 

@@ -20,6 +20,7 @@ char *strrev(char *s);
 
 char *strtok(char *s, const char *delim);
 char *strdup(const char *s);
+char *strndup(const char *s, unsigned length);
 void strtoupper(char *s);
 void strtolower(char *s);
 
