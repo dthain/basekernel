@@ -36,8 +36,8 @@ void process_init()
 
 	//set up initial kobject descriptors
 	current->ktable[0] = kobject_create_device(keyboard_get());
-	current->ktable[1] = kobject_create_device(console_get());
-	current->ktable[2] = current->ktable[1];
+	current->ktable[1] = kobject_create_console(&console_root);
+	current->ktable[2] = kobject_addref(current->ktable[1]);
 	current->ktable[3] = kobject_create_graphics(&graphics_root);
 	graphics_root.count++;
 
@@ -327,7 +327,7 @@ void process_yield()
 
 void process_exit(int code)
 {
-	// console_printf("process %d exiting with status %d...\n", current->pid, code); --> transport to kshell run
+	// printf("process %d exiting with status %d...\n", current->pid, code); --> transport to kshell run
 	current->exitcode = code;
 	current->exitreason = PROCESS_EXIT_NORMAL;
 	process_wakeup_parent(&grave_watcher_list);	// On exit, wake up parent if need be
@@ -387,17 +387,17 @@ void process_wakeup_all(struct list *q)
 void process_dump(struct process *p)
 {
 	struct x86_stack *s = (struct x86_stack *) (INTERRUPT_STACK_TOP - sizeof(*s));
-	console_printf("kstack: %x\n", p->kstack);
-	console_printf("stackp: %x\n", p->kstack_ptr);
-	console_printf("eax: %x     cs: %x\n", s->regs1.eax, s->cs);
-	console_printf("ebx: %x     ds: %x\n", s->regs1.ebx, s->ds);
-	console_printf("ecx: %x     ss: %x\n", s->regs1.ecx, s->ss);
-	console_printf("edx: %x eflags: %x\n", s->regs1.edx, s->eflags);
-	console_printf("esi: %x\n", s->regs1.esi);
-	console_printf("edi: %x\n", s->regs1.edi);
-	console_printf("ebp: %x\n", s->regs1.ebp);
-	console_printf("esp: %x\n", s->esp);
-	console_printf("eip: %x\n", s->eip);
+	printf("kstack: %x\n", p->kstack);
+	printf("stackp: %x\n", p->kstack_ptr);
+	printf("eax: %x     cs: %x\n", s->regs1.eax, s->cs);
+	printf("ebx: %x     ds: %x\n", s->regs1.ebx, s->ds);
+	printf("ecx: %x     ss: %x\n", s->regs1.ecx, s->ss);
+	printf("edx: %x eflags: %x\n", s->regs1.edx, s->eflags);
+	printf("esi: %x\n", s->regs1.esi);
+	printf("edi: %x\n", s->regs1.edi);
+	printf("ebp: %x\n", s->regs1.ebp);
+	printf("esp: %x\n", s->esp);
+	printf("eip: %x\n", s->eip);
 }
 
 int process_available_fd(struct process *p)
@@ -447,7 +447,7 @@ int process_kill(uint32_t pid)
 	if(pid > 0 && pid <= PROCESS_MAX_PID) {
 		struct process *dead = process_table[pid];
 		if(dead) {
-			console_printf("process killed\n");
+			printf("process killed\n");
 			process_make_dead(dead);
 			return 0;
 		} else {

@@ -30,7 +30,7 @@ static void clock_interrupt(int i, int code)
 	if(clicks >= CLICKS_PER_SECOND) {
 		clicks = 0;
 		seconds++;
-		console_heartbeat();
+		console_heartbeat(&console_root);
 		process_preempt();
 	}
 }
@@ -77,5 +77,5 @@ void clock_init()
 	interrupt_register(32, clock_interrupt);
 	interrupt_enable(32);
 
-	console_printf("clock: ticking\n");
+	printf("clock: ticking\n");
 }

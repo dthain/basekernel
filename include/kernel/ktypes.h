@@ -5,6 +5,7 @@ typedef enum {
 	KOBJECT_FILE,
 	KOBJECT_DEVICE,
 	KOBJECT_GRAPHICS,
-	KOBJECT_PIPE
+	KOBJECT_PIPE,
+	KOBJECT_CONSOLE
 } kobject_type;
 #endif

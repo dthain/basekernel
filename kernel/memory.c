@@ -30,7 +30,7 @@ void memory_init()
 
 	pages_total = (total_memory * 1024 * 1024 - MAIN_MEMORY_START) / PAGE_SIZE;
 	pages_free = pages_total;
-	console_printf("memory: %d MB (%d KB) total\n", (pages_free * PAGE_SIZE) / MEGA, (pages_free * PAGE_SIZE) / KILO);
+	printf("memory: %d MB (%d KB) total\n", (pages_free * PAGE_SIZE) / MEGA, (pages_free * PAGE_SIZE) / KILO);
 
 	freemap = main_memory_start;
 	freemap_bits = pages_total;
@@ -38,7 +38,7 @@ void memory_init()
 	freemap_cells = 1 + freemap_bits / CELL_BITS;
 	freemap_pages = 1 + freemap_bytes / PAGE_SIZE;
 
-	console_printf("memory: %d bits %d bytes %d cells %d pages\n", freemap_bits, freemap_bytes, freemap_cells, freemap_pages);
+	printf("memory: %d bits %d bytes %d cells %d pages\n", freemap_bits, freemap_bytes, freemap_cells, freemap_pages);
 
 	memset(freemap, 0xff, freemap_bytes);
 	for(i = 0; i < freemap_pages; i++)
@@ -50,7 +50,7 @@ void memory_init()
 
 	freemap[0] = 0x0;
 
-	console_printf("memory: %d MB (%d KB) available\n", (pages_free * PAGE_SIZE) / MEGA, (pages_free * PAGE_SIZE) / KILO);
+	printf("memory: %d MB (%d KB) available\n", (pages_free * PAGE_SIZE) / MEGA, (pages_free * PAGE_SIZE) / KILO);
 }
 
 uint32_t memory_pages_free()
@@ -71,7 +71,7 @@ void *memory_alloc_page(bool zeroit)
 	void *pageaddr;
 
 	if(!freemap) {
-		console_printf("memory: not initialized yet!\n");
+		printf("memory: not initialized yet!\n");
 		return 0;
 	}
 
@@ -92,7 +92,7 @@ void *memory_alloc_page(bool zeroit)
 		}
 	}
 
-	console_printf("memory: WARNING: everything allocated\n");
+	printf("memory: WARNING: everything allocated\n");
 	halt();
 
 	return 0;

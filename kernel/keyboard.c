@@ -158,5 +158,5 @@ void keyboard_init()
 	keyboard.read_nonblock = keyboard_device_read_nonblock;
 	interrupt_register(33, keyboard_interrupt);
 	interrupt_enable(33);
-	console_printf("keyboard: ready\n");
+	printf("keyboard: ready\n");
 }

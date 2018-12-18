@@ -32,7 +32,7 @@ See the file LICENSE for details.
 
 int sys_debug(const char *str)
 {
-	console_printf("%s", str);
+	printf("%s", str);
 	return 0;
 }
 
@@ -531,11 +531,11 @@ int sys_open_console(int wd)
 	if(wd < 0 || fd < 0) {
 		return KERROR_NOT_FOUND;
 	}
-	struct device *d = console_create(current->ktable[wd]->data.graphics);
-	if(!d) {
+	struct console *c = console_create(current->ktable[wd]->data.graphics);
+	if(!c) {
 		return KERROR_NOT_FOUND;
 	}
-	current->ktable[fd] = kobject_create_device(d);
+	current->ktable[fd] = kobject_create_console(c);
 	return fd;
 }
 

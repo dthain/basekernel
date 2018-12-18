@@ -133,7 +133,7 @@ void kfree(void *ptr)
 	c--;
 
 	if(c->state != KMALLOC_STATE_USED) {
-		console_printf("invalid kfree(%x)\n", ptr);
+		printf("invalid kfree(%x)\n", ptr);
 		return;
 	}
 
@@ -147,18 +147,18 @@ void kmalloc_debug()
 {
 	struct kmalloc_chunk *c;
 
-	console_printf("state ptr      prev     next     length\n");
+	printf("state ptr      prev     next     length\n");
 
 	for(c = head; c; c = c->next) {
 		if(c->state == KMALLOC_STATE_FREE) {
-			console_printf("F");
+			printf("F");
 		} else if(c->state == KMALLOC_STATE_USED) {
-			console_printf("U");
+			printf("U");
 		} else {
-			console_printf("kmalloc list corrupted at %x!\n", c);
+			printf("kmalloc list corrupted at %x!\n", c);
 			return;
 		}
-		console_printf("     %x %x %x %d\n", c, c->prev, c->next, c->length);
+		printf("     %x %x %x %d\n", c, c->prev, c->next, c->length);
 	}
 }
 
@@ -207,7 +207,7 @@ int kmalloc_test(void)
 
 	int i = 0;
 	for(i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
-		console_printf("running test %d...", i);
+		printf("running test %d...", i);
 		int res;
 
 		setup();
@@ -215,11 +215,11 @@ int kmalloc_test(void)
 		tear_down();
 
 		if(!res) {
-			console_printf("failed\n");
-			console_printf("\ntest %d failed.\n");
+			printf("failed\n");
+			printf("\ntest %d failed.\n");
 			return 0;
 		}
-		console_printf("succeeded\n");
+		printf("succeeded\n");
 	}
 	return 1;
 }
