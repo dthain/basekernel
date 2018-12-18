@@ -33,7 +33,6 @@ struct cdrom_dirent {
 
 static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
 static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
-int strcmp_cdrom_ident(const char *ident, const char *s);
 
 static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int sector, int length, int isdir)
 {
@@ -48,18 +47,15 @@ static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int
 	return d;
 }
 
-static char *cdrom_dirent_load(struct fs_dirent *d)
+static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	int nsectors = cdd->length / ATAPI_BLOCKSIZE + (cdd->length % ATAPI_BLOCKSIZE) ? 1 : 0;
-	char *data = kmalloc(nsectors * ATAPI_BLOCKSIZE);
-	if(!data)
-		return 0;
-
-	bcache_read(cdd->volume->device, data, nsectors, cdd->sector);
-	// XXX check result
-
-	return data;
+	int nblocks = device_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
+	if(nblocks == 1) {
+		return ATAPI_BLOCKSIZE;
+	} else {
+		return -1;
+	}
 }
 
 static void fix_filename(char *name, int length)
@@ -74,54 +70,59 @@ static void fix_filename(char *name, int length)
 	}
 	// In any case, null-terminate the string
 	name[length] = 0;
-}
 
-static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
-{
-	struct cdrom_dirent *cdd = d->private_data;
-	int nblocks = device_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
-	if(nblocks == 1) {
-		return ATAPI_BLOCKSIZE;
-	} else {
-		return -1;
-	}
+	// And make it lowercase
+	strtolower(name);
 }
 
 static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *name)
 {
 	struct cdrom_dirent *cddir = dir->private_data;
-	char *data = cdrom_dirent_load(dir);
-	if(!data)
-		return 0;
+	if(!cddir->isdir) return 0;
 
-	int data_length = cddir->length;
+	char *temp = memory_alloc_page(0);
+	if(!temp) return 0;
 
-	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
-	char *upper_name = strdup(name);
-	if(!upper_name)
-		return 0;
-	strtoupper(upper_name);
+	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
 
-	while(data_length > 0 && d->descriptor_length > 0) {
-		fix_filename(d->ident, d->ident_length);
+	int i;
+	for(i=0;i<nsectors;i++) {
+		cdrom_dirent_read_block(dir,temp,i);
 
-		if(!strcmp_cdrom_ident(d->ident, upper_name)) {
-			struct cdrom_dirent *r = cdrom_dirent_create(cddir->volume,
-								     d->first_sector_little,
-								     d->length_little,
-								     d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY);
+		struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) temp;
 
-			kfree(data);
-			kfree(upper_name);
-			return cdrom_dirent_as_dirent(r);
+		while(d->descriptor_length > 0) {
+
+			const char *dname;
+			int dname_length;
+
+			if(d->ident[0] == 0) {
+				dname = ".";
+				dname_length = 2;
+			} else if(d->ident[0] == 1) {
+				dname = "..";
+				dname_length = 3;
+			} else {
+				fix_filename(d->ident, d->ident_length);
+				dname = d->ident;
+				dname_length = strlen(dname) + 1;
+			}
+
+			if(!strncmp(name,dname,dname_length)) {
+				struct cdrom_dirent *r;
+				r = cdrom_dirent_create(
+					cddir->volume,
+					d->first_sector_little,
+					d->length_little,
+					d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY);
+				memory_free_page(temp);
+				return cdrom_dirent_as_dirent(r);
+			}
+			d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
 		}
-
-		d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
-		data_length -= d->descriptor_length;
 	}
 
-	kfree(data);
-	kfree(upper_name);
+	memory_free_page(temp);
 
 	return 0;
 }
@@ -129,70 +130,55 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer_length)
 {
 	struct cdrom_dirent *cddir = dir->private_data;
+	if(!cddir->isdir) return KERROR_NOT_A_DIRECTORY;
 
-	if(!cddir->isdir)
-		return KERROR_NOT_A_DIRECTORY;
+	char *temp = memory_alloc_page(0);
+	if(!temp) return KERROR_NO_MEMORY;
 
-	char *data = cdrom_dirent_load(dir);
-	if(!data)
-		return 0;
-
-	int data_length = cddir->length;
+	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
 	int total = 0;
 
-	struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) data;
+	int i;
+	for(i=0;i<nsectors;i++) {
+		cdrom_dirent_read_block(dir,temp,i);
 
-	while(data_length > 0 && d->descriptor_length > 0 && buffer_length > 0) {
-		fix_filename(d->ident, d->ident_length);
+		struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) temp;
 
-		if(d->ident[0] == 0) {
-			if (buffer_length < 2) {
-				buffer_length = 0;
-				continue;
+		while(d->descriptor_length > 0 && buffer_length > 0) {
+
+			const char *dname;
+			int dname_length;
+
+			if(d->ident[0] == 0) {
+				dname = ".";
+				dname_length = 2;
+			} else if(d->ident[0] == 1) {
+				dname = "..";
+				dname_length = 3;
+			} else {
+				fix_filename(d->ident, d->ident_length);
+				dname = d->ident;
+				dname_length = strlen(dname) + 1;
 			}
-			strcpy(buffer, ".");
-			buffer += 2;
-			buffer_length -= 2;
-			total += 2;
-		} else if(d->ident[0] == 1) {
-			if (buffer_length < 3) {
-				buffer_length = 0;
-				continue;
+
+			// If there is enough space, keep copying items.
+			// If not, count them up to return the value.
+
+			if (buffer_length > dname_length) {
+				strcpy(buffer,dname);
+				buffer += dname_length;
+				buffer_length -= dname_length;
 			}
-			strcpy(buffer, "..");
-			buffer += 3;
-			buffer_length -= 3;
-			total += 3;
-		} else {
-			int len = strlen(d->ident) + 1;
-			if (buffer_length < len) {
-				buffer_length = 0;
-				continue;
-			}
-			strcpy(buffer, d->ident);
-			strtolower(buffer);
-			buffer += len;
-			buffer_length -= len;
-			total += len;
+
+			total += dname_length;
+
+			d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
 		}
-		d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
-		data_length -= d->descriptor_length;
 	}
 
-	kfree(data);
+	memory_free_page(temp);
 
 	return total;
-}
-
-int strcmp_cdrom_ident(const char *ident, const char *s)
-{
-	if(ident[0] == 0 && (strcmp(s, ".") == 0)) {
-		return 0;
-	}
-	if(ident[0] == 1 && (strcmp(s, "..") == 0)) {
-		return 0;
-	}
-	return strcmp(ident, s);
 }
 
 static int cdrom_dirent_close(struct fs_dirent *d)
