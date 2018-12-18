@@ -150,7 +150,7 @@ int keyboard_device_read_nonblock( int unit, void *data, int size, int offset)
 	int i;
 	char *cdata = data;
 	for(i = 0; i < size; i++) {
-		cdata[i] = keyboard_read(0);
+		cdata[i] = keyboard_read(1);
 		if(cdata[i]==-1) return i;
 	}
 	return size;
