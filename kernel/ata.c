@@ -400,7 +400,7 @@ static int ata_identify(int id, int command, void *buffer)
 }
 
 
-int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
+int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 {
 	uint16_t buffer[256];
 	char *cbuffer = (char *) buffer;
@@ -465,7 +465,7 @@ void ata_init()
 {
 	int i;
 
-	unsigned int nblocks;
+	int nblocks;
 	int blocksize = 0;
 
 	char longname[256];

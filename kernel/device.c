@@ -4,73 +4,123 @@
  * for details. 
  */
 
-
 #include "device.h"
 #include "string.h"
 #include "ata.h"
 #include "cdromfs.h"
 #include "keyboard.h"
+#include "memory.h"
+#include "serial.h"
+#include "kmalloc.h"
+
 #include "kernel/types.h"
 #include "kernel/error.h"
 
-#define ATA_DEVICE_COUNT   4
-#define ATAPI_DEVICE_COUNT 4
+struct device_driver {
+	const char *name;
+	int (*probe) ( int unit, int *nblocks, int *blocksize, char *info );
+	int (*read) ( int unit, void *buffer, int nblocks, int block_offset);
+	int (*read_nonblock) ( int unit, void *buffer, int nblocks, int block_offset);
+	int (*write) ( int unit, const void *buffer, int nblocks, int block_offset);
+};
 
-static struct device ata_devices[ATA_DEVICE_COUNT] = { {0} };
-static struct device atapi_devices[ATAPI_DEVICE_COUNT] = { {0} };
+struct device {
+	struct device_driver *driver;
+	int unit;
+	int block_size;
+	int nblocks;
+	int multiplier;
+};
 
-int ata_device_read(struct device *d, void *data, int nblocks, int offset)
+struct device_driver drivers[] = {
 {
-	return ata_read(d->unit, data, nblocks, offset);
-}
-
-int ata_device_write(struct device *d, const void *data, int nblocks, int offset)
+	"ata",
+	ata_probe,
+	ata_read,
+	ata_read,
+	ata_write
+},
 {
-	return ata_write(d->unit, data, nblocks, offset);
-}
-
-int atapi_device_read(struct device *d, void *data, int nblocks, int offset)
+	"atapi",
+	ata_probe,
+	atapi_read,
+	atapi_read,
+	0,
+},
 {
-	return atapi_read(d->unit, data, nblocks, offset);
-}
+	"serial",
+	serial_device_probe,
+	serial_device_read,
+	serial_device_read,
+	serial_device_write
+},
+{
+	"keyboard",
+	keyboard_device_probe,
+	keyboard_device_read,
+	keyboard_device_read_nonblock,
+	0,
+},
+	{0,0,0,0}
+};
+
 
 void device_init()
 {
-	int i;
-	for(i = 0; i < ATAPI_DEVICE_COUNT; i++) {
-		atapi_devices[i].read = atapi_device_read;
-		atapi_devices[i].write = 0;
-		atapi_devices[i].unit = i;
-		atapi_devices[i].block_size = CDROM_BLOCK_SIZE;
-	}
-	for(i = 0; i < ATA_DEVICE_COUNT; i++) {
-		ata_devices[i].read = ata_device_read;
-		ata_devices[i].write = ata_device_write;
-		ata_devices[i].unit = i;
-		ata_devices[i].block_size = ATA_BLOCKSIZE;
-	}
 }
 
-struct device *device_open(char *name, int unit)
+static struct device *device_create( struct device_driver *dd, int unit, int nblocks, int block_size )
 {
-	if(!strcmp("ATA", name)) {
-		if(unit >= 0 && unit < ATA_DEVICE_COUNT) {
-			return &ata_devices[unit];
+	struct device *d = kmalloc(sizeof(*d));
+	d->driver = dd;
+	d->unit = unit;
+	d->block_size = block_size;
+	d->nblocks = nblocks;
+	d->multiplier = 1;
+	return d;
+}
+
+
+struct device *device_open( const char *name, int unit )
+{
+	int i;
+	int nblocks, block_size;
+	char info[64];
+
+	for(i=0;drivers[i].name;i++) {
+		struct device_driver *dd = &drivers[i];
+		if(!strcmp(dd->name,name)) {
+			if(dd->probe(unit,&nblocks,&block_size,info)) {
+				return device_create(dd,unit,nblocks,block_size);
+			} else {
+				return 0;
+			}
 		}
-		return 0;
-	} else if(!strcmp("ATAPI", name)) {
-		if(unit >= 0 && unit < ATAPI_DEVICE_COUNT) {
-			return &atapi_devices[unit];
-		}
-		return 0;
 	}
+
 	return 0;
+}
+
+int device_set_multiplier( struct device *d, int multiplier )
+{
+	if(multiplier<1 || multiplier*d->block_size>PAGE_SIZE ) {
+		return KERROR_INVALID_REQUEST;
+	}
+
+	d->multiplier = multiplier;
+
+	return 0;
+}
+
+void device_close( struct device *d )
+{
+	kfree(d);
 }
 
 int device_read(struct device *d, void *data, int size, int offset)
 {
-	if(d->read) {
-		return d->read(d,data,size,offset);
+	if(d->driver->read) {
+		return d->driver->read(d->unit,data,size*d->multiplier,offset/d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
@@ -78,8 +128,8 @@ int device_read(struct device *d, void *data, int size, int offset)
 
 int device_read_nonblock(struct device *d, void *data, int size, int offset)
 {
-	if(d->read_nonblock) {
-		return d->read_nonblock(d,data,size,offset);
+	if(d->driver->read_nonblock) {
+		return d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset/d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
@@ -87,8 +137,8 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 
 int device_write(struct device *d, const void *data, int size, int offset)
 {
-	if(d->write) {
-		return d->write(d,data,size,offset);
+	if(d->driver->write) {
+		return d->driver->write(d->unit,data,size*d->multiplier,offset/d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
@@ -96,5 +146,20 @@ int device_write(struct device *d, const void *data, int size, int offset)
 
 int device_block_size( struct device *d )
 {
-	return d->block_size;
+	return d->block_size*d->multiplier;
+}
+
+int device_nblocks( struct device *d )
+{
+	return d->nblocks/d->multiplier;
+}
+
+int device_unit( struct device *d )
+{
+	return d->unit;
+}
+
+const char * device_name( struct device *d )
+{
+	return d->driver->name;
 }
