@@ -457,7 +457,7 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 	/* Get disk size in megabytes*/
 	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
-	printf("ata unit %d: %s %u blocks %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
+	printf("ata unit %d: %s %u sectors %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
 	return 1;
 }
 
@@ -466,7 +466,8 @@ static struct device_driver ata_driver = {
 	.probe         = ata_probe,
 	.read          = ata_read,
 	.read_nonblock = ata_read,
-	.write         = ata_write
+	.write         = ata_write,
+	.multiplier    = 8
 };
 
 static struct device_driver atapi_driver = {

@@ -39,7 +39,20 @@ static struct device *device_create( struct device_driver *dd, int unit, int nbl
 	d->unit = unit;
 	d->block_size = block_size;
 	d->nblocks = nblocks;
-	d->multiplier = 1;
+
+/*
+If the device driver specifies a non-zero default multiplier,
+then save it in this device instance.  It gives the effect of
+multiplying the block size, typically from the 512 ATA sector
+size, up to the usual 4KB page size.  See the effect below
+in read/write.
+*/
+
+	if(dd->multiplier>0) {
+		d->multiplier = dd->multiplier;
+	} else {
+		d->multiplier = 1;
+	}
 	return d;
 }
 
@@ -82,7 +95,7 @@ void device_close( struct device *d )
 int device_read(struct device *d, void *data, int size, int offset)
 {
 	if(d->driver->read) {
-		return d->driver->read(d->unit,data,size*d->multiplier,offset/d->multiplier);
+		return d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
@@ -91,7 +104,7 @@ int device_read(struct device *d, void *data, int size, int offset)
 int device_read_nonblock(struct device *d, void *data, int size, int offset)
 {
 	if(d->driver->read_nonblock) {
-		return d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset/d->multiplier);
+		return d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
@@ -100,7 +113,7 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 int device_write(struct device *d, const void *data, int size, int offset)
 {
 	if(d->driver->write) {
-		return d->driver->write(d->unit,data,size*d->multiplier,offset/d->multiplier);
+		return d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}

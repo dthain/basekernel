@@ -15,6 +15,7 @@ struct device_driver {
 	int (*read) ( int unit, void *buffer, int nblocks, int block_offset);
 	int (*read_nonblock) ( int unit, void *buffer, int nblocks, int block_offset);
 	int (*write) ( int unit, const void *buffer, int nblocks, int block_offset);
+	int multiplier;
 	struct device_driver *next;
 };
 
