@@ -6,11 +6,7 @@
 
 #include "device.h"
 #include "string.h"
-#include "ata.h"
-#include "cdromfs.h"
-#include "keyboard.h"
 #include "memory.h"
-#include "serial.h"
 #include "kmalloc.h"
 
 #include "kernel/types.h"
