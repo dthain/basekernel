@@ -11,10 +11,20 @@ See the file LICENSE for details.
 #include "string.h"
 #include "hash_set.h"
 #include "fs.h"
+#include "bcache.h"
 
 #define RESERVED_BIT_TABLE_LEN 1031
 #define CONTAINERS(total, container_size) \
 	(total / container_size + (total % container_size == 0 ? 0 : 1))
+
+/*
+The hash set is used to store pointers to values,
+but here it is being used to track keys with no values.
+To distinguish between "no value" and "a value", we
+store the opaque pointer HASH_MARKER
+*/
+
+#define HASH_MARKER ((void*)0xffffffff)
 
 static uint32_t ceiling(double d)
 {
@@ -74,14 +84,18 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 {
-	uint32_t num_blocks = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	return device_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
+	uint32_t num_blocks = factor;
+	index = index * factor;
+	return bcache_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
 int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
-	uint32_t num_blocks = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	return device_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
+	uint32_t num_blocks = factor;
+	index = index * factor;
+	return bcache_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
 }
 
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
@@ -137,7 +151,7 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	uint32_t counter = 0;
 	printf("Writing inode bitmap...\n");
 	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
-		if(!device_write(device, zeros, 1, i))
+		if(!kevinfs_ata_write_block(device, i, zeros))
 			return -1;
 		counter++;
 	}
@@ -145,12 +159,15 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	counter = 0;
 	printf("Writing free block bitmap...\n");
 	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
-		if(!device_write(device, zeros, 1, i))
+		if(!kevinfs_ata_write_block(device, i, zeros))
 			return -1;
 		counter++;
 	}
+	printf("writing superblock...\n");
+	kevinfs_ata_write_block(device, 0, wbuffer);
+	counter++;
 	printf("%u blocks written\n", counter);
-	return kevinfs_ata_write_block(device, 0, wbuffer);
+	return counter;
 }
 
 int kevinfs_ata_format(struct device *device)
@@ -497,7 +514,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 			return 0;
 		}
 		for(i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
-			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
+			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + (i + FS_DIRECT_MAXBLOCKS) * FS_BLOCKSIZE) < 0) {
 				kevinfs_dir_dealloc(res);
 				return 0;
 			}
@@ -606,6 +623,8 @@ static int kevinfs_dirent_resize(struct fs_dirent *d, uint32_t size)
 static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
 	struct kevinfs_dir_record *iter = dir_list->list, *prev = 0;
+	if (!dir_list->list_len)
+		return 0;
 	while(strcmp(iter->filename, filename) < 0) {
 		prev = iter;
 		if(iter->offset_to_next == 0)
@@ -618,6 +637,8 @@ static struct kevinfs_dir_record *kevinfs_lookup_dir_prev(const char *filename, 
 static struct kevinfs_dir_record *kevinfs_lookup_dir_exact(const char *filename, struct kevinfs_dir_record_list *dir_list)
 {
 	struct kevinfs_dir_record *iter = dir_list->list, *prev = 0;
+	if (!dir_list->list_len)
+		return 0;
 	while(strcmp(iter->filename, filename) <= 0) {
 		prev = iter;
 		if(iter->offset_to_next == 0)
@@ -646,19 +667,19 @@ static int kevinfs_dir_record_insert_after(struct kevinfs_dir_record_list *dir_l
 			new_pos->offset_to_next = 0;
 
 		new_prev->offset_to_next = new_pos - new_prev;
-		hash_set_add(dir_list->changed, (new_prev - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-		hash_set_add(dir_list->changed, ((new_prev - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, (new_prev - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+		hash_set_add(dir_list->changed, ((new_prev - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 	} else {
 		memcpy(new_pos, new_list, sizeof(struct kevinfs_dir_record));
 		new_pos->offset_to_next = new_pos - new_list;
 		memcpy(new_list, new, sizeof(struct kevinfs_dir_record));
 		new_list->offset_to_next = new_list - new_pos;
 
-		hash_set_add(dir_list->changed, 0, 0);
-		hash_set_add(dir_list->changed, (sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, 0, HASH_MARKER);
+		hash_set_add(dir_list->changed, (sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 	}
-	hash_set_add(dir_list->changed, (new_pos - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-	hash_set_add(dir_list->changed, ((new_pos - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, (new_pos - new_list) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+	hash_set_add(dir_list->changed, ((new_pos - new_list + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
 	kfree(list);
 	dir_list->list = new_list;
@@ -691,11 +712,11 @@ static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
 		if(to_rm->offset_to_next != 0)
 			to_rm->offset_to_next = to_rm->offset_to_next + (last - to_rm);
 
-		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, (to_rm - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+		hash_set_add(dir_list->changed, ((to_rm - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
-		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+		hash_set_add(dir_list->changed, (last_prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+		hash_set_add(dir_list->changed, ((last_prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
 	}
 
@@ -706,11 +727,11 @@ static int kevinfs_dir_record_rm_after(struct kevinfs_dir_record_list *dir_list,
 
 	memset(last, 0, sizeof(struct kevinfs_dir_record));
 
-	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, (last - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+	hash_set_add(dir_list->changed, ((last - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
-	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, 0);
-	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir_list->changed, (prev - list_head) * sizeof(struct kevinfs_dir_record) / FS_BLOCKSIZE, HASH_MARKER);
+	hash_set_add(dir_list->changed, ((prev - list_head + 1) * sizeof(struct kevinfs_dir_record) - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
 	dir_list->list_len--;
 	return 0;
@@ -813,8 +834,8 @@ static struct kevinfs_dir_record_list *kevinfs_create_empty_dir(struct kevinfs_i
 	records[1].offset_to_next = 0;
 	records[1].is_directory = 1;
 
-	hash_set_add(dir->changed, 0, 0);
-	hash_set_add(dir->changed, (sizeof(struct kevinfs_dir_record) * FS_EMPTY_DIR_SIZE - 1) / FS_BLOCKSIZE, 0);
+	hash_set_add(dir->changed, 0, HASH_MARKER);
+	hash_set_add(dir->changed, (sizeof(struct kevinfs_dir_record) * FS_EMPTY_DIR_SIZE - 1) / FS_BLOCKSIZE, HASH_MARKER);
 
 	return dir;
 }
@@ -1056,6 +1077,9 @@ static int kevinfs_mkfs(int unit_no)
 		ret = !kevinfs_writedir(kd, top_dir) && !kevinfs_save_dirent(kd);
 	}
 
+	printf("flushing dirty blocks...\n");
+	bcache_flush_device(kv->device);
+
 	if(kd)
 		kfree(kd);
 	if(kv)
@@ -1096,6 +1120,7 @@ static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 static int kevinfs_umount(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
+	bcache_flush_device(kv->device);
 	struct kevinfs_inode *node = kevinfs_lookup_inode(kv, kv->root_inode_num);
 	kfree(node);
 	kfree(kv);

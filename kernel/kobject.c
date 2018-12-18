@@ -10,6 +10,7 @@
 #include "fs.h"
 #include "device.h"
 #include "library/string.h"
+#include "kernel/error.h"
 
 static struct kobject *kobject_init();
 
@@ -40,6 +41,14 @@ struct kobject *kobject_create_graphics(struct graphics *g)
 	return k;
 }
 
+struct kobject *kobject_create_console(struct console *c)
+{
+	struct kobject *k = kobject_init();
+	k->type = KOBJECT_CONSOLE;
+	k->data.console = c;
+	return k;
+}
+
 struct kobject *kobject_create_pipe(struct pipe *p)
 {
 	struct kobject *k = kobject_init();
@@ -58,7 +67,6 @@ static struct kobject *kobject_init()
 	return k;
 }
 
-
 struct kobject *kobject_addref(struct kobject *k)
 {
 	k->refcount++;
@@ -72,10 +80,13 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		break;
 	case KOBJECT_GRAPHICS:
 		break;
+	case KOBJECT_CONSOLE:
+		return 0;
 	case KOBJECT_FILE:{
 			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 			break;
 		}
 	case KOBJECT_DEVICE:
@@ -92,6 +103,8 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_INVALID:
 		return 0;
 	case KOBJECT_GRAPHICS:
+		return 0;
+	case KOBJECT_CONSOLE:
 		return 0;
 	case KOBJECT_FILE:
 		return 0;
@@ -110,10 +123,13 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 		return 0;
 	case KOBJECT_GRAPHICS:
 		return graphics_write(kobject->data.graphics, (struct graphics_command *) buffer);
+	case KOBJECT_CONSOLE:
+		return console_write(kobject->data.console, buffer, size );
 	case KOBJECT_FILE:{
 			int actual = fs_file_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
+			return actual;
 		}
 	case KOBJECT_DEVICE:
 		return device_write(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
@@ -131,6 +147,10 @@ int kobject_close(struct kobject *kobject)
 		case KOBJECT_INVALID:
 			return 0;
 		case KOBJECT_GRAPHICS:
+			// XXX delete graphics object?
+			return 0;
+		case KOBJECT_CONSOLE:
+			console_delete(kobject->data.console);
 			return 0;
 		case KOBJECT_FILE:
 			ret = fs_file_close(kobject->data.file);
@@ -147,6 +167,8 @@ int kobject_close(struct kobject *kobject)
 		case KOBJECT_INVALID:
 			return 0;
 		case KOBJECT_GRAPHICS:
+			return 0;
+		case KOBJECT_CONSOLE:
 			return 0;
 		case KOBJECT_FILE:
 			return 0;
@@ -167,6 +189,8 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 		return 0;
 	case KOBJECT_GRAPHICS:
 		return 0;
+	case KOBJECT_CONSOLE:
+		return 0;
 	case KOBJECT_FILE:
 		return 0;
 	case KOBJECT_DEVICE:
@@ -184,7 +208,14 @@ int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 		return 0;
 	case KOBJECT_GRAPHICS:
 		return graphics_get_dimensions(kobject->data.graphics, dims, n);
+	case KOBJECT_CONSOLE:
+		if(n==2) {
+			console_size(kobject->data.console,&dims[0],&dims[1]);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_FILE:
+		// XXX Make this fs_file_size instead.
 		return fs_file_get_dimensions(kobject->data.file, dims, n);
 	case KOBJECT_DEVICE:
 		return 0;

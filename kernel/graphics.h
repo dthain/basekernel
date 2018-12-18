@@ -47,7 +47,7 @@ void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int3
 void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
 void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
 void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
-void graphics_char(struct graphics *g, int32_t x, int32_t y, char c);
+void graphics_char(struct graphics *g, int32_t x, int32_t y, unsigned char c);
 
 int graphics_write(struct graphics *g, struct graphics_command *command);
 

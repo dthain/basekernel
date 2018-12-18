@@ -1,6 +1,6 @@
 include ../Makefile.config
 
-KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs.o hash_set.o kevinfs_test.o serial.o elf.o device.o kobject.o buffer.o pipe.o
+KERNEL_OBJECTS=kernelcore.o main.o console.o memory.o keyboard.o mouse.o clock.o interrupt.o kmalloc.o pic.o ata.o cdromfs.o string.o bitmap.o graphics.o font.o syscall_handler.o process.o mutex.o list.o pagetable.o rtc.o kshell.o fs.o kevinfs.o hash_set.o kevinfs_test.o serial.o elf.o device.o kobject.o pipe.o bcache.o printf.o
 
 basekernel.img: bootblock kernel
 	cat bootblock kernel /dev/zero | head -c 1474560 > basekernel.img
