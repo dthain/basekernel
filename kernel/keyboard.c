@@ -157,10 +157,10 @@ int keyboard_device_read_nonblock( int unit, void *data, int size, int offset)
 }
 
 static struct device_driver keyboard_driver = {
-	"keyboard",
-	keyboard_device_probe,
-	keyboard_device_read,
-	keyboard_device_read_nonblock,
+	.name          = "keyboard",
+	.probe         = keyboard_device_probe,
+	.read          = keyboard_device_read,
+	.read_nonblock = keyboard_device_read_nonblock,
 	0,
 };
 

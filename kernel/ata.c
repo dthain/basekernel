@@ -462,19 +462,18 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 }
 
 static struct device_driver ata_driver = {
-	"ata",
-	ata_probe,
-	ata_read,
-	ata_read,
-	ata_write
+	.name          = "ata",
+	.probe         = ata_probe,
+	.read          = ata_read,
+	.read_nonblock = ata_read,
+	.write         = ata_write
 };
 
 static struct device_driver atapi_driver = {
-	"atapi",
-	ata_probe,
-	atapi_read,
-	atapi_read,
-	0,
+	.name          = "atapi",
+	.probe         = ata_probe,
+	.read          = atapi_read,
+	.read_nonblock = atapi_read,
 };
 
 void ata_init()

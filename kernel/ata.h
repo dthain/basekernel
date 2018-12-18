@@ -21,11 +21,12 @@ void ata_init();
 
 struct ata_count ata_stats();
 void ata_reset(int unit);
-int ata_probe(int unit, int *nblocks, int *blocksize, char *name);
 
+int ata_probe(int unit, int *nblocks, int *blocksize, char *name);
 int ata_read(int unit, void *buffer, int nblocks, int offset);
 int ata_write(int unit, const void *buffer, int nblocks, int offset);
-int atapi_read(int unit, void *buffer, int nblocks, int offset);
 
+int atapi_probe(int unit, int *nblocks, int *blocksize, char *name);
+int atapi_read(int unit, void *buffer, int nblocks, int offset);
 
 #endif

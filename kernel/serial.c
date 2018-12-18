@@ -138,11 +138,11 @@ int serial_device_write( int unit, const void *data, int length, int offset )
 }
 
 static struct device_driver serial_driver = {
-	"serial",
-	serial_device_probe,
-	serial_device_read,
-	serial_device_read,
-	serial_device_write
+       .name           = "serial",
+       .probe          = serial_device_probe,
+       .read           = serial_device_read,
+       .read_nonblock  = serial_device_read,
+       .write          = serial_device_write
 };
 
 void serial_init()
