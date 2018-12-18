@@ -461,6 +461,22 @@ int ata_probe( int id, int *nblocks, int *blocksize, char *name )
 	return 1;
 }
 
+static struct device_driver ata_driver = {
+	"ata",
+	ata_probe,
+	ata_read,
+	ata_read,
+	ata_write
+};
+
+static struct device_driver atapi_driver = {
+	"atapi",
+	ata_probe,
+	atapi_read,
+	atapi_read,
+	0,
+};
+
 void ata_init()
 {
 	int i;
@@ -487,4 +503,7 @@ void ata_init()
 	for(i = 0; i < 4; i++) {
 		ata_probe(i, &nblocks, &blocksize, longname);
 	}
+
+	device_driver_register(&ata_driver);
+	device_driver_register(&atapi_driver);
 }

@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "kernel/ascii.h"
 #include "process.h"
+#include "device.h"
 #include "kernelcore.h"
 
 #define KEYBOARD_PORT 0x60
@@ -121,14 +122,6 @@ char keyboard_read( int non_blocking )
 	return c;
 }
 
-void keyboard_init()
-{
-	interrupt_register(33, keyboard_interrupt);
-	interrupt_enable(33);
-	printf("keyboard: ready\n");
-}
-
-
 int keyboard_device_probe( int unit, int *nblocks, int *blocksize, char *name )
 {
        if(unit==0) {
@@ -162,4 +155,23 @@ int keyboard_device_read_nonblock( int unit, void *data, int size, int offset)
 	}
 	return size;
 }
+
+static struct device_driver keyboard_driver = {
+	"keyboard",
+	keyboard_device_probe,
+	keyboard_device_read,
+	keyboard_device_read_nonblock,
+	0,
+};
+
+void keyboard_init()
+{
+	interrupt_register(33, keyboard_interrupt);
+	interrupt_enable(33);
+	device_driver_register(&keyboard_driver);
+	printf("keyboard: ready\n");
+}
+
+
+
 

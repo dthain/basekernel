@@ -50,7 +50,6 @@ int kernel_main()
 	memory_init();
 	kmalloc_init((char *) KMALLOC_START, KMALLOC_LENGTH);
 	interrupt_init();
-	device_init();
 	rtc_init();
 	clock_init();
 	mouse_init();

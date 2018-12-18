@@ -16,13 +16,7 @@
 #include "kernel/types.h"
 #include "kernel/error.h"
 
-struct device_driver {
-	const char *name;
-	int (*probe) ( int unit, int *nblocks, int *blocksize, char *info );
-	int (*read) ( int unit, void *buffer, int nblocks, int block_offset);
-	int (*read_nonblock) ( int unit, void *buffer, int nblocks, int block_offset);
-	int (*write) ( int unit, const void *buffer, int nblocks, int block_offset);
-};
+static struct device_driver *driver_list = 0;
 
 struct device {
 	struct device_driver *driver;
@@ -32,41 +26,10 @@ struct device {
 	int multiplier;
 };
 
-struct device_driver drivers[] = {
+void device_driver_register( struct device_driver *d )
 {
-	"ata",
-	ata_probe,
-	ata_read,
-	ata_read,
-	ata_write
-},
-{
-	"atapi",
-	ata_probe,
-	atapi_read,
-	atapi_read,
-	0,
-},
-{
-	"serial",
-	serial_device_probe,
-	serial_device_read,
-	serial_device_read,
-	serial_device_write
-},
-{
-	"keyboard",
-	keyboard_device_probe,
-	keyboard_device_read,
-	keyboard_device_read_nonblock,
-	0,
-},
-	{0,0,0,0}
-};
-
-
-void device_init()
-{
+	d->next = driver_list;
+	driver_list = d;
 }
 
 static struct device *device_create( struct device_driver *dd, int unit, int nblocks, int block_size )
@@ -80,15 +43,14 @@ static struct device *device_create( struct device_driver *dd, int unit, int nbl
 	return d;
 }
 
-
 struct device *device_open( const char *name, int unit )
 {
-	int i;
 	int nblocks, block_size;
 	char info[64];
 
-	for(i=0;drivers[i].name;i++) {
-		struct device_driver *dd = &drivers[i];
+	struct device_driver *dd = driver_list;
+
+	for(dd=driver_list;dd;dd=dd->next) {
 		if(!strcmp(dd->name,name)) {
 			if(dd->probe(unit,&nblocks,&block_size,info)) {
 				return device_create(dd,unit,nblocks,block_size);

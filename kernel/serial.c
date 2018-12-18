@@ -6,6 +6,7 @@
 #include "kernel/types.h"
 #include "ioports.h"
 #include "string.h"
+#include "device.h"
 
 #define COM1 0x3f8
 #define COM2 0x2F8
@@ -86,14 +87,6 @@ static int is_valid_port(uint8_t port_no)
 	return port_no < sizeof(serial_ports) / sizeof(int);
 }
 
-void serial_init()
-{
-	int i;
-	for(i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
-		serial_init_port(serial_ports[i]);
-	}
-}
-
 char serial_read(uint8_t port_no)
 {
 	if(!is_valid_port(port_no))
@@ -143,3 +136,22 @@ int serial_device_write( int unit, const void *data, int length, int offset )
 	}
 	return length;
 }
+
+static struct device_driver serial_driver = {
+	"serial",
+	serial_device_probe,
+	serial_device_read,
+	serial_device_read,
+	serial_device_write
+};
+
+void serial_init()
+{
+	int i;
+	for(i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
+		serial_init_port(serial_ports[i]);
+	}
+	device_driver_register(&serial_driver);
+}
+
+

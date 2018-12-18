@@ -9,7 +9,16 @@
 
 #include "kernel/types.h"
 
-void device_init();
+struct device_driver {
+	const char *name;
+	int (*probe) ( int unit, int *nblocks, int *blocksize, char *info );
+	int (*read) ( int unit, void *buffer, int nblocks, int block_offset);
+	int (*read_nonblock) ( int unit, void *buffer, int nblocks, int block_offset);
+	int (*write) ( int unit, const void *buffer, int nblocks, int block_offset);
+	struct device_driver *next;
+};
+
+void device_driver_register( struct device_driver *d );
 
 struct device *device_open(const char *name, int unit);
 void device_close( struct device *d );
