@@ -221,24 +221,28 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		if(n==2) {
 			dims[0] = graphics_width(kobject->data.graphics);
 			dims[1] = graphics_height(kobject->data.graphics);
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_CONSOLE:
 		if(n==2) {
 			console_size(kobject->data.console,&dims[0],&dims[1]);
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_FILE:
 		if(n==1) {
 			dims[0] = fs_file_size(kobject->data.file);
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_DIR:
 		if(n==1) {
 			dims[0] = fs_dirent_size(kobject->data.dir);
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
@@ -246,12 +250,14 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		if(n==2) {
 			dims[0] = device_nblocks(kobject->data.device);
 			dims[1] = device_block_size(kobject->data.device);
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_PIPE:
 		if(n==1) {
 			dims[0] = PIPE_SIZE;
+			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
