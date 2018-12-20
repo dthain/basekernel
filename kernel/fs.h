@@ -40,8 +40,8 @@ struct fs_dirent *fs_resolve(const char *path);
 
 void fs_register(struct fs *f);
 struct fs *fs_lookup(const char *name);
-int fs_mkfs(struct fs *f, struct device *d);
 
+int fs_volume_format(struct fs *f, struct device *d);
 struct fs_volume *fs_volume_open(struct fs *f, struct device *d );
 struct fs_volume *fs_volume_addref(struct fs_volume *v);
 struct fs_dirent *fs_volume_root(struct fs_volume *);
@@ -68,10 +68,11 @@ int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
 
 struct fs_ops {
-	struct fs_dirent *(*root) (struct fs_volume * d);
-	struct fs_volume *(*mount) (struct device *d);
-	int (*umount) (struct fs_volume * d);
-	int (*mkfs) (struct device *d);
+	struct fs_dirent *(*volume_root) (struct fs_volume * d);
+	struct fs_volume *(*volume_open) (struct device *d);
+	int (*volume_close) (struct fs_volume * d);
+	int (*volume_format) (struct device *d);
+
 	int (*close) (struct fs_dirent * d);
 	int (*mkdir) (struct fs_dirent * d, const char *name);
 	int (*mkfile) (struct fs_dirent * d, const char *name);

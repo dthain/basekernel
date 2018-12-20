@@ -247,15 +247,16 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 static int cdrom_volume_close(struct fs_volume *v)
 {
 	struct cdrom_volume *cdv = v->private_data;
-	printf("cdromfs: unmounted filesystem from %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
+	printf("cdromfs: unvolume_opened filesystem from %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
 	kfree(v);
 	return 0;
 }
 
 const static struct fs_ops cdrom_ops = {
-	.mount = cdrom_volume_open,
-	.umount = cdrom_volume_close,
-	.root = cdrom_volume_root,
+	.volume_open = cdrom_volume_open,
+	.volume_close = cdrom_volume_close,
+	.volume_root = cdrom_volume_root,
+
 	.close = cdrom_dirent_close,
 	.readdir = cdrom_dirent_read_dir,
 	.lookup = cdrom_dirent_lookup,

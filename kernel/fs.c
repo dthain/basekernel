@@ -35,20 +35,20 @@ struct fs *fs_lookup(const char *name)
 	return 0;
 }
 
-int fs_mkfs(struct fs *f, struct device *d )
+int fs_volume_format(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
-	if(!ops->mkfs)
+	if(!ops->volume_format)
 		return KERROR_NOT_IMPLEMENTED;
-	return f->ops->mkfs(d);
+	return f->ops->volume_format(d);
 }
 
 struct fs_volume *fs_volume_open(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
-	if(!ops->mount)
+	if(!ops->volume_open)
 		return 0;
-	struct fs_volume *v = f->ops->mount(d);
+	struct fs_volume *v = f->ops->volume_open(d);
 	if(v)
 		v->fs = f;
 	return v;
@@ -63,22 +63,22 @@ struct fs_volume *fs_volume_addref(struct fs_volume *v)
 int fs_volume_close(struct fs_volume *v)
 {
 	const struct fs_ops *ops = v->fs->ops;
-	if(!ops->umount)
+	if(!ops->volume_close)
 		return KERROR_NOT_IMPLEMENTED;
 
 	v->refcount--;
 	if(v->refcount <= 0)
-		return v->fs->ops->umount(v);
+		return v->fs->ops->volume_close(v);
 	return -1;
 }
 
 struct fs_dirent *fs_volume_root(struct fs_volume *v)
 {
 	const struct fs_ops *ops = v->fs->ops;
-	if(!ops->root)
+	if(!ops->volume_root)
 		return 0;
 
-	struct fs_dirent *d = v->fs->ops->root(v);
+	struct fs_dirent *d = v->fs->ops->volume_root(v);
 	d->v = fs_volume_addref(v);
 	return d;
 }

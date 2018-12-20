@@ -855,7 +855,7 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 	return record;
 }
 
-static struct fs_volume *kevinfs_mount( struct device *device )
+static struct fs_volume *kevinfs_volume_open( struct device *device )
 {
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
 	if(!super)
@@ -1049,7 +1049,7 @@ static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *
 	return kevinfs_dirent_as_dirent(res);
 }
 
-static int kevinfs_mkfs( struct device * device )
+static int kevinfs_volume_format( struct device * device )
 {
 	struct kevinfs_dir_record_list *top_dir;
 	struct kevinfs_inode *first_node;
@@ -1104,7 +1104,7 @@ static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_vol
 	return kd;
 }
 
-static struct fs_dirent *kevinfs_root(struct fs_volume *v)
+static struct fs_dirent *kevinfs_volume_root(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
 	struct kevinfs_inode *node = kevinfs_lookup_inode(kv, kv->root_inode_num);
@@ -1112,7 +1112,7 @@ static struct fs_dirent *kevinfs_root(struct fs_volume *v)
 	return kd ? kevinfs_dirent_as_dirent(kd) : 0;
 }
 
-static int kevinfs_umount(struct fs_volume *v)
+static int kevinfs_volume_close(struct fs_volume *v)
 {
 	struct kevinfs_volume *kv = v->private_data;
 	bcache_flush_device(kv->device);
@@ -1160,10 +1160,11 @@ static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
 }
 
 static struct fs_ops kevinfs_ops = {
-	.mount = kevinfs_mount,
-	.umount = kevinfs_umount,
-	.mkfs = kevinfs_mkfs,
-	.root = kevinfs_root,
+	.volume_open = kevinfs_volume_open,
+	.volume_close = kevinfs_volume_close,
+	.volume_format = kevinfs_volume_format,
+	.volume_root = kevinfs_volume_root,
+
 	.readdir = kevinfs_read_dir,
 	.mkdir = kevinfs_mkdir,
 	.mkfile = kevinfs_mkfile,

@@ -208,7 +208,7 @@ static int kshell_execute(const char **argv, int argc)
 				if(f) {
 					struct device *d = device_open(argv[1],unit);
 					if(d) {
-						fs_mkfs(f,d);
+						fs_volume_format(f,d);
 					} else {
 						printf("couldn't open device %s unit %d\n",argv[1],unit);
 					}
