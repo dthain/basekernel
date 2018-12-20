@@ -134,8 +134,3 @@ const char * device_name( struct device *d )
 {
 	return d->driver->name;
 }
-
-int device_nblocks( struct device *d )
-{
-	return 0;
-}
