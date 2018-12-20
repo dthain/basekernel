@@ -93,7 +93,7 @@ int device_read(struct device *d, void *data, int size, int offset)
 	if(d->driver->read) {
 		return d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 }
 
@@ -102,7 +102,7 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 	if(d->driver->read_nonblock) {
 		return d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 }
 
@@ -111,7 +111,7 @@ int device_write(struct device *d, const void *data, int size, int offset)
 	if(d->driver->write) {
 		return d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 }
 

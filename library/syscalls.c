@@ -169,11 +169,6 @@ int readdir(const char *name, char *buffer, int n)
 	return syscall(SYSCALL_READDIR, (uint32_t) name, (uint32_t) buffer, (uint32_t) n, 0, 0);
 }
 
-int pwd(char *buffer)
-{
-	return syscall(SYSCALL_PWD, (uint32_t) buffer, 0, 0, 0, 0);
-}
-
 int process_reap(unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_REAP, pid, 0, 0, 0, 0);
@@ -194,9 +189,9 @@ int process_stats(struct proc_stats *s, unsigned int pid)
 	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
 }
 
-int get_dimensions(int fd, int *dims, int n)
+int size(int fd, int *dims, int n)
 {
-	return syscall(SYSCALL_GET_DIMENSIONS, fd, (uint32_t) dims, n, 0, 0);
+	return syscall(SYSCALL_SIZE, fd, (uint32_t) dims, n, 0, 0);
 }
 
 int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len)

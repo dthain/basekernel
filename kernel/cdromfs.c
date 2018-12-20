@@ -133,7 +133,7 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 	if(!cddir->isdir) return KERROR_NOT_A_DIRECTORY;
 
 	char *temp = memory_alloc_page(0);
-	if(!temp) return KERROR_NO_MEMORY;
+	if(!temp) return KERROR_OUT_OF_MEMORY;
 
 	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
 	int total = 0;

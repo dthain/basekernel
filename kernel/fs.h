@@ -50,10 +50,8 @@ struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode);
 struct fs_file *fs_file_addref(struct fs_file *f);
 int fs_file_read(struct fs_file *f, char *buffer, uint32_t length, uint32_t offset);
 int fs_file_write(struct fs_file *f, const char *buffer, uint32_t length, uint32_t offset);
+int fs_file_size(struct fs_file *f );
 int fs_file_close(struct fs_file *f);
-
-// Sets dimensions[0] to the file size
-int fs_file_get_dimensions(struct fs_file *f, int *dims, int n);
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
 struct fs_dirent *fs_dirent_addref(struct fs_dirent *d);
@@ -64,6 +62,7 @@ int fs_dirent_unlink(struct fs_dirent *d, const char *name);
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
+int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_close(struct fs_dirent *d);
 
 struct fs_ops {

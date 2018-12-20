@@ -7,21 +7,38 @@
 #include "console.h"
 #include "kobject.h"
 #include "kmalloc.h"
-#include "fs.h"
+
 #include "device.h"
+#include "fs.h"
+#include "graphics.h"
+#include "console.h"
+#include "pipe.h"
+
 #include "library/string.h"
 #include "kernel/error.h"
 
-static struct kobject *kobject_init();
+static struct kobject *kobject_init()
+{
+	struct kobject *k = kmalloc(sizeof(*k));
+	k->refcount = 1;
+	k->offset = 0;
+	k->intent = 0;
+	return k;
+}
 
 struct kobject *kobject_create_file(struct fs_file *f)
 {
 	struct kobject *k = kobject_init();
 	k->type = KOBJECT_FILE;
-	k->refcount = 1;
 	k->data.file = f;
-	k->offset = 0;
-	k->intent = 0;
+	return k;
+}
+
+struct kobject *kobject_create_dir( struct fs_dirent *d )
+{
+	struct kobject *k = kobject_init();
+	k->type = KOBJECT_DIR;
+	k->data.dir = d;
 	return k;
 }
 
@@ -57,61 +74,66 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 	return k;
 }
 
-// Helper function for constant initializations across all types of Kobjects.
-// SHOULD NOT BE CALLED ON ITS OWN, IT DOESN'T GENERATE A VALID KOBJECT.
-static struct kobject *kobject_init()
-{
-	struct kobject *k = kmalloc(sizeof(*k));
-	k->refcount = 1;
-	k->intent = 0;
-	return k;
-}
-
 struct kobject *kobject_addref(struct kobject *k)
 {
 	k->refcount++;
 	return k;
 }
 
+struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h )
+{
+	if(k->type!=KOBJECT_GRAPHICS) return 0;
+
+	struct graphics *g = graphics_create(k->data.graphics);
+	if(graphics_clip(g,x,y,w,h)) {
+		return kobject_create_graphics(g);
+	} else {
+		graphics_delete(g);
+		return 0;
+	}
+}
+
+struct kobject *kobject_create_console_from_graphics( struct kobject *k )
+{
+	if(k->type!=KOBJECT_GRAPHICS) return 0;
+	struct console *c = console_create(k->data.graphics);
+	if(!c) return 0;
+	return kobject_create_console(c);
+}
+
 int kobject_read(struct kobject *kobject, void *buffer, int size)
 {
+	int actual = 0;
+
 	switch (kobject->type) {
-	case KOBJECT_INVALID:
+	case KOBJECT_FILE:
+		actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
-	case KOBJECT_GRAPHICS:
-		break;
-	case KOBJECT_CONSOLE:
-		return 0;
-	case KOBJECT_FILE:{
-			int actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
-			if(actual > 0)
-				kobject->offset += actual;
-			return actual;
-			break;
-		}
 	case KOBJECT_DEVICE:
-		return device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device),0);
+		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		break;
 	case KOBJECT_PIPE:
-		return pipe_read(kobject->data.pipe, buffer, size);
+		actual = pipe_read(kobject->data.pipe, buffer, size);
+		break;
+	default:
+		actual = 0;
+		break;
 	}
-	return 0;
+
+	if(actual > 0) kobject->offset += actual;
+
+	return actual;
 }
 
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
-	case KOBJECT_INVALID:
-		return 0;
-	case KOBJECT_GRAPHICS:
-		return 0;
-	case KOBJECT_CONSOLE:
-		return 0;
-	case KOBJECT_FILE:
-		return 0;
 	case KOBJECT_DEVICE:
 		return device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 	case KOBJECT_PIPE:
 		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
+	default:
+		return kobject_read(kobject,buffer,size);
 	}
 	return 0;
 }
@@ -119,8 +141,6 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 int kobject_write(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
-	case KOBJECT_INVALID:
-		return 0;
 	case KOBJECT_GRAPHICS:
 		return graphics_write(kobject->data.graphics, (struct graphics_command *) buffer);
 	case KOBJECT_CONSOLE:
@@ -135,47 +155,45 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 		return device_write(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 	case KOBJECT_PIPE:
 		return pipe_write(kobject->data.pipe, buffer, size);
+	default:
+		return 0;
 	}
 	return 0;
 }
 
 int kobject_close(struct kobject *kobject)
 {
-	int ret;
-	if(--kobject->refcount <= 0) {
+	kobject->refcount--;
+
+	if(kobject->refcount<1) {
 		switch (kobject->type) {
-		case KOBJECT_INVALID:
-			return 0;
 		case KOBJECT_GRAPHICS:
 			// XXX delete graphics object?
-			return 0;
+			break;
 		case KOBJECT_CONSOLE:
 			console_delete(kobject->data.console);
-			return 0;
+			break;
 		case KOBJECT_FILE:
-			ret = fs_file_close(kobject->data.file);
-			kfree(kobject);
-			return ret;
+			fs_file_close(kobject->data.file);
+			break;
 		case KOBJECT_DEVICE:
-			return 0;
+			// XXX add device close once branch is merged
+			//device_close(kobject->data.device);
+			break;
 		case KOBJECT_PIPE:
 			pipe_close(kobject->data.pipe);
-			return 1;
+			break;
+		default:
+			break;
 		}
+		kfree(kobject);
+		return 0;
 	} else if(kobject->refcount == 1) {
 		switch (kobject->type) {
-		case KOBJECT_INVALID:
-			return 0;
-		case KOBJECT_GRAPHICS:
-			return 0;
-		case KOBJECT_CONSOLE:
-			return 0;
-		case KOBJECT_FILE:
-			return 0;
-		case KOBJECT_DEVICE:
-			return 0;
 		case KOBJECT_PIPE:
 			pipe_flush(kobject->data.pipe);
+			return 0;
+		default:
 			return 0;
 		}
 	}
@@ -185,29 +203,24 @@ int kobject_close(struct kobject *kobject)
 int kobject_set_blocking(struct kobject *kobject, int b)
 {
 	switch (kobject->type) {
-	case KOBJECT_INVALID:
-		return 0;
-	case KOBJECT_GRAPHICS:
-		return 0;
-	case KOBJECT_CONSOLE:
-		return 0;
-	case KOBJECT_FILE:
-		return 0;
-	case KOBJECT_DEVICE:
-		return 0;
 	case KOBJECT_PIPE:
 		return pipe_set_blocking(kobject->data.pipe, b);
+	default:
+		return 0;
 	}
 	return 0;
 }
 
-int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
+int kobject_size(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
-	case KOBJECT_INVALID:
-		return 0;
 	case KOBJECT_GRAPHICS:
-		return graphics_get_dimensions(kobject->data.graphics, dims, n);
+		if(n==2) {
+			dims[0] = graphics_width(kobject->data.graphics);
+			dims[1] = graphics_height(kobject->data.graphics);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_CONSOLE:
 		if(n==2) {
 			console_size(kobject->data.console,&dims[0],&dims[1]);
@@ -215,14 +228,32 @@ int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_FILE:
-		// XXX Make this fs_file_size instead.
-		return fs_file_get_dimensions(kobject->data.file, dims, n);
+		if(n==1) {
+			dims[0] = fs_file_size(kobject->data.file);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
+	case KOBJECT_DIR:
+		if(n==1) {
+			dims[0] = fs_dirent_size(kobject->data.dir);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_DEVICE:
-		return 0;
+		if(n==2) {
+			dims[0] = device_nblocks(kobject->data.device);
+			dims[1] = device_block_size(kobject->data.device);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_PIPE:
-		return 0;
+		if(n==1) {
+			dims[0] = PIPE_SIZE;
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	}
-	return 0;
+	return KERROR_INVALID_REQUEST;
 }
 
 int kobject_get_type(struct kobject *kobject)
@@ -248,3 +279,47 @@ int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 	}
 	return 0;
 }
+
+int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dirent **dir )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		*dir = fs_dirent_namei(kobject->data.dir,name);
+		if(*dir) {
+			return 0;
+		} else {
+			return KERROR_NOT_FOUND;
+		}
+	} else {
+		return KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
+int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dirent **dir )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		// XXX mkdir should return the newly created dirent.
+		int r = fs_dirent_mkdir(kobject->data.dir,name);
+		if(r<0) return r;
+
+		*dir = fs_dirent_namei(kobject->data.dir,name);
+		if(!*dir) return KERROR_NOT_FOUND;
+
+		return 0;
+	} else {
+		return KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
+int kobject_dir_delete( struct kobject *kobject, const char *name )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		return fs_dirent_rmdir(kobject->data.dir,name);
+	} else {
+		return KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
+

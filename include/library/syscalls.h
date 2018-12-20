@@ -43,13 +43,12 @@ int pipe_open();
 int mkdir(const char *path);
 int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
-int pwd(char *buffer);
 int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
 uint32_t gettimeofday();
 void gettimeofday_rtc(struct rtc_time * time);
-int get_dimensions(int fd, int * dims, int n);
+int size(int fd, int * dims, int n);
 int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
 
 #endif

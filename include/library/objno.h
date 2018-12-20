@@ -1,6 +1,6 @@
 #ifndef OBJNO_H
 #define OBJNO_H
 
-const char *strobjno(int err_code);
+const char *strobjno( kobject_type_t type );
 
 #endif
