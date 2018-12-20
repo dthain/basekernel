@@ -24,6 +24,7 @@ struct fs_dirent {
 	struct fs_volume *v;
 	uint32_t size;
 	int refcount;
+	int isdir;
 	void *private_data;
 };
 
@@ -63,6 +64,7 @@ int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 int fs_dirent_size(struct fs_dirent *d );
+int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
 
 struct fs_ops {

@@ -343,17 +343,18 @@ int sys_object_readdir( int fd, char *buffer, int length)
 
 static int open_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
 {
-	struct fs_file *fp = fs_file_open(d, mode);
-	if(!fp) {
-		fs_dirent_close(d);
-		// XXX need better errno here
-		return KERROR_NOT_FOUND;
-	}
-
 	int new_fd = process_available_fd(current);
 	if(new_fd<0) return KERROR_OUT_OF_OBJECTS;
 
-	current->ktable[new_fd] = kobject_create_file(fp);
+	struct kobject *k;
+
+	if(fs_dirent_isdir(d)) {
+		k = kobject_create_dir(d);
+	} else {
+		k = kobject_create_file(fs_file_open(d,mode));
+	}
+
+	current->ktable[new_fd] = k;
 
 	return new_fd;
 }
