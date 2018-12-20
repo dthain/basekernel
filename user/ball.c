@@ -10,6 +10,8 @@ A fun graphics demo that features text bouncing around the screen.
 
 #include "library/syscalls.h"
 #include "library/user-io.h"
+#include "library/string.h"
+
 #define WIDTH    (200)
 #define HEIGHT   (200)
 typedef unsigned int uint32_t;
@@ -19,9 +21,9 @@ void move(int *x, int *d, int min, int max);
 
 int main(const char *argv[], int argc)
 {
-	int wd = open_window(KNO_STDWIN, 800, 500, WIDTH, HEIGHT);
+	int wd = syscall_open_window(KNO_STDWIN, 800, 500, WIDTH, HEIGHT);
 	if(wd < 0) {
-		debug("Window create failed!\n");
+		printf("Window create failed!\n");
 		return 1;
 	}
 
@@ -51,7 +53,7 @@ int main(const char *argv[], int argc)
 		draw_string(x1, y1, "basekernel");
 		draw_flush();
 
-		process_sleep(75);
+		syscall_process_sleep(75);
 	}
 
 	return 0;

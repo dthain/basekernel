@@ -18,9 +18,13 @@
 #define HAVE_MMAP 0
 #define MMAP_CLEARS 0
 #define HAVE_MREMAP 0
+
 #include "library/string.h" /* for memset etc */
 #include "kernel/error.h" /* for KERROR_INVALID_REQUEST */
 #include "library/syscalls.h" /* for sbrk, sysconf */
+
+#define sbrk(x) syscall_process_heap(x)
+
 /* END CUSTOM SETTINGS */
 /* Below is the unedited dlmalloc code */
 /*

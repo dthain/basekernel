@@ -346,4 +346,9 @@ int fs_dirent_size(struct fs_dirent *d)
 	return d->size;
 }
 
+int fs_dirent_isdir( struct fs_dirent *d )
+{
+	return d->isdir;
+}
+
 

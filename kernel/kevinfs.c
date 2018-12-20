@@ -1155,6 +1155,7 @@ static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
 	d->private_data = kd;
 	d->size = kd->node->size;
 	d->refcount = 1;
+	d->isdir = kd->node->is_directory;
 	return d;
 }
 

@@ -34,7 +34,7 @@ int main(const char ** argv, int argc)
 	float factor = 0.001;
 
 	/* Setup the window */
-	int wd = open_window(KNO_STDWIN, 0, 0, dim, dim);
+	int wd = syscall_open_window(KNO_STDWIN, 0, 0, dim, dim);
 	draw_window(wd);
 	draw_clear(0, 0, dim, dim);
 
@@ -53,7 +53,7 @@ int main(const char ** argv, int argc)
 			draw_window(wd);
 			draw_flush();
 		}
-		process_yield();
+		syscall_process_yield();
 	}
 
 

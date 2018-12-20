@@ -297,5 +297,6 @@ static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd)
 	d->refcount = 1;
 	d->private_data = cdd;
 	d->size = cdd->length;
+	d->isdir = cdd->isdir;
 	return d;
 }

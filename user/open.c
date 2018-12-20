@@ -10,22 +10,22 @@ See the file LICENSE for details.
 
 int main(const char *argv[], int argc)
 {
-	chdir("/");
+	syscall_chdir("/");
 	printf("got root\n");
-	int dir_fd = open("/", 0, 0);
-	object_set_intent(dir_fd, "ROOT");
+	int dir_fd = syscall_open_file("/", 0, 0);
+	syscall_object_set_intent(dir_fd, "ROOT");
 	printf("Opened root directory\n");
-	int fd = open("ROOT:/data/words", 0, 0);
+	int fd = syscall_open_file("ROOT:/data/words", 0, 0);
 	char buffer[1000];
 	int n;
 	printf("reading file...\n");
-	while((n = read(fd, buffer, 100)) > 0) {
+	while((n = syscall_object_read(fd, buffer, 100)) > 0) {
 		buffer[n] = 0;
 		printf("%s", buffer);
 		flush();
 	}
-	close(fd);
-	process_exit(0);
+	syscall_object_close(fd);
+	syscall_process_exit(0);
 
 	return 0;
 }
