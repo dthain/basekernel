@@ -14,6 +14,10 @@ run: basekernel.iso
 disk.img:
 	qemu-img create disk.img 10M
 
+debug:
+	qemu-system-i386 -cdrom basekernel.iso -s -S &
+	gdb
+
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
 
