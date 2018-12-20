@@ -268,7 +268,7 @@ const static struct fs_ops cdrom_ops = {
 };
 
 static struct fs cdrom_fs = {
-	"cdrom",
+	"cdromfs",
 	&cdrom_ops,
 	0
 };
