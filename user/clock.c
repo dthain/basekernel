@@ -30,7 +30,7 @@ int main(const char ** argv, int argc)
 
 	/* Get initial time */
 	struct rtc_time time;
-	gettimeofday_rtc(&time);
+	syscall_system_rtc(&time);
 
 	/* Clock draw params */
 	int CLOCK_W = 55;
@@ -48,9 +48,9 @@ int main(const char ** argv, int argc)
 	char c = 0;
 	while(c != 'q')
 	{
-		read_nonblock(0, &c, 1);
-		process_sleep(2000);
-		gettimeofday_rtc(&time);
+		syscall_object_read_nonblock(0, &c, 1);
+		syscall_process_sleep(2000);
+		syscall_system_rtc(&time);
 		draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);
 		draw_flush();
 

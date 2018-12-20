@@ -14,7 +14,7 @@ void print_directory(char *d, int length)
 	}
 }
 
-int process_command(char *line)
+int do_command(char *line)
 {
 	const char *pch = strtok(line, " ");
 	if(pch && !strcmp(pch, "echo")) {
@@ -31,11 +31,11 @@ int process_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = process_fork();
+			int pid = syscall_process_fork();
 			if(pid != 0) {
 				printf("started process %d\n", pid);
 			} else {
-				process_exec(pch, argv, 2);
+				syscall_process_exec(pch, argv, 2);
 			}
 		} else
 			printf("start: missing argument\n");
@@ -49,14 +49,14 @@ int process_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = process_run(argv[0], &argv[0], i);
+			int pid = syscall_process_run(argv[0], &argv[0], i);
 			if(pid > 0) {
 				printf("started process %d\n", pid);
-				process_yield();
+				syscall_process_yield();
 				struct process_info info;
-				process_wait(&info, -1);
+				syscall_process_wait(&info, -1);
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
-				process_reap(info.pid);
+				syscall_process_reap(info.pid);
 			} else {
 				printf("Couldn't start %s\n", argv[1]);
 			}
@@ -67,7 +67,7 @@ int process_command(char *line)
 		pch = strtok(0, " ");
 		int pid;
 		if(pch && str2int(pch, &pid)) {
-			if(process_reap(pid)) {
+			if(syscall_process_reap(pid)) {
 				printf("reap failed!\n");
 			} else {
 				printf("processed reaped!\n");
@@ -78,7 +78,7 @@ int process_command(char *line)
 		pch = strtok(0, " ");
 		int pid;
 		if(pch && str2int(pch, &pid)) {
-			process_kill(pid);
+			syscall_process_kill(pid);
 		} else
 			printf("kill: expected process id number but got %s\n", pch);
 
@@ -88,7 +88,7 @@ int process_command(char *line)
 			printf("%s: unexpected argument\n", pch);
 		else {
 			struct process_info info;
-			if(process_wait(&info, 5000) > 0) {
+			if(syscall_process_wait(&info, 5000) > 0) {
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 			} else {
 				printf("wait: timeout\n");
@@ -96,15 +96,19 @@ int process_command(char *line)
 		}
 	} else if(pch && !strcmp(pch, "list")) {
 		char buffer[1024];
-		int length = readdir(".", buffer, 1024);
-		print_directory(buffer, length);
+		int fd = syscall_open_file(".",0,0);
+		if(fd>=0) {
+			int length = syscall_object_readdir(fd, buffer, 1024);
+			syscall_object_close(fd);
+			print_directory(buffer, length);
+		}
 	} else if(pch && !strcmp(pch, "chdir")) {
 		char *path = strtok(0, " ");
 		if(!path) {
 			printf("Incorrect arguments, usage: chdir <path>\n");
 			return 1;
 		}
-		chdir(path);
+		syscall_chdir(path);
 	} else if(pch && !strcmp(pch, "help")) {
 		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type>", "list", "start <path>", "kill <pid>", "reap <pid>", "wait", "help", "exit");
 	} else if(pch && !strcmp(pch, "exit")) {
@@ -124,13 +128,13 @@ int main(char **argv, int argc)
 	printf("u$ ");
 	while(1) {
 		flush();
-		read(0, &c, 1);
+		syscall_object_read(0, &c, 1);
 		if(pos == line && c == ASCII_BS)
 			continue;
 		printf_putchar(c);
 		flush();
 		if(c == ASCII_CR) {
-			int res = process_command(line);
+			int res = do_command(line);
 			if(res < 0) {
 				break;
 			}

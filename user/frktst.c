@@ -3,8 +3,8 @@
 
 int main(const char *argv[], int argc)
 {
-	printf("hello world, I am %d.\n", process_self());
-	int x = process_fork();
+	printf("hello world, I am %d.\n", syscall_process_self());
+	int x = syscall_process_fork();
 	printf("My fork returned %d\n", x);
 
 	printf("Some numbers:\n");

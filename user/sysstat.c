@@ -9,7 +9,7 @@ See the file LICENSE for details.
 
 int main(int argc, char const *argv[]) {
 	struct system_stats s = {0};
-	if (system_stats(&s)) {
+	if (syscall_system_stats(&s)) {
 		return 1;
 	}
 

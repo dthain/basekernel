@@ -68,7 +68,7 @@ int main(const char *argv[], int argc)
 
 	struct coords apple;
 	if(set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board) < 0) {
-		debug("Setting apple location failed!\n");
+		printf("Setting apple location failed!\n");
 		return 1;
 	}
 	// Misc. initializations
@@ -88,7 +88,7 @@ int main(const char *argv[], int argc)
 	draw_flush();
 
 
-	read(0, &tin, 1);
+	syscall_object_read(0, &tin, 1);
 	if(tin != 'm' && tin != 'n') {
 		in = 'm';
 	} else {
@@ -101,10 +101,10 @@ int main(const char *argv[], int argc)
 		draw_board(wd, thick, thick, game_width, game_height, x_steps, y_steps, snake_coords, apple, thick);
 
 		// Wait
-		process_sleep(100);
+		syscall_process_sleep(100);
 
 		// Get users next input -- non-blocking
-		read_nonblock(0, &tin, 1);
+		syscall_object_read_nonblock(0, &tin, 1);
 
 		// Skip if the user goes reverse direction
 		if((tin == 'b' && in == 'm') || (tin == 'm' && in == 'b') || (tin == 'j' && in == 'n') || (tin == 'n' && in == 'j'))
@@ -129,7 +129,7 @@ int main(const char *argv[], int argc)
 			draw_string(thick * 3, thick * 8, "Enter q to quit");
 			draw_string(thick * 3, thick * 12, "Press any key to start");
 			draw_flush();
-			read(0, &tin, 1);
+			syscall_object_read(0, &tin, 1);
 			if (tin == 'q')
 			{
 				printf("Snake exiting\n");
@@ -142,7 +142,7 @@ int main(const char *argv[], int argc)
 			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
 			draw_clear(0, 0, game_width, game_height);
 			if(draw_border(0, 0, game_width, game_height, thick, 255, 255, 255) < 0) {
-				debug("Border create failed!\n");
+				printf("Border create failed!\n");
 				return -1;
 			}
 		}
@@ -195,7 +195,9 @@ uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords *ap
 uint16_t randint(uint16_t min, uint16_t max)
 {
 	// Could be a lot better but at the moment it works
-	uint16_t state = (uint16_t) gettimeofday();
+	uint32_t tm;
+	syscall_system_time(&tm);
+	uint16_t state = tm;
 	if(state % 5 == 0) {
 		state += 50000;
 	} else if(state % 4 == 0) {
@@ -214,16 +216,16 @@ uint16_t randint(uint16_t min, uint16_t max)
 
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
 {
-	int wd = open_window(KNO_STDWIN, x_b, y_b, w_b, h_b);
+	int wd = syscall_open_window(KNO_STDWIN, x_b, y_b, w_b, h_b);
 	if(wd < 0) {
-		debug("Window create failed!\n");
+		printf("Window create failed!\n");
 		return -1;
 	}
 	// draw initial window
 	draw_window(wd);
 	draw_clear(0, 0, w_b, h_b);
 	if(draw_border(0, 0, w_b, h_b, thick, r_b, g_b, b_b) < 0) {
-		debug("Border create failed!\n");
+		printf("Border create failed!\n");
 		return -1;
 	}
 	draw_flush();
@@ -309,7 +311,7 @@ int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_ste
 
 		// Relocate the apple
 		if(set_apple_location(x_steps, y_steps, apple, board) < 0) {
-			debug("Setting apple location failed!\n");
+			printf("Setting apple location failed!\n");
 			return -1;
 		}
 	} else {

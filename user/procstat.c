@@ -14,10 +14,11 @@ int main(int argc, char const *argv[]) {
 		printf("No program to run\n");
 		return 1;
 	}
-	unsigned int startTime = gettimeofday();
-	int pid = process_fork();
+	unsigned int startTime;
+	syscall_system_time(&startTime);
+	int pid = syscall_process_fork();
 	if (pid == 0) { // child
-		process_exec(argv[1], &argv[1], argc-1);
+		syscall_process_exec(argv[1], &argv[1], argc-1);
 		printf("exec failed\n");
 		return 1;
 	} else if (pid < 0) {
@@ -26,10 +27,12 @@ int main(int argc, char const *argv[]) {
 	}
 	/* parent */
 	struct process_info info;
-	process_wait(&info, -1);
-	unsigned int timeElapsed = gettimeofday() - startTime;
+	syscall_process_wait(&info, -1);
+	unsigned int timeElapsed;
+	syscall_system_time(&timeElapsed);
+	timeElapsed -= startTime;
 	struct process_stats stat;
-	process_stats(&stat, pid);
+	syscall_process_stats(&stat, pid);
 	printf("Process %u exited with status %d\n", info.pid, info.exitcode);
 	printf("Time elapsed: %d:%d:%d\n", timeElapsed/3600, (timeElapsed%3600)/60, timeElapsed % 60);
 	printf("%d blocks read, %d blocks written\n", stat.blocks_read, stat.blocks_written);
