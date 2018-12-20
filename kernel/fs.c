@@ -35,20 +35,20 @@ struct fs *fs_lookup(const char *name)
 	return 0;
 }
 
-int fs_mkfs(struct fs *f, uint32_t device_no)
+int fs_mkfs(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
 	if(!ops->mkfs)
 		return KERROR_NOT_SUPPORTED;
-	return f->ops->mkfs(device_no);
+	return f->ops->mkfs(d);
 }
 
-struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no)
+struct fs_volume *fs_volume_open(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
 	if(!ops->mount)
 		return 0;
-	struct fs_volume *v = f->ops->mount(device_no);
+	struct fs_volume *v = f->ops->mount(d);
 	if(v)
 		v->fs = f;
 	return v;

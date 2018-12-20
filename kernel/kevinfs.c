@@ -49,7 +49,7 @@ static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinf
 static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
 static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *v, struct kevinfs_inode *node);
-static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no);
+static struct kevinfs_volume *kevinfs_volume_create_empty(struct device *device);
 
 #ifdef DEBUG
 
@@ -84,18 +84,12 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 {
-	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	uint32_t num_blocks = factor;
-	index = index * factor;
-	return bcache_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	return bcache_read(device, buffer, 1, index) ? FS_BLOCKSIZE : -1;
 }
 
 int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
-	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	uint32_t num_blocks = factor;
-	index = index * factor;
-	return bcache_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	return bcache_write(device, buffer, 1, index) ? FS_BLOCKSIZE : -1;
 }
 
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
@@ -119,8 +113,9 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	uint32_t superblock_num_blocks,  available_blocks, free_blocks,
 		 total_inodes, total_inode_bitmap_bytes, total_block_bitmap_bytes, inode_sector_size,
 		 inode_bit_sector_size, data_bit_sector_size;
-	if (!ata_probe(device->unit, &num_blocks, &ata_blocksize, 0) || num_blocks == 0)
-		return -1;
+
+	num_blocks = device_nblocks(device);
+	ata_blocksize = device_block_size(device);
 
 	char zeros[ata_blocksize];
 	memset(zeros, 0, ata_blocksize);
@@ -860,9 +855,8 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 	return record;
 }
 
-static struct fs_volume *kevinfs_mount(int unit_no)
+static struct fs_volume *kevinfs_mount( struct device *device )
 {
-	struct device *device = device_open("ATA", unit_no);
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
 	if(!super)
 		return 0;
@@ -1055,11 +1049,11 @@ static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *
 	return kevinfs_dirent_as_dirent(res);
 }
 
-static int kevinfs_mkfs(int unit_no)
+static int kevinfs_mkfs( struct device * device )
 {
 	struct kevinfs_dir_record_list *top_dir;
 	struct kevinfs_inode *first_node;
-	struct kevinfs_volume *kv = kevinfs_volume_create_empty(unit_no);
+	struct kevinfs_volume *kv = kevinfs_volume_create_empty(device);
 	struct kevinfs_dirent *kd;
 	bool is_directory = 1;
 	int ret = -1;
@@ -1073,8 +1067,9 @@ static int kevinfs_mkfs(int unit_no)
 	top_dir = kevinfs_create_empty_dir(first_node, first_node);
 	kd = kevinfs_inode_as_kevinfs_dirent(kv, first_node);
 
+	// XXX The return conventions here are wonky, need consistency.
 	if(kd && top_dir) {
-		ret = !kevinfs_writedir(kd, top_dir) && !kevinfs_save_dirent(kd);
+		ret = kevinfs_writedir(kd, top_dir)>=0 && kevinfs_save_dirent(kd)>=0;
 	}
 
 	printf("flushing dirty blocks...\n");
@@ -1136,10 +1131,9 @@ static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinf
 	return kv;
 }
 
-static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no)
+static struct kevinfs_volume *kevinfs_volume_create_empty(struct device *device)
 {
 	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
-	struct device *device = device_open("ATA", unit_no);
 	kv->device = device;
 	return kv;
 }

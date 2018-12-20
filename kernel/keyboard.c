@@ -9,8 +9,8 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "kernel/ascii.h"
 #include "process.h"
-#include "kernelcore.h"
 #include "device.h"
+#include "kernelcore.h"
 
 #define KEYBOARD_PORT 0x60
 
@@ -23,8 +23,6 @@ See the file LICENSE for details.
 #define SPECIAL_SHIFTLOCK 4
 
 #define BUFFER_SIZE 256
-
-struct device keyboard = { 0 };
 
 struct keymap {
 	char normal;
@@ -113,50 +111,67 @@ static void keyboard_interrupt(int i, int code)
 	process_wakeup(&queue);
 }
 
-int keyboard_device_read(struct device *d, void *dest, int size, int offset)
+char keyboard_read( int non_blocking )
+{
+	while(keyboard_buffer_read == keyboard_buffer_write) {
+		if(non_blocking) return -1;
+		process_wait(&queue);
+	}
+	char c = buffer[keyboard_buffer_read];
+	keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
+	return c;
+}
+
+int keyboard_device_probe( int unit, int *nblocks, int *blocksize, char *name )
+{
+       if(unit==0) {
+		strcpy(name,"keyboard");
+		*nblocks = 0;
+		*blocksize = 1;
+		return 1;
+       } else {
+		return 0;
+       }
+
+}
+
+int keyboard_device_read( int unit, void *data, int size, int offset)
 {
 	int i;
+	char *cdata = data;
 	for(i = 0; i < size; i++) {
-		while(keyboard_buffer_read == keyboard_buffer_write) {
-			process_wait(&queue);
-		}
-		((char *) dest)[i] = buffer[keyboard_buffer_read];
-		keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
+		cdata[i] = keyboard_read(0);
 	}
 	return size;
 }
 
-int keyboard_device_read_nonblock(struct device *d, void *dest, int size, int offset)
+int keyboard_device_read_nonblock( int unit, void *data, int size, int offset)
 {
 	int i;
+	char *cdata = data;
 	for(i = 0; i < size; i++) {
-		if(keyboard_buffer_read == keyboard_buffer_write) {
-			return -1;
-		}
-		((char *) dest)[i] = buffer[keyboard_buffer_read];
-		keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
+		cdata[i] = keyboard_read(1);
+		if(cdata[i]==-1) return i;
 	}
 	return size;
 }
 
-char keyboard_read(int non_blocking)
-{
-	char toRet = 0;
-	device_read(&keyboard, &toRet, 1, 0);
-	return toRet;
-}
-
-struct device *keyboard_get()
-{
-	return &keyboard;
-}
+static struct device_driver keyboard_driver = {
+	.name          = "keyboard",
+	.probe         = keyboard_device_probe,
+	.read          = keyboard_device_read,
+	.read_nonblock = keyboard_device_read_nonblock,
+	0,
+};
 
 void keyboard_init()
 {
-	keyboard.block_size = 1;
-	keyboard.read = keyboard_device_read;
-	keyboard.read_nonblock = keyboard_device_read_nonblock;
 	interrupt_register(33, keyboard_interrupt);
 	interrupt_enable(33);
+	device_driver_register(&keyboard_driver);
 	printf("keyboard: ready\n");
 }
+
+
+
+

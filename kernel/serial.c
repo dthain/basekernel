@@ -5,6 +5,8 @@
 
 #include "kernel/types.h"
 #include "ioports.h"
+#include "string.h"
+#include "device.h"
 
 #define COM1 0x3f8
 #define COM2 0x2F8
@@ -85,14 +87,6 @@ static int is_valid_port(uint8_t port_no)
 	return port_no < sizeof(serial_ports) / sizeof(int);
 }
 
-void serial_init()
-{
-	int i;
-	for(i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
-		serial_init_port(serial_ports[i]);
-	}
-}
-
 char serial_read(uint8_t port_no)
 {
 	if(!is_valid_port(port_no))
@@ -113,13 +107,51 @@ int serial_write(uint8_t port_no, char a)
 	return 0;
 }
 
-int serial_write_string(uint8_t port_no, char *s)
+int serial_device_probe( int unit, int *blocksize, int *nblocks, char *info )
 {
-	if(!is_valid_port(port_no))
-		return -1;
-
-	while(*s) {
-		serial_write(port_no, *s++);
-	}
-	return 0;
+	if(unit<0 || unit>3) return 0;
+	serial_init_port(serial_ports[unit]);
+	*blocksize = 1;
+	*nblocks = 0;
+	strcpy(info,"serial");
+	return 1;
 }
+
+int serial_device_read( int unit, void *data, int length, int offset )
+{
+	int i;
+	char *cdata = data;
+	for(i=0;i<length;i++) {
+		cdata[i] = serial_read(unit);
+	}
+	return length;
+}
+
+int serial_device_write( int unit, const void *data, int length, int offset )
+{
+	int i;
+	const char *cdata = data;
+	for(i=0;i<length;i++) {
+		serial_write(unit,cdata[i]);
+	}
+	return length;
+}
+
+static struct device_driver serial_driver = {
+       .name           = "serial",
+       .probe          = serial_device_probe,
+       .read           = serial_device_read,
+       .read_nonblock  = serial_device_read,
+       .write          = serial_device_write
+};
+
+void serial_init()
+{
+	int i;
+	for(i = 0; i < sizeof(serial_ports) / sizeof(int); i++) {
+		serial_init_port(serial_ports[i]);
+	}
+	device_driver_register(&serial_driver);
+}
+
+

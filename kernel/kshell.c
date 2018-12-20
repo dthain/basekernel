@@ -18,31 +18,40 @@
 #include "bcache.h"
 #include "printf.h"
 
-static int kshell_mount(int unit, const char *fs_type)
+static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
-	struct fs *fs = fs_lookup(fs_type);
-	if(!fs) {
-		printf("invalid fs type: %s\n", fs_type);
+
+	struct device *dev = device_open(devname,unit);
+	if(dev) {
+		struct fs *fs = fs_lookup(fs_type);
+		if(fs) {
+			struct fs_volume *v = fs_volume_open(fs,dev);
+			if(v) {
+				struct fs_dirent *d = fs_volume_root(v);
+				if(d) {
+					current->root_dir = d;
+					current->current_dir = fs_dirent_addref(d);
+					return 0;
+				} else {
+					printf("mount: couldn't find root dir on %s unit %d!\n",device_name(dev),device_unit(dev));
+					return -1;
+				}
+				fs_volume_close(v);
+			} else {
+				printf("mount: couldn't mount %s on %s unit %d\n",fs_type,device_name(dev),device_unit(dev));
+				return -1;
+			}
+		} else {
+			printf("mount: invalid fs type: %s\n", fs_type);
+			return -1;
+		}
+		device_close(dev);
+	} else {
+		printf("mount: couldn't open device %s unit %d\n",devname,unit);
 		return -1;
 	}
-	struct fs_volume *v = fs_volume_open(fs, unit);
-	if(v) {
-		struct fs_dirent *d = fs_volume_root(v);
-		if(d) {
-			current->root_dir = d;
-			current->current_dir = fs_dirent_addref(d);
-			return 0;
-		} else {
-			printf("couldn't access root dir!\n");
-			return 1;
-		}
-		fs_volume_close(v);
-	} else {
-		printf("couldn't mount filesystem!\n");
-		return 2;
-	}
 
-	return 3;
+	return -1;
 }
 
 static int kshell_printdir(const char *d, int length)
@@ -119,15 +128,15 @@ static int kshell_execute(const char **argv, int argc)
 			printf("run: requires argument\n");
 		}
 	} else if(!strcmp(cmd, "mount")) {
-		if(argc > 1) {
+		if(argc==4) {
 			int unit;
-			if(str2int(argv[1], &unit)) {
-				kshell_mount(unit, argv[2]);
+			if(str2int(argv[2], &unit)) {
+				kshell_mount(argv[1],unit,argv[3]);
 			} else {
-				printf("mount: expected unit number but got %s\n", argv[1]);
+				printf("mount: expected unit number but got %s\n", argv[2]);
 			}
 		} else {
-			printf("mount: requires argument\n");
+			printf("mount: requires device, unit, and fs type\n");
 		}
 	} else if(!strcmp(cmd, "reap")) {
 		if(argc > 1) {
@@ -192,18 +201,22 @@ static int kshell_execute(const char **argv, int argc)
 			printf("mkdir: missing argument\n");
 		}
 	} else if(!strcmp(cmd, "format")) {
-		if(argc == 3) {
+		if(argc == 4) {
 			int unit;
-			if(str2int(argv[1], &unit)) {
-				struct fs *f = fs_lookup(argv[2]);
-
-				if(!f) {
-					printf("invalid fs type: %s\n", argv[2]);
+			if(str2int(argv[2], &unit)) {
+				struct fs *f = fs_lookup(argv[3]);
+				if(f) {
+					struct device *d = device_open(argv[1],unit);
+					if(d) {
+						fs_mkfs(f,d);
+					} else {
+						printf("couldn't open device %s unit %d\n",argv[1],unit);
+					}
 				} else {
-					fs_mkfs(f, unit);
+					printf("invalid fs type: %s\n", argv[3]);
 				}
 			} else {
-				printf("mount: expected unit number but got %s\n", argv[1]);
+				printf("format: expected unit number but got %s\n", argv[2]);
 			}
 		}
 	} else if(!strcmp(cmd, "rmdir")) {
@@ -232,7 +245,7 @@ static int kshell_execute(const char **argv, int argc)
 			stats.write_hits,stats.write_misses,
 			stats.writebacks);
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <fstype>\nformat <device> <fstype\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\nformat <device> <unit><fstype>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

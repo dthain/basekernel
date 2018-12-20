@@ -400,7 +400,7 @@ static int ata_identify(int id, int command, void *buffer)
 }
 
 
-int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
+static int ata_probe_internal( int id, int kind, int *nblocks, int *blocksize, char *name )
 {
 	uint16_t buffer[256];
 	char *cbuffer = (char *) buffer;
@@ -422,21 +422,31 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	/* Clear the buffer to receive the identify data. */
 	memset(cbuffer, 0, 512);
 
-	if(ata_identify(id, ATA_COMMAND_IDENTIFY, cbuffer)) {
+	int result = 0;
 
-		*nblocks = buffer[1] * buffer[3] * buffer[6];
-		printf("%d logical cylinders\n", buffer[1]);
-		printf("%d logical heads\n", buffer[3]);
-		printf("%d logical sectors/track\n", buffer[6]);
-		*blocksize = ATA_BLOCKSIZE;
+	/* Do either an ATA or ATAPI identify, or do both if kind is zero */
 
-	} else if(ata_identify(id, ATAPI_COMMAND_IDENTIFY, cbuffer)) {
+	if(kind==ATA_COMMAND_IDENTIFY || kind==0) {
+		result = ata_identify(id, ATA_COMMAND_IDENTIFY, cbuffer);
+		if(result) {
+			*nblocks = buffer[1] * buffer[3] * buffer[6];
+			printf("%d logical cylinders\n", buffer[1]);
+			printf("%d logical heads\n", buffer[3]);
+			printf("%d logical sectors/track\n", buffer[6]);
+			*blocksize = ATA_BLOCKSIZE;
+		}
+	}
 
-		// XXX use SCSI sense to get media size
-		*nblocks = 337920;
-		*blocksize = ATAPI_BLOCKSIZE;
+	if(kind==ATAPI_COMMAND_IDENTIFY || (kind==0 && result==0) ) {
+		result = ata_identify(id, ATAPI_COMMAND_IDENTIFY, cbuffer);
+		if(result) {
+			// XXX use SCSI sense to get media size
+			*nblocks = 337920;
+			*blocksize = ATAPI_BLOCKSIZE;
+		}
+	}
 
-	} else {
+	if(!result) {
 		printf("ata unit %d: not connected\n", id);
 		return 0;
 	}
@@ -457,15 +467,41 @@ int ata_probe( int id, unsigned int *nblocks, int *blocksize, char *name )
 	/* Get disk size in megabytes*/
 	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
-	printf("ata unit %d: %s %u blocks %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
+	printf("ata unit %d: %s %u sectors %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
 	return 1;
 }
+
+int ata_probe( int id, int *nblocks, int *blocksize, char *name )
+{
+	return ata_probe_internal(id,ATA_COMMAND_IDENTIFY,nblocks,blocksize,name);
+}
+
+int atapi_probe( int id, int *nblocks, int *blocksize, char *name )
+{
+	return ata_probe_internal(id,ATAPI_COMMAND_IDENTIFY,nblocks,blocksize,name);
+}
+
+static struct device_driver ata_driver = {
+	.name          = "ata",
+	.probe         = ata_probe,
+	.read          = ata_read,
+	.read_nonblock = ata_read,
+	.write         = ata_write,
+	.multiplier    = 8
+};
+
+static struct device_driver atapi_driver = {
+	.name          = "atapi",
+	.probe         = atapi_probe,
+	.read          = atapi_read,
+	.read_nonblock = atapi_read,
+};
 
 void ata_init()
 {
 	int i;
 
-	unsigned int nblocks;
+	int nblocks;
 	int blocksize = 0;
 
 	char longname[256];
@@ -485,6 +521,9 @@ void ata_init()
 	printf("ata: probing devices\n");
 
 	for(i = 0; i < 4; i++) {
-		ata_probe(i, &nblocks, &blocksize, longname);
+		ata_probe_internal(i, 0, &nblocks, &blocksize, longname);
 	}
+
+	device_driver_register(&ata_driver);
+	device_driver_register(&atapi_driver);
 }

@@ -5,6 +5,7 @@
 #define FS_FILE_WRITE (1 << 1)
 
 #include "kernel/types.h"
+#include "device.h"
 
 struct fs {
 	char *name;
@@ -38,9 +39,9 @@ struct fs_dirent *fs_resolve(const char *path);
 
 void fs_register(struct fs *f);
 struct fs *fs_lookup(const char *name);
-int fs_mkfs(struct fs *f, uint32_t device_no);
+int fs_mkfs(struct fs *f, struct device *d);
 
-struct fs_volume *fs_volume_open(struct fs *f, uint32_t device_no);
+struct fs_volume *fs_volume_open(struct fs *f, struct device *d );
 struct fs_volume *fs_volume_addref(struct fs_volume *v);
 struct fs_dirent *fs_volume_root(struct fs_volume *);
 int fs_volume_close(struct fs_volume *v);
@@ -67,9 +68,9 @@ int fs_dirent_close(struct fs_dirent *d);
 
 struct fs_ops {
 	struct fs_dirent *(*root) (struct fs_volume * d);
-	struct fs_volume *(*mount) (int unit);
+	struct fs_volume *(*mount) (struct device *d);
 	int (*umount) (struct fs_volume * d);
-	int (*mkfs) (int unit);
+	int (*mkfs) (struct device *d);
 	int (*close) (struct fs_dirent * d);
 	int (*mkdir) (struct fs_dirent * d, const char *name);
 	int (*mkfile) (struct fs_dirent * d, const char *name);
