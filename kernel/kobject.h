@@ -45,6 +45,7 @@ struct kobject *kobject_addref(struct kobject *k);
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
+int kobject_size(struct kobject *kobject, int *dimensions, int n);
 int kobject_close(struct kobject *kobject);
 
 int kobject_dir_lookup( struct kobject *k, const char *name, struct fs_dirent **d );
@@ -52,7 +53,6 @@ int kobject_dir_create( struct kobject *k, const char *name, struct fs_dirent **
 int kobject_dir_delete( struct kobject *k, const char *name );
 
 int kobject_set_blocking(struct kobject *kobject, int b);
-int kobject_get_dimensions(struct kobject *kobject, int *dimensions, int n);
 int kobject_get_type(struct kobject *kobject);
 int kobject_set_intent(struct kobject *kobject, char *new_intent);
 int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size);

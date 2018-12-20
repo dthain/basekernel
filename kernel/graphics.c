@@ -360,17 +360,3 @@ void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int3
 
 	graphics_clear(g, x, y + h - dy, w, dy);
 }
-
-int graphics_get_dimensions(struct graphics *g, int * dims, int n) 
-{
-	if (n <= 0)
-		return 0;
-	
-	dims[0] = g->clip.w;
-	
-	if (n == 1)
-		return 1;
-
-	dims[1] = g->clip.h;
-	return 2;
-}

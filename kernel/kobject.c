@@ -211,11 +211,16 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	return 0;
 }
 
-int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
+int kobject_size(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
 	case KOBJECT_GRAPHICS:
-		return graphics_get_dimensions(kobject->data.graphics, dims, n);
+		if(n==2) {
+			dims[0] = graphics_width(kobject->data.graphics);
+			dims[1] = graphics_height(kobject->data.graphics);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_CONSOLE:
 		if(n==2) {
 			console_size(kobject->data.console,&dims[0],&dims[1]);
@@ -223,18 +228,32 @@ int kobject_get_dimensions(struct kobject *kobject, int *dims, int n)
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_FILE:
-		// XXX Make this fs_file_size instead.
-		return fs_file_get_dimensions(kobject->data.file, dims, n);
+		if(n==1) {
+			dims[0] = fs_file_size(kobject->data.file);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_DIR:
-		// XXX invoke fs function here instead.
-		return kobject->data.dir->size;
-		return 0;
+		if(n==1) {
+			dims[0] = fs_dirent_size(kobject->data.dir);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_DEVICE:
-		return 0;
+		if(n==2) {
+			dims[0] = device_nblocks(kobject->data.device);
+			dims[1] = device_block_size(kobject->data.device);
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	case KOBJECT_PIPE:
-		return 0;
+		if(n==1) {
+			dims[0] = PIPE_SIZE;
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
 	}
-	return 0;
+	return KERROR_INVALID_REQUEST;
 }
 
 int kobject_get_type(struct kobject *kobject)

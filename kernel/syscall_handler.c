@@ -623,13 +623,13 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	return fd;
 }
 
-int sys_get_dimensions(int fd, int *dims, int n)
+int sys_size(int fd, int *dims, int n)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(dims,sizeof(*dims)*n)) return KERROR_INVALID_ADDRESS;
 
 	struct kobject *p = current->ktable[fd];
-	return kobject_get_dimensions(p, dims, n);
+	return kobject_size(p, dims, n);
 }
 
 int sys_sys_stats(struct sys_stats *s)
@@ -716,8 +716,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_console(a);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
-	case SYSCALL_GET_DIMENSIONS:
-		return sys_get_dimensions(a, (int *) b, c);
+	case SYSCALL_SIZE:
+		return sys_size(a, (int *) b, c);
 	case SYSCALL_GETTIMEOFDAY:
 		return sys_gettimeofday();
 	case SYSCALL_GETTIMEOFDAY_RTC:

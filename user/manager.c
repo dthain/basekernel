@@ -49,7 +49,7 @@ int main(const char ** argv, int argc) {
 
 	/* Setup the window */
 	int std_dims[2];
-	get_dimensions(KNO_STDWIN, std_dims, 2);
+	size(KNO_STDWIN, std_dims, 2);
 	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, std_dims[0], std_dims[1]);
 	draw_flush();
