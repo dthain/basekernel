@@ -45,7 +45,7 @@ which atapi unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
 to mount the cdrom filesystem on that unit:
 
 <pre>
-mount atapi 2 cdrom
+mount atapi 2 cdromfs
 </pre>
 
 Use the <tt>list</tt> command to examine the root directory:
