@@ -92,7 +92,7 @@ int elf_load(struct process *p, const char *filename, addr_t * entry)
 	int i;
 	uint32_t actual;
 
-	struct fs_dirent *d = fs_dirent_namei(p->current_dir, filename);
+	struct fs_dirent *d = fs_resolve(filename);
 	if(!d)
 		return KERROR_NOT_FOUND;
 
