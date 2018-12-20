@@ -40,17 +40,17 @@ And you should see something like this:
 After some initial boot messages, you will see the kernel shell prompt.
 This allows you to take some simple actions before running the first
 user level program.  For example, read the boot messages to see
-which ata unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
+which atapi unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
 to mount the cdrom filesystem on that unit:
 
 <pre>
-mount 2 cdrom
+mount atapi 2 cdrom
 </pre>
 
 Use the <tt>list</tt> command to examine the root directory:
 
 <pre>
-list
+list /
 </pre>
 
 And use the <tt>run</tt> command to run a program:
