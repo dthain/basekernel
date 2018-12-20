@@ -169,11 +169,6 @@ int readdir(const char *name, char *buffer, int n)
 	return syscall(SYSCALL_READDIR, (uint32_t) name, (uint32_t) buffer, (uint32_t) n, 0, 0);
 }
 
-int pwd(char *buffer)
-{
-	return syscall(SYSCALL_PWD, (uint32_t) buffer, 0, 0, 0, 0);
-}
-
 int process_reap(unsigned int pid)
 {
 	return syscall(SYSCALL_PROCESS_REAP, pid, 0, 0, 0, 0);

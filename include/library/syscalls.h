@@ -43,7 +43,6 @@ int pipe_open();
 int mkdir(const char *path);
 int readdir(const char *path, char *buffer, int buffer_len);
 int rmdir(const char *path);
-int pwd(char *buffer);
 int chdir(const char *path);
 int sys_stats(struct sys_stats *s);
 int process_stats(struct proc_stats *s, unsigned int pid);
