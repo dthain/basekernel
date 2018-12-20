@@ -62,7 +62,6 @@ int fs_dirent_link(struct fs_dirent *d, const char *oldpath, const char *newpath
 int fs_dirent_unlink(struct fs_dirent *d, const char *name);
 int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
-int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result);
 int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
@@ -85,7 +84,6 @@ struct fs_ops {
 	int (*read_block) (struct fs_dirent * d, char *buffer, uint32_t blocknum);
 	int (*write_block) (struct fs_dirent * d, const char *buffer, uint32_t blocknum);
 	int (*resize) (struct fs_dirent * d, uint32_t blocks);
-	int (*compare) (struct fs_dirent * d1, struct fs_dirent * d2, int *result);
 };
 
 #endif

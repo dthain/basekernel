@@ -102,15 +102,6 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 	return r;
 }
 
-int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
-{
-	const struct fs_ops *ops = d1->v->fs->ops;
-	if(!ops->compare)
-		return KERROR_NOT_IMPLEMENTED;
-
-	return d1->v->fs->ops->compare(d1, d2, result);
-}
-
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
 {
 	if(!d || !path)

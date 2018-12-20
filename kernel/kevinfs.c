@@ -1086,14 +1086,6 @@ static int kevinfs_volume_format( struct device * device )
 	return ret;
 }
 
-static int kevinfs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
-{
-	struct kevinfs_dirent *kd1 = d1->private_data;
-	struct kevinfs_dirent *kd2 = d2->private_data;
-	*result = (kd1->node->inode_number == kd2->node->inode_number);
-	return 0;
-}
-
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *kv, struct kevinfs_inode *node)
 {
 	if(!node)
@@ -1175,7 +1167,6 @@ static struct fs_ops kevinfs_ops = {
 	.read_block = kevinfs_read_block,
 	.write_block = kevinfs_write_block,
 	.resize = kevinfs_dirent_resize,
-	.compare = kevinfs_dirent_compare,
 };
 
 
