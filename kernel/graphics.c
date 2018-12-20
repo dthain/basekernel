@@ -35,15 +35,19 @@ struct graphics *graphics_create_root()
 	return g;
 }
 
-struct graphics *graphics_create(struct graphics *parent)
+struct graphics *graphics_create(struct graphics *parent )
 {
 	struct graphics *g = kmalloc(sizeof(*g));
-	if(!g)
-		return 0;
+	if(!g) return 0;
 
 	memcpy(g, parent, sizeof(*g));
 
 	return g;
+}
+
+void graphics_delete( struct graphics *g )
+{
+	kfree(g);
 }
 
 int graphics_write(struct graphics *g, struct graphics_command *command)
@@ -111,20 +115,27 @@ void graphics_bgcolor(struct graphics *g, struct graphics_color c)
 	g->bgcolor = c;
 }
 
-void graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+int graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
 {
-	if(x < 0)
-		x = 0;
-	if(y < 0)
-		y = 0;
-	if((x + w) > g->bitmap->width)
-		w = g->bitmap->width - x;
-	if((y + h) > g->bitmap->height)
-		h = g->bitmap->height - y;
+	// Clip values may not be negative
+	if(x<0 || y<0 || w<0 || h<0) return 0;
+
+	// Child origin is relative to parent's clip origin.
+	x += g->clip.x;
+	y += g->clip.y;
+
+	// Child origin must fall within parent clip
+	if(x>=g->bitmap->width || y>=g->bitmap->width) return 0;
+
+	// Child width must fall within parent size
+	if((x + w) >= g->bitmap->width || (y + h) >= g->bitmap->height) return 0;
+
+	// Apply the clip
 	g->clip.x = x;
 	g->clip.y = y;
 	g->clip.w = w;
 	g->clip.h = h;
+	return 1;
 }
 
 static inline void plot_pixel(struct bitmap *b, int32_t x, int32_t y, struct graphics_color c)

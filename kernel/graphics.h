@@ -35,13 +35,14 @@ struct graphics {
 
 struct graphics *graphics_create_root();
 
-struct graphics *graphics_create(struct graphics *parent);
+struct graphics *graphics_create(struct graphics *parent );
 void graphics_delete(struct graphics *g);
+
 int32_t graphics_width(struct graphics *g);
 int32_t graphics_height(struct graphics *g);
 void graphics_fgcolor(struct graphics *g, struct graphics_color c);
 void graphics_bgcolor(struct graphics *g, struct graphics_color c);
-void graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
+int graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
 
 void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h, int32_t dy);
 void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
