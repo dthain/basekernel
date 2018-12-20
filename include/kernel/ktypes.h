@@ -1,11 +1,14 @@
 #ifndef KTYPES_H
 #define KTYPES_H
+
 typedef enum {
 	KOBJECT_INVALID = 0,
 	KOBJECT_FILE,
+	KOBJECT_DIR,
 	KOBJECT_DEVICE,
 	KOBJECT_GRAPHICS,
 	KOBJECT_PIPE,
 	KOBJECT_CONSOLE
 } kobject_type;
+
 #endif

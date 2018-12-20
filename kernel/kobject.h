@@ -17,6 +17,7 @@ struct kobject {
 	union {
 		struct device *device;
 		struct fs_file *file;
+		struct fs_dirent *dir;
 		struct graphics *graphics;
 		struct console *console;
 		struct pipe *pipe;
@@ -28,6 +29,7 @@ struct kobject {
 };
 
 struct kobject *kobject_create_file(struct fs_file *f);
+struct kobject *kobject_create_dir(struct fs_dirent *d);
 struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_console(struct console *c);
@@ -39,6 +41,11 @@ int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);
+
+int kobject_dir_lookup( struct kobject *k, const char *name, struct kobject **nk );
+int kobject_dir_create( struct kobject *k, const char *name, struct kobject **nk );
+int kobject_dir_delete( struct kobject *k, const char *name );
+
 int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_dimensions(struct kobject *kobject, int *dimensions, int n);
 int kobject_get_type(struct kobject *kobject);
