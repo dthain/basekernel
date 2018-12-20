@@ -610,8 +610,7 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 	struct kobject *k = current->ktable[wd];
 
 	int fd = process_available_fd(current);
-		// XXX choose better errno
-	if(fd<0) return KERROR_INVALID_REQUEST;
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
 
 	k = kobject_create_graphics_from_graphics(k,x,y,w,h);
 	if(!k) {
