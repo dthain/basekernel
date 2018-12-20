@@ -16,8 +16,9 @@ To be clear, this is raw low-level code, not a production system.
 If you want to hack code and learn about operating system, you will like Basekernel.
 If you are looking for a new OS to run on your laptop, then this is not what you want.
 
-This project is led by Prof. Douglas Thain at the University of Notre Dame,
-with contributions from students, particularly Jon Westhoff and Kevin Wern.
+This project is led by Prof. Douglas Thain at the University of Notre Dame.
+A variety of students have contributed to the code, including
+Jack Mazanec, Douglas Smith, Ethan Williams, Jon Westhoff, and Kevin Wern.
 
 To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wiki).
 
