@@ -467,7 +467,11 @@ static int ata_probe_internal( int id, int kind, int *nblocks, int *blocksize, c
 	/* Get disk size in megabytes*/
 	uint32_t mbytes = (*nblocks) / KILO * (*blocksize) / KILO;
 
-	printf("ata unit %d: %s %u sectors %u MB %s\n", id, (*blocksize)==512 ? "ata disk" : "atapi cdrom", *nblocks, mbytes, name);
+	printf("%s unit %d: %s %u sectors %u MB %s\n",
+	       (*blocksize)==512 ? "ata" : "atapi",
+	       id,
+	       (*blocksize)==512 ? "disk" : "cdrom",
+	       *nblocks, mbytes, name);
 	return 1;
 }
 
