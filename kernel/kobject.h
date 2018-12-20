@@ -7,10 +7,12 @@
 #ifndef KOBJECT_H
 #define KOBJECT_H
 
+#include "kernel/ktypes.h"
+
 #include "fs.h"
 #include "device.h"
 #include "graphics.h"
-#include "kernel/ktypes.h"
+#include "console.h"
 #include "pipe.h"
 
 struct kobject {
@@ -35,6 +37,9 @@ struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_console(struct console *c);
 struct kobject *kobject_create_pipe(struct pipe *p);
 
+struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h );
+struct kobject *kobject_create_console_from_graphics( struct kobject *k );
+
 struct kobject *kobject_addref(struct kobject *k);
 
 int kobject_read(struct kobject *kobject, void *buffer, int size);
@@ -42,8 +47,8 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_close(struct kobject *kobject);
 
-int kobject_dir_lookup( struct kobject *k, const char *name, struct kobject **nk );
-int kobject_dir_create( struct kobject *k, const char *name, struct kobject **nk );
+int kobject_dir_lookup( struct kobject *k, const char *name, struct fs_dirent **d );
+int kobject_dir_create( struct kobject *k, const char *name, struct fs_dirent **d );
 int kobject_dir_delete( struct kobject *k, const char *name );
 
 int kobject_set_blocking(struct kobject *kobject, int b);

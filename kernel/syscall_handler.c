@@ -318,15 +318,18 @@ int sys_rmdir(const char *path)
 	}
 }
 
-static int open_from_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
+static int open_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
 {
+	struct fs_file *fp = fs_file_open(d, mode);
+	if(!fp) {
+		fs_dirent_close(d);
+		// XXX need better errno here
+		return KERROR_NOT_FOUND;
+	}
+
 	int new_fd = process_available_fd(current);
 	if(new_fd<0) return KERROR_TOO_MANY_OBJECTS;
 
-	d = fs_dirent_namei(d,path);
-	if(!d) return KERROR_NOT_FOUND;
-
-	struct fs_file *fp = fs_file_open(d, mode);
 	current->ktable[new_fd] = kobject_create_file(fp);
 
 	return new_fd;
@@ -336,10 +339,12 @@ int sys_open_dirent( int fd, const char *path, int mode, int flags)
 {
 	if(!current->ktable[fd]) return KERROR_INVALID_REQUEST;
 
-	// XXX breaking abstraction, pass through kobject instead.
-	struct fs_dirent *d = current->ktable[fd]->data.file->d;
+	struct fs_dirent *d;
 
-	return open_from_dirent(d,path,mode,flags);
+	int r = kobject_dir_lookup(current->ktable[fd],path,&d);
+	if(r<0) return r;
+
+	return open_dirent(d,path,mode,flags);
 }
 
 static int find_kobject_by_intent( const char *intent )
@@ -372,7 +377,8 @@ int sys_open(const char *path, int mode, int flags)
 
 	// If we have no tag, use everything as a path.
 	if(!colon) {
-		return open_from_dirent(current->current_dir, path, mode, flags);
+		struct fs_dirent *d = fs_dirent_namei(current->current_dir,path);
+		return open_dirent(d, path, mode, flags);
 	}
 
 	// The base path is whatever comes after the colon
@@ -531,33 +537,29 @@ int sys_open_console(int wd)
 	if(wd < 0 || fd < 0) {
 		return KERROR_NOT_FOUND;
 	}
-	struct console *c = console_create(current->ktable[wd]->data.graphics);
-	if(!c) {
-		return KERROR_NOT_FOUND;
-	}
-	current->ktable[fd] = kobject_create_console(c);
+	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
 	return fd;
 }
 
-// XXX don't go into kobject internals
-
 int sys_open_window(int wd, int x, int y, int w, int h)
 {
+	if(wd<0 || wd>PROCESS_MAX_OBJECTS || !current->ktable[wd] ) return KERROR_INVALID_REQUEST;
+
+	struct kobject *k = current->ktable[wd];
+	if(kobject_get_type(k)!=KOBJECT_GRAPHICS) return KERROR_INVALID_REQUEST;
+
 	int fd = process_available_fd(current);
-	if(fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
-		return KERROR_NOT_FOUND;
+		// XXX choose better errno
+	if(fd<0) return KERROR_INVALID_REQUEST;
+
+	k = kobject_create_graphics_from_graphics(k,x,y,w,h);
+	if(!k) {
+		// XXX choose better errno
+		return KERROR_INVALID_REQUEST;
 	}
 
-	current->ktable[fd] = kobject_create_graphics(graphics_create(current->ktable[wd]->data.graphics));
+	current->ktable[fd] = k;
 
-	if(!current->ktable[fd]) {
-		return KERROR_NOT_FOUND;
-	}
-
-	current->ktable[fd]->data.graphics->clip.x = x + current->ktable[wd]->data.graphics->clip.x;
-	current->ktable[fd]->data.graphics->clip.y = y + current->ktable[wd]->data.graphics->clip.y;
-	current->ktable[fd]->data.graphics->clip.w = w;
-	current->ktable[fd]->data.graphics->clip.h = h;
 	return fd;
 }
 

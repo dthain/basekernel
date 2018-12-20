@@ -7,8 +7,13 @@
 #include "console.h"
 #include "kobject.h"
 #include "kmalloc.h"
-#include "fs.h"
+
 #include "device.h"
+#include "fs.h"
+#include "graphics.h"
+#include "console.h"
+#include "pipe.h"
+
 #include "library/string.h"
 #include "kernel/error.h"
 
@@ -73,6 +78,27 @@ struct kobject *kobject_addref(struct kobject *k)
 {
 	k->refcount++;
 	return k;
+}
+
+struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h )
+{
+	if(k->type!=KOBJECT_GRAPHICS) return 0;
+
+	struct graphics *g = graphics_create(k->data.graphics);
+	if(graphics_clip(g,x,y,w,h)) {
+		return kobject_create_graphics(g);
+	} else {
+		graphics_delete(g);
+		return 0;
+	}
+}
+
+struct kobject *kobject_create_console_from_graphics( struct kobject *k )
+{
+	if(k->type!=KOBJECT_GRAPHICS) return 0;
+	struct console *c = console_create(k->data.graphics);
+	if(!c) return 0;
+	return kobject_create_console(c);
 }
 
 int kobject_read(struct kobject *kobject, void *buffer, int size)
@@ -237,31 +263,31 @@ int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 	return 0;
 }
 
-int kobject_dir_lookup( struct kobject *kobject, const char *name, struct kobject **nk )
+int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		struct fs_dirent *newdir = fs_dirent_namei(kobject->data.dir,name);
-		if(!newdir) return KERROR_NOT_FOUND;
-
-		*nk = kobject_create_dir(newdir);
-		return 0;
+		*dir = fs_dirent_namei(kobject->data.dir,name);
+		if(*dir) {
+			return 0;
+		} else {
+			return KERROR_NOT_FOUND;
+		}
 	} else {
 		return KERROR_NOT_SUPPORTED;
 	}
 	return 0;
 }
 
-int kobject_dir_create( struct kobject *kobject, const char *name, struct kobject **nk )
+int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
 		// XXX mkdir should return the newly created dirent.
 		int r = fs_dirent_mkdir(kobject->data.dir,name);
 		if(r<0) return r;
 
-		struct fs_dirent *newdir = fs_dirent_namei(kobject->data.dir,name);
-		if(!newdir) return KERROR_NOT_FOUND;
+		*dir = fs_dirent_namei(kobject->data.dir,name);
+		if(!*dir) return KERROR_NOT_FOUND;
 
-		*nk = kobject_create_dir(newdir);
 		return 0;
 	} else {
 		return KERROR_NOT_SUPPORTED;
