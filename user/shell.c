@@ -110,7 +110,7 @@ int do_command(char *line)
 		}
 		syscall_chdir(path);
 	} else if(pch && !strcmp(pch, "help")) {
-		printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", "Commands:", "echo <text>", "run <path>", "mount <unit_no> <fs_type>", "list", "start <path>", "kill <pid>", "reap <pid>", "wait", "help", "exit");
+		printf("Commands:\necho <text>\nrun <path>\nmount <unit_no> <fs_type>\nlist\nstart <path>\nkill <pid>\nreap <pid>\nwait\nhelp\nexit\n");
 	} else if(pch && !strcmp(pch, "exit")) {
 		return -1;
 	} else if(pch) {
