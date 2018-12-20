@@ -43,4 +43,13 @@ struct process_info {
 	int exitreason;
 };
 
+typedef enum {
+	KOBJECT_FILE,
+	KOBJECT_DIR,
+	KOBJECT_DEVICE,
+	KOBJECT_GRAPHICS,
+	KOBJECT_PIPE,
+	KOBJECT_CONSOLE
+} kobject_type_t;
+
 #endif

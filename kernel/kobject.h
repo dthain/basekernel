@@ -7,7 +7,7 @@
 #ifndef KOBJECT_H
 #define KOBJECT_H
 
-#include "kernel/ktypes.h"
+#include "kernel/types.h"
 
 #include "fs.h"
 #include "device.h"
@@ -24,7 +24,7 @@ struct kobject {
 		struct console *console;
 		struct pipe *pipe;
 	} data;
-	kobject_type type;
+	kobject_type_t type;
 	int refcount;
 	int offset;
 	char *intent;
