@@ -110,7 +110,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
 	case KOBJECT_DEVICE:
-		actual = device_read(kobject->data.device, buffer, size / kobject->data.device->block_size, 0);
+		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 		break;
 	case KOBJECT_PIPE:
 		actual = pipe_read(kobject->data.pipe, buffer, size);
@@ -271,7 +271,7 @@ int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dir
 			return KERROR_NOT_FOUND;
 		}
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 	return 0;
 }
@@ -288,7 +288,7 @@ int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dir
 
 		return 0;
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 	return 0;
 }
@@ -298,7 +298,7 @@ int kobject_dir_delete( struct kobject *kobject, const char *name )
 	if(kobject->type==KOBJECT_DIR) {
 		return fs_dirent_rmdir(kobject->data.dir,name);
 	} else {
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	}
 	return 0;
 }

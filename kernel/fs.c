@@ -39,7 +39,7 @@ int fs_mkfs(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
 	if(!ops->mkfs)
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	return f->ops->mkfs(d);
 }
 
@@ -64,7 +64,7 @@ int fs_volume_close(struct fs_volume *v)
 {
 	const struct fs_ops *ops = v->fs->ops;
 	if(!ops->umount)
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 
 	v->refcount--;
 	if(v->refcount <= 0)
@@ -87,7 +87,7 @@ int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->readdir)
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 	return ops->readdir(d, buffer, buffer_length);
 }
 
@@ -106,7 +106,7 @@ int fs_dirent_compare(struct fs_dirent *d1, struct fs_dirent *d2, int *result)
 {
 	const struct fs_ops *ops = d1->v->fs->ops;
 	if(!ops->compare)
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 
 	return d1->v->fs->ops->compare(d1, d2, result);
 }
@@ -141,7 +141,7 @@ int fs_dirent_close(struct fs_dirent *d)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->close)
-		return KERROR_NOT_SUPPORTED;
+		return KERROR_NOT_IMPLEMENTED;
 
 	d->refcount--;
 	if(d->refcount <= 0) {

@@ -1,6 +1,8 @@
 #ifndef ERRNO_H
 #define ERRNO_H
 
-const char *strerror(int err_code);
+#include "kernel/error.h"
+
+const char *strerror( kernel_error_t err_code);
 
 #endif

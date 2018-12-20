@@ -27,11 +27,69 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "graphics.h"
 
+/*
+syscall_handler() is responsible for decoding system calls
+as they arrive, converting raw integers into the appropriate
+types, depending on the system call number.  Then, each
+individual handler routine checks the validity of each
+argument (fd in range, valid path, etc) and invokes the 
+underlying system within the kernel.  Ideally, each of these
+handler functions should be short (only a few lines)
+and simply make use of functionality within other kernel modules.
+
+sys_run/fork/exec are notable exceptions and could benefit
+from simplification.
+*/
+
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
 
+// Return true if file desciptor is in range and refers to a live object.
+static int is_valid_object( int fd )
+{
+	return fd>=0 && fd<PROCESS_MAX_OBJECTS && current->ktable[fd];
+}
+
+// Return true if fd valid and object is also of indicated type.
+static int is_valid_object_type( int fd, kobject_type_t type )
+{
+	return is_valid_object(fd) && kobject_get_type(current->ktable[fd])==type;
+}
+
+// Return true if (ptr,length) describes a valid area in user space.
+// XXX Needs to be implemented!
+
+static int is_valid_pointer( void *ptr, int length )
+{
+	return 1;
+}
+
+// Return true if string points to a valid area in user space.
+// XXX Needs to be implemented!
+
+static int is_valid_string( const char *str )
+{
+	return 1;
+}
+
+// Return true if path only consists of allowable characters
+// XXX Needs to be implemented!
+
+static int is_valid_path( const char *str )
+{
+	return 1;
+}
+
+/*
+Here follow the handlers for each individual system call
+For all of these system calls, a return value of zero or
+greater indiciates success, and return of less than zero
+indicates an error and the reason.
+*/
+
 int sys_debug(const char *str)
 {
+	if(!is_valid_string(str)) return KERROR_INVALID_ADDRESS;
 	printf("%s", str);
 	return 0;
 }
@@ -86,6 +144,8 @@ the memory state, then loading
 
 int sys_process_run(const char *path, const char **argv, int argc)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	/* Copy argv and path into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
@@ -133,6 +193,8 @@ int sys_process_run(const char *path, const char **argv, int argc)
 /* Function creates a child process with the standard window replaced by wd */
 int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, int fd_len)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
@@ -181,6 +243,8 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, in
 
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	addr_t entry;
 
 	/* Duplicate the arguments into kernel space */
@@ -254,6 +318,8 @@ int sys_process_kill(int pid)
 
 int sys_process_wait(struct process_info *info, int timeout)
 {
+	if(!is_valid_pointer(info,sizeof(*info))) return KERROR_INVALID_ADDRESS;
+
 	return process_wait_child(0, info, timeout);
 }
 
@@ -271,12 +337,16 @@ uint32_t sys_gettimeofday()
 
 uint32_t sys_gettimeofday_rtc(struct rtc_time * t)
 {
+	if(!is_valid_pointer(t,sizeof(*t))) return KERROR_INVALID_ADDRESS;
+
 	rtc_read(t);
 	return 0;
 }
 
 int sys_chdir(const char *path)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		fs_dirent_close(current->current_dir);
@@ -290,6 +360,9 @@ int sys_chdir(const char *path)
 
 int sys_readdir(const char *path, char *buffer, int len)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+	if(!is_valid_pointer(buffer,len)) return KERROR_INVALID_ADDRESS;
+
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		return fs_dirent_readdir(d, buffer, len);
@@ -301,6 +374,7 @@ int sys_readdir(const char *path, char *buffer, int len)
 
 int sys_mkdir(const char *path)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 	// XXX doesn't work -- separate parent and new directory.
 
 	return fs_dirent_mkdir(current->current_dir, path);
@@ -308,6 +382,8 @@ int sys_mkdir(const char *path)
 
 int sys_rmdir(const char *path)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		// XXX this API doesn't make sense.
@@ -328,7 +404,7 @@ static int open_dirent( struct fs_dirent *d, const char *path, int mode, int fla
 	}
 
 	int new_fd = process_available_fd(current);
-	if(new_fd<0) return KERROR_TOO_MANY_OBJECTS;
+	if(new_fd<0) return KERROR_OUT_OF_OBJECTS;
 
 	current->ktable[new_fd] = kobject_create_file(fp);
 
@@ -337,7 +413,7 @@ static int open_dirent( struct fs_dirent *d, const char *path, int mode, int fla
 
 int sys_open_dirent( int fd, const char *path, int mode, int flags)
 {
-	if(!current->ktable[fd]) return KERROR_INVALID_REQUEST;
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 
 	struct fs_dirent *d;
 
@@ -368,6 +444,8 @@ static int find_kobject_by_intent( const char *intent )
 
 int sys_open(const char *path, int mode, int flags)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	const char *colon = strchr(path,':');
 
 	// If the colon comes at the end, then there is no path
@@ -386,7 +464,7 @@ int sys_open(const char *path, int mode, int flags)
 
 	// Duplicate the intent path into a null terminated string.
 	char *intent = strndup(path,colon-path);
-	if(!intent) return KERROR_NO_MEMORY;
+	if(!intent) return KERROR_OUT_OF_MEMORY;
 
 	// Look up the corresponding object by intent
 	int fd = find_kobject_by_intent(intent);
@@ -399,17 +477,21 @@ int sys_open(const char *path, int mode, int flags)
 
 int sys_object_set_intent(int fd, char *intent)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	kobject_set_intent(current->ktable[fd], intent);
 	return 0;
 }
 
 int sys_object_get_intent(int fd, char *buffer, int buffer_size)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
 }
 
 int sys_object_type(int fd)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
 	int fd_type = kobject_get_type(current->ktable[fd]);
 	if(!fd_type)
 		return 0;
@@ -422,11 +504,14 @@ int sys_process_object_max()
 	return max_fd;
 }
 
+// XXX the direction of dup here is backwards from the typical unix,
+// which dups the second argument into the first.
+
 int sys_dup(int fd1, int fd2)
 {
-	if(fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS) {
-		return KERROR_NOT_FOUND;
-	}
+	if(!is_valid_object(fd1)) return KERROR_INVALID_OBJECT;
+	if(fd2>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
+
 	if(fd2 < 0) {
 		fd2 = process_available_fd(current);
 		if(!fd2) {
@@ -442,31 +527,43 @@ int sys_dup(int fd1, int fd2)
 
 int sys_read(int fd, void *data, int length)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_read(p, data, length);
 }
 
 int sys_read_nonblock(int fd, void *data, int length)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_read_nonblock(p, data, length);
 }
 
-
 int sys_write(int fd, void *data, int length)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_write(p, data, length);
 }
 
 int sys_lseek(int fd, int offset, int whence)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
 	// XXX add kobject method here
 	return KERROR_NOT_IMPLEMENTED;
 }
 
 int sys_close(int fd)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
 	struct kobject *p = current->ktable[fd];
 	kobject_close(p);
 	current->ktable[fd] = 0;
@@ -527,26 +624,28 @@ int sys_open_pipe()
 
 int sys_set_blocking(int fd, int b)
 {
-	struct kobject *p = current->ktable[fd];
-	return kobject_set_blocking(p, b);
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	return kobject_set_blocking(current->ktable[fd], b);
 }
 
 int sys_open_console(int wd)
 {
+	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
+
 	int fd = process_available_fd(current);
-	if(wd < 0 || fd < 0) {
+	if(fd<0) {
 		return KERROR_NOT_FOUND;
 	}
 	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
 	return fd;
 }
 
+
 int sys_open_window(int wd, int x, int y, int w, int h)
 {
-	if(wd<0 || wd>PROCESS_MAX_OBJECTS || !current->ktable[wd] ) return KERROR_INVALID_REQUEST;
+	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
 
 	struct kobject *k = current->ktable[wd];
-	if(kobject_get_type(k)!=KOBJECT_GRAPHICS) return KERROR_INVALID_REQUEST;
 
 	int fd = process_available_fd(current);
 		// XXX choose better errno
@@ -565,13 +664,17 @@ int sys_open_window(int wd, int x, int y, int w, int h)
 
 int sys_get_dimensions(int fd, int *dims, int n)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(dims,sizeof(*dims)*n)) return KERROR_INVALID_ADDRESS;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_get_dimensions(p, dims, n);
 }
 
-
 int sys_sys_stats(struct sys_stats *s)
 {
+  if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+
 	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
@@ -580,11 +683,13 @@ int sys_sys_stats(struct sys_stats *s)
 		s->blocks_written[i] = a.blocks_written[i];
 		s->blocks_read[i] = a.blocks_read[i];
 	}
+
 	return 0;
 }
 
 int sys_process_stats(struct proc_stats *s, int pid)
 {
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 	return process_stats(pid, s);
 }
 
