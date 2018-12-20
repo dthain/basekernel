@@ -632,7 +632,7 @@ int sys_size(int fd, int *dims, int n)
 	return kobject_size(p, dims, n);
 }
 
-int sys_sys_stats(struct sys_stats *s)
+int sys_system_stats(struct system_stats *s)
 {
   if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 
@@ -648,7 +648,7 @@ int sys_sys_stats(struct sys_stats *s)
 	return 0;
 }
 
-int sys_process_stats(struct proc_stats *s, int pid)
+int sys_process_stats(struct process_stats *s, int pid)
 {
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 	return process_stats(pid, s);
@@ -733,9 +733,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_RMDIR:
 		return sys_rmdir((const char *) a);
 	case SYSCALL_SYS_STATS:
-		return sys_sys_stats((struct sys_stats *) a);
+		return sys_system_stats((struct system_stats *) a);
 	case SYSCALL_PROCESS_STATS:
-		return sys_process_stats((struct proc_stats *) a, b);
+		return sys_process_stats((struct process_stats *) a, b);
 	default:
 		return -1;
 	}

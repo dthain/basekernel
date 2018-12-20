@@ -562,7 +562,7 @@ void process_pass_arguments(struct process *p, int argc, char **argv)
 	kfree(addr_of_argv);
 }
 
-int process_stats(int pid, struct proc_stats *s)
+int process_stats(int pid, struct process_stats *s)
 {
 	if(pid > PROCESS_MAX_PID || !process_table[pid]) {
 		return 1;

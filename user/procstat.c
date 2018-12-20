@@ -28,7 +28,7 @@ int main(int argc, char const *argv[]) {
 	struct process_info info;
 	process_wait(&info, -1);
 	unsigned int timeElapsed = gettimeofday() - startTime;
-	struct proc_stats stat;
+	struct process_stats stat;
 	process_stats(&stat, pid);
 	printf("Process %u exited with status %d\n", info.pid, info.exitcode);
 	printf("Time elapsed: %d:%d:%d\n", timeElapsed/3600, (timeElapsed%3600)/60, timeElapsed % 60);

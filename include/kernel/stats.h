@@ -4,13 +4,20 @@
 #include "kernel/types.h"
 #include "kernel/syscall.h"
 
-struct sys_stats {
+struct system_stats {
 	uint32_t time;
 	uint32_t blocks_read[4];
 	uint32_t blocks_written[4];
 };
 
-struct proc_stats {
+struct object_stats {
+	uint32_t reads;
+	uint32_t writes;
+	uint64_t bytes_read;
+	uint64_t bytes_written;
+};
+
+struct process_stats {
 	uint32_t blocks_read;
 	uint32_t blocks_written;
 	uint32_t bytes_read;
