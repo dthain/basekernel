@@ -9,11 +9,12 @@ See the file LICENSE for details.
 
 #include "device.h"
 
-struct device *keyboard_get();
-char keyboard_read(int non_blocking);	// 1 for non_blocking, 0 for blocking
 void keyboard_init();
-int keyboard_device_read_block(struct device *d, void *dest, int size, int offset);
-int keyboard_device_read_nonblock(struct device *d, void *dest, int size, int offset);
+char keyboard_read(int non_blocking);	// 1 for non_blocking, 0 for blocking
+
+int keyboard_device_probe( int unit, int *nblocks, int *blocksize, char *info );
+int keyboard_device_read( int unit, void *data, int size, int offset);
+int keyboard_device_read_nonblock( int unit, void *data, int size, int offset);
 
 
 #endif

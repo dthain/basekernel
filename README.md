@@ -16,8 +16,9 @@ To be clear, this is raw low-level code, not a production system.
 If you want to hack code and learn about operating system, you will like Basekernel.
 If you are looking for a new OS to run on your laptop, then this is not what you want.
 
-This project is led by Prof. Douglas Thain at the University of Notre Dame,
-with contributions from students, particularly Jon Westhoff and Kevin Wern.
+This project is led by Prof. Douglas Thain at the University of Notre Dame.
+A variety of students have contributed to the code, including
+Jack Mazanec, Douglas Smith, Ethan Williams, Jon Westhoff, and Kevin Wern.
 
 To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wiki).
 
@@ -40,17 +41,17 @@ And you should see something like this:
 After some initial boot messages, you will see the kernel shell prompt.
 This allows you to take some simple actions before running the first
 user level program.  For example, read the boot messages to see
-which ata unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
+which atapi unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
 to mount the cdrom filesystem on that unit:
 
 <pre>
-mount 2 cdrom
+mount atapi 2 cdromfs
 </pre>
 
 Use the <tt>list</tt> command to examine the root directory:
 
 <pre>
-list
+list /
 </pre>
 
 And use the <tt>run</tt> command to run a program:

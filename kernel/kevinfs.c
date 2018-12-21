@@ -49,7 +49,7 @@ static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinf
 static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
 static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);
 static struct kevinfs_dirent *kevinfs_inode_as_kevinfs_dirent(struct kevinfs_volume *v, struct kevinfs_inode *node);
-static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no);
+static struct kevinfs_volume *kevinfs_volume_create_empty(struct device *device);
 
 #ifdef DEBUG
 
@@ -84,27 +84,22 @@ static void kevinfs_print_dir_record_list(struct kevinfs_dir_record_list *l)
 
 int kevinfs_ata_read_block(struct device *device, uint32_t index, void *buffer)
 {
-	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	uint32_t num_blocks = factor;
-	index = index * factor;
-	return bcache_read(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	return bcache_read(device, buffer, 1, index) ? FS_BLOCKSIZE : -1;
 }
 
 int kevinfs_ata_write_block(struct device *device, uint32_t index, const void *buffer)
 {
-	int factor = FS_BLOCKSIZE / ATA_BLOCKSIZE;
-	uint32_t num_blocks = factor;
-	index = index * factor;
-	return bcache_write(device, buffer, num_blocks, index) ? FS_BLOCKSIZE : -1;
+	return bcache_write(device, buffer, 1, index) ? FS_BLOCKSIZE : -1;
 }
 
 struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
 {
 	struct kevinfs_superblock *check = kmalloc(sizeof(struct kevinfs_superblock));
-	uint8_t buffer[FS_BLOCKSIZE];
+	uint8_t * buffer = kmalloc(FS_BLOCKSIZE);
 	if(kevinfs_ata_read_block(device, 0, buffer) < 0)
 		return 0;
 	memcpy(check, buffer, sizeof(struct kevinfs_superblock));
+	kfree(buffer);
 	if(check->magic == FS_MAGIC)
 		return check;
 	kfree(check);
@@ -113,14 +108,15 @@ struct kevinfs_superblock *kevinfs_ata_read_superblock(struct device *device)
 
 static int kevinfs_ata_write_superblock(struct device *device)
 {
-	uint8_t wbuffer[FS_BLOCKSIZE];
+	uint8_t * wbuffer = kmalloc(FS_BLOCKSIZE);
 	uint32_t num_blocks;
 	int ata_blocksize;
 	uint32_t superblock_num_blocks,  available_blocks, free_blocks,
 		 total_inodes, total_inode_bitmap_bytes, total_block_bitmap_bytes, inode_sector_size,
 		 inode_bit_sector_size, data_bit_sector_size;
-	if (!ata_probe(device->unit, &num_blocks, &ata_blocksize, 0) || num_blocks == 0)
-		return -1;
+
+	num_blocks = device_nblocks(device);
+	ata_blocksize = device_block_size(device);
 
 	char zeros[ata_blocksize];
 	memset(zeros, 0, ata_blocksize);
@@ -151,22 +147,27 @@ static int kevinfs_ata_write_superblock(struct device *device)
 	uint32_t counter = 0;
 	printf("Writing inode bitmap...\n");
 	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
-		if(!kevinfs_ata_write_block(device, i, zeros))
+		if(!bcache_write(device, zeros, 1, i)) {
+			kfree(wbuffer);
 			return -1;
+		}
 		counter++;
 	}
 	printf("%u blocks written\n", counter);
 	counter = 0;
 	printf("Writing free block bitmap...\n");
 	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
-		if(!kevinfs_ata_write_block(device, i, zeros))
+		if(!bcache_write(device, zeros, 1, i)) {
+			kfree(wbuffer);
 			return -1;
+		}
 		counter++;
 	}
 	printf("writing superblock...\n");
 	kevinfs_ata_write_block(device, 0, wbuffer);
 	counter++;
 	printf("%u blocks written\n", counter);
+	kfree(wbuffer);
 	return counter;
 }
 
@@ -179,9 +180,11 @@ int kevinfs_ata_format(struct device *device)
 static int kevinfs_ata_get_available_bit(struct device *device, uint32_t index, uint32_t * res)
 {
 	uint32_t bit_index;
-	uint8_t bit_buffer[FS_BLOCKSIZE];
-	if(kevinfs_ata_read_block(device, index, bit_buffer) < 0)
+	uint8_t * bit_buffer = kmalloc(FS_BLOCKSIZE);
+	if(kevinfs_ata_read_block(device, index, bit_buffer) < 0) {
+		kfree(bit_buffer);
 		return -1;
+	}
 
 	for(bit_index = 0; bit_index < sizeof(bit_buffer); bit_index++) {
 		if(bit_buffer[bit_index] != 255) {
@@ -190,49 +193,63 @@ static int kevinfs_ata_get_available_bit(struct device *device, uint32_t index, 
 			for(offset = 0; offset < sizeof(uint8_t) * 8; offset += 1) {
 				if(!(bit_buffer[bit_index] & bit)) {
 					*res = index * FS_BLOCKSIZE + bit_index * sizeof(uint8_t) * 8 + offset;
+					kfree(bit_buffer);
 					return 0;
 				}
 				bit >>= 1;
 			}
 		}
 	}
+	kfree(bit_buffer);
 	return -1;
 }
 
 int kevinfs_ata_set_bit(struct device *device, uint32_t index, uint32_t begin, uint32_t end)
 {
-	uint8_t bit_buffer[FS_BLOCKSIZE];
+	uint8_t * bit_buffer = kmalloc(FS_BLOCKSIZE);
 	uint32_t bit_block_index = index / (8 * FS_BLOCKSIZE);
 	uint32_t bit_block_offset = index % (8 * FS_BLOCKSIZE);
 	uint8_t bit_mask = 1u << (7 - bit_block_offset % 8);
 
-	if(kevinfs_ata_read_block(device, begin + bit_block_index, bit_buffer) < 0)
+	if(kevinfs_ata_read_block(device, begin + bit_block_index, bit_buffer) < 0) {
+		kfree(bit_buffer);
 		return -1;
-	if((bit_mask & bit_buffer[bit_block_offset / 8]) > 0)
+	}
+	if((bit_mask & bit_buffer[bit_block_offset / 8]) > 0) {
+		kfree(bit_buffer);
 		return -1;
+	}
 
 	bit_buffer[bit_block_offset / 8] |= bit_mask;
-	return kevinfs_ata_write_block(device, begin + bit_block_index, bit_buffer);
+	int res = kevinfs_ata_write_block(device, begin + bit_block_index, bit_buffer);
+	kfree(bit_buffer);
+	return res;
 }
 
 int kevinfs_ata_unset_bit(struct device *device, uint32_t index, uint32_t begin, uint32_t end)
 {
-	uint8_t bit_buffer[FS_BLOCKSIZE];
+	uint8_t * bit_buffer = kmalloc(FS_BLOCKSIZE);
 	uint32_t bit_block_index = index / (8 * FS_BLOCKSIZE);
 	uint32_t bit_block_offset = index % (8 * FS_BLOCKSIZE);
 	uint8_t bit_mask = 1u << (7 - bit_block_offset % 8);
 
-	if(kevinfs_ata_read_block(device, begin + bit_block_index, bit_buffer) < 0)
+	if(kevinfs_ata_read_block(device, begin + bit_block_index, bit_buffer) < 0) {
+		kfree(bit_buffer);
 		return -1;
-	if((bit_mask & bit_buffer[bit_block_offset / 8]) == 0)
+	}
+	if((bit_mask & bit_buffer[bit_block_offset / 8]) == 0) {
+		kfree(bit_buffer);
 		return -1;
+	}
 	bit_buffer[bit_block_offset / 8] ^= bit_mask;
-	return kevinfs_ata_write_block(device, begin + bit_block_index, bit_buffer);
+	int res = kevinfs_ata_write_block(device, begin + bit_block_index, bit_buffer);
+	kfree(bit_buffer);
+	return res;
 }
 
 int kevinfs_ata_check_bit(struct device *device, uint32_t index, uint32_t begin, uint32_t end, bool * res)
 {
-	uint8_t bit_buffer[FS_BLOCKSIZE];
+	uint8_t * bit_buffer = kmalloc(FS_BLOCKSIZE);
 	uint32_t bit_block_index = index / (8 * FS_BLOCKSIZE);
 	uint32_t bit_block_offset = index % (8 * FS_BLOCKSIZE);
 	uint8_t bit_mask = 1u << (7 - bit_block_offset % 8);
@@ -241,6 +258,7 @@ int kevinfs_ata_check_bit(struct device *device, uint32_t index, uint32_t begin,
 		return -1;
 	}
 	*res = (bit_mask & bit_buffer[bit_block_offset / 8]) != 0;
+	kfree(bit_buffer);
 	return 0;
 }
 
@@ -330,13 +348,14 @@ static struct kevinfs_inode *kevinfs_lookup_inode(struct kevinfs_volume *kv, uin
 	uint32_t block = index / inodes_per_block;
 	uint32_t offset = index % inodes_per_block;
 	bool is_active;
-	struct kevinfs_inode current_nodes[inodes_per_block + 1];
+	// struct kevinfs_inode current_nodes[inodes_per_block + 1]; // THIS IS BAD
 
 	if(kevinfs_ata_check_bit(kv->device, index, super->inode_bitmap_start, super->inode_start, &is_active) < 0)
 		return 0;
 	if(is_active == 0)
 		return 0;
 
+	struct kevinfs_inode *current_nodes = kmalloc((inodes_per_block + 1)*sizeof(struct kevinfs_inode));
 	node = kmalloc(sizeof(struct kevinfs_inode));
 	if(node) {
 		if(kevinfs_ata_read_block(kv->device, super->inode_start + block, current_nodes) < 0) {
@@ -347,6 +366,7 @@ static struct kevinfs_inode *kevinfs_lookup_inode(struct kevinfs_volume *kv, uin
 		}
 	}
 
+	kfree(current_nodes);
 	return node;
 }
 
@@ -492,18 +512,22 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 	struct kevinfs_inode *node = kd->node;
 	struct kevinfs_volume *kv = kd->kv;
 	uint32_t num_blocks = node->size / FS_BLOCKSIZE + (node->size % FS_BLOCKSIZE ? 1:0);
-	uint8_t buffer[node->size];
+	uint8_t * buffer = kmalloc(num_blocks*FS_BLOCKSIZE);
+	if (buffer == 0) return 0;
 	uint32_t num_files = node->size / sizeof(struct kevinfs_dir_record);
 	struct kevinfs_dir_record_list *res = kevinfs_dir_alloc(num_files);
 	struct kevinfs_dir_record *files = res->list;
 
-	if(!res)
+	if(!res) {
+		kfree(buffer);
 		return 0;
+	}
 
 	uint32_t i;
 	for(i = 0; i < MIN(num_blocks, FS_DIRECT_MAXBLOCKS); i++) {
 		if(kevinfs_read_data_block(kv, node->direct_addresses[i], buffer + i * FS_BLOCKSIZE) < 0) {
 			kevinfs_dir_dealloc(res);
+			kfree(buffer);
 			return 0;
 		}
 	}
@@ -511,11 +535,13 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 		struct kevinfs_indirect_block indirect;
 		if(kevinfs_read_data_block(kv, node->indirect_block_address, (uint8_t *)&indirect) < 0) {
 			kevinfs_dir_dealloc(res);
+			kfree(buffer);
 			return 0;
 		}
 		for(i = 0; i < num_blocks - FS_DIRECT_MAXBLOCKS; i++) {
 			if(kevinfs_read_data_block(kv, indirect.indirect_addresses[i], buffer + (i + FS_DIRECT_MAXBLOCKS) * FS_BLOCKSIZE) < 0) {
 				kevinfs_dir_dealloc(res);
+				kfree(buffer);
 				return 0;
 			}
 		}
@@ -524,7 +550,7 @@ static struct kevinfs_dir_record_list *kevinfs_readdir(struct kevinfs_dirent *kd
 	for(i = 0; i < num_files; i++) {
 		memcpy(&files[i], buffer + sizeof(struct kevinfs_dir_record) * i, sizeof(struct kevinfs_dir_record));
 	}
-
+	kfree(buffer);
 	return res;
 }
 
@@ -860,9 +886,8 @@ static struct kevinfs_dir_record *kevinfs_init_record_by_filename(const char *fi
 	return record;
 }
 
-static struct fs_volume *kevinfs_mount(int unit_no)
+static struct fs_volume *kevinfs_mount( struct device *device )
 {
-	struct device *device = device_open("ATA", unit_no);
 	struct kevinfs_superblock *super = kevinfs_ata_read_superblock(device);
 	if(!super)
 		return 0;
@@ -894,8 +919,19 @@ static int kevinfs_mkdir(struct fs_dirent *d, const char *filename)
 		goto cleanup;
 	}
 
-	if(kevinfs_writedir(new_kd, new_dir_record_list) < 0 || kevinfs_dir_add(cwd_record_list, new_cwd_record, kd->node) < 0 || kevinfs_writedir(kd, cwd_record_list) < 0 || kevinfs_save_dirent(new_kd) < 0 || kevinfs_save_dirent(kd) < 0) {
-		ret = -1;
+	if ((ret = kevinfs_writedir(new_kd, new_dir_record_list)) < 0) {
+		goto cleanup;
+	}
+	if ((ret = kevinfs_dir_add(cwd_record_list, new_cwd_record, kd->node)) < 0) {
+		goto cleanup;
+	}
+	if ((ret = kevinfs_writedir(kd, cwd_record_list)) < 0) {
+		goto cleanup;
+	}
+	if ((ret = kevinfs_save_dirent(new_kd)) < 0) {
+		goto cleanup;
+	}
+	if ((ret = kevinfs_save_dirent(kd)) < 0) {
 		goto cleanup;
 	}
 
@@ -1055,11 +1091,11 @@ static struct fs_dirent *kevinfs_dirent_lookup(struct fs_dirent *d, const char *
 	return kevinfs_dirent_as_dirent(res);
 }
 
-static int kevinfs_mkfs(int unit_no)
+static int kevinfs_mkfs( struct device * device )
 {
 	struct kevinfs_dir_record_list *top_dir;
 	struct kevinfs_inode *first_node;
-	struct kevinfs_volume *kv = kevinfs_volume_create_empty(unit_no);
+	struct kevinfs_volume *kv = kevinfs_volume_create_empty(device);
 	struct kevinfs_dirent *kd;
 	bool is_directory = 1;
 	int ret = -1;
@@ -1073,8 +1109,9 @@ static int kevinfs_mkfs(int unit_no)
 	top_dir = kevinfs_create_empty_dir(first_node, first_node);
 	kd = kevinfs_inode_as_kevinfs_dirent(kv, first_node);
 
+	// XXX The return conventions here are wonky, need consistency.
 	if(kd && top_dir) {
-		ret = !kevinfs_writedir(kd, top_dir) && !kevinfs_save_dirent(kd);
+		ret = kevinfs_writedir(kd, top_dir) <= 0 || kevinfs_save_dirent(kd);
 	}
 
 	printf("flushing dirty blocks...\n");
@@ -1136,10 +1173,9 @@ static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinf
 	return kv;
 }
 
-static struct kevinfs_volume *kevinfs_volume_create_empty(uint32_t unit_no)
+static struct kevinfs_volume *kevinfs_volume_create_empty(struct device *device)
 {
 	struct kevinfs_volume *kv = kmalloc(sizeof(struct kevinfs_volume));
-	struct device *device = device_open("ATA", unit_no);
 	kv->device = device;
 	return kv;
 }
@@ -1161,6 +1197,7 @@ static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd)
 	d->private_data = kd;
 	d->size = kd->node->size;
 	d->refcount = 1;
+	d->isdir = kd->node->is_directory;
 	return d;
 }
 

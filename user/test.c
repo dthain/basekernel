@@ -10,7 +10,7 @@ See the file LICENSE for details.
 
 int main(const char *argv[], int argc)
 {
-	printf("hello world, I am %d, and I have %d arguments!\n", process_self(), argc);
+	printf("hello world, I am %d, and I have %d arguments!\n", syscall_process_self(), argc);
 
 	printf("They are: ");
 

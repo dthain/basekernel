@@ -49,7 +49,7 @@ int main(const char ** argv, int argc) {
 
 	/* Setup the window */
 	int std_dims[2];
-	get_dimensions(KNO_STDWIN, std_dims, 2);
+	syscall_object_size(KNO_STDWIN, std_dims, 2);
 	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, std_dims[0], std_dims[1]);
 	draw_flush();
@@ -101,15 +101,15 @@ int main(const char ** argv, int argc) {
 			continue;
 		}
 
-		fds[p_i][0] = pipe_open();
-		fds[p_i][3] = open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h);
+		fds[p_i][0] = syscall_open_pipe();
+		fds[p_i][3] = syscall_open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h);
 
 		// Standard output and error get console
-		fds[p_i][1] = console_open(fds[p_i][3]);
+		fds[p_i][1] = syscall_open_console(fds[p_i][3]);
 		fds[p_i][2] = fds[p_i][1];
 
 		// Take in an array of FD's
-		pids[p_i] = process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
+		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
 		draw_window(KNO_STDWIN);
 		draw_border(placement[p_i][0] - 2*padding, placement[p_i][1] - 2*padding, programs[p_i].w + 4*padding, programs[p_i].h + 4*padding, padding, 255, 255, 255);
 		draw_flush();
@@ -131,7 +131,7 @@ int main(const char ** argv, int argc) {
 		}
 
 		/* If tab entered, go to the next process */
-		read(0, &tin, 1);
+		syscall_object_read(0, &tin, 1);
 		if (tin == '\t') {
 			draw_window(KNO_STDWIN);
 			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 255, 255, 255);
@@ -146,13 +146,13 @@ int main(const char ** argv, int argc) {
 			continue;
 		}
 		/* Write 1 character to the correct pipe */
-		write(fds[p_act][0], &tin, 1);
+		syscall_object_write(fds[p_act][0], &tin, 1);
 	}
 
 	/* Reap all children processes */
 	for (int i = 0; i < num_programs; ++i)
 	{
-		process_reap(pids[i]);
+		syscall_process_reap(pids[i]);
 	}
 
 	/* Clean up the window */

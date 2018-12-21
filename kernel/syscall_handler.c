@@ -27,18 +27,70 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "graphics.h"
 
+/*
+syscall_handler() is responsible for decoding system calls
+as they arrive, converting raw integers into the appropriate
+types, depending on the system call number.  Then, each
+individual handler routine checks the validity of each
+argument (fd in range, valid path, etc) and invokes the 
+underlying system within the kernel.  Ideally, each of these
+handler functions should be short (only a few lines)
+and simply make use of functionality within other kernel modules.
+
+sys_run/fork/exec are notable exceptions and could benefit
+from simplification.
+*/
+
 // Get rid of this once we have a proper dirlist stream
 #define LSDIR_TEMP_BUFFER_SIZE 250
 
-int sys_debug(const char *str)
+// Return true if file desciptor is in range and refers to a live object.
+static int is_valid_object( int fd )
 {
-	printf("%s", str);
-	return 0;
+	return fd>=0 && fd<PROCESS_MAX_OBJECTS && current->ktable[fd];
 }
 
-int sys_process_exit(int status)
+// Return true if fd valid and object is also of indicated type.
+static int is_valid_object_type( int fd, kobject_type_t type )
 {
-	process_exit(status);
+	return is_valid_object(fd) && kobject_get_type(current->ktable[fd])==type;
+}
+
+// Return true if (ptr,length) describes a valid area in user space.
+// XXX Needs to be implemented!
+
+static int is_valid_pointer( void *ptr, int length )
+{
+	return 1;
+}
+
+// Return true if string points to a valid area in user space.
+// XXX Needs to be implemented!
+
+static int is_valid_string( const char *str )
+{
+	return 1;
+}
+
+// Return true if path only consists of allowable characters
+// XXX Needs to be implemented!
+
+static int is_valid_path( const char *str )
+{
+	return 1;
+}
+
+/*
+Here follow the handlers for each individual system call
+For all of these system calls, a return value of zero or
+greater indiciates success, and return of less than zero
+indicates an error and the reason.
+*/
+
+int sys_debug(const char *str)
+{
+	if(!is_valid_string(str)) return KERROR_INVALID_ADDRESS;
+	printf("%s", str);
 	return 0;
 }
 
@@ -48,10 +100,10 @@ int sys_process_yield()
 	return 0;
 }
 
-int sys_sbrk(int delta)
+int sys_process_exit(int status)
 {
-	process_data_size_set(current, current->vm_data_size + delta);
-	return PROCESS_ENTRY_POINT + current->vm_data_size;
+	process_exit(status);
+	return 0;
 }
 
 /* Helper routines to duplicate/free an argv array locally */
@@ -86,6 +138,8 @@ the memory state, then loading
 
 int sys_process_run(const char *path, const char **argv, int argc)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	/* Copy argv and path into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
@@ -133,6 +187,8 @@ int sys_process_run(const char *path, const char **argv, int argc)
 /* Function creates a child process with the standard window replaced by wd */
 int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, int fd_len)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
 	char *copy_path = strdup(path);
@@ -181,6 +237,8 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, in
 
 int sys_process_exec(const char *path, const char **argv, int argc)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	addr_t entry;
 
 	/* Duplicate the arguments into kernel space */
@@ -231,12 +289,6 @@ int sys_process_fork()
 	return p->pid;
 }
 
-int sys_process_sleep(unsigned int ms)
-{
-	clock_wait(ms);
-	return 0;
-}
-
 int sys_process_self()
 {
 	return current->pid;
@@ -252,94 +304,71 @@ int sys_process_kill(int pid)
 	return process_kill(pid);
 }
 
-int sys_process_wait(struct process_info *info, int timeout)
-{
-	return process_wait_child(0, info, timeout);
-}
-
 int sys_process_reap(int pid)
 {
 	return process_reap(pid);
 }
 
-uint32_t sys_gettimeofday()
+int sys_process_wait(struct process_info *info, int timeout)
 {
-	struct rtc_time t;
-	rtc_read(&t);
-	return rtc_time_to_timestamp(&t);
+	if(!is_valid_pointer(info,sizeof(*info))) return KERROR_INVALID_ADDRESS;
+	return process_wait_child(0, info, timeout);
 }
 
-uint32_t sys_gettimeofday_rtc(struct rtc_time * t)
+int sys_process_sleep(unsigned int ms)
 {
-	rtc_read(t);
+	clock_wait(ms);
 	return 0;
 }
 
-int sys_chdir(const char *path)
+int sys_process_stats(struct process_stats *s, int pid)
 {
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		fs_dirent_close(current->current_dir);
-		current->current_dir = d;
-		return 0;
-	} else {
-		// XXX get error back from namei
-		return KERROR_NOT_FOUND;
-	}
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+	return process_stats(pid, s);
 }
 
-int sys_readdir(const char *path, char *buffer, int len)
+int sys_process_heap(int delta)
 {
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		return fs_dirent_readdir(d, buffer, len);
-	} else {
-		// XXX get error back from namei
-		return KERROR_NOT_FOUND;
-	}
+	process_data_size_set(current, current->vm_data_size + delta);
+	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
-int sys_mkdir(const char *path)
+int sys_object_readdir( int fd, char *buffer, int length)
 {
-	// XXX doesn't work -- separate parent and new directory.
-
-	return fs_dirent_mkdir(current->current_dir, path);
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(buffer,length)) return KERROR_INVALID_ADDRESS;
+	if(kobject_get_type(current->ktable[fd])!=KOBJECT_DIR) return KERROR_NOT_A_DIRECTORY;
+	return kobject_read(current->ktable[fd],buffer,length);
 }
 
-int sys_rmdir(const char *path)
-{
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		// XXX this API doesn't make sense.
-		return fs_dirent_rmdir(d, path);
-	} else {
-		// XXX get error back from namei
-		return -1;
-	}
-}
-
-static int open_from_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
+static int open_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
 {
 	int new_fd = process_available_fd(current);
-	if(new_fd<0) return KERROR_TOO_MANY_OBJECTS;
+	if(new_fd<0) return KERROR_OUT_OF_OBJECTS;
 
-	d = fs_dirent_namei(d,path);
-	if(!d) return KERROR_NOT_FOUND;
+	struct kobject *k;
 
-	struct fs_file *fp = fs_file_open(d, mode);
-	current->ktable[new_fd] = kobject_create_file(fp);
+	if(fs_dirent_isdir(d)) {
+		k = kobject_create_dir(d);
+	} else {
+		k = kobject_create_file(fs_file_open(d,mode));
+	}
+
+	current->ktable[new_fd] = k;
 
 	return new_fd;
 }
 
-int sys_open_dirent( int fd, const char *path, int mode, int flags)
+int sys_open_file_relative( int fd, const char *path, int mode, int flags)
 {
-	if(!current->ktable[fd]) return KERROR_INVALID_REQUEST;
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 
-	// XXX breaking abstraction, pass through kobject instead.
-	struct fs_dirent *d = current->ktable[fd]->data.file->d;
+	struct fs_dirent *d;
 
-	return open_from_dirent(d,path,mode,flags);
+	int r = kobject_dir_lookup(current->ktable[fd],path,&d);
+	if(r<0) return r;
+
+	return open_dirent(d,path,mode,flags);
 }
 
 static int find_kobject_by_intent( const char *intent )
@@ -351,7 +380,8 @@ static int find_kobject_by_intent( const char *intent )
 		str2int(&intent[1], &i);
 	} else {
 		// Find an intent matching the tag.
-		for(int i = sys_process_object_max(); i >= 0; i--) {
+		int max = process_object_max(current);
+		for(int i = max; i >= 0; i--) {
 			if(!strcmp(current->ktable[i]->intent, intent)) {
 				return i;
 			}
@@ -361,8 +391,10 @@ static int find_kobject_by_intent( const char *intent )
 	return KERROR_NOT_FOUND;
 }
 
-int sys_open(const char *path, int mode, int flags)
+int sys_open_file(const char *path, int mode, int flags)
 {
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
 	const char *colon = strchr(path,':');
 
 	// If the colon comes at the end, then there is no path
@@ -372,7 +404,8 @@ int sys_open(const char *path, int mode, int flags)
 
 	// If we have no tag, use everything as a path.
 	if(!colon) {
-		return open_from_dirent(current->current_dir, path, mode, flags);
+		struct fs_dirent *d = fs_dirent_namei(current->current_dir,path);
+		return open_dirent(d, path, mode, flags);
 	}
 
 	// The base path is whatever comes after the colon
@@ -380,7 +413,7 @@ int sys_open(const char *path, int mode, int flags)
 
 	// Duplicate the intent path into a null terminated string.
 	char *intent = strndup(path,colon-path);
-	if(!intent) return KERROR_NO_MEMORY;
+	if(!intent) return KERROR_OUT_OF_MEMORY;
 
 	// Look up the corresponding object by intent
 	int fd = find_kobject_by_intent(intent);
@@ -388,121 +421,40 @@ int sys_open(const char *path, int mode, int flags)
 	if(fd<0) return fd;
 
 	// Open the file relative to that object.
-	return sys_open_dirent(fd, base_path, mode, flags);
+	return sys_open_file_relative(fd, base_path, mode, flags);
 }
 
-int sys_object_set_intent(int fd, char *intent)
+int sys_open_console(int wd)
 {
-	kobject_set_intent(current->ktable[fd], intent);
-	return 0;
-}
+	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
 
-int sys_object_get_intent(int fd, char *buffer, int buffer_size)
-{
-	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
-}
-
-int sys_object_type(int fd)
-{
-	int fd_type = kobject_get_type(current->ktable[fd]);
-	if(!fd_type)
-		return 0;
-	return fd_type;
-}
-
-int sys_process_object_max()
-{
-	int max_fd = process_object_max(current);
-	return max_fd;
-}
-
-int sys_dup(int fd1, int fd2)
-{
-	if(fd1 < 0 || fd1 >= PROCESS_MAX_OBJECTS || !current->ktable[fd1] || fd2 >= PROCESS_MAX_OBJECTS) {
+	int fd = process_available_fd(current);
+	if(fd<0) {
 		return KERROR_NOT_FOUND;
 	}
-	if(fd2 < 0) {
-		fd2 = process_available_fd(current);
-		if(!fd2) {
-			return KERROR_NOT_FOUND;
-		}
+	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
+	return fd;
+}
+
+
+int sys_open_window(int wd, int x, int y, int w, int h)
+{
+	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
+
+	struct kobject *k = current->ktable[wd];
+
+	int fd = process_available_fd(current);
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+
+	k = kobject_create_graphics_from_graphics(k,x,y,w,h);
+	if(!k) {
+		// XXX choose better errno
+		return KERROR_INVALID_REQUEST;
 	}
-	if(current->ktable[fd2]) {
-		kobject_close(current->ktable[fd2]);
-	}
-	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
-	return fd2;
-}
 
-int sys_read(int fd, void *data, int length)
-{
-	struct kobject *p = current->ktable[fd];
-	return kobject_read(p, data, length);
-}
+	current->ktable[fd] = k;
 
-int sys_read_nonblock(int fd, void *data, int length)
-{
-	struct kobject *p = current->ktable[fd];
-	return kobject_read_nonblock(p, data, length);
-}
-
-
-int sys_write(int fd, void *data, int length)
-{
-	struct kobject *p = current->ktable[fd];
-	return kobject_write(p, data, length);
-}
-
-int sys_lseek(int fd, int offset, int whence)
-{
-	// XXX add kobject method here
-	return KERROR_NOT_IMPLEMENTED;
-}
-
-int sys_close(int fd)
-{
-	struct kobject *p = current->ktable[fd];
-	kobject_close(p);
-	current->ktable[fd] = 0;
-	return 0;
-}
-
-int sys_pwd(char *result)
-{
-	struct fs_dirent *d = current->current_dir;
-	char dir_list[LSDIR_TEMP_BUFFER_SIZE];
-	memset(dir_list, 0, LSDIR_TEMP_BUFFER_SIZE);
-	result[0] = 0;
-	while(1) {
-		struct fs_dirent *parent = fs_dirent_namei(d, "..");
-		int hit_root, found_child;
-		fs_dirent_compare(parent, d, &hit_root);
-		if(hit_root) {
-			kfree(parent);
-			break;
-		}
-		if(fs_dirent_readdir(parent, dir_list, LSDIR_TEMP_BUFFER_SIZE) < 0)
-			return -1;
-		char *dir = strtok(dir_list, " ");
-		while(dir) {
-			struct fs_dirent *child = fs_dirent_namei(parent, dir);
-			fs_dirent_compare(child, d, &found_child);
-			if(found_child) {
-				char result_next[LSDIR_TEMP_BUFFER_SIZE];
-				memset(result_next, 0, LSDIR_TEMP_BUFFER_SIZE);
-				strcat(result_next, "/");
-				strcat(result_next, dir);
-				strcat(result_next, result);
-				if(strlen(result) + strlen(result_next) + 1 > LSDIR_TEMP_BUFFER_SIZE)
-					return -1;
-				strcpy(result, result_next);
-				break;
-			}
-			dir = strtok(dir + strlen(dir) + 1, " ");
-		}
-		d = parent;
-	}
-	return 0;
+	return fd;
 }
 
 int sys_open_pipe()
@@ -519,71 +471,197 @@ int sys_open_pipe()
 	return fd;
 }
 
-int sys_set_blocking(int fd, int b)
+int sys_object_type(int fd)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
+	int fd_type = kobject_get_type(current->ktable[fd]);
+	if(!fd_type)
+		return 0;
+	return fd_type;
+}
+
+// XXX the direction of dup here is backwards from the typical unix,
+// which dups the second argument into the first.
+
+int sys_object_dup(int fd1, int fd2)
+{
+	if(!is_valid_object(fd1)) return KERROR_INVALID_OBJECT;
+	if(fd2>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
+
+	if(fd2 < 0) {
+		fd2 = process_available_fd(current);
+		if(!fd2) {
+			return KERROR_NOT_FOUND;
+		}
+	}
+	if(current->ktable[fd2]) {
+		kobject_close(current->ktable[fd2]);
+	}
+	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
+	return fd2;
+}
+
+int sys_object_read(int fd, void *data, int length)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
 	struct kobject *p = current->ktable[fd];
-	return kobject_set_blocking(p, b);
+	return kobject_read(p, data, length);
 }
 
-int sys_open_console(int wd)
+int sys_object_read_nonblock(int fd, void *data, int length)
 {
-	int fd = process_available_fd(current);
-	if(wd < 0 || fd < 0) {
-		return KERROR_NOT_FOUND;
-	}
-	struct console *c = console_create(current->ktable[wd]->data.graphics);
-	if(!c) {
-		return KERROR_NOT_FOUND;
-	}
-	current->ktable[fd] = kobject_create_console(c);
-	return fd;
-}
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
 
-// XXX don't go into kobject internals
-
-int sys_open_window(int wd, int x, int y, int w, int h)
-{
-	int fd = process_available_fd(current);
-	if(fd == -1 || wd < 0 || current->ktable[wd]->type != KOBJECT_GRAPHICS || current->ktable[wd]->data.graphics->clip.w < x + w || current->ktable[wd]->data.graphics->clip.h < y + h) {
-		return KERROR_NOT_FOUND;
-	}
-
-	current->ktable[fd] = kobject_create_graphics(graphics_create(current->ktable[wd]->data.graphics));
-
-	if(!current->ktable[fd]) {
-		return KERROR_NOT_FOUND;
-	}
-
-	current->ktable[fd]->data.graphics->clip.x = x + current->ktable[wd]->data.graphics->clip.x;
-	current->ktable[fd]->data.graphics->clip.y = y + current->ktable[wd]->data.graphics->clip.y;
-	current->ktable[fd]->data.graphics->clip.w = w;
-	current->ktable[fd]->data.graphics->clip.h = h;
-	return fd;
-}
-
-int sys_get_dimensions(int fd, int *dims, int n)
-{
 	struct kobject *p = current->ktable[fd];
-	return kobject_get_dimensions(p, dims, n);
+	return kobject_read_nonblock(p, data, length);
 }
 
-
-int sys_sys_stats(struct sys_stats *s)
+int sys_object_write(int fd, void *data, int length)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
+	struct kobject *p = current->ktable[fd];
+	return kobject_write(p, data, length);
+}
+
+int sys_object_seek(int fd, int offset, int whence)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
+	// XXX add kobject method here
+	return KERROR_NOT_IMPLEMENTED;
+}
+
+int sys_object_close(int fd)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+
+	struct kobject *p = current->ktable[fd];
+	kobject_close(p);
+	current->ktable[fd] = 0;
+	return 0;
+}
+
+int sys_object_stats( int fd, struct object_stats *stats )
+{
+	return KERROR_NOT_IMPLEMENTED;
+}
+
+int sys_object_set_intent(int fd, char *intent)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	kobject_set_intent(current->ktable[fd], intent);
+	return 0;
+}
+
+int sys_object_get_intent(int fd, char *buffer, int buffer_size)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
+}
+
+int sys_object_set_blocking(int fd, int b)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	return kobject_set_blocking(current->ktable[fd], b);
+}
+
+int sys_object_size(int fd, int *dims, int n)
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_pointer(dims,sizeof(*dims)*n)) return KERROR_INVALID_ADDRESS;
+
+	struct kobject *p = current->ktable[fd];
+	return kobject_size(p, dims, n);
+}
+
+int sys_object_copy( int src, int dst )
+{
+	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object(dst)) return KERROR_INVALID_OBJECT;
+
+	return kobject_copy(current->ktable[src],current->ktable[dst]);
+}
+
+int sys_object_max()
+{
+	int max_fd = process_object_max(current);
+	return max_fd;
+}
+
+int sys_system_stats(struct system_stats *s)
+{
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+
 	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
+
 	struct ata_count a = ata_stats();
 	for(int i = 0; i < 4; i++) {
 		s->blocks_written[i] = a.blocks_written[i];
 		s->blocks_read[i] = a.blocks_read[i];
 	}
+
 	return 0;
 }
 
-int sys_process_stats(struct proc_stats *s, int pid)
+int sys_system_time( uint32_t *tm )
 {
-	return process_stats(pid, s);
+	if(!is_valid_pointer(tm,sizeof(*tm))) return KERROR_INVALID_ADDRESS;
+	struct rtc_time t;
+	rtc_read(&t);
+	*tm = rtc_time_to_timestamp(&t);
+	return 0;
+}
+
+int sys_system_rtc( struct rtc_time *t )
+{
+	if(!is_valid_pointer(t,sizeof(*t))) return KERROR_INVALID_ADDRESS;
+	rtc_read(t);
+	return 0;
+}
+
+int sys_mkdir(const char *path)
+{
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+	// XXX doesn't work -- separate parent and new directory.
+
+	return fs_dirent_mkdir(current->current_dir, path);
+}
+
+int sys_rmdir(const char *path)
+{
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
+	struct fs_dirent *d = fs_resolve(path);
+	if(d) {
+		// XXX this API doesn't make sense.
+		return fs_dirent_rmdir(d, path);
+	} else {
+		// XXX get error back from namei
+		return -1;
+	}
+}
+
+int sys_chdir(const char *path)
+{
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
+	struct fs_dirent *d = fs_resolve(path);
+	if(d) {
+		fs_dirent_close(current->current_dir);
+		current->current_dir = d;
+		return 0;
+	} else {
+		// XXX get error back from namei
+		return KERROR_NOT_FOUND;
+	}
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
@@ -594,16 +672,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	switch (n) {
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
-	case SYSCALL_PROCESS_EXIT:
-		return sys_process_exit(a);
 	case SYSCALL_PROCESS_YIELD:
 		return sys_process_yield();
-	case SYSCALL_PROCESS_SLEEP:
-		return sys_process_sleep(a);
-	case SYSCALL_PROCESS_SELF:
-		return sys_process_self();
-	case SYSCALL_PROCESS_PARENT:
-		return sys_process_parent();
+	case SYSCALL_PROCESS_EXIT:
+		return sys_process_exit(a);
 	case SYSCALL_PROCESS_RUN:
 		return sys_process_run((const char *) a, (const char **) b, c);
 	case SYSCALL_PROCESS_WRUN:
@@ -612,65 +684,77 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
 		return sys_process_exec((const char *) a, (const char **) b, c);
+	case SYSCALL_PROCESS_SELF:
+		return sys_process_self();
+	case SYSCALL_PROCESS_PARENT:
+		return sys_process_parent();
 	case SYSCALL_PROCESS_KILL:
 		return sys_process_kill(a);
-	case SYSCALL_PROCESS_WAIT:
-		return sys_process_wait((struct process_info *) a, b);
 	case SYSCALL_PROCESS_REAP:
 		return sys_process_reap(a);
-	case SYSCALL_OPEN:
-		return sys_open((const char *) a, b, c);
-	case SYSCALL_DUP:
-		return sys_dup(a, b);
-	case SYSCALL_READ:
-		return sys_read(a, (void *) b, c);
-	case SYSCALL_READ_NONBLOCK:
-		return sys_read_nonblock(a, (void *) b, c);
-	case SYSCALL_WRITE:
-		return sys_write(a, (void *) b, c);
-	case SYSCALL_LSEEK:
-		return sys_lseek(a, b, c);
-	case SYSCALL_CLOSE:
-		return sys_close(a);
+	case SYSCALL_PROCESS_WAIT:
+		return sys_process_wait((struct process_info *) a, b);
+	case SYSCALL_PROCESS_SLEEP:
+		return sys_process_sleep(a);
+	case SYSCALL_PROCESS_STATS:
+		return sys_process_stats((struct process_stats *) a, b);
+	case SYSCALL_PROCESS_HEAP:
+		return sys_process_heap(a);
+
+	case SYSCALL_OPEN_FILE:
+		return sys_open_file((const char *) a, b, c);
+	case SYSCALL_OPEN_FILE_RELATIVE:
+		return sys_open_file_relative(a, (const char *)b, c, d);
+	case SYSCALL_OPEN_WINDOW:
+		return sys_open_window(a, b, c, d, e);
+	case SYSCALL_OPEN_CONSOLE:
+		return sys_open_console(a);
+	case SYSCALL_OPEN_PIPE:
+		return sys_open_pipe();
+
 	case SYSCALL_OBJECT_TYPE:
 		return sys_object_type(a);
-	case SYSCALL_PROCESS_OBJECT_MAX:
-		return sys_process_object_max(a);
+	case SYSCALL_OBJECT_DUP:
+		return sys_object_dup(a, b);
+	case SYSCALL_OBJECT_READ:
+		return sys_object_read(a, (void *) b, c);
+	case SYSCALL_OBJECT_READ_NONBLOCK:
+		return sys_object_read_nonblock(a, (void *) b, c);
+	case SYSCALL_OBJECT_READDIR:
+		return sys_object_readdir(a, (char *) b, (int) c);
+	case SYSCALL_OBJECT_WRITE:
+		return sys_object_write(a, (void *) b, c);
+	case SYSCALL_OBJECT_SEEK:
+		return sys_object_seek(a, b, c);
+	case SYSCALL_OBJECT_CLOSE:
+		return sys_object_close(a);
+	case SYSCALL_OBJECT_STATS:
+		return sys_object_stats(a, (struct object_stats *) b);
 	case SYSCALL_OBJECT_SET_INTENT:
 		return sys_object_set_intent(a, (char *) b);
 	case SYSCALL_OBJECT_GET_INTENT:
 		return sys_object_get_intent(a, (char *) b, c);
-	case SYSCALL_SET_BLOCKING:
-		return sys_set_blocking(a, b);
-	case SYSCALL_OPEN_PIPE:
-		return sys_open_pipe();
-	case SYSCALL_OPEN_CONSOLE:
-		return sys_open_console(a);
-	case SYSCALL_OPEN_WINDOW:
-		return sys_open_window(a, b, c, d, e);
-	case SYSCALL_GET_DIMENSIONS:
-		return sys_get_dimensions(a, (int *) b, c);
-	case SYSCALL_GETTIMEOFDAY:
-		return sys_gettimeofday();
-	case SYSCALL_GETTIMEOFDAY_RTC:
-		return sys_gettimeofday_rtc((struct rtc_time *) a);
-	case SYSCALL_SBRK:
-		return sys_sbrk(a);
-	case SYSCALL_CHDIR:
-		return sys_chdir((const char *) a);
+	case SYSCALL_OBJECT_SET_BLOCKING:
+		return sys_object_set_blocking(a, b);
+	case SYSCALL_OBJECT_SIZE:
+		return sys_object_size(a, (int *) b, c);
+	case SYSCALL_OBJECT_MAX:
+		return sys_object_max(a);
+	case SYSCALL_OBJECT_COPY:
+		return sys_object_copy(a,b);
+	case SYSCALL_SYSTEM_STATS:
+		return sys_system_stats((struct system_stats *) a);
+	case SYSCALL_SYSTEM_TIME:
+		return sys_system_time((uint32_t*)a);
+	case SYSCALL_SYSTEM_RTC:
+		return sys_system_rtc((struct rtc_time *) a);
 	case SYSCALL_MKDIR:
 		return sys_mkdir((const char *) a);
-	case SYSCALL_READDIR:
-		return sys_readdir((const char *) a, (char *) b, (int) c);
 	case SYSCALL_RMDIR:
 		return sys_rmdir((const char *) a);
-	case SYSCALL_PWD:
-		return sys_pwd((char *) a);
-	case SYSCALL_SYS_STATS:
-		return sys_sys_stats((struct sys_stats *) a);
-	case SYSCALL_PROCESS_STATS:
-		return sys_process_stats((struct proc_stats *) a, b);
+	case SYSCALL_CHDIR:
+		return sys_chdir((const char *) a);
 	default:
-		return -1;
+		return KERROR_INVALID_SYSCALL;
 	}
 }

@@ -2,49 +2,49 @@
 #include "library/errno.h"
 #include "library/string.h"
 
-static const char KERROR_NOT_FOUND_STRING[] = "KERROR: Not Found";
-static const char KERROR_INVALID_REQUEST_STRING[] = "KERROR: Invalid Request";
-static const char KERROR_PERMISSION_DENIED_STRING[] = "KERROR: Permission Denied";
-static const char KERROR_NOT_IMPLEMENTED_STRING[] = "KERROR: Not Implemented";
-static const char KERROR_NOT_EXECUTABLE_STRING[] = "KERROR: Not Executable";
-static const char KERROR_EXECUTION_FAILED_STRING[] = "KERROR: Execution Failed";
-static const char KERROR_NOT_SUPPORTED_STRING[] = "KERROR: Not a Supported String";
-static const char KERROR_NOT_A_DIRECTORY_STRING[] = "KERROR: Not a Directory";
-static const char KERROR_NOT_A_FILE_STRING[] = "KERROR: Not a File";
-static const char KERROR_NOT_A_WINDOW_STRING[] = "KERROR: Not a Window";
-static const char KERROR_NOT_A_DEVICE_STRING[] = "KERROR: Not a Device";
-static const char KERROR_NO_MEMORY_STRING[] = "KERROR: No Memory";
-static const char KERROR_IO_FAILURE_STRING[] = "KERROR: IO Failure";
-
-const char * strerror(int err_code) {
+const char * strerror( kernel_error_t err_code) {
 	switch (err_code) {
 		case KERROR_NOT_FOUND:
-			return KERROR_NOT_FOUND_STRING;
+			return "Not Found";
 		case KERROR_INVALID_REQUEST:
-			return KERROR_INVALID_REQUEST_STRING;
+			return "Invalid Request";
 		case KERROR_PERMISSION_DENIED:
-			return KERROR_PERMISSION_DENIED_STRING;
+			return "Permission Denied";
 		case KERROR_NOT_IMPLEMENTED:
-			return KERROR_NOT_IMPLEMENTED_STRING;
+			return "Not Implemented";
 		case KERROR_NOT_EXECUTABLE:
-			return KERROR_NOT_EXECUTABLE_STRING;
+			return "Not Executable";
 		case KERROR_EXECUTION_FAILED:
-			return KERROR_EXECUTION_FAILED_STRING;
-		case KERROR_NOT_SUPPORTED:
-			return KERROR_NOT_SUPPORTED_STRING;
+			return "Execution Failed";
 		case KERROR_NOT_A_DIRECTORY:
-			return KERROR_NOT_A_DIRECTORY_STRING;
+			return "Not a Directory";
 		case KERROR_NOT_A_FILE:
-			return KERROR_NOT_A_FILE_STRING;
+			return "Not a File";
 		case KERROR_NOT_A_WINDOW:
-			return KERROR_NOT_A_WINDOW_STRING;
+			return "Not a Window";
 		case KERROR_NOT_A_DEVICE:
-			return KERROR_NOT_A_DEVICE_STRING;
-		case KERROR_NO_MEMORY:
-			return KERROR_NO_MEMORY_STRING;
-		case KERROR_IO_FAILURE:
-			return KERROR_IO_FAILURE_STRING;
+			return "Not a Device";
+		case KERROR_NOT_A_CONSOLE:
+			return "Not a Console";
+		case KERROR_NOT_A_PIPE:
+			return "Not a Pipe";
+		case KERROR_INVALID_SYSCALL:
+			return "Invalid System Call";
+		case KERROR_INVALID_OBJECT:
+			return "Invalid Object";
+		case KERROR_INVALID_ADDRESS:
+			return "Invalid Address";
+		case KERROR_INVALID_PATH:
+			return "Invalid Path";
+		case KERROR_INVALID_TAG:
+			return "Invalid Tag";
+		case KERROR_OUT_OF_MEMORY:
+			return "Out of Memory";
+		case KERROR_OUT_OF_OBJECTS:
+			return "Out of Objects";
+		case KERROR_OUT_OF_SPACE:
+			return "Out of Space";
 		default:
-			return "unknown";
+			return "Unknown error";
 	}
 }

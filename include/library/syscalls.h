@@ -9,47 +9,66 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 #include "kernel/stats.h"
-#include "kernel/gfxstream.h"
 
-void debug(const char *str);
-void process_exit(int status);
-int process_yield();
-int process_run(const char *cmd, const char **argv, int argc);
-int process_fork();
-void process_exec(const char *path, const char **argv, int argc);
-int process_self();
-int process_parent();
-int process_kill(unsigned int pid);
-int process_reap(unsigned int pid);
-int process_wait(struct process_info *info, int timeout);
-int process_sleep(unsigned int ms);
-int process_object_max();
-int open(const char *path, int mode, int flags);
-int object_type(int fd);
-int dup(int fd1, int fd2);
-int read(int fd, void *data, int length);
-int read_nonblock(int fd, void *data, int length);
-int write(int fd, void *data, int length);
-int lseek(int fd, int offset, int whence);
-int close(int fd);
-int object_set_intent(int fd, char *intent);
-int object_get_intent(int fd, char *buffer, int buffer_size);
-extern void *sbrk(int a);
-char keyboard_read_char();
-int open_window(int wd, int x, int y, int w, int h);
-int set_blocking(int fd, int b);
-int console_open(int fd);
-int pipe_open();
-int mkdir(const char *path);
-int readdir(const char *path, char *buffer, int buffer_len);
-int rmdir(const char *path);
-int pwd(char *buffer);
-int chdir(const char *path);
-int sys_stats(struct sys_stats *s);
-int process_stats(struct proc_stats *s, unsigned int pid);
-uint32_t gettimeofday();
-void gettimeofday_rtc(struct rtc_time * time);
-int get_dimensions(int fd, int * dims, int n);
-int process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
+void syscall_debug(const char *str);
+
+/* Syscalls that manipulate this process and its children. */
+
+void syscall_process_exit(int status);
+int syscall_process_yield();
+int syscall_process_run(const char *cmd, const char **argv, int argc);
+int syscall_process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
+int syscall_process_fork();
+int syscall_process_exec(const char *path, const char **argv, int argc);
+int syscall_process_self();
+int syscall_process_parent();
+int syscall_process_kill(unsigned int pid);
+int syscall_process_reap(unsigned int pid);
+int syscall_process_wait(struct process_info *info, int timeout);
+int syscall_process_sleep(unsigned int ms);
+int syscall_process_stats(struct process_stats *s, unsigned int pid);
+extern void *syscall_process_heap(int a);
+
+/* Syscalls that open or create new kernel objects for this process. */
+
+int syscall_open_file(const char *path, int mode, int flags);
+int syscall_open_file_relative(int fd, const char *path, int mode, int flags);
+int syscall_open_window(int fd, int x, int y, int w, int h);
+int syscall_open_console(int fd);
+int syscall_open_pipe();
+
+/* Syscalls that manipulate kernel objects for this process. */
+
+int syscall_object_type(int fd);
+int syscall_object_dup(int fd1, int fd2);
+int syscall_object_read(int fd, void *data, int length);
+int syscall_object_read_nonblock(int fd, void *data, int length);
+int syscall_object_readdir( int fd, char *buffer, int buffer_len);
+int syscall_object_write(int fd, void *data, int length);
+int syscall_object_seek(int fd, int offset, int whence);
+int syscall_object_size(int fd, int * dims, int n);
+int syscall_object_copy( int src, int dst );
+int syscall_object_close(int fd);
+int syscall_object_stats(int fd, struct object_stats *stats );
+int syscall_object_set_intent(int fd, char *intent);
+int syscall_object_get_intent(int fd, char *buffer, int buffer_size);
+int syscall_object_set_blocking(int fd, int b);
+int syscall_object_max();
+
+/* Syscalls that query or affect the whole system state. */
+
+int syscall_system_stats(struct system_stats *s);
+int syscall_system_time( uint32_t *t );
+int syscall_system_rtc( struct rtc_time *t );
+
+
+/*
+These system calls are carryovers from Unix-like thinking
+and need to be reworked to fit the kernel object model.
+*/
+
+int syscall_mkdir( const char *name );
+int syscall_rmdir( const char *path );
+int syscall_chdir( const char *path );
 
 #endif

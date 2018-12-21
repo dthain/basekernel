@@ -16,10 +16,12 @@
 #define MIN(x,y) ( ((x)<(y)) ? (x) : (y) )
 #define MAX(x,y) ( ((x)>(y)) ? (x) : (y) )
 
+typedef long long int64_t;
 typedef int int32_t;
 typedef short int16_t;
 typedef char int8_t;
 
+typedef unsigned long long uint64_t;
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char uint8_t;
@@ -42,5 +44,14 @@ struct process_info {
 	int exitcode;
 	int exitreason;
 };
+
+typedef enum {
+	KOBJECT_FILE,
+	KOBJECT_DIR,
+	KOBJECT_DEVICE,
+	KOBJECT_GRAPHICS,
+	KOBJECT_PIPE,
+	KOBJECT_CONSOLE
+} kobject_type_t;
 
 #endif

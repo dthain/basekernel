@@ -1,23 +1,22 @@
-#include "kernel/ktypes.h"
+#include "kernel/types.h"
 #include "library/objno.h"
 #include "library/string.h"
 
-static const char KOBJECT_INVALID_STRING[] = "Invalid";
-static const char KOBJECT_FILE_STRING[] = "File";
-static const char KOBJECT_DEVICE_STRING[] = "Device";
-static const char KOBJECT_GRAPHICS_STRING[] = "Graphics";
-
-const char *strobjno(int err_code)
+const char *strobjno( kobject_type_t type )
 {
-	switch(err_code) {
-		case KOBJECT_INVALID:
-			return KOBJECT_INVALID_STRING;
+	switch(type) {
 		case KOBJECT_FILE:
-			return KOBJECT_FILE_STRING;
+			return "file";
+		case KOBJECT_DIR:
+			return "directory";	
 		case KOBJECT_DEVICE:
-			return KOBJECT_DEVICE_STRING;
+			return "device";
 		case KOBJECT_GRAPHICS:
-			return KOBJECT_GRAPHICS_STRING;
+			return "graphics";
+		case KOBJECT_CONSOLE:
+			return "console";
+		case KOBJECT_PIPE:
+			return "pipe";
 		default:
 			return "unknown";
 	}

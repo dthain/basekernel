@@ -50,7 +50,7 @@ static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int
 static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	int nblocks = device_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
+	int nblocks = bcache_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
 	if(nblocks == 1) {
 		return ATAPI_BLOCKSIZE;
 	} else {
@@ -133,7 +133,7 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 	if(!cddir->isdir) return KERROR_NOT_A_DIRECTORY;
 
 	char *temp = memory_alloc_page(0);
-	if(!temp) return KERROR_NO_MEMORY;
+	if(!temp) return KERROR_OUT_OF_MEMORY;
 
 	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
 	int total = 0;
@@ -196,7 +196,7 @@ static struct fs_dirent *cdrom_volume_root(struct fs_volume *v)
 	return cdrom_dirent_as_dirent(cdd);
 }
 
-static struct fs_volume *cdrom_volume_open(int unit)
+static struct fs_volume *cdrom_volume_open( struct device *device )
 {
 	struct cdrom_volume *cdv = kmalloc(sizeof(*cdv));
 	if(!cdv)
@@ -208,10 +208,9 @@ static struct fs_volume *cdrom_volume_open(int unit)
 		return 0;
 	}
 
-	printf("cdromfs: scanning atapi unit %d...\n", unit);
+	printf("cdromfs: scanning %s unit %d...\n",device_name(device),device_unit(device));
 
 	int j;
-	struct device *device = device_open("ATAPI", unit);
 
 	for(j = 0; j < 16; j++) {
 		printf("cdromfs: checking volume %d\n", j);
@@ -228,7 +227,7 @@ static struct fs_volume *cdrom_volume_open(int unit)
 			cdv->total_sectors = d->nsectors_little;
 			cdv->device = device;
 
-			printf("cdromfs: mounted filesystem on unit %d\n", cdv->device->unit);
+			printf("cdromfs: mounted filesystem on %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
 
 			memory_free_page(d);
 
@@ -241,7 +240,6 @@ static struct fs_volume *cdrom_volume_open(int unit)
 		}
 	}
 
-	kfree(device);
 	printf("cdromfs: no filesystem found\n");
 	return 0;
 }
@@ -249,7 +247,7 @@ static struct fs_volume *cdrom_volume_open(int unit)
 static int cdrom_volume_close(struct fs_volume *v)
 {
 	struct cdrom_volume *cdv = v->private_data;
-	printf("cdromfs: umounted filesystem from unit %d\n", cdv->device->unit);
+	printf("cdromfs: unmounted filesystem from %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
 	kfree(v);
 	return 0;
 }
@@ -270,7 +268,7 @@ const static struct fs_ops cdrom_ops = {
 };
 
 static struct fs cdrom_fs = {
-	"cdrom",
+	"cdromfs",
 	&cdrom_ops,
 	0
 };
@@ -299,5 +297,6 @@ static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd)
 	d->refcount = 1;
 	d->private_data = cdd;
 	d->size = cdd->length;
+	d->isdir = cdd->isdir;
 	return d;
 }

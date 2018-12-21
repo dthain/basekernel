@@ -103,7 +103,7 @@ int bcache_read_block( struct device *device, char *data, int block )
 	int result;
 
 	struct bcache_entry *e = bcache_find_or_create(device,block,&hit);
-	if(!e) return KERROR_NO_MEMORY;
+	if(!e) return KERROR_OUT_OF_MEMORY;
 
 	if(hit) {
 		stats.read_hits++;
@@ -148,7 +148,7 @@ int bcache_write_block( struct device *device, const char *data, int block )
 	int hit;
 
 	struct bcache_entry *e = bcache_find_or_create(device,block,&hit);
-	if(!e) return KERROR_NO_MEMORY;
+	if(!e) return KERROR_OUT_OF_MEMORY;
 
 	if(hit) {
 		stats.write_hits++;
