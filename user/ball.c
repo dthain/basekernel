@@ -12,8 +12,6 @@ A fun graphics demo that features text bouncing around the screen.
 #include "library/user-io.h"
 #include "library/string.h"
 
-#define WIDTH    (200)
-#define HEIGHT   (200)
 typedef unsigned int uint32_t;
 
 uint32_t randint(uint32_t min, uint32_t max);
@@ -21,11 +19,7 @@ void move(int *x, int *d, int min, int max);
 
 int main(const char *argv[], int argc)
 {
-	int wd = syscall_open_window(KNO_STDWIN, 800, 500, WIDTH, HEIGHT);
-	if(wd < 0) {
-		printf("Window create failed!\n");
-		return 1;
-	}
+	int wd = KNO_STDWIN;
 
 	int r = 255;
 	int g = 0;
@@ -38,14 +32,21 @@ int main(const char *argv[], int argc)
 	int dg = 2;
 	int db = 3;
 
+	int dims[2];
+	syscall_object_size(wd, (int *)&dims, 2);
+
+	int width = dims[0];
+	int height = dims[1];
+
 	draw_window(wd);
-	draw_clear(0, 0, WIDTH, HEIGHT);
+	draw_clear(0, 0, width, height);
 	draw_flush();
 
-	for(;;) {
+	char stop = -1;
+	while(stop == -1) {
 		draw_window(wd);
-		move(&x1, &dx1, 0, WIDTH - 80);
-		move(&y1, &dy1, 0, HEIGHT - 1);
+		move(&x1, &dx1, 0, width - 80);
+		move(&y1, &dy1, 0, height - 1);
 		move(&r, &dr, 0, 255);
 		move(&g, &dg, 0, 255);
 		move(&b, &db, 0, 255);
@@ -54,8 +55,11 @@ int main(const char *argv[], int argc)
 		draw_flush();
 
 		syscall_process_sleep(75);
+		syscall_object_read_nonblock(KNO_STDIN, (void *) &stop, 1);
 	}
-
+	draw_clear(0, 0, width, height);
+	draw_color(255, 255, 255);
+	draw_flush();
 	return 0;
 }
 
