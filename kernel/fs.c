@@ -1,8 +1,8 @@
+
 #include "fs.h"
+#include "fs_internal.h"
 #include "kmalloc.h"
-#include "kernel/syscall.h"
 #include "string.h"
-#include "list.h"
 #include "memory.h"
 #include "process.h"
 

@@ -16,6 +16,7 @@ See the file LICENSE for details.
 #include "bcache.h"
 #include "cdromfs.h"
 #include "kernel/syscall.h"
+#include "fs_internal.h"
 
 struct cdrom_volume {
 	struct device *device;

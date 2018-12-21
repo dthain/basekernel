@@ -13,4 +13,5 @@ See the file LICENSE for details.
 #define CDROM_BLOCK_SIZE 2048
 
 int cdrom_init();
+
 #endif

@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "hash_set.h"
 #include "fs.h"
+#include "fs_internal.h"
 #include "bcache.h"
 
 #define RESERVED_BIT_TABLE_LEN 1031

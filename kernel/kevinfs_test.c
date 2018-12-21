@@ -3,6 +3,7 @@
 #include "kmalloc.h"
 #include "kernel/types.h"
 #include "fs.h"
+#include "fs_internal.h"
 
 void test_mount()
 {
