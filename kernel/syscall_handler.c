@@ -580,6 +580,25 @@ int sys_object_size(int fd, int *dims, int n)
 	return kobject_size(p, dims, n);
 }
 
+int sys_copy_volume(int src, int dst, char *srcfstype, char*dstfstype)
+{
+	struct fs *srcfs = fs_lookup(srcfstype);
+	struct fs *dstfs = fs_lookup(dstfstype);
+
+	struct device *srcdev = device_open("atapi",src);
+	struct device *dstdev = device_open("atapi",dst);
+
+	struct fs_volume *srcvolume = fs_volume_open(srcfs,srcdev);
+	struct fs_volume *dstvolume = fs_volume_open(dstfs,dstdev);
+
+	struct fs_dirent *srcroot = fs_volume_root(srcvolume);
+	struct fs_dirent *dstroot = fs_volume_root(dstvolume);
+
+	fs_dirent_copy(srcroot, dstroot);
+
+	return 0;
+}
+
 int sys_object_max()
 {
 	int max_fd = process_object_max(current);
@@ -743,6 +762,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_rmdir((const char *) a);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
+	case SYSCALL_COPY_VOLUME:
+		return sys_copy_volume(a,b,(char *)c,(char *)d);
 	default:
 		return KERROR_INVALID_SYSCALL;
 	}

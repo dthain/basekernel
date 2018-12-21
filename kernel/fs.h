@@ -67,6 +67,8 @@ int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
 
+int fs_dirent_copy(struct fs_dirent* src, struct fs_dirent* dst);
+
 struct fs_ops {
 	struct fs_dirent *(*root) (struct fs_volume * d);
 	struct fs_volume *(*mount) (struct device *d);

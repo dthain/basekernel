@@ -60,6 +60,8 @@ int syscall_system_stats(struct system_stats *s);
 int syscall_system_time( uint32_t *t );
 int syscall_system_rtc( struct rtc_time *t );
 
+int syscall_copy_volume(int srcdisk, int dstdisk, char *srcfs, char *destfs);
+
 /*
 These system calls are carryovers from Unix-like thinking
 and need to be reworked to fit the kernel object model.

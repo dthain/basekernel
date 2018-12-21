@@ -50,7 +50,7 @@ static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int
 static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
 	struct cdrom_dirent *cdd = d->private_data;
-	int nblocks = device_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
+	int nblocks = bcache_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
 	if(nblocks == 1) {
 		return ATAPI_BLOCKSIZE;
 	} else {
