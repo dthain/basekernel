@@ -1,6 +1,10 @@
 #ifndef FS_INTERNAL
 #define FS_INTERNAL
 
+#include "fs.h"
+#include "cdromfs.h"
+#include "kevinfs.h"
+
 struct fs {
 	char *name;
 	const struct fs_ops *ops;
@@ -9,9 +13,13 @@ struct fs {
 
 struct fs_volume {
 	struct fs *fs;
+	struct device *device;
 	uint32_t block_size;
 	int refcount;
-	void *private_data;
+	union {
+		struct cdrom_volume cdrom;
+		struct kevinfs_volume kevin;
+	};
 };
 
 struct fs_dirent {
@@ -19,7 +27,10 @@ struct fs_dirent {
 	uint32_t size;
 	int refcount;
 	int isdir;
-	void *private_data;
+	union {
+		struct cdrom_dirent cdrom;
+		struct kevinfs_dirent kevin;
+	};
 };
 
 struct fs_file {
@@ -27,7 +38,6 @@ struct fs_file {
 	uint32_t size;
 	int8_t mode;
 	int refcount;
-	void *private_data;
 };
 
 struct fs_ops {

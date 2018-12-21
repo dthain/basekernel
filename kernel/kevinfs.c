@@ -35,17 +35,6 @@ static uint32_t ceiling(double d)
 	return i + 1;
 }
 
-struct kevinfs_volume {
-	struct device *device;
-	int root_inode_num;
-	struct kevinfs_superblock *super;
-};
-
-struct kevinfs_dirent {
-	struct kevinfs_volume *kv;
-	struct kevinfs_inode *node;
-};
-
 static struct kevinfs_volume *kevinfs_superblock_as_kevinfs_volume(struct kevinfs_superblock *s, struct device *device);
 static struct fs_volume *kevinfs_volume_as_volume(struct kevinfs_volume *kv);
 static struct fs_dirent *kevinfs_dirent_as_dirent(struct kevinfs_dirent *kd);

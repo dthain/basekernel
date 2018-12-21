@@ -57,7 +57,7 @@ int kernel_main()
 	process_init();
 	ata_init();
 	cdrom_init();
-	kevinfs_init();
+	//kevinfs_init();
 
 	printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();

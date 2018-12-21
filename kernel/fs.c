@@ -49,8 +49,10 @@ struct fs_volume *fs_volume_open(struct fs *f, struct device *d )
 	if(!ops->volume_open)
 		return 0;
 	struct fs_volume *v = f->ops->volume_open(d);
-	if(v)
+	if(v) {
 		v->fs = f;
+		v->device = d;
+	}
 	return v;
 }
 
@@ -149,7 +151,6 @@ struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
 	struct fs_file *f = kmalloc(sizeof(*f));
 	f->size = d->size;
 	f->d = fs_dirent_addref(d);
-	f->private_data = 0;
 	f->mode = mode;
 	f->refcount = 1;
 	return f;
@@ -168,7 +169,6 @@ int fs_file_close(struct fs_file *f)
 	f->refcount--;
 	if(f->refcount <= 0) {
 		fs_dirent_close(f->d);
-		// XXX free private data?
 		kfree(f);
 	}
 	return 0;

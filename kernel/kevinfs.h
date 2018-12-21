@@ -21,6 +21,17 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 
+struct kevinfs_volume {
+	struct device *device;
+	int root_inode_num;
+	struct kevinfs_superblock *super;
+};
+
+struct kevinfs_dirent {
+	struct kevinfs_volume *kv;
+	struct kevinfs_inode *node;
+};
+
 struct kevinfs_superblock {
 	uint32_t magic;
 
