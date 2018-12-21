@@ -586,7 +586,7 @@ int sys_copy_volume(int src, int dst, char *srcfstype, char*dstfstype)
 	struct fs *dstfs = fs_lookup(dstfstype);
 
 	struct device *srcdev = device_open("atapi",src);
-	struct device *dstdev = device_open("atapi",dst);
+	struct device *dstdev = device_open("ata",dst);
 
 	struct fs_volume *srcvolume = fs_volume_open(srcfs,srcdev);
 	struct fs_volume *dstvolume = fs_volume_open(dstfs,dstdev);
