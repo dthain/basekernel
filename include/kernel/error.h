@@ -24,6 +24,7 @@ typedef enum {
 	KERROR_OUT_OF_MEMORY = -18,
 	KERROR_OUT_OF_OBJECTS = -19,
 	KERROR_OUT_OF_SPACE = -20,
+	KERROR_FILE_EXISTS = -21,
 } kernel_error_t;
 
 #endif

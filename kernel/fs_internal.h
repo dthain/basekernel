@@ -4,6 +4,7 @@
 #include "fs.h"
 #include "cdromfs.h"
 #include "kevinfs.h"
+#include "diskfs.h"
 
 struct fs {
 	char *name;
@@ -19,17 +20,20 @@ struct fs_volume {
 	union {
 		struct cdrom_volume cdrom;
 		struct kevinfs_volume kevin;
+		struct diskfs_superblock disk;
 	};
 };
 
 struct fs_dirent {
 	struct fs_volume *v;
 	uint32_t size;
+	int inumber;
 	int refcount;
 	int isdir;
 	union {
 		struct cdrom_dirent cdrom;
 		struct kevinfs_dirent kevin;
+		struct diskfs_inode disk;
 	};
 };
 

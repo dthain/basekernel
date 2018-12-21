@@ -8,14 +8,14 @@ KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 
 all: basekernel.iso
 
-run: basekernel.iso
+run: basekernel.iso disk.img
 	qemu-system-i386 -cdrom basekernel.iso -hda disk.img
+
+debug: basekernel.iso disk.img
+	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
 
 disk.img:
 	qemu-img create disk.img 10M
-
-debug:
-	qemu-system-i386 -cdrom basekernel.iso -s -S &
 
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
