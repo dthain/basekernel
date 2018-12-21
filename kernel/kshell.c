@@ -54,6 +54,37 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 	return -1;
 }
 
+/*
+Install software from the cdrom volume unit src
+to the disk volume dst by performing a recursive copy.
+XXX This needs better error checking.
+*/
+
+int kshell_install( int src, int dst )
+{
+	struct fs *srcfs = fs_lookup("cdromfs");
+	struct fs *dstfs = fs_lookup("kevinfs");
+
+	if(!srcfs || !dstfs) return KERROR_NOT_FOUND;
+
+	struct device *srcdev = device_open("atapi",src);
+	struct device *dstdev = device_open("ata",dst);
+
+	if(!srcdev || !dstdev) return KERROR_NOT_FOUND;
+
+	struct fs_volume *srcvolume = fs_volume_open(srcfs,srcdev);
+	struct fs_volume *dstvolume = fs_volume_open(dstfs,dstdev);
+
+	if(!srcvolume || !dstvolume) return KERROR_NOT_FOUND;
+
+	struct fs_dirent *srcroot = fs_volume_root(srcvolume);
+	struct fs_dirent *dstroot = fs_volume_root(dstvolume);
+
+	printf("copying atapi unit %d to ata unit %d...\n",src,dst);
+
+	return fs_dirent_copy(srcroot, dstroot);
+}
+
 static int kshell_printdir(const char *d, int length)
 {
 	while(length > 0) {
@@ -219,6 +250,16 @@ static int kshell_execute(const char **argv, int argc)
 				printf("format: expected unit number but got %s\n", argv[2]);
 			}
 		}
+	} else if(!strcmp(cmd,"install")) {
+		if(argc==3) {
+			int src, dst;
+			str2int(argv[1], &src);
+			str2int(argv[2], &dst);
+			kshell_install(src,dst);
+		} else {
+			printf("install: expected unit #s for cdrom and disk\n");
+		}
+
 	} else if(!strcmp(cmd, "rmdir")) {
 		if(argc == 2) {
 			sys_rmdir(argv[1]);
@@ -245,7 +286,7 @@ static int kshell_execute(const char **argv, int argc)
 			stats.write_hits,stats.write_misses,
 			stats.writebacks);
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\nformat <device> <unit><fstype>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}
