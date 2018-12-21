@@ -164,6 +164,27 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 	return 0;
 }
 
+int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
+{
+	struct fs_dirent *src, *dst;
+
+	if(ksrc->type==KOBJECT_FILE) {
+		src = ksrc->data.file->d;
+	} else if(ksrc->type==KOBJECT_DIR) {
+		src = ksrc->data.dir;
+	} else {
+		return KERROR_NOT_A_FILE;
+	}
+
+	if(kdst->type==KOBJECT_DIR) {
+		dst = kdst->data.dir;
+	} else {
+		return KERROR_NOT_A_DIRECTORY;
+	}
+
+	return fs_dirent_copy(src,dst);
+}
+
 int kobject_close(struct kobject *kobject)
 {
 	kobject->refcount--;

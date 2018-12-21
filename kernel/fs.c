@@ -286,6 +286,11 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 
 	char *temp = memory_alloc_page(0);
 
+	// if writing past the (current) end of the file, resize the file first
+	if (offset + length > file->size) {
+		ops->resize(file->d, offset+length);
+	}
+
 	while(length > 0) {
 
 		int blocknum = offset / bs;
@@ -351,4 +356,88 @@ int fs_dirent_isdir( struct fs_dirent *d )
 	return d->isdir;
 }
 
+int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
+{
+/*
+ * This function is temporarily disabled since we do not yet have
+ * reliable filesystem writes.
+*/
+	return KERROR_NOT_IMPLEMENTED;
 
+	char *buffer = memory_alloc_page(1);
+
+	int length = fs_dirent_readdir(src, buffer, PAGE_SIZE);
+	if (length <= 0) goto failure;
+
+	char *name = buffer;
+	while (name && (name - buffer) < length) {
+
+		// Skip relative directory entries.
+		if (strcmp(name,".") == 0 || (strcmp(name, "..") == 0)) {
+			goto next_entry;
+		}
+
+		struct fs_dirent *new_src = fs_dirent_lookup(src, name);
+		if(!new_src) {
+			printf("couldn't lookup %s in directory!\n",name);
+			goto next_entry;
+		}
+
+		if(fs_dirent_isdir(new_src)) {
+			printf("copying dir %s...\n", name);
+			fs_dirent_mkdir(dst,name);
+			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			if(!new_dst) {
+				printf("couldn't lookup newly created %s!\n",name);
+				fs_dirent_close(new_src);
+				goto next_entry;
+			}
+			int res = fs_dirent_copy(new_src, new_dst);
+			fs_dirent_close(new_dst);
+			fs_dirent_close(new_src);
+			if(res<0) goto failure;
+		} else {
+			printf("copying file %s...\n", name);
+			// XXX mkfile should just return the new dirent
+			fs_dirent_mkfile(dst, name);
+			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			if(!new_dst) {
+				printf("couldn't open newly-created %s!\n",name);
+				fs_dirent_close(new_src);
+				goto next_entry;
+			}
+
+			char * filebuf = kmalloc(new_src->size);
+			if (!filebuf) {
+				fs_dirent_close(new_src);
+				fs_dirent_close(new_dst);
+				goto failure;
+			}
+
+			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
+			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
+	
+			fs_file_read(src_file, filebuf,src_file->size,0);
+			fs_file_write(dst_file, filebuf, src_file->size, 0);
+
+			kfree(filebuf);
+
+			fs_file_close(src_file);
+			fs_file_close(dst_file);
+		}
+
+		fs_dirent_close(new_src);
+
+		printf("Done.\n");
+
+		next_entry:
+		name += strlen(name) + 1;
+	}
+
+	memory_free_page(buffer);
+	return 0;
+
+failure:
+	memory_free_page(buffer);
+	return KERROR_NOT_FOUND;
+}

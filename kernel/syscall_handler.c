@@ -580,6 +580,14 @@ int sys_object_size(int fd, int *dims, int n)
 	return kobject_size(p, dims, n);
 }
 
+int sys_object_copy( int src, int dst )
+{
+	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object(dst)) return KERROR_INVALID_OBJECT;
+
+	return kobject_copy(current->ktable[src],current->ktable[dst]);
+}
+
 int sys_object_max()
 {
 	int max_fd = process_object_max(current);
@@ -588,11 +596,12 @@ int sys_object_max()
 
 int sys_system_stats(struct system_stats *s)
 {
-  if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 
 	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
+
 	struct ata_count a = ata_stats();
 	for(int i = 0; i < 4; i++) {
 		s->blocks_written[i] = a.blocks_written[i];
@@ -731,6 +740,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_size(a, (int *) b, c);
 	case SYSCALL_OBJECT_MAX:
 		return sys_object_max(a);
+	case SYSCALL_OBJECT_COPY:
+		return sys_object_copy(a,b);
 	case SYSCALL_SYSTEM_STATS:
 		return sys_system_stats((struct system_stats *) a);
 	case SYSCALL_SYSTEM_TIME:

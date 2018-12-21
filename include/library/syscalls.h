@@ -47,6 +47,7 @@ int syscall_object_readdir( int fd, char *buffer, int buffer_len);
 int syscall_object_write(int fd, void *data, int length);
 int syscall_object_seek(int fd, int offset, int whence);
 int syscall_object_size(int fd, int * dims, int n);
+int syscall_object_copy( int src, int dst );
 int syscall_object_close(int fd);
 int syscall_object_stats(int fd, struct object_stats *stats );
 int syscall_object_set_intent(int fd, char *intent);
@@ -59,6 +60,7 @@ int syscall_object_max();
 int syscall_system_stats(struct system_stats *s);
 int syscall_system_time( uint32_t *t );
 int syscall_system_rtc( struct rtc_time *t );
+
 
 /*
 These system calls are carryovers from Unix-like thinking

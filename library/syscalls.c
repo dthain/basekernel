@@ -168,6 +168,11 @@ int syscall_object_size(int fd, int *dims, int n)
 	return syscall(SYSCALL_OBJECT_SIZE, fd, (uint32_t) dims, n, 0, 0);
 }
 
+int syscall_object_copy( int src, int dst )
+{
+	return syscall(SYSCALL_OBJECT_COPY,src,dst,0,0,0);
+}
+
 int syscall_object_max()
 {
 	return syscall(SYSCALL_OBJECT_MAX, 0, 0, 0, 0, 0);
