@@ -216,13 +216,8 @@ uint16_t randint(uint16_t min, uint16_t max)
 
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
 {
-	int wd = syscall_open_window(KNO_STDWIN, x_b, y_b, w_b, h_b);
-	if(wd < 0) {
-		printf("Window create failed!\n");
-		return -1;
-	}
-	// draw initial window
-	draw_window(wd);
+	/* draw initial window */
+	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, w_b, h_b);
 	if(draw_border(0, 0, w_b, h_b, thick, r_b, g_b, b_b) < 0) {
 		printf("Border create failed!\n");
@@ -230,7 +225,7 @@ int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, ui
 	}
 	draw_flush();
 
-	return wd;
+	return KNO_STDWIN;
 }
 
 // Draws the border with the colors specified
