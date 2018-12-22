@@ -19,8 +19,6 @@ void move(int *x, int *d, int min, int max);
 
 int main(const char *argv[], int argc)
 {
-	int wd = KNO_STDWIN;
-
 	int r = 255;
 	int g = 0;
 	int b = 0;
@@ -33,18 +31,18 @@ int main(const char *argv[], int argc)
 	int db = 3;
 
 	int dims[2];
-	syscall_object_size(wd, (int *)&dims, 2);
+	syscall_object_size(KNO_STDWIN, (int *)&dims, 2);
 
 	int width = dims[0];
 	int height = dims[1];
 
-	draw_window(wd);
+	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, width, height);
 	draw_flush();
 
 	char stop = -1;
 	while(stop == -1) {
-		draw_window(wd);
+		draw_window(KNO_STDWIN);
 		move(&x1, &dx1, 0, width - 80);
 		move(&y1, &dy1, 0, height - 1);
 		move(&r, &dr, 0, 255);
