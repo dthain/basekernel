@@ -53,7 +53,7 @@ int main(const char *argv[], int argc)
 		draw_flush();
 
 		syscall_process_sleep(75);
-		syscall_object_read_nonblock(KNO_STDIN, (void *) &stop, 1);
+		syscall_object_read_nonblock(KNO_STDIN, stop, 1);
 	}
 	draw_clear(0, 0, width, height);
 	draw_color(255, 255, 255);
