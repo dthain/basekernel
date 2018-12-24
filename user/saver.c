@@ -35,7 +35,7 @@ int main(const char *argv[], int argc)
 	int db = 3;
 
 	int dims[2];
-	syscall_object_size(KNO_STDWIN, (int *)&dims, 2);
+	syscall_object_size(KNO_STDWIN, dims, 2);
 
 	int width = dims[0];
 	int height = dims[1];
