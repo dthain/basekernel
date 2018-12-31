@@ -232,7 +232,7 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 	return total;
 }
 
-int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
+struct fs_dirent * fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->mkdir)
@@ -240,7 +240,7 @@ int fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 	return ops->mkdir(d, name);
 }
 
-int fs_dirent_mkfile(struct fs_dirent *d, const char *name)
+struct fs_dirent * fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->mkfile)
@@ -248,20 +248,12 @@ int fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 	return ops->mkfile(d, name);
 }
 
-int fs_dirent_rmdir(struct fs_dirent *d, const char *name)
+int fs_dirent_remove(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->rmdir)
+	if(!ops->remove)
 		return 0;
-	return ops->rmdir(d, name);
-}
-
-int fs_dirent_unlink(struct fs_dirent *d, const char *name)
-{
-	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->unlink)
-		return 0;
-	return ops->unlink(d, name);
+	return ops->remove(d, name);
 }
 
 int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uint32_t offset)

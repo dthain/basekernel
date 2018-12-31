@@ -46,13 +46,11 @@ the object (size, type, etc) but not the actual contents.
 */
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
+struct fs_dirent *fs_dirent_mkdir(struct fs_dirent *d, const char *name);
+struct fs_dirent *fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 struct fs_dirent *fs_dirent_addref(struct fs_dirent *d);
 int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length);
-int fs_dirent_rmdir(struct fs_dirent *d, const char *name);
-int fs_dirent_link(struct fs_dirent *d, const char *oldpath, const char *newpath);
-int fs_dirent_unlink(struct fs_dirent *d, const char *name);
-int fs_dirent_mkdir(struct fs_dirent *d, const char *name);
-int fs_dirent_mkfile(struct fs_dirent *d, const char *name);
+int fs_dirent_remove(struct fs_dirent *d, const char *name);
 int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);

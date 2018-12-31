@@ -248,15 +248,15 @@ const static struct fs_ops cdrom_ops = {
 	.volume_close = cdrom_volume_close,
 	.volume_root = cdrom_volume_root,
 
-	.close = cdrom_dirent_close,
-	.readdir = cdrom_dirent_read_dir,
 	.lookup = cdrom_dirent_lookup,
 	.mkdir = 0,
-	.rmdir = 0,
-	.link = 0,
-	.unlink = 0,
+	.mkfile = 0,
 	.read_block = cdrom_dirent_read_block,
 	.write_block = 0,
+	.readdir = cdrom_dirent_read_dir,
+	.remove = 0,
+	.resize = 0,
+	.close = cdrom_dirent_close,
 };
 
 static struct fs cdrom_fs = {
