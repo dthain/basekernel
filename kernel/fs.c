@@ -138,9 +138,7 @@ int fs_dirent_close(struct fs_dirent *d)
 
 	d->refcount--;
 	if(d->refcount <= 0) {
-		struct fs_volume *v = d->v;
-		ops->close(d);
-		fs_volume_close(v);
+		return ops->close(d);
 	}
 
 	return 0;
