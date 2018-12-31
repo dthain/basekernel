@@ -59,7 +59,7 @@ int main(const char *argv[], int argc)
 		draw_line(x1, y1, x2 - x1, y2 - y1);
 		draw_flush();
 		syscall_process_sleep(25);
-		syscall_object_read_nonblock(KNO_STDIN, stop, 1);
+		syscall_object_read_nonblock(KNO_STDIN,&stop, 1);
 	}
 	draw_clear(0, 0, width, height);
 	draw_color(255, 255, 255);
