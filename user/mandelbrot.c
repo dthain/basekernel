@@ -13,7 +13,7 @@ See the file LICENSE for details.
 #define VAL_THRES 2
 #define STEPS 5
 
-/* 
+/*
 	Compute and graph the mandelbrot set
 */
 
@@ -25,7 +25,7 @@ typedef struct Complex {
 int in_set(Complex c);
 void plot_point(int iter_val, int j, int k);
 
-int main(const char ** argv, int argc) 
+int main(const char ** argv, int argc)
 {
 	/* Set up params */
 	int dim = 400;
@@ -34,8 +34,7 @@ int main(const char ** argv, int argc)
 	float factor = 0.001;
 
 	/* Setup the window */
-	int wd = syscall_open_window(KNO_STDWIN, 0, 0, dim, dim);
-	draw_window(wd);
+	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, dim, dim);
 
 	/* For each point, see if it is in the Mandelbrot set */
@@ -50,19 +49,17 @@ int main(const char ** argv, int argc)
 			current.i = (float)k*factor + i_init;
 			iter_val = in_set(current);
 			plot_point(iter_val, j, k);
-			draw_window(wd);
 			draw_flush();
 		}
 		syscall_process_yield();
 	}
-
 
 	return 0;
 }
 
 int in_set(Complex c)
 {
-	/* 
+	/*
 		Checks if the number is in the set
 		Returns iteration it exceeded the threshold
 		If it does not, return one greater than Threshold
