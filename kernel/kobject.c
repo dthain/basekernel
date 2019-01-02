@@ -307,13 +307,8 @@ int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dir
 int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		// XXX mkdir should return the newly created dirent.
-		int r = fs_dirent_mkdir(kobject->data.dir,name);
-		if(r<0) return r;
-
-		*dir = fs_dirent_namei(kobject->data.dir,name);
+		*dir = fs_dirent_mkdir(kobject->data.dir,name);
 		if(!*dir) return KERROR_NOT_FOUND;
-
 		return 0;
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
@@ -324,7 +319,7 @@ int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dir
 int kobject_dir_delete( struct kobject *kobject, const char *name )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		return fs_dirent_rmdir(kobject->data.dir,name);
+		return fs_dirent_remove(kobject->data.dir,name);
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
 	}

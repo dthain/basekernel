@@ -621,9 +621,17 @@ int sys_system_rtc( struct rtc_time *t )
 int sys_mkdir(const char *path)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
+       	int fd = process_available_fd(current);
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+
 	// XXX doesn't work -- separate parent and new directory.
 
-	return fs_dirent_mkdir(current->current_dir, path);
+	struct fs_dirent *d = fs_dirent_mkdir(current->current_dir, path);
+	if(!d) return KERROR_NOT_FOUND;
+
+	current->ktable[fd] = kobject_create_dir(d);
+	return fd;
 }
 
 int sys_rmdir(const char *path)
@@ -633,7 +641,7 @@ int sys_rmdir(const char *path)
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		// XXX this API doesn't make sense.
-		return fs_dirent_rmdir(d, path);
+		return fs_dirent_remove(d, path);
 	} else {
 		// XXX get error back from namei
 		return -1;
