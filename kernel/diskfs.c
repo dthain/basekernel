@@ -16,14 +16,14 @@ See the file LICENSE for details.
 
 /* Read or write a block from the raw device, starting from zero. */
 
-static int diskfs_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
+static int diskfs_block_read(struct device *d, struct diskfs_block *b, uint32_t blockno )
 {
-	return bcache_read(v->device, b->data, 1, blockno) ? DISKFS_BLOCK_SIZE : -1;
+	return bcache_read(d, b->data, 1, blockno) ? DISKFS_BLOCK_SIZE : -1;
 }
 
-static int diskfs_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
+static int diskfs_block_write(struct device *d, struct diskfs_block *b, uint32_t blockno )
 {
-	return bcache_write(v->device, b->data, 1, blockno) ? DISKFS_BLOCK_SIZE : -1;
+	return bcache_write(d, b->data, 1, blockno) ? DISKFS_BLOCK_SIZE : -1;
 }
 
 /* Read or write a bitmap block, starting from the bitmap offset. */
@@ -31,36 +31,36 @@ static int diskfs_block_write(struct fs_volume *v, struct diskfs_block *b, uint3
 static int diskfs_bitmap_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
   // XXX add protections for ranges
-	return diskfs_block_read(v,b,v->disk.bitmap_start+blockno);
+	return diskfs_block_read(v->device,b,v->disk.bitmap_start+blockno);
 }
 
 static int diskfs_bitmap_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-	return diskfs_block_write(v,b,v->disk.bitmap_start+blockno);
+	return diskfs_block_write(v->device,b,v->disk.bitmap_start+blockno);
 }
 
 /* Read or write an inode block, starting from the inode block offset. */
 
 static int diskfs_inode_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-	return diskfs_block_read(v,b,v->disk.inode_start+blockno);
+	return diskfs_block_read(v->device,b,v->disk.inode_start+blockno);
 }
 
 static int diskfs_inode_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-	return diskfs_block_write(v,b,v->disk.inode_start+blockno);
+	return diskfs_block_write(v->device,b,v->disk.inode_start+blockno);
 }
 
 /* Read or write a data block, starting from the data block offset. */
 
 static int diskfs_data_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-	return diskfs_block_read(v,b,v->disk.data_start+blockno);
+	return diskfs_block_read(v->device,b,v->disk.data_start+blockno);
 }
 
 static int diskfs_data_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-	return diskfs_block_write(v,b,v->disk.data_start+blockno);
+	return diskfs_block_write(v->device,b,v->disk.data_start+blockno);
 }
 
 /*
@@ -234,10 +234,13 @@ struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber )
 	return d;
 }
 
-void diskfs_dirent_close( struct fs_dirent *d )
+
+int diskfs_dirent_close( struct fs_dirent *d )
 {
-	// XXX write out old node if dierty!
+	// XXX check if inode dirty first
+	diskfs_inode_save(d->v,d->inumber,&d->disk);
 	kfree(d);
+	return 0;
 }
 
 struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
@@ -252,7 +255,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
 			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
-			  return diskfs_dirent_create(d->v,r->inumber);
+				return diskfs_dirent_create(d->v,r->inumber);
 			}
 		}
 	}
@@ -347,6 +350,7 @@ struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const 
 
 	diskfs_dirent_add(d,name,DISKFS_ITEM_FILE,inumber);
 
+	// XXX set type of dirent
 	return diskfs_dirent_create(d->v,inumber);
 }
 
@@ -360,7 +364,36 @@ struct fs_dirent * diskfs_dirent_create_dir( struct fs_dirent *d, const char *na
 	return diskfs_dirent_create_file_or_dir(d,name,DISKFS_ITEM_DIR);
 }
 
-int diskfs_dirent_delete( struct fs_dirent *d, const char *name )
+void diskfs_inode_delete( struct fs_volume *v, struct diskfs_inode *node, int inumber )
+{
+	int size = 0;
+	int i;
+
+
+	// XXX check for errors in here
+	for(i=0;i<DISKFS_DIRECT_POINTERS;i++) {
+		diskfs_data_block_free(v,node->direct[i]);
+		size += v->block_size;
+		if(size>=node->size) break;
+	}
+
+	if(size<node->size) {
+		struct diskfs_block *b = memory_alloc_page(0);
+		diskfs_data_block_read(v,b,node->indirect);
+		for(i=0;i<DISKFS_POINTERS_PER_BLOCK;i++) {
+			diskfs_data_block_free(v,b->pointers[i]);
+			size += v->block_size;
+			if(size>=node->size) break;
+		}
+		memory_free_page(b);
+	}
+
+	memset(node,sizeof(*node),0);
+	diskfs_inode_save(v,inumber,node);
+	diskfs_inumber_free(v,inumber);
+}
+
+int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 {
 	struct diskfs_block *b = memory_alloc_page(0);
 
@@ -376,7 +409,7 @@ int diskfs_dirent_delete( struct fs_dirent *d, const char *name )
 				int inumber = r->inumber;
 				r->type = DISKFS_ITEM_BLANK;
 				diskfs_inode_write(d,b,i);
-				diskfs_inode_delete(d->v,inumber);
+				diskfs_inode_delete(d->v,&d->disk,inumber);
 				memory_free_page(b);
 				return 0;
 			}
@@ -386,131 +419,159 @@ int diskfs_dirent_delete( struct fs_dirent *d, const char *name )
 	return KERROR_NOT_FOUND;
 }
 
-#if 0
-
-int diskfs_dirent_write_block( struct fs_dirent *d, const char *name )
+int diskfs_dirent_write_block( struct fs_dirent *d, const char *data, uint32_t blockno )
 {
+	return diskfs_inode_write(d,(void*)data,blockno);
 }
 
-
-int diskfs_dirent_read_block( struct fs_dirent *d, const char *name )
+int diskfs_dirent_read_block( struct fs_dirent *d, char *data, uint32_t blockno )
 {
+	return diskfs_inode_read(d,(void*)data,blockno);
 }
 
+extern struct fs disk_fs;
 
-int diskfs_inode_load( fs_volume *v, int inumber, struct diskfs_inode *inode )
-
-int diskfs_dirent_close( struct fs_dirent *d )
+struct fs_volume * diskfs_volume_open( struct device *device )
 {
-  // write inode back to disk
-  // free the dirent
+	struct diskfs_block *b = memory_alloc_page(0);
+
+	printf("diskfs: opening device %s unit %d\n",device_name(device),device_unit(device));
+
+	diskfs_block_read(device,b,0);
+
+	struct diskfs_superblock *sb = &b->superblock;
+
+	if(sb->magic!=DISKFS_MAGIC) {
+		printf("diskfs: no filesystem found!\n");
+		memory_free_page(b);
+		return 0;
+	}
+
+       	struct fs_volume *v = kmalloc(sizeof(*v));
+	v->fs = &disk_fs;
+	v->device = device;
+	v->block_size = device_block_size(device);
+	v->refcount = 1;
+	v->disk = *sb;
+
+	memory_free_page(b);
+
+	printf("diskfs: %d bitmap blocks, %d inode blocks, %d data blocks\n",
+		v->disk.bitmap_blocks,
+		v->disk.inode_blocks,
+		v->disk.data_blocks);
+
+	return v;
 }
 
-static int diskfs_format( struct device *device )
+struct fs_dirent * diskfs_volume_root( struct fs_volume *v )
+{
+	struct fs_dirent *d = diskfs_dirent_create(v,1);
+	d->isdir = 1;
+	return d;
+}
+
+int diskfs_volume_close( struct fs_volume *v )
+{
+	device_close(v->device);
+	kfree(v);
+	return 0;
+}
+
+int diskfs_volume_format( struct device *device )
 {
 	struct diskfs_block *b = memory_alloc_page(1);
+	struct diskfs_superblock *sb = &b->superblock;
 
 	int nblocks = device_nblocks(device);
-	int blocksize = device_block_size(device);
 
-	b->superblock.magic = DISKFS_MAGIC;
+	memset(b,0,DISKFS_BLOCK_SIZE);
 
-	ninodes = nblocks/
-...
-	  }
+	sb->magic = DISKFS_MAGIC;
+	sb->block_size = DISKFS_BLOCK_SIZE;
+	sb->inode_blocks = nblocks / 10;
 
-static int diskfs_write_superblock(struct device *device)
-{
-	uint8_t wbuffer[FS_BLOCK_SIZE];
-	uint32_t num_blocks;
-	int ata_blocksize;
-	uint32_t superblock_num_blocks,  available_blocks, free_blocks,
-		 total_inodes, total_inode_bitmap_bytes, total_block_bitmap_bytes, inode_sector_size,
-		 inode_bit_sector_size, data_bit_sector_size;
+	int remaining_blocks = nblocks - sb->inode_blocks;
+	sb->bitmap_blocks = 1 + remaining_blocks / (DISKFS_BLOCK_SIZE*8);
+	sb->data_blocks = remaining_blocks - sb->bitmap_blocks;
 
-	char zeros[ata_blocksize];
-	memset(zeros, 0, ata_blocksize);
-	struct diskfs_superblock super;
-	superblock_num_blocks = CONTAINERS(sizeof(struct diskfs_superblock), FS_BLOCK_SIZE);
-	available_blocks = num_blocks - superblock_num_blocks;
-	free_blocks = (uint32_t) ((double) (available_blocks) / (1.0 + (double) (sizeof(struct diskfs_inode) + .125) / (4.0 * FS_BLOCK_SIZE) + .125 / (FS_BLOCK_SIZE)
-				  )
-		);
-	total_inodes = free_blocks / 8;
-	total_inode_bitmap_bytes = CONTAINERS(total_inodes, 8);
-	total_block_bitmap_bytes = CONTAINERS(free_blocks, 8);
-	inode_sector_size = CONTAINERS((total_inodes * sizeof(struct diskfs_inode)), FS_BLOCK_SIZE);
-	inode_bit_sector_size = CONTAINERS(total_inode_bitmap_bytes, FS_BLOCK_SIZE);
-	data_bit_sector_size = CONTAINERS(total_block_bitmap_bytes, FS_BLOCK_SIZE);
+	sb->inode_start = 1;
+	sb->bitmap_start = sb->inode_start + sb->inode_blocks;
+	sb->data_start = sb->bitmap_start + sb->bitmap_blocks;
 
-	super.magic = FS_MAGIC;
-	super.blocksize = FS_BLOCK_SIZE;
-	super.physical_blocksize = ata_blocksize;
-	super.inode_bitmap_start = superblock_num_blocks;
-	super.inode_start = super.inode_bitmap_start + inode_bit_sector_size;
-	super.block_bitmap_start = super.inode_start + inode_sector_size;
-	super.free_block_start = super.block_bitmap_start + data_bit_sector_size;
-	super.num_inodes = total_inodes;
-	super.num_free_blocks = free_blocks;
+	diskfs_block_write(device,b,0);
 
-	memcpy(wbuffer, &super, sizeof(super));
-	uint32_t counter = 0;
-	printf("Writing inode bitmap...\n");
-	for (uint32_t i = super.inode_bitmap_start; i < super.inode_start; i++) {
-		if(!diskfs_write_block(device, i, zeros))
-			return -1;
-		counter++;
+	memset(b,0,DISKFS_BLOCK_SIZE);
+
+	int i;
+
+	for(i=sb->bitmap_start;i<(sb->bitmap_start+sb->bitmap_blocks);i++) {
+		diskfs_block_write(device,b,i);
 	}
-	printf("%u blocks written\n", counter);
-	counter = 0;
-	printf("Writing free block bitmap...\n");
-	for (uint32_t i = super.block_bitmap_start; i < super.free_block_start; i++) {
-		if(!diskfs_write_block(device, i, zeros))
-			return -1;
-		counter++;
+
+	for(i=sb->inode_start;i<(sb->inode_start+sb->inode_blocks);i++) {
+		diskfs_block_write(device,b,i);
 	}
-	printf("writing superblock...\n");
-	diskfs_write_block(device, 0, wbuffer);
-	counter++;
-	printf("%u blocks written\n", counter);
-	return counter;
+
+	struct fs_volume *v = kmalloc(sizeof(*v));
+	memset(v,0,sizeof(*v));
+	v->fs = &disk_fs;
+	v->device = device;
+	v->block_size = sb->block_size;
+	v->refcount = 1;
+	v->disk = *sb;
+
+	// Allocate the first (numbered zero) blocks and inodes
+	// to avoid confusion with zero used as a not-present pointer.
+
+	diskfs_inumber_alloc(v);
+	diskfs_data_block_alloc(v);
+
+	// Create the first directory inode.
+	int inumber = diskfs_inumber_alloc(v);
+	struct diskfs_inode node;
+	memset(&node,0,sizeof(node));
+	node.inuse = 1;
+	diskfs_inode_save(v,inumber,&node);
+
+	memory_free_page(b);
+	bcache_flush_device(device);
+
+	return 0;
 }
 
-static struct fs_ops diskfs_ops = {
+int diskfs_dirent_resize( struct fs_dirent *d, uint32_t size )
+{
+	return KERROR_NOT_IMPLEMENTED;
+}
+
+struct fs_ops diskfs_ops = {
 	.volume_open = diskfs_volume_open,
 	.volume_close = diskfs_volume_close,
 	.volume_format = diskfs_volume_format,
 	.volume_root = diskfs_volume_root,
 
-	.readdir = diskfs_read_dir,
-	.mkdir = diskfs_mkdir,
-	.mkfile = diskfs_mkfile,
 	.lookup = diskfs_dirent_lookup,
-	.rmdir = diskfs_rmdir,
-	.unlink = diskfs_unlink,
-	.link = diskfs_link,
-	.read_block = diskfs_read_block,
-	.write_block = diskfs_write_block,
+	.mkdir = diskfs_dirent_create_dir,
+	.mkfile = diskfs_dirent_create_file,
+	.read_block = diskfs_dirent_read_block,
+	.write_block = diskfs_dirent_write_block,
+	.readdir = diskfs_dirent_readdir,
+	.remove = diskfs_dirent_remove,
 	.resize = diskfs_dirent_resize,
+	.close = diskfs_dirent_close
 };
 
 
-static struct fs disk_fs = {
+struct fs disk_fs = {
 	"diskfs",
 	&diskfs_ops,
 	0
 };
 
-static int diskfs_register()
+int diskfs_init(void)
 {
 	fs_register(&disk_fs);
 	return 0;
 }
 
-int diskfs_init(void)
-{
-	diskfs_register();
-	return 0;
-}
-
-#endif

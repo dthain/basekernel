@@ -26,6 +26,7 @@ See the file LICENSE for details.
 #include "cdromfs.h"
 #include "kevinfs_test.h"
 #include "kevinfs.h"
+#include "diskfs.h"
 #include "serial.h"
 
 /*
@@ -57,7 +58,7 @@ int kernel_main()
 	process_init();
 	ata_init();
 	cdrom_init();
-	//kevinfs_init();
+	diskfs_init();
 
 	printf("\nKERNEL SHELL READY:\n");
 	kshell_launch();

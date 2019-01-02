@@ -18,6 +18,7 @@ See the file LICENSE for details.
 
 struct diskfs_superblock {
 	uint32_t magic;
+	uint32_t block_size;
 	uint32_t inode_start;
 	uint32_t inode_blocks;
 	uint32_t bitmap_start;
