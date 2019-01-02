@@ -3,7 +3,6 @@
 
 #include "fs.h"
 #include "cdromfs.h"
-#include "kevinfs.h"
 #include "diskfs.h"
 
 struct fs {
@@ -19,7 +18,6 @@ struct fs_volume {
 	int refcount;
 	union {
 		struct cdrom_volume cdrom;
-		struct kevinfs_volume kevin;
 		struct diskfs_superblock disk;
 	};
 };
@@ -32,7 +30,6 @@ struct fs_dirent {
 	int isdir;
 	union {
 		struct cdrom_dirent cdrom;
-		struct kevinfs_dirent kevin;
 		struct diskfs_inode disk;
 	};
 };

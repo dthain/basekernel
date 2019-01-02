@@ -24,8 +24,6 @@ See the file LICENSE for details.
 #include "memorylayout.h"
 #include "kshell.h"
 #include "cdromfs.h"
-#include "kevinfs_test.h"
-#include "kevinfs.h"
 #include "diskfs.h"
 #include "serial.h"
 

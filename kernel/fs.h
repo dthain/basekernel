@@ -22,7 +22,7 @@ struct fs_dirent *fs_resolve(const char *path);
 
 /*
 fs_lookup returns the filesystem driver corresponding to
-the given name, such as "cdromfs" or "kevinfs"
+the given name, such as "cdromfs" or "diskfs"
 */
 
 struct fs *fs_lookup(const char *name);
