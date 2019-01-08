@@ -383,7 +383,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 			fs_dirent_close(new_src);
 			if(res<0) goto failure;
 		} else {
-			printf(" %s (%d bytes)\n", name,fs_dirent_size(src));
+			printf(" %s (%d bytes)\n", name,fs_dirent_size(new_src));
 			// XXX mkfile should just return the new dirent
 			fs_dirent_mkfile(dst, name);
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
@@ -393,7 +393,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 				goto next_entry;
 			}
 
-			char * filebuf = kmalloc(new_src->size);
+			char * filebuf = memory_alloc_page(0);
 			if (!filebuf) {
 				fs_dirent_close(new_src);
 				fs_dirent_close(new_dst);
@@ -403,10 +403,17 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
 			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
 	
-			fs_file_read(src_file, filebuf,src_file->size,0);
-			fs_file_write(dst_file, filebuf, src_file->size, 0);
+			uint32_t file_size = fs_dirent_size(new_src);
+			uint32_t offset = 0;
 
-			kfree(filebuf);
+			while(offset<file_size) {
+				uint32_t chunk = MIN(PAGE_SIZE,file_size-offset);
+				fs_file_read(src_file, filebuf, chunk, offset );
+				fs_file_write(dst_file, filebuf, chunk, offset );
+				offset += chunk;
+			}
+
+			memory_free_page(filebuf);
 
 			fs_file_close(src_file);
 			fs_file_close(dst_file);
