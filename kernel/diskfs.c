@@ -420,6 +420,8 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 {
 	struct diskfs_block *b = memory_alloc_page(0);
 
+	int name_length = strlen(name);
+
 	int i, j;
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
 	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
@@ -429,7 +431,17 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
 
-			if(!strncmp(name,r->name,r->name_length)) {
+			if(r->type!=DISKFS_ITEM_BLANK && r->name_length==name_length && !strncmp(name,r->name,name_length)) {
+
+				if(r->type==DISKFS_ITEM_DIR) {
+					struct diskfs_inode inode;
+					diskfs_inode_load(d->v,r->inumber,&inode);
+					if(inode.size>0) {
+						memory_free_page(b);
+						return KERROR_NOT_EMPTY;
+					}
+				}
+
 				int inumber = r->inumber;
 				r->type = DISKFS_ITEM_BLANK;
 				diskfs_inode_write(d,b,i);
