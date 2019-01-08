@@ -81,8 +81,14 @@ static uint32_t diskfs_data_block_alloc( struct fs_volume *v )
 			if(b->data[j]!=0xff) {
 				for(k=0;k<8;k++) {
 					if(!((1<<k) & b->data[j])) {
+						int blockno = i*DISKFS_BLOCK_SIZE+j*8+k;
+						// Never allocate block zero
+						if(blockno==0) continue;
+						printf("allocated block %d\n",blockno);
+						b->data[j] |= 1<<k;
+						diskfs_bitmap_block_write(v,b,i);
 						memory_free_page(b);
-						return i*DISKFS_BLOCK_SIZE+j*8+k;
+						return blockno;
 					}
 				}
 			}		
@@ -106,6 +112,8 @@ static void diskfs_data_block_free( struct fs_volume *v, int blockno )
 	diskfs_bitmap_block_write(v,b,bitmap_block);
 
 	memory_free_page(b);
+
+	printf("freed block %d\n",blockno);
 }
 
 static int diskfs_inumber_alloc( struct fs_volume *v )
@@ -117,8 +125,11 @@ static int diskfs_inumber_alloc( struct fs_volume *v )
 		diskfs_inode_block_read(v,b,i);
 		for(j=0;j<DISKFS_INODES_PER_BLOCK;j++) {
 			if(!b->inodes[j].inuse) {
+				int inumber = i * DISKFS_INODES_PER_BLOCK + j;
+				b->inodes[j].inuse = 1;
+				diskfs_inode_block_write(v,b,i);
 				memory_free_page(b);
-				return i * DISKFS_INODES_PER_BLOCK + j;
+				return inumber;
 			}
 		}
 	}
@@ -145,7 +156,7 @@ int diskfs_inode_load( struct fs_volume *v, int inumber, struct diskfs_inode *in
 	int inode_position = inumber % DISKFS_INODES_PER_BLOCK;
 
 	diskfs_inode_block_read(v,b,inode_block);
-	memcpy(inode,&b->data[inode_position],sizeof(*inode));
+	memcpy(inode,&b->inodes[inode_position],sizeof(*inode));
 
 	memory_free_page(b);
 
@@ -160,7 +171,7 @@ int diskfs_inode_save( struct fs_volume *v, int inumber, struct diskfs_inode *in
 	int inode_position = inumber % DISKFS_INODES_PER_BLOCK;
 
 	diskfs_inode_block_read(v,b,inode_block);
-	memcpy(&b->data[inode_position],inode,sizeof(*inode));
+	memcpy(&b->inodes[inode_position],inode,sizeof(*inode));
 	diskfs_inode_block_write(v,b,inode_block);
 
 	memory_free_page(b);
@@ -249,6 +260,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 	int i, j;
 
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
+	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
 
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
@@ -269,8 +281,12 @@ int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
 	struct diskfs_block *b = memory_alloc_page(0);
 
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
+	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
+
 	int i,j;
 	int total = 0;
+
+	printf("reading dirent inumber %d:\n",d->inumber);
 
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
@@ -283,6 +299,7 @@ int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
 				case DISKFS_ITEM_DIR:
 					memcpy(buffer,r->name,r->name_length);
 					buffer[r->name_length] = 0;
+					printf("item: %d %d %s\n",r->type,r->inumber,buffer);
 					buffer += r->name_length + 1;
 					length -= r->name_length + 1;
 					total += r->name_length + 1;
@@ -304,6 +321,7 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 	int i, j;
 
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
+	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
 
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
@@ -323,15 +341,15 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 	}
 
 	memset(b->data,0,DISKFS_BLOCK_SIZE);
-	struct diskfs_item *r = &b->items[i];
+	struct diskfs_item *r = &b->items[0];
 
 	r->inumber = inumber;
 	r->type = type;
 	r->name_length = strlen(name);
 	memcpy(r->name,name,r->name_length);
 
+	diskfs_inode_setsize(d,d->size+sizeof(*r));
 	diskfs_inode_write(d,b,i);
-	diskfs_inode_setsize(d,d->size+DISKFS_BLOCK_SIZE);
 	diskfs_inode_save(d->v,d->inumber,&d->disk);
 
        	memory_free_page(b);
@@ -347,8 +365,13 @@ struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const 
 	}
 
 	int inumber = diskfs_inumber_alloc(d->v);
+	struct diskfs_inode inode;
+	memset(&inode,0,sizeof(inode));
+	inode.inuse = 1;
+	inode.size = 0;
+	diskfs_inode_save(d->v,inumber,&inode);
 
-	diskfs_dirent_add(d,name,DISKFS_ITEM_FILE,inumber);
+	diskfs_dirent_add(d,name,type,inumber);
 
 	// XXX set type of dirent
 	return diskfs_dirent_create(d->v,inumber);
@@ -399,6 +422,7 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 
 	int i, j;
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
+	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
 
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
@@ -466,7 +490,7 @@ struct fs_volume * diskfs_volume_open( struct device *device )
 
 struct fs_dirent * diskfs_volume_root( struct fs_volume *v )
 {
-	struct fs_dirent *d = diskfs_dirent_create(v,1);
+	struct fs_dirent *d = diskfs_dirent_create(v,0);
 	d->isdir = 1;
 	return d;
 }
@@ -487,7 +511,7 @@ int diskfs_volume_format( struct device *device )
 
 	sb.magic = DISKFS_MAGIC;
 	sb.block_size = DISKFS_BLOCK_SIZE;
-	sb.inode_blocks = nblocks / 10;
+	sb.inode_blocks = 1024 / sizeof(struct diskfs_inode);
 
 	int remaining_blocks = nblocks - sb.inode_blocks;
 	sb.bitmap_blocks = 1 + remaining_blocks / (DISKFS_BLOCK_SIZE*8);
@@ -515,40 +539,34 @@ int diskfs_volume_format( struct device *device )
 
 	printf("writing %d inode blocks\n",sb.inode_blocks);
 
-	for(i=0;i<sb.inode_blocks;i++) {
+	for(i=sb.inode_blocks-1;i>=0;i--) {
 		diskfs_block_write(device,b,sb.inode_start+i);
 	}
 
 	printf("writing %d bitmap blocks\n",sb.bitmap_blocks);
 
-	for(i=0;i<sb.bitmap_blocks;i++) {
+	for(i=sb.bitmap_blocks-1;i>=0;i--) {
 		diskfs_block_write(device,b,sb.bitmap_start+i);
 	}
 
-	printf("\n");
+	// Mark the zeroth and first blocks as used.
+	b->data[0] = 0x03;
+	diskfs_block_write(device,b,sb.bitmap_start);
 
-	struct fs_volume *v = kmalloc(sizeof(*v));
-	memset(v,0,sizeof(*v));
-	v->fs = &disk_fs;
-	v->device = device;
-	v->block_size = sb.block_size;
-	v->refcount = 1;
-	v->disk = sb;
+	// Set up the zeroth inode as the root directory with a single direct block.
+	memset(b,0,DISKFS_BLOCK_SIZE);
+	b->inodes[0].inuse = 1;
+	b->inodes[0].size = sizeof(struct diskfs_item);
+	b->inodes[0].direct[0] = 1;
+	diskfs_block_write(device,b,sb.inode_start);
 
-	// Allocate the first (numbered zero) blocks and inodes
-	// to avoid confusion with zero used as a not-present pointer.
-
-	printf("allocating root directory");
-
-	diskfs_inumber_alloc(v);
-	diskfs_data_block_alloc(v);
-
-	// Create the first directory inode.
-	int inumber = diskfs_inumber_alloc(v);
-	struct diskfs_inode node;
-	memset(&node,0,sizeof(node));
-	node.inuse = 1;
-	diskfs_inode_save(v,inumber,&node);
+	// Create the first directory entry as dot and write it to the first block.
+	memset(b,0,DISKFS_BLOCK_SIZE);
+	b->items[0].inumber = 0;
+	b->items[0].type = DISKFS_ITEM_DIR;
+	b->items[0].name_length = 1;
+	b->items[0].name[0] = '.';
+	diskfs_block_write(device,b,sb.data_start+1);
 
 	memory_free_page(b);
 
