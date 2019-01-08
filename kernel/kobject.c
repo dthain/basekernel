@@ -180,7 +180,7 @@ int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
 		return KERROR_NOT_A_DIRECTORY;
 	}
 
-	return fs_dirent_copy(src,dst);
+	return fs_dirent_copy(src,dst,0);
 }
 
 int kobject_close(struct kobject *kobject)

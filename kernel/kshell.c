@@ -82,7 +82,20 @@ int kshell_install( int src, int dst )
 
 	printf("copying atapi unit %d to ata unit %d...\n",src,dst);
 
-	return fs_dirent_copy(srcroot, dstroot,0);
+	fs_dirent_copy(srcroot, dstroot,0);
+
+	fs_dirent_close(dstroot);
+	fs_dirent_close(srcroot);
+
+	fs_volume_close(srcvolume);
+	fs_volume_close(dstvolume);
+
+	device_close(srcdev);
+
+	bcache_flush_device(dstdev);
+	device_close(dstdev);
+
+	return 0;
 }
 
 static int kshell_printdir(const char *d, int length)

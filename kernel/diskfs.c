@@ -30,12 +30,13 @@ static int diskfs_block_write(struct device *d, struct diskfs_block *b, uint32_t
 
 static int diskfs_bitmap_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
-  // XXX add protections for ranges
+	if(blockno>=v->disk.bitmap_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_read(v->device,b,v->disk.bitmap_start+blockno);
 }
 
 static int diskfs_bitmap_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
+	if(blockno>=v->disk.bitmap_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_write(v->device,b,v->disk.bitmap_start+blockno);
 }
 
@@ -43,11 +44,13 @@ static int diskfs_bitmap_block_write(struct fs_volume *v, struct diskfs_block *b
 
 static int diskfs_inode_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
+	if(blockno>=v->disk.inode_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_read(v->device,b,v->disk.inode_start+blockno);
 }
 
 static int diskfs_inode_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
+	if(blockno>=v->disk.inode_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_write(v->device,b,v->disk.inode_start+blockno);
 }
 
@@ -55,11 +58,13 @@ static int diskfs_inode_block_write(struct fs_volume *v, struct diskfs_block *b,
 
 static int diskfs_data_block_read(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
+	if(blockno>=v->disk.data_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_read(v->device,b,v->disk.data_start+blockno);
 }
 
 static int diskfs_data_block_write(struct fs_volume *v, struct diskfs_block *b, uint32_t blockno )
 {
+	if(blockno>=v->disk.data_blocks) return KERROR_OUT_OF_SPACE;
 	return diskfs_block_write(v->device,b,v->disk.data_start+blockno);
 }
 
@@ -82,8 +87,13 @@ static uint32_t diskfs_data_block_alloc( struct fs_volume *v )
 				for(k=0;k<8;k++) {
 					if(!((1<<k) & b->data[j])) {
 						int blockno = i*DISKFS_BLOCK_SIZE+j*8+k;
-						// Never allocate block zero
+
+						// Never allocate block zero;
 						if(blockno==0) continue;
+
+						// Do not exceet the actual number of blocks
+						if(blockno>=v->disk.data_blocks) break;
+
 						b->data[j] |= 1<<k;
 						diskfs_bitmap_block_write(v,b,i);
 						memory_free_page(b);
@@ -93,6 +103,8 @@ static uint32_t diskfs_data_block_alloc( struct fs_volume *v )
 			}		
 		}
 	}
+
+	printf("diskfs: warning: out of space!\n");
 
 	memory_free_page(b);
 	return 0;
@@ -130,6 +142,8 @@ static int diskfs_inumber_alloc( struct fs_volume *v )
 			}
 		}
 	}
+
+	printf("diskfs: warning: out of inodes!\n");
 
 	memory_free_page(b);
 	return 0;
@@ -227,7 +241,7 @@ int diskfs_inode_setsize( struct fs_dirent *d, uint32_t size )
 	return 0;
 }
 
-struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber )
+struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber, int type )
 {
 	struct fs_dirent *d = kmalloc(sizeof(*d));
 	memset(d,0,sizeof(*d));
@@ -238,7 +252,7 @@ struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber )
 	d->size = d->disk.size;
 	d->inumber = inumber;
 	d->refcount = 1;
-	d->isdir = 0; // XXX where to set this?
+	d->isdir = type==DISKFS_ITEM_DIR;
 	return d;
 }
 
@@ -266,7 +280,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
 				int inumber = r->inumber;
 				memory_free_page(b);
-				return diskfs_dirent_create(d->v,inumber);
+				return diskfs_dirent_create(d->v,inumber,r->type);
 			}
 		}
 	}
@@ -361,16 +375,15 @@ struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const 
 	}
 
 	int inumber = diskfs_inumber_alloc(d->v);
+	if(inumber==0) return 0; // KERROR_OUT_OF_SPACE
+
 	struct diskfs_inode inode;
 	memset(&inode,0,sizeof(inode));
 	inode.inuse = 1;
 	inode.size = 0;
 	diskfs_inode_save(d->v,inumber,&inode);
-
 	diskfs_dirent_add(d,name,type,inumber);
-
-	// XXX set type of dirent
-	return diskfs_dirent_create(d->v,inumber);
+	return diskfs_dirent_create(d->v,inumber,type);
 }
 
 struct fs_dirent * diskfs_dirent_create_file( struct fs_dirent *d, const char *name )
@@ -498,14 +511,11 @@ struct fs_volume * diskfs_volume_open( struct device *device )
 
 struct fs_dirent * diskfs_volume_root( struct fs_volume *v )
 {
-	struct fs_dirent *d = diskfs_dirent_create(v,0);
-	d->isdir = 1;
-	return d;
+	return diskfs_dirent_create(v,0,DISKFS_ITEM_DIR);
 }
 
 int diskfs_volume_close( struct fs_volume *v )
 {
-	device_close(v->device);
 	kfree(v);
 	return 0;
 }

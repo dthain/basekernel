@@ -46,12 +46,14 @@ int fs_volume_format(struct fs *f, struct device *d )
 struct fs_volume *fs_volume_open(struct fs *f, struct device *d )
 {
 	const struct fs_ops *ops = f->ops;
+
 	if(!ops->volume_open)
 		return 0;
+
 	struct fs_volume *v = f->ops->volume_open(d);
 	if(v) {
 		v->fs = f;
-		v->device = d;
+		v->device = device_addref(d);
 	}
 	return v;
 }
@@ -69,8 +71,11 @@ int fs_volume_close(struct fs_volume *v)
 		return KERROR_NOT_IMPLEMENTED;
 
 	v->refcount--;
-	if(v->refcount <= 0)
-		return v->fs->ops->volume_close(v);
+	if(v->refcount <= 0) {
+		v->fs->ops->volume_close(v);
+		device_close(v->device);
+	}
+
 	return -1;
 }
 
@@ -110,20 +115,28 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 	}
 }
 
-struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
+struct fs_dirent *fs_dirent_namei(struct fs_dirent *parent, const char *path)
 {
-	if(!d || !path)
+	if(!parent || !path)
 		return 0;
 
 	char *lpath = kmalloc(strlen(path) + 1);
 	strcpy(lpath, path);
 
+	struct fs_dirent *d = parent;
+
 	char *part = strtok(lpath, "/");
 	while(part) {
-		d = fs_dirent_lookup(d, part);
-		if(!d)
-			break;
+		struct fs_dirent *n = fs_dirent_lookup(d, part);
 
+		if(d!=parent) fs_dirent_close(d);
+
+		if(!n) {
+			// KERROR_NOT_FOUND
+			kfree(lpath);
+			return 0;
+		}
+		d = n;
 		part = strtok(0, "/");
 	}
 	kfree(lpath);
@@ -243,17 +256,29 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 struct fs_dirent * fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->mkdir)
-		return 0;
-	return ops->mkdir(d, name);
+	if(!ops->mkdir) return 0;
+
+	struct fs_dirent *n = ops->mkdir(d, name);
+	if(n) {
+		n->v = fs_volume_addref(d->v);
+		return n;
+	}
+
+	return 0;
 }
 
 struct fs_dirent * fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->mkfile)
-		return 0;
-	return ops->mkfile(d, name);
+	if(!ops->mkfile) return 0;
+
+	struct fs_dirent *n = ops->mkfile(d, name);
+	if(n) {
+		n->v = fs_volume_addref(d->v);
+		return n;
+	}
+
+	return 0;
 }
 
 int fs_dirent_remove(struct fs_dirent *d, const char *name)
@@ -370,11 +395,10 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 		for(i=0;i<depth;i++) printf(">");
 
 		if(fs_dirent_isdir(new_src)) {
-			printf(" %s (dir)\n", name);
-			fs_dirent_mkdir(dst,name);
-			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			printf("%s (dir)\n", name);
+			struct fs_dirent *new_dst = fs_dirent_mkdir(dst,name);
 			if(!new_dst) {
-				printf("couldn't lookup newly created %s!\n",name);
+				printf("couldn't create %s!\n",name);
 				fs_dirent_close(new_src);
 				goto next_entry;
 			}
@@ -382,12 +406,10 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 			fs_dirent_close(new_dst);
 			if(res<0) goto failure;
 		} else {
-			printf(" %s (%d bytes)\n", name,fs_dirent_size(new_src));
-			// XXX mkfile should just return the new dirent
-			fs_dirent_mkfile(dst, name);
-			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
+			printf("%s (%d bytes)\n", name,fs_dirent_size(new_src));
+			struct fs_dirent *new_dst = fs_dirent_mkfile(dst, name);
 			if(!new_dst) {
-				printf("couldn't open newly-created %s!\n",name);
+				printf("couldn't create %s!\n",name);
 				fs_dirent_close(new_src);
 				goto next_entry;
 			}
