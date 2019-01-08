@@ -38,12 +38,14 @@ struct diskfs_inode {
 #define DISKFS_ITEM_FILE 1
 #define DISKFS_ITEM_DIR 2
 
+#pragma pack(1)
 struct diskfs_item {
 	uint32_t inumber;
 	uint8_t  type;
 	uint8_t  name_length;
 	char     name[26];
 };
+#pragma pack()
 
 struct diskfs_block {
 	union {
