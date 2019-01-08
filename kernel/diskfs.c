@@ -266,7 +266,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
 				int inumber = r->inumber;
 				memory_free_page(b);
-				return diskfs_dirent_create(d->v,r->inumber);
+				return diskfs_dirent_create(d->v,inumber);
 			}
 		}
 	}
