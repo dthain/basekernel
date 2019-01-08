@@ -264,6 +264,8 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
 			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
+				int inumber = r->inumber;
+				memory_free_page(b);
 				return diskfs_dirent_create(d->v,r->inumber);
 			}
 		}
