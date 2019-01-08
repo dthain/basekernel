@@ -347,12 +347,6 @@ int fs_dirent_isdir( struct fs_dirent *d )
 
 int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
 {
-/*
- * This function is temporarily disabled since we do not yet have
- * reliable filesystem writes.
-*/
-	return KERROR_NOT_IMPLEMENTED;
-
 	char *buffer = memory_alloc_page(1);
 
 	int length = fs_dirent_readdir(src, buffer, PAGE_SIZE);

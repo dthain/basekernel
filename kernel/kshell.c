@@ -63,7 +63,7 @@ XXX This needs better error checking.
 int kshell_install( int src, int dst )
 {
 	struct fs *srcfs = fs_lookup("cdromfs");
-	struct fs *dstfs = fs_lookup("kevinfs");
+	struct fs *dstfs = fs_lookup("diskfs");
 
 	if(!srcfs || !dstfs) return KERROR_NOT_FOUND;
 
