@@ -577,7 +577,7 @@ int diskfs_volume_format( struct device *device )
 
 	memory_free_page(b);
 
-	printf("diskfs: flushing dirty blocks");
+	printf("diskfs: flushing buffer cache\n");
 	bcache_flush_device(device);
 
 	return 0;

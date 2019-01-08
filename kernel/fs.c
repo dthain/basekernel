@@ -345,7 +345,7 @@ int fs_dirent_isdir( struct fs_dirent *d )
 	return d->isdir;
 }
 
-int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
+int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 {
 	char *buffer = memory_alloc_page(1);
 
@@ -366,8 +366,11 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
 			goto next_entry;
 		}
 
+		int i;
+		for(i=0;i<depth;i++) printf(">");
+
 		if(fs_dirent_isdir(new_src)) {
-			printf("copying dir %s...\n", name);
+			printf(" %s (dir)\n", name);
 			fs_dirent_mkdir(dst,name);
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
 			if(!new_dst) {
@@ -375,12 +378,12 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
 				fs_dirent_close(new_src);
 				goto next_entry;
 			}
-			int res = fs_dirent_copy(new_src, new_dst);
+			int res = fs_dirent_copy(new_src, new_dst,depth+1);
 			fs_dirent_close(new_dst);
 			fs_dirent_close(new_src);
 			if(res<0) goto failure;
 		} else {
-			printf("copying file %s...\n", name);
+			printf(" %s (%d bytes)\n", name,fs_dirent_size(src));
 			// XXX mkfile should just return the new dirent
 			fs_dirent_mkfile(dst, name);
 			struct fs_dirent *new_dst = fs_dirent_lookup(dst, name);
@@ -410,8 +413,6 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst )
 		}
 
 		fs_dirent_close(new_src);
-
-		printf("Done.\n");
 
 		next_entry:
 		name += strlen(name) + 1;

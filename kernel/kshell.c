@@ -82,7 +82,7 @@ int kshell_install( int src, int dst )
 
 	printf("copying atapi unit %d to ata unit %d...\n",src,dst);
 
-	return fs_dirent_copy(srcroot, dstroot);
+	return fs_dirent_copy(srcroot, dstroot,0);
 }
 
 static int kshell_printdir(const char *d, int length)

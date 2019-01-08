@@ -54,7 +54,7 @@ int fs_dirent_remove(struct fs_dirent *d, const char *name);
 int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
-int fs_dirent_copy( struct fs_dirent *src, struct fs_dirent *dst );
+int fs_dirent_copy( struct fs_dirent *src, struct fs_dirent *dst, int depth );
 
 /*
 An fs_file represents an actual file that can be read and possible
