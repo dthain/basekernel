@@ -84,7 +84,6 @@ static uint32_t diskfs_data_block_alloc( struct fs_volume *v )
 						int blockno = i*DISKFS_BLOCK_SIZE+j*8+k;
 						// Never allocate block zero
 						if(blockno==0) continue;
-						printf("allocated block %d\n",blockno);
 						b->data[j] |= 1<<k;
 						diskfs_bitmap_block_write(v,b,i);
 						memory_free_page(b);
@@ -112,8 +111,6 @@ static void diskfs_data_block_free( struct fs_volume *v, int blockno )
 	diskfs_bitmap_block_write(v,b,bitmap_block);
 
 	memory_free_page(b);
-
-	printf("freed block %d\n",blockno);
 }
 
 static int diskfs_inumber_alloc( struct fs_volume *v )
@@ -286,8 +283,6 @@ int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
 	int i,j;
 	int total = 0;
 
-	printf("reading dirent inumber %d:\n",d->inumber);
-
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
 
@@ -299,7 +294,6 @@ int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
 				case DISKFS_ITEM_DIR:
 					memcpy(buffer,r->name,r->name_length);
 					buffer[r->name_length] = 0;
-					printf("item: %d %d %s\n",r->type,r->inumber,buffer);
 					buffer += r->name_length + 1;
 					length -= r->name_length + 1;
 					total += r->name_length + 1;
@@ -521,6 +515,8 @@ int diskfs_volume_format( struct device *device )
 
 	int nblocks = device_nblocks(device);
 
+	printf("diskfs: formatting device %s unit %d\n",device_name(device),device_unit(device));
+
 	sb.magic = DISKFS_MAGIC;
 	sb.block_size = DISKFS_BLOCK_SIZE;
 	sb.inode_blocks = 1024 / sizeof(struct diskfs_inode);
@@ -533,33 +529,32 @@ int diskfs_volume_format( struct device *device )
 	sb.bitmap_start = sb.inode_start + sb.inode_blocks;
 	sb.data_start = sb.bitmap_start + sb.bitmap_blocks;
 
+	printf("diskfs: %d inode blocks, %d bitmap blocks, %d data blocks\n",
+	       sb.inode_blocks, sb.bitmap_blocks, sb.data_blocks );
+
 	memset(b,0,DISKFS_BLOCK_SIZE);
 	b->superblock = sb;
-	
-	diskfs_block_write(device,b,0);
 
-	printf("mg %d bs %d ib %d bb %d db %d\n",
-	       sb.magic,
-	       sb.block_size,
-	       sb.inode_blocks,
-	       sb.bitmap_blocks,
-	       sb.data_blocks );
+	printf("diskfs: writing superblock\n");
+	diskfs_block_write(device,b,0);
 
 	memset(b,0,DISKFS_BLOCK_SIZE);
 
 	int i;
 
-	printf("writing %d inode blocks\n",sb.inode_blocks);
+	printf("diskfs: writing %d inode blocks\n",sb.inode_blocks);
 
 	for(i=sb.inode_blocks-1;i>=0;i--) {
 		diskfs_block_write(device,b,sb.inode_start+i);
 	}
 
-	printf("writing %d bitmap blocks\n",sb.bitmap_blocks);
+	printf("diskfs: writing %d bitmap blocks\n",sb.bitmap_blocks);
 
 	for(i=sb.bitmap_blocks-1;i>=0;i--) {
 		diskfs_block_write(device,b,sb.bitmap_start+i);
 	}
+
+	printf("diskfs: creating root directory\n");
 
 	// Mark the zeroth and first blocks as used.
 	b->data[0] = 0x03;
@@ -582,7 +577,7 @@ int diskfs_volume_format( struct device *device )
 
 	memory_free_page(b);
 
-	printf("flushing dirty blocks");
+	printf("diskfs: flushing dirty blocks");
 	bcache_flush_device(device);
 
 	return 0;
