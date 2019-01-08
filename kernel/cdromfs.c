@@ -32,7 +32,7 @@ static struct fs_dirent *cdrom_dirent_create(struct fs_volume *volume, int secto
 
 static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
-	int nblocks = device_read(d->v->device, buffer, 1, (int) d->cdrom.sector + blocknum);
+	int nblocks = bcache_read(d->v->device, buffer, 1, d->cdrom.sector + blocknum);
 	if(nblocks == 1) {
 		return CDROMFS_BLOCK_SIZE;
 	} else {

@@ -46,6 +46,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_size(struct kobject *kobject, int *dimensions, int n);
+int kobject_copy( struct kobject *ksrc, struct kobject *kdst );
 int kobject_close(struct kobject *kobject);
 
 int kobject_dir_lookup( struct kobject *k, const char *name, struct fs_dirent **d );
