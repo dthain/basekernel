@@ -380,7 +380,6 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 			}
 			int res = fs_dirent_copy(new_src, new_dst,depth+1);
 			fs_dirent_close(new_dst);
-			fs_dirent_close(new_src);
 			if(res<0) goto failure;
 		} else {
 			printf(" %s (%d bytes)\n", name,fs_dirent_size(new_src));
@@ -417,6 +416,8 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 
 			fs_file_close(src_file);
 			fs_file_close(dst_file);
+
+			fs_dirent_close(new_dst);
 		}
 
 		fs_dirent_close(new_src);
