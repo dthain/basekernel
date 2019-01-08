@@ -96,12 +96,18 @@ int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
 static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
+
 	if(!ops->lookup)
 		return 0;
 
-	struct fs_dirent *r = ops->lookup(d, name);
-	r->v = fs_volume_addref(d->v);
-	return r;
+	if(!strcmp(name,".")) {
+		// Special case: . refers to the containing directory.
+		return fs_dirent_addref(d);
+	} else {
+		struct fs_dirent *r = ops->lookup(d, name);
+		if(r) r->v = fs_volume_addref(d->v);
+		return r;
+	}
 }
 
 struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path)
@@ -138,7 +144,9 @@ int fs_dirent_close(struct fs_dirent *d)
 
 	d->refcount--;
 	if(d->refcount <= 0) {
-		return ops->close(d);
+		ops->close(d);
+		// This close is paired with the addref in fs_dirent_lookup
+		fs_volume_close(d->v);
 	}
 
 	return 0;
