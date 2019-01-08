@@ -73,7 +73,7 @@ static int kshell_listdir(const char *path)
 		char *buffer = kmalloc(buffer_length);
 		if(buffer) {
 			int length = fs_dirent_readdir(d, buffer, buffer_length);
-			if(length > 0) {
+			if(length>=0) {
 				kshell_printdir(buffer, length);
 			} else {
 				printf("list: %s is not a directory\n", path);
