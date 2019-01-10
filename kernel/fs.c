@@ -74,6 +74,7 @@ int fs_volume_close(struct fs_volume *v)
 	if(v->refcount <= 0) {
 		v->fs->ops->volume_close(v);
 		device_close(v->device);
+		kfree(v);
 	}
 
 	return -1;
@@ -160,6 +161,7 @@ int fs_dirent_close(struct fs_dirent *d)
 		ops->close(d);
 		// This close is paired with the addref in fs_dirent_lookup
 		fs_volume_close(d->v);
+		kfree(d);
 	}
 
 	return 0;

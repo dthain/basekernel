@@ -111,7 +111,6 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 
 static int cdrom_dirent_close( struct fs_dirent *d )
 {
-	kfree(d);
 	return 0;
 }
 
@@ -183,9 +182,6 @@ static struct fs_volume *cdrom_volume_create( struct device *device )
 
 static int cdrom_volume_close(struct fs_volume *v)
 {
-	printf("cdromfs: unmounted filesystem from %s unit %d\n", device_name(v->device), device_unit(v->device));
-	device_close(v->device);
-	kfree(v);
 	return 0;
 }
 

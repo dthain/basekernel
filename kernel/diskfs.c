@@ -261,7 +261,6 @@ int diskfs_dirent_close( struct fs_dirent *d )
 {
 	// XXX check if inode dirty first
 	diskfs_inode_save(d->v,d->inumber,&d->disk);
-	kfree(d);
 	return 0;
 }
 
@@ -516,7 +515,6 @@ struct fs_dirent * diskfs_volume_root( struct fs_volume *v )
 
 int diskfs_volume_close( struct fs_volume *v )
 {
-	kfree(v);
 	return 0;
 }
 
