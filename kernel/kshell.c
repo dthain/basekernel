@@ -20,7 +20,6 @@
 
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
-
 	struct device *dev = device_open(devname,unit);
 	if(dev) {
 		struct fs *fs = fs_lookup(fs_type);

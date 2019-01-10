@@ -96,18 +96,14 @@ int elf_load(struct process *p, const char *filename, addr_t * entry)
 	if(!d)
 		return KERROR_NOT_FOUND;
 
-	struct fs_file *file = fs_file_open(d, FS_FILE_READ);
-	if(!file)
-		return KERROR_NOT_FOUND;
-
-	actual = fs_file_read(file, (char *) &header, sizeof(header), 0);
+	actual = fs_dirent_read(d, (char *) &header, sizeof(header), 0);
 	if(actual != sizeof(header))
 		goto noload;
 
 	if(strncmp(header.ident, "\177ELF", 4) || header.machine != ELF_HEADER_MACHINE_I386 || header.version != ELF_HEADER_VERSION)
 		goto noexec;
 
-	actual = fs_file_read(file, (char *) &program, sizeof(program), header.program_offset);
+	actual = fs_dirent_read(d, (char *) &program, sizeof(program), header.program_offset);
 	if(actual != sizeof(program))
 		goto noload;
 
@@ -118,12 +114,12 @@ int elf_load(struct process *p, const char *filename, addr_t * entry)
 
 	process_data_size_set(p, program.memory_size);
 
-	actual = fs_file_read(file, (char *) program.vaddr, program.memory_size, program.offset);
+	actual = fs_dirent_read(d, (char *) program.vaddr, program.memory_size, program.offset);
 	if(actual != program.memory_size)
 		goto mustdie;
 
 	for(i = 0; i < header.shnum; i++) {
-		actual = fs_file_read(file, (char *) &section, sizeof(section), header.section_offset + i * header.shentsize);
+		actual = fs_dirent_read(d, (char *) &section, sizeof(section), header.section_offset + i * header.shentsize);
 		if(actual != sizeof(section))
 			goto mustdie;
 
@@ -138,24 +134,23 @@ int elf_load(struct process *p, const char *filename, addr_t * entry)
 		}
 	}
 
-	fs_file_close(file);
-
 	*entry = header.entry;
+	fs_dirent_close(d);
 
 	return 0;
 
       noload:
 	printf("elf: %s failed to load correctly!\n", filename);
-	fs_file_close(file);
+	fs_dirent_close(d);
 	return KERROR_NOT_FOUND;
 
       noexec:
 	printf("elf: %s is not a valid i386 ELF executable\n", filename);
-	fs_file_close(file);
+	fs_dirent_close(d);
 	return KERROR_NOT_EXECUTABLE;
 
       mustdie:
 	printf("elf: %s did not load correctly\n", filename);
-	fs_file_close(file);
+	fs_dirent_close(d);
 	return KERROR_EXECUTION_FAILED;
 }

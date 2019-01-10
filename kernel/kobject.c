@@ -26,7 +26,7 @@ static struct kobject *kobject_init()
 	return k;
 }
 
-struct kobject *kobject_create_file(struct fs_file *f)
+struct kobject *kobject_create_file(struct fs_dirent *f)
 {
 	struct kobject *k = kobject_init();
 	k->type = KOBJECT_FILE;
@@ -107,7 +107,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 
 	switch (kobject->type) {
 	case KOBJECT_FILE:
-		actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
+		actual = fs_dirent_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
 	case KOBJECT_DIR:
 		actual = fs_dirent_readdir(kobject->data.dir, (char *)buffer, size );
@@ -149,7 +149,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_CONSOLE:
 		return console_write(kobject->data.console, buffer, size );
 	case KOBJECT_FILE:{
-			int actual = fs_file_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
+			int actual = fs_dirent_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
 			return actual;
@@ -196,7 +196,7 @@ int kobject_close(struct kobject *kobject)
 			console_delete(kobject->data.console);
 			break;
 		case KOBJECT_FILE:
-			fs_file_close(kobject->data.file);
+			fs_dirent_close(kobject->data.file);
 			break;
 		case KOBJECT_DEVICE:
 			// XXX add device close once branch is merged
@@ -253,7 +253,7 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		}
 	case KOBJECT_FILE:
 		if(n==1) {
-			dims[0] = fs_file_size(kobject->data.file);
+			dims[0] = fs_dirent_size(kobject->data.file);
 			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;

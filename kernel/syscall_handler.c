@@ -351,7 +351,7 @@ static int open_dirent( struct fs_dirent *d, const char *path, int mode, int fla
 	if(fs_dirent_isdir(d)) {
 		k = kobject_create_dir(d);
 	} else {
-		k = kobject_create_file(fs_file_open(d,mode));
+		k = kobject_create_file(d);
 	}
 
 	current->ktable[new_fd] = k;

@@ -167,49 +167,21 @@ int fs_dirent_close(struct fs_dirent *d)
 	return 0;
 }
 
-struct fs_file *fs_file_open(struct fs_dirent *d, uint8_t mode)
-{
-	struct fs_file *f = kmalloc(sizeof(*f));
-	f->size = d->size;
-	f->d = fs_dirent_addref(d);
-	f->mode = mode;
-	f->refcount = 1;
-	return f;
-}
-
-struct fs_file *fs_file_addref(struct fs_file *f)
-{
-	f->refcount++;
-	return f;
-}
-
-int fs_file_close(struct fs_file *f)
-{
-	if(!f)
-		return 0;
-	f->refcount--;
-	if(f->refcount <= 0) {
-		fs_dirent_close(f->d);
-		kfree(f);
-	}
-	return 0;
-}
-
-int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t offset)
+int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
-	int bs = file->d->v->block_size;
+	int bs = d->v->block_size;
 
-	const struct fs_ops *ops = file->d->v->fs->ops;
+	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->read_block)
 		return KERROR_INVALID_REQUEST;
 
-	if(offset > file->size) {
+	if(offset > d->size) {
 		return 0;
 	}
 
-	if(offset + length > file->size) {
-		length = file->size - offset;
+	if(offset + length > d->size) {
+		length = d->size - offset;
 	}
 
 	char *temp = memory_alloc_page(0);
@@ -222,17 +194,17 @@ int fs_file_read(struct fs_file *file, char *buffer, uint32_t length, uint32_t o
 		int actual = 0;
 
 		if(offset % bs) {
-			actual = ops->read_block(file->d, temp, blocknum);
+			actual = ops->read_block(d, temp, blocknum);
 			if(actual != bs)
 				goto failure;
 			actual = MIN(bs - offset % bs, length);
 			memcpy(buffer, &temp[offset % bs], actual);
 		} else if(length >= bs) {
-			actual = ops->read_block(file->d, buffer, blocknum);
+			actual = ops->read_block(d, buffer, blocknum);
 			if(actual != bs)
 				goto failure;
 		} else {
-			actual = ops->read_block(file->d, temp, blocknum);
+			actual = ops->read_block(d, temp, blocknum);
 			if(actual != bs)
 				goto failure;
 			actual = length;
@@ -291,20 +263,20 @@ int fs_dirent_remove(struct fs_dirent *d, const char *name)
 	return ops->remove(d, name);
 }
 
-int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uint32_t offset)
+int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
-	int bs = file->d->v->block_size;
+	int bs = d->v->block_size;
 
-	const struct fs_ops *ops = file->d->v->fs->ops;
+	const struct fs_ops *ops = d->v->fs->ops;
 	if(!ops->write_block || !ops->read_block)
 		return KERROR_INVALID_REQUEST;
 
 	char *temp = memory_alloc_page(0);
 
 	// if writing past the (current) end of the file, resize the file first
-	if (offset + length > file->size) {
-		ops->resize(file->d, offset+length);
+	if (offset + length > d->size) {
+		ops->resize(d, offset+length);
 	}
 
 	while(length > 0) {
@@ -313,30 +285,30 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 		int actual = 0;
 
 		if(offset % bs) {
-			actual = ops->read_block(file->d, temp, blocknum);
+			actual = ops->read_block(d, temp, blocknum);
 			if(actual != bs)
 				goto failure;
 
 			actual = MIN(bs - offset % bs, length);
 			memcpy(&temp[offset % bs], buffer, actual);
 
-			int wactual = ops->write_block(file->d, temp, blocknum);
+			int wactual = ops->write_block(d, temp, blocknum);
 			if(wactual != bs)
 				goto failure;
 
 		} else if(length >= bs) {
-			actual = ops->write_block(file->d, buffer, blocknum);
+			actual = ops->write_block(d, buffer, blocknum);
 			if(actual != bs)
 				goto failure;
 		} else {
-			actual = ops->read_block(file->d, temp, blocknum);
+			actual = ops->read_block(d, temp, blocknum);
 			if(actual != bs)
 				goto failure;
 
 			actual = length;
 			memcpy(temp, buffer, actual);
 
-			int wactual = ops->write_block(file->d, temp, blocknum);
+			int wactual = ops->write_block(d, temp, blocknum);
 			if(wactual != bs)
 				goto failure;
 		}
@@ -355,11 +327,6 @@ int fs_file_write(struct fs_file *file, const char *buffer, uint32_t length, uin
 	if(total == 0)
 		return -1;
 	return total;
-}
-
-int fs_file_size(struct fs_file *f)
-{
-	return f->size;
 }
 
 int fs_dirent_size(struct fs_dirent *d)
@@ -423,23 +390,17 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 				goto failure;
 			}
 
-			struct fs_file *src_file = fs_file_open(new_src, FS_FILE_READ);
-			struct fs_file *dst_file = fs_file_open(new_dst, FS_FILE_WRITE);
-	
 			uint32_t file_size = fs_dirent_size(new_src);
 			uint32_t offset = 0;
 
 			while(offset<file_size) {
 				uint32_t chunk = MIN(PAGE_SIZE,file_size-offset);
-				fs_file_read(src_file, filebuf, chunk, offset );
-				fs_file_write(dst_file, filebuf, chunk, offset );
+				fs_dirent_read(new_src, filebuf, chunk, offset );
+				fs_dirent_write(new_dst, filebuf, chunk, offset );
 				offset += chunk;
 			}
 
 			memory_free_page(filebuf);
-
-			fs_file_close(src_file);
-			fs_file_close(dst_file);
 
 			fs_dirent_close(new_dst);
 		}

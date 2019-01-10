@@ -18,7 +18,7 @@
 struct kobject {
 	union {
 		struct device *device;
-		struct fs_file *file;
+		struct fs_dirent *file;
 		struct fs_dirent *dir;
 		struct graphics *graphics;
 		struct console *console;
@@ -30,7 +30,7 @@ struct kobject {
 	char *intent;
 };
 
-struct kobject *kobject_create_file(struct fs_file *f);
+struct kobject *kobject_create_file(struct fs_dirent *f);
 struct kobject *kobject_create_dir(struct fs_dirent *d);
 struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
