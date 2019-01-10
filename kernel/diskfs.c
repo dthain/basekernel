@@ -234,13 +234,6 @@ int diskfs_inode_write( struct fs_dirent *d, struct diskfs_block *b, uint32_t bl
 	return diskfs_data_block_write(d->v,b,actual);
 }
 
-int diskfs_inode_setsize( struct fs_dirent *d, uint32_t size )
-{
-	// XXX this only handles the case of getting bigger!
-	d->size = d->disk.size = size;
-	return 0;
-}
-
 struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber, int type )
 {
 	struct fs_dirent *d = kmalloc(sizeof(*d));
@@ -324,6 +317,12 @@ int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
 	return total;
 }
 
+int diskfs_dirent_resize( struct fs_dirent *d, uint32_t size )
+{
+	d->size = d->disk.size = size;
+	return 0;
+}
+
 static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, int inumber )
 {
 	struct diskfs_block *b = memory_alloc_page(0);
@@ -357,7 +356,7 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 	r->name_length = strlen(name);
 	memcpy(r->name,name,r->name_length);
 
-	diskfs_inode_setsize(d,d->size+sizeof(*r));
+	diskfs_dirent_resize(d,d->size+sizeof(*r));
 	diskfs_inode_write(d,b,i);
 	diskfs_inode_save(d->v,d->inumber,&d->disk);
 
@@ -591,11 +590,6 @@ int diskfs_volume_format( struct device *device )
 	bcache_flush_device(device);
 
 	return 0;
-}
-
-int diskfs_dirent_resize( struct fs_dirent *d, uint32_t size )
-{
-	return KERROR_NOT_IMPLEMENTED;
 }
 
 struct fs_ops diskfs_ops = {
