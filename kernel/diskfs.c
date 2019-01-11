@@ -224,11 +224,17 @@ int diskfs_inode_write( struct fs_dirent *d, struct diskfs_block *b, uint32_t bl
 			if(actual==0) return KERROR_OUT_OF_SPACE;
 			i->indirect = actual;
 			diskfs_inode_save(d->v,d->inumber,i);	
-			// XXX need to clear the indirect block!
+			memset(b->data,0,DISKFS_BLOCK_SIZE);
+			diskfs_data_block_write(d->v,b,i->indirect);
 		}
 		diskfs_data_block_read(d->v,b,i->indirect);
 		actual = b->pointers[block-DISKFS_DIRECT_POINTERS];
-		// XXX what if that value is no good!?
+		if(actual==0) {
+			actual = diskfs_data_block_alloc(d->v);
+			if(actual==0) return KERROR_OUT_OF_SPACE;
+			b->pointers[block-DISKFS_DIRECT_POINTERS] = actual;
+			diskfs_data_block_write(d->v,b,i->indirect);
+		}
 	}
 
 	return diskfs_data_block_write(d->v,b,actual);
