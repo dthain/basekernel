@@ -196,10 +196,10 @@ int kobject_close(struct kobject *kobject)
 {
 	kobject->refcount--;
 
-	if(kobject->refcount<1) {
+	if(kobject->refcount==0) {
 		switch (kobject->type) {
 		case KOBJECT_GRAPHICS:
-			// XXX delete graphics object?
+			graphics_delete(kobject->data.graphics);
 			break;
 		case KOBJECT_CONSOLE:
 			console_delete(kobject->data.console);
@@ -207,9 +207,11 @@ int kobject_close(struct kobject *kobject)
 		case KOBJECT_FILE:
 			fs_dirent_close(kobject->data.file);
 			break;
+		case KOBJECT_DIR:
+			fs_dirent_close(kobject->data.dir);
+			break;
 		case KOBJECT_DEVICE:
-			// XXX add device close once branch is merged
-			//device_close(kobject->data.device);
+			device_close(kobject->data.device);
 			break;
 		case KOBJECT_PIPE:
 			pipe_delete(kobject->data.pipe);
@@ -219,13 +221,9 @@ int kobject_close(struct kobject *kobject)
 		}
 		kfree(kobject);
 		return 0;
-	} else if(kobject->refcount == 1) {
-		switch (kobject->type) {
-		case KOBJECT_PIPE:
+	} else if(kobject->refcount>1 ) {
+		if(kobject->type==KOBJECT_PIPE) {
 			pipe_flush(kobject->data.pipe);
-			return 0;
-		default:
-			return 0;
 		}
 	}
 	return 0;

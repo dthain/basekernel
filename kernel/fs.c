@@ -72,14 +72,14 @@ int fs_volume_close(struct fs_volume *v)
 		return KERROR_NOT_IMPLEMENTED;
 
 	v->refcount--;
-	if(v->refcount <= 0) {
+	if(v->refcount==0) {
 		v->fs->ops->volume_close(v);
 		bcache_flush_device(v->device);
 		device_close(v->device);
 		kfree(v);
 	}
 
-	return -1;
+	return 0;
 }
 
 struct fs_dirent *fs_volume_root(struct fs_volume *v)
@@ -159,7 +159,7 @@ int fs_dirent_close(struct fs_dirent *d)
 		return KERROR_NOT_IMPLEMENTED;
 
 	d->refcount--;
-	if(d->refcount <= 0) {
+	if(d->refcount==0) {
 		ops->close(d);
 		// This close is paired with the addref in fs_dirent_lookup
 		fs_volume_close(d->volume);
