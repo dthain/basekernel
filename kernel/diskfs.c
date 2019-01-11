@@ -219,22 +219,32 @@ int diskfs_inode_write( struct fs_dirent *d, struct diskfs_block *b, uint32_t bl
 			diskfs_inode_save(d->v,d->inumber,i);	
 		}
 	} else {
+		struct diskfs_block *iblock = memory_alloc_page(0);
+
 		if(i->indirect==0) {
 			actual = diskfs_data_block_alloc(d->v);
-			if(actual==0) return KERROR_OUT_OF_SPACE;
+			if(actual==0) {
+				memory_free_page(iblock);
+				return KERROR_OUT_OF_SPACE;
+			}
 			i->indirect = actual;
 			diskfs_inode_save(d->v,d->inumber,i);	
-			memset(b->data,0,DISKFS_BLOCK_SIZE);
-			diskfs_data_block_write(d->v,b,i->indirect);
+			memset(iblock,0,DISKFS_BLOCK_SIZE);
+			diskfs_data_block_write(d->v,iblock,i->indirect);
 		}
-		diskfs_data_block_read(d->v,b,i->indirect);
-		actual = b->pointers[block-DISKFS_DIRECT_POINTERS];
+
+		diskfs_data_block_read(d->v,iblock,i->indirect);
+		actual = iblock->pointers[block-DISKFS_DIRECT_POINTERS];
 		if(actual==0) {
 			actual = diskfs_data_block_alloc(d->v);
-			if(actual==0) return KERROR_OUT_OF_SPACE;
-			b->pointers[block-DISKFS_DIRECT_POINTERS] = actual;
-			diskfs_data_block_write(d->v,b,i->indirect);
+			if(actual==0) {
+				memory_free_page(iblock);
+				return KERROR_OUT_OF_SPACE;
+			}
+			iblock->pointers[block-DISKFS_DIRECT_POINTERS] = actual;
+			diskfs_data_block_write(d->v,iblock,i->indirect);
 		}
+		memory_free_page(iblock);
 	}
 
 	return diskfs_data_block_write(d->v,b,actual);
