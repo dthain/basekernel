@@ -19,14 +19,16 @@
 // [a-z]		|	[65-90]
 // '_'			|	95
 // [A-Z]		|	[97-122]
-int is_valid_path(const char * test_string) {
-	int max_length = strlen(test_string);
-	for (int i = 0; i < max_length; i++) {
-		if (test_string[i] < 45) return 0;
-		if (test_string[i] > 57 && test_string[i] < 65) return 0;
-		if (test_string[i] > 90 && test_string[i] < 95) return 0;
-		if (test_string[i] > 95 && test_string[i] < 97) return 0;
-		if (test_string[i] > 122) return 0;
+
+int is_valid_path(const char * s)
+{
+	int length = strlen(s);
+	for (int i = 0; i < length; i++) {
+		if (s[i] < 45) return 0;
+		if (s[i] > 57 && s[i] < 65) return 0;
+		if (s[i] > 90 && s[i] < 95) return 0;
+		if (s[i] > 95 && s[i] < 97) return 0;
+		if (s[i] > 122) return 0;
 	}
 	return 1;
 }
@@ -36,14 +38,16 @@ int is_valid_path(const char * test_string) {
 // [0-9]		|	[48-57]
 // [a-z]		|	[65-90]
 // [A-Z]		|	[97-122]
-int is_valid_tag(const char * test_string) {
-	int max_length = strlen(test_string);
-	for (int i = 0; i < max_length; i++) {
-		if (test_string[i] < 48) return 0;
-		if (test_string[i] > 57 && test_string[i] < 65) return 0;
-		if (test_string[i] > 90 && test_string[i] < 95) return 0;
-		if (test_string[i] > 95 && test_string[i] < 97) return 0;
-		if (test_string[i] > 122) return 0;
+
+int is_valid_tag(const char * s)
+{
+	int length = strlen(s);
+	for (int i = 0; i < length; i++) {
+		if (s[i] < 48) return 0;
+		if (s[i] > 57 && s[i] < 65) return 0;
+		if (s[i] > 90 && s[i] < 95) return 0;
+		if (s[i] > 95 && s[i] < 97) return 0;
+		if (s[i] > 122) return 0;
 	}
 	return 1;
 }
@@ -52,13 +56,15 @@ int is_valid_tag(const char * test_string) {
 // intent-path concatenation)?
 // CHARS		|	ASCII CODE
 // ':'			|	58
-int is_valid_location(const char * test_string) {
-	int max_length = strlen(test_string);
-	char * mutable_test = kmalloc(sizeof(char) * (max_length+1));
-	strcpy(mutable_test, test_string);
+
+int is_valid_location(const char * s)
+{
+	int length = strlen(s);
+	char * mutable_test = kmalloc(sizeof(char) * (length+1));
+	strcpy(mutable_test, s);
 
 	int path_index = 0;
-	while (path_index < max_length && test_string[path_index] != 58) {
+	while (path_index < length && s[path_index] != 58) {
 		path_index += 1;
 	}
 	mutable_test[path_index++] = 0;
