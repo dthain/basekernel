@@ -130,12 +130,12 @@ int graphics_write(struct graphics *g, struct graphics_command *command)
 	return 0;
 }
 
-int32_t graphics_width(struct graphics * g)
+uint32_t graphics_width(struct graphics * g)
 {
 	return g->clip.w;
 }
 
-int32_t graphics_height(struct graphics * g)
+uint32_t graphics_height(struct graphics * g)
 {
 	return g->clip.h;
 }
@@ -150,7 +150,7 @@ void graphics_bgcolor(struct graphics *g, struct graphics_color c)
 	g->bgcolor = c;
 }
 
-int graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+int graphics_clip(struct graphics *g, int x, int y, int w, int h)
 {
 	// Clip values may not be negative
 	if(x<0 || y<0 || w<0 || h<0) return 0;
@@ -173,7 +173,7 @@ int graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h
 	return 1;
 }
 
-static inline void plot_pixel(struct bitmap *b, int32_t x, int32_t y, struct graphics_color c)
+static inline void plot_pixel(struct bitmap *b, int x, int y, struct graphics_color c)
 {
 	uint8_t *v = b->data + (b->width * y + x) * 3;
 	if(c.a == 0) {
@@ -189,7 +189,7 @@ static inline void plot_pixel(struct bitmap *b, int32_t x, int32_t y, struct gra
 	}
 }
 
-void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+void graphics_rect(struct graphics *g, int x, int y, int w, int h)
 {
 	int i, j;
 
@@ -205,7 +205,7 @@ void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t 
 	}
 }
 
-void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+void graphics_clear(struct graphics *g, int x, int y, int w, int h)
 {
 	int i, j;
 
@@ -221,7 +221,7 @@ void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t
 	}
 }
 
-static inline void graphics_line_vert(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_vert(struct graphics *g, int x, int y, int w, int h)
 {
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -230,10 +230,10 @@ static inline void graphics_line_vert(struct graphics *g, int32_t x, int32_t y, 
 	} while(h > 0);
 }
 
-static inline void graphics_line_q1(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_q1(struct graphics *g, int x, int y, int w, int h)
 {
-	int32_t slope = FACTOR * w / h;
-	int32_t counter = 0;
+	int slope = FACTOR * w / h;
+	int counter = 0;
 
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -248,10 +248,10 @@ static inline void graphics_line_q1(struct graphics *g, int32_t x, int32_t y, in
 	} while(h > 0);
 }
 
-static inline void graphics_line_q2(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_q2(struct graphics *g, int x, int y, int w, int h)
 {
-	int32_t slope = FACTOR * h / w;
-	int32_t counter = 0;
+	int slope = FACTOR * h / w;
+	int counter = 0;
 
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -266,10 +266,10 @@ static inline void graphics_line_q2(struct graphics *g, int32_t x, int32_t y, in
 	} while(w > 0);
 }
 
-static inline void graphics_line_q3(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_q3(struct graphics *g, int x, int y, int w, int h)
 {
-	int32_t slope = -FACTOR * h / w;
-	int32_t counter = 0;
+	int slope = -FACTOR * h / w;
+	int counter = 0;
 
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -284,10 +284,10 @@ static inline void graphics_line_q3(struct graphics *g, int32_t x, int32_t y, in
 	} while(w > 0);
 }
 
-static inline void graphics_line_q4(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_q4(struct graphics *g, int x, int y, int w, int h)
 {
-	int32_t slope = -FACTOR * w / h;
-	int32_t counter = 0;
+	int slope = -FACTOR * w / h;
+	int counter = 0;
 
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -302,7 +302,7 @@ static inline void graphics_line_q4(struct graphics *g, int32_t x, int32_t y, in
 	} while(h > 0);
 }
 
-static inline void graphics_line_hozo(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+static inline void graphics_line_hozo(struct graphics *g, int x, int y, int w, int h)
 {
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
@@ -311,7 +311,7 @@ static inline void graphics_line_hozo(struct graphics *g, int32_t x, int32_t y, 
 	} while(w > 0);
 }
 
-void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h)
+void graphics_line(struct graphics *g, int x, int y, int w, int h)
 {
 	if(w < 0) {
 		x = x + w;
@@ -342,7 +342,7 @@ void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t 
 	}
 }
 
-void graphics_bitmap(struct graphics *g, int32_t x, int32_t y, int32_t width, int32_t height, uint8_t * data)
+void graphics_bitmap(struct graphics *g, int x, int y, int width, int height, uint8_t * data)
 {
 	int i, j, b;
 	int value;
@@ -371,13 +371,13 @@ void graphics_bitmap(struct graphics *g, int32_t x, int32_t y, int32_t width, in
 	}
 }
 
-void graphics_char(struct graphics *g, int32_t x, int32_t y, unsigned char c)
+void graphics_char(struct graphics *g, int x, int y, unsigned char c)
 {
 	uint32_t u = ((uint32_t) c) * FONT_WIDTH * FONT_HEIGHT / 8;
 	return graphics_bitmap(g, x, y, FONT_WIDTH, FONT_HEIGHT, &fontdata[u]);
 }
 
-void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h, int32_t dy)
+void graphics_scrollup(struct graphics *g, int x, int y, int w, int h, int dy)
 {
 	int j;
 
