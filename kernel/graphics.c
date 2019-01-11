@@ -21,7 +21,6 @@ struct graphics {
 	struct graphics_color fgcolor;
 	struct graphics_color bgcolor;
 	struct clip clip;
-	uint32_t count;
 	struct graphics *parent;
 	int refcount;
 };
@@ -37,7 +36,6 @@ struct graphics *graphics_create_root()
 	g->bitmap = bitmap_create_root();
 	g->fgcolor = color_white;
 	g->bgcolor = color_black;
-	g->count = 0;
 	g->clip.x = 0;
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
@@ -68,6 +66,11 @@ struct graphics *graphics_addref( struct graphics *g )
 
 void graphics_delete( struct graphics *g )
 {
+	if(!g) return;
+
+	/* Cannot delete the statically allocated root graphics */
+	if(g==&graphics_root) return;
+
 	g->refcount--;
 	if(g->refcount==0) {
 		graphics_delete(g->parent);
