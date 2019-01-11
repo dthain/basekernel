@@ -3,9 +3,11 @@
  * Containts logic for validating strings pointing to resources in the fs.
  */
 
-#include "library/validate.h"
-#include "library/malloc.h"
-#include "library/string.h"
+#include "is_valid.h"
+#include "string.h"
+#include "kobject.h"
+#include "process.h"
+#include "kmalloc.h"
 
 // Does this string comprise a valid path?
 // Valid paths are comprised of the following characters:
@@ -52,7 +54,7 @@ int is_valid_tag(const char * test_string) {
 // ':'			|	58
 int is_valid_location(const char * test_string) {
 	int max_length = strlen(test_string);
-	char * mutable_test = malloc(sizeof(char) * (max_length+1));
+	char * mutable_test = kmalloc(sizeof(char) * (max_length+1));
 	strcpy(mutable_test, test_string);
 
 	int path_index = 0;
@@ -67,3 +69,32 @@ int is_valid_location(const char * test_string) {
 	}
 	return 0;
 }
+
+// Return true if file desciptor is in range and refers to a live object.
+int is_valid_object( int fd )
+{
+	return fd>=0 && fd<PROCESS_MAX_OBJECTS && current->ktable[fd];
+}
+
+// Return true if fd valid and object is also of indicated type.
+int is_valid_object_type( int fd, kobject_type_t type )
+{
+	return is_valid_object(fd) && kobject_get_type(current->ktable[fd])==type;
+}
+
+// Return true if (ptr,length) describes a valid area in user space.
+// XXX Needs to be implemented!
+
+int is_valid_pointer( void *ptr, int length )
+{
+	return 1;
+}
+
+// Return true if string points to a valid area in user space.
+// XXX Needs to be implemented!
+
+int is_valid_string( const char *str )
+{
+	return 1;
+}
+
