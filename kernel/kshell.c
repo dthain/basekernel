@@ -28,6 +28,7 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 			if(v) {
 				struct fs_dirent *d = fs_volume_root(v);
 				if(d) {
+					if(current->root_dir) fs_dirent_close(current->root_dir);
 					current->root_dir = d;
 					current->current_dir = fs_dirent_addref(d);
 					return 0;
@@ -181,6 +182,14 @@ static int kshell_execute(const char **argv, int argc)
 		} else {
 			printf("mount: requires device, unit, and fs type\n");
 		}
+	} else if(!strcmp(cmd, "umount")) {
+		if(current->root_dir) {
+			printf("unmounting root directory\n");
+			fs_dirent_close(current->root_dir);
+			current->root_dir = 0;
+		} else {
+			printf("nothing currently mounted\n");
+		}
 	} else if(!strcmp(cmd, "reap")) {
 		if(argc > 1) {
 			int pid;
@@ -297,8 +306,10 @@ static int kshell_execute(const char **argv, int argc)
 			stats.read_hits,stats.read_misses,
 			stats.write_hits,stats.write_misses,
 			stats.writebacks);
+	} else if(!strcmp(cmd,"bcache_flush")) {
+		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

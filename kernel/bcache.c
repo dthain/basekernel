@@ -202,6 +202,17 @@ void bcache_flush_device( struct device *device )
 	}
 }
 
+void bcache_flush_all()
+{
+	struct list_node *n;
+	struct bcache_entry *e;
+
+	for(n=cache.head;n;n=n->next) {
+		e = (struct bcache_entry *) n;
+		bcache_entry_clean(e);
+	}
+}
+
 void bcache_get_stats( struct bcache_stats *s )
 {
 	memcpy(s,&stats,sizeof(*s));
