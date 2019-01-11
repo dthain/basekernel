@@ -5,54 +5,36 @@ See the file LICENSE for details.
 */
 
 #include "kmalloc.h"
-#include "console.h"
 #include "kernel/types.h"
+#include "kernel/error.h"
 #include "string.h"
-#include "iso9660.h"
-#include "ata.h"
 #include "memory.h"
 #include "fs.h"
+#include "fs_internal.h"
+#include "cdromfs.h"
+#include "iso9660.h"
 #include "device.h"
 #include "bcache.h"
-#include "cdromfs.h"
-#include "kernel/syscall.h"
 
-struct cdrom_volume {
-	struct device *device;
-	int root_sector;
-	int root_length;
-	int total_sectors;
-};
-
-struct cdrom_dirent {
-	struct cdrom_volume *volume;
-	int sector;
-	int length;
-	int isdir;
-};
-
-static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv);
-static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd);
-
-static struct cdrom_dirent *cdrom_dirent_create(struct cdrom_volume *volume, int sector, int length, int isdir)
+static struct fs_dirent *cdrom_dirent_create(struct fs_volume *volume, int sector, int length, int isdir)
 {
-	struct cdrom_dirent *d = kmalloc(sizeof(*d));
-	if(!d)
-		return 0;
+	struct fs_dirent *d = kmalloc(sizeof(*d));
+	if(!d) return 0;
 
 	d->volume = volume;
-	d->sector = sector;
-	d->length = length;
+	d->refcount = 1;
+	d->size = length;
 	d->isdir = isdir;
+	d->cdrom.sector = sector;
+
 	return d;
 }
 
 static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
-	struct cdrom_dirent *cdd = d->private_data;
-	int nblocks = bcache_read(cdd->volume->device, buffer, 1, (int) cdd->sector + blocknum);
+	int nblocks = bcache_read(d->volume->device, buffer, 1, d->cdrom.sector + blocknum);
 	if(nblocks == 1) {
-		return ATAPI_BLOCKSIZE;
+		return CDROMFS_BLOCK_SIZE;
 	} else {
 		return -1;
 	}
@@ -77,17 +59,17 @@ static void fix_filename(char *name, int length)
 
 static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *name)
 {
-	struct cdrom_dirent *cddir = dir->private_data;
-	if(!cddir->isdir) return 0;
+	if(!dir->isdir) return 0;
 
 	char *temp = memory_alloc_page(0);
 	if(!temp) return 0;
 
-	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
+	int nsectors = dir->size / CDROMFS_BLOCK_SIZE + (dir->size % CDROMFS_BLOCK_SIZE ? 1 : 0);
 
 	int i;
 	for(i=0;i<nsectors;i++) {
 		cdrom_dirent_read_block(dir,temp,i);
+		// XXX check result here!
 
 		struct iso_9660_directory_entry *d = (struct iso_9660_directory_entry *) temp;
 
@@ -109,14 +91,14 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 			}
 
 			if(!strncmp(name,dname,dname_length)) {
-				struct cdrom_dirent *r;
+				struct fs_dirent *r;
 				r = cdrom_dirent_create(
-					cddir->volume,
+					dir->volume,
 					d->first_sector_little,
 					d->length_little,
 					d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY);
 				memory_free_page(temp);
-				return cdrom_dirent_as_dirent(r);
+				return r;
 			}
 			d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
 		}
@@ -127,15 +109,19 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 	return 0;
 }
 
-static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer_length)
+static int cdrom_dirent_close( struct fs_dirent *d )
 {
-	struct cdrom_dirent *cddir = dir->private_data;
-	if(!cddir->isdir) return KERROR_NOT_A_DIRECTORY;
+	return 0;
+}
+
+static int cdrom_dirent_list(struct fs_dirent *dir, char *buffer, int buffer_length)
+{
+	if(!dir->isdir) return KERROR_NOT_A_DIRECTORY;
 
 	char *temp = memory_alloc_page(0);
 	if(!temp) return KERROR_OUT_OF_MEMORY;
 
-	int nsectors = cddir->length / ATAPI_BLOCKSIZE + (cddir->length % ATAPI_BLOCKSIZE ? 1 : 0);
+	int nsectors = dir->size / CDROMFS_BLOCK_SIZE + (dir->size % CDROMFS_BLOCK_SIZE ? 1 : 0);
 	int total = 0;
 
 	int i;
@@ -181,30 +167,31 @@ static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer
 	return total;
 }
 
-static int cdrom_dirent_close(struct fs_dirent *d)
+static struct fs_volume *cdrom_volume_create( struct device *device )
 {
-	struct cdrom_dirent *cdd = d->private_data;
-	kfree(cdd);
-	kfree(d);
-	return 0;
+	struct fs_volume *v = kmalloc(sizeof(*v));
+	if(!v) return 0;
+
+	memset(v, 0, sizeof(struct fs_volume));
+	v->device = device;
+	v->refcount = 1;
+	v->block_size = device_block_size(device);
+
+	return v;
 }
 
-static struct fs_dirent *cdrom_volume_root(struct fs_volume *v)
+static int cdrom_volume_close(struct fs_volume *v)
 {
-	struct cdrom_volume *cdv = v->private_data;
-	struct cdrom_dirent *cdd = cdrom_dirent_create(cdv, cdv->root_sector, cdv->root_length, 1);
-	return cdrom_dirent_as_dirent(cdd);
+	return 0;
 }
 
 static struct fs_volume *cdrom_volume_open( struct device *device )
 {
-	struct cdrom_volume *cdv = kmalloc(sizeof(*cdv));
-	if(!cdv)
-		return 0;
+	struct fs_volume *v = cdrom_volume_create(device);
 
 	struct iso_9660_volume_descriptor *d = memory_alloc_page(0);
 	if(!d) {
-		kfree(cdv);
+		kfree(v);
 		return 0;
 	}
 
@@ -222,16 +209,16 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 			continue;
 
 		if(d->type == ISO_9660_VOLUME_TYPE_PRIMARY) {
-			cdv->root_sector = d->root.first_sector_little;
-			cdv->root_length = d->root.length_little;
-			cdv->total_sectors = d->nsectors_little;
-			cdv->device = device;
+			v->cdrom.root_sector = d->root.first_sector_little;
+			v->cdrom.root_length = d->root.length_little;
+			v->cdrom.total_sectors = d->nsectors_little;
+			v->device = device;
 
-			printf("cdromfs: mounted filesystem on %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
+			printf("cdromfs: mounted filesystem on %s-%d\n", device_name(v->device), device_unit(v->device));
 
 			memory_free_page(d);
 
-			return cdrom_volume_as_volume(cdv);
+			return v;
 
 		} else if(d->type == ISO_9660_VOLUME_TYPE_TERMINATOR) {
 			break;
@@ -240,31 +227,32 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 		}
 	}
 
+	memory_free_page(d);
+	cdrom_volume_close(v);
+
 	printf("cdromfs: no filesystem found\n");
 	return 0;
 }
 
-static int cdrom_volume_close(struct fs_volume *v)
+static struct fs_dirent *cdrom_volume_root(struct fs_volume *v)
 {
-	struct cdrom_volume *cdv = v->private_data;
-	printf("cdromfs: unmounted filesystem from %s-%d\n", device_name(cdv->device), device_unit(cdv->device));
-	kfree(v);
-	return 0;
+	return cdrom_dirent_create(v,v->cdrom.root_sector,v->cdrom.root_length, 1);
 }
 
 const static struct fs_ops cdrom_ops = {
-	.mount = cdrom_volume_open,
-	.umount = cdrom_volume_close,
-	.root = cdrom_volume_root,
-	.close = cdrom_dirent_close,
-	.readdir = cdrom_dirent_read_dir,
+	.volume_open = cdrom_volume_open,
+	.volume_close = cdrom_volume_close,
+	.volume_root = cdrom_volume_root,
+
 	.lookup = cdrom_dirent_lookup,
 	.mkdir = 0,
-	.rmdir = 0,
-	.link = 0,
-	.unlink = 0,
+	.mkfile = 0,
 	.read_block = cdrom_dirent_read_block,
 	.write_block = 0,
+	.list = cdrom_dirent_list,
+	.remove = 0,
+	.resize = 0,
+	.close = cdrom_dirent_close,
 };
 
 static struct fs cdrom_fs = {
@@ -277,26 +265,4 @@ int cdrom_init()
 {
 	fs_register(&cdrom_fs);
 	return 0;
-}
-
-static struct fs_volume *cdrom_volume_as_volume(struct cdrom_volume *cdv)
-{
-	struct fs_volume *v = kmalloc(sizeof(struct fs_volume));
-	memset(v, 0, sizeof(struct fs_volume));
-	v->refcount = 1;
-	v->private_data = cdv;
-	v->fs->ops = &cdrom_ops;
-	v->block_size = ATAPI_BLOCKSIZE;
-	return v;
-}
-
-static struct fs_dirent *cdrom_dirent_as_dirent(struct cdrom_dirent *cdd)
-{
-	struct fs_dirent *d = kmalloc(sizeof(struct fs_dirent));
-	memset(d, 0, sizeof(struct fs_volume));
-	d->refcount = 1;
-	d->private_data = cdd;
-	d->size = cdd->length;
-	d->isdir = cdd->isdir;
-	return d;
 }

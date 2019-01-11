@@ -20,7 +20,6 @@
 
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
-
 	struct device *dev = device_open(devname,unit);
 	if(dev) {
 		struct fs *fs = fs_lookup(fs_type);
@@ -29,6 +28,7 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 			if(v) {
 				struct fs_dirent *d = fs_volume_root(v);
 				if(d) {
+					if(current->root_dir) fs_dirent_close(current->root_dir);
 					current->root_dir = d;
 					current->current_dir = fs_dirent_addref(d);
 					return 0;
@@ -63,7 +63,7 @@ XXX This needs better error checking.
 int kshell_install( int src, int dst )
 {
 	struct fs *srcfs = fs_lookup("cdromfs");
-	struct fs *dstfs = fs_lookup("kevinfs");
+	struct fs *dstfs = fs_lookup("diskfs");
 
 	if(!srcfs || !dstfs) return KERROR_NOT_FOUND;
 
@@ -82,7 +82,20 @@ int kshell_install( int src, int dst )
 
 	printf("copying atapi unit %d to ata unit %d...\n",src,dst);
 
-	return fs_dirent_copy(srcroot, dstroot);
+	fs_dirent_copy(srcroot, dstroot,0);
+
+	fs_dirent_close(dstroot);
+	fs_dirent_close(srcroot);
+
+	fs_volume_close(srcvolume);
+	fs_volume_close(dstvolume);
+
+	device_close(srcdev);
+
+	bcache_flush_device(dstdev);
+	device_close(dstdev);
+
+	return 0;
 }
 
 static int kshell_printdir(const char *d, int length)
@@ -103,8 +116,8 @@ static int kshell_listdir(const char *path)
 		int buffer_length = 1024;
 		char *buffer = kmalloc(buffer_length);
 		if(buffer) {
-			int length = fs_dirent_readdir(d, buffer, buffer_length);
-			if(length > 0) {
+			int length = fs_dirent_list(d, buffer, buffer_length);
+			if(length>=0) {
 				kshell_printdir(buffer, length);
 			} else {
 				printf("list: %s is not a directory\n", path);
@@ -168,6 +181,14 @@ static int kshell_execute(const char **argv, int argc)
 			}
 		} else {
 			printf("mount: requires device, unit, and fs type\n");
+		}
+	} else if(!strcmp(cmd, "umount")) {
+		if(current->root_dir) {
+			printf("unmounting root directory\n");
+			fs_dirent_close(current->root_dir);
+			current->root_dir = 0;
+		} else {
+			printf("nothing currently mounted\n");
 		}
 	} else if(!strcmp(cmd, "reap")) {
 		if(argc > 1) {
@@ -239,7 +260,7 @@ static int kshell_execute(const char **argv, int argc)
 				if(f) {
 					struct device *d = device_open(argv[1],unit);
 					if(d) {
-						fs_mkfs(f,d);
+						fs_volume_format(f,d);
 					} else {
 						printf("couldn't open device %s unit %d\n",argv[1],unit);
 					}
@@ -285,8 +306,10 @@ static int kshell_execute(const char **argv, int argc)
 			stats.read_hits,stats.read_misses,
 			stats.write_hits,stats.write_misses,
 			stats.writebacks);
+	} else if(!strcmp(cmd,"bcache_flush")) {
+		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

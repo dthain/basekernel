@@ -8,14 +8,16 @@ KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 
 all: basekernel.iso
 
-run: basekernel.iso
+run: basekernel.iso disk.img
+	cp disk.fresh disk.img
 	qemu-system-i386 -cdrom basekernel.iso -hda disk.img
+
+debug: basekernel.iso disk.img
+	cp disk.fresh disk.img
+	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
 
 disk.img:
 	qemu-img create disk.img 10M
-
-debug:
-	qemu-system-i386 -cdrom basekernel.iso -s -S &
 
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
@@ -31,7 +33,7 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 	mkdir image image/boot image/bin image/data
 	cp kernel/basekernel.img image/boot
 	cp $(USER_PROGRAMS) image/bin
-	cp /usr/share/dict/words image/data/words
+	head -2000l /usr/share/dict/words > image/data/words
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image

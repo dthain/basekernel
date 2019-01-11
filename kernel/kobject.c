@@ -26,7 +26,7 @@ static struct kobject *kobject_init()
 	return k;
 }
 
-struct kobject *kobject_create_file(struct fs_file *f)
+struct kobject *kobject_create_file(struct fs_dirent *f)
 {
 	struct kobject *k = kobject_init();
 	k->type = KOBJECT_FILE;
@@ -107,10 +107,10 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 
 	switch (kobject->type) {
 	case KOBJECT_FILE:
-		actual = fs_file_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
+		actual = fs_dirent_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
 	case KOBJECT_DIR:
-		actual = fs_dirent_readdir(kobject->data.dir, (char *)buffer, size );
+		return KERROR_INVALID_REQUEST;
 		break;
 	case KOBJECT_DEVICE:
 		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
@@ -149,7 +149,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_CONSOLE:
 		return console_write(kobject->data.console, buffer, size );
 	case KOBJECT_FILE:{
-			int actual = fs_file_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
+			int actual = fs_dirent_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 			if(actual > 0)
 				kobject->offset += actual;
 			return actual;
@@ -164,13 +164,20 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 	return 0;
 }
 
+int kobject_list(struct kobject *kobject, void *buffer, int size)
+{
+	if(kobject->type==KOBJECT_DIR) {
+		return fs_dirent_list(kobject->data.dir,buffer,size);
+	} else {
+		return KERROR_NOT_A_DIRECTORY;
+	}
+}
+
 int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
 {
 	struct fs_dirent *src, *dst;
 
-	if(ksrc->type==KOBJECT_FILE) {
-		src = ksrc->data.file->d;
-	} else if(ksrc->type==KOBJECT_DIR) {
+	if(ksrc->type==KOBJECT_DIR) {
 		src = ksrc->data.dir;
 	} else {
 		return KERROR_NOT_A_FILE;
@@ -182,7 +189,7 @@ int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
 		return KERROR_NOT_A_DIRECTORY;
 	}
 
-	return fs_dirent_copy(src,dst);
+	return fs_dirent_copy(src,dst,0);
 }
 
 int kobject_close(struct kobject *kobject)
@@ -198,7 +205,7 @@ int kobject_close(struct kobject *kobject)
 			console_delete(kobject->data.console);
 			break;
 		case KOBJECT_FILE:
-			fs_file_close(kobject->data.file);
+			fs_dirent_close(kobject->data.file);
 			break;
 		case KOBJECT_DEVICE:
 			// XXX add device close once branch is merged
@@ -255,7 +262,7 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		}
 	case KOBJECT_FILE:
 		if(n==1) {
-			dims[0] = fs_file_size(kobject->data.file);
+			dims[0] = fs_dirent_size(kobject->data.file);
 			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
@@ -313,7 +320,7 @@ int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		*dir = fs_dirent_namei(kobject->data.dir,name);
+		*dir = fs_dirent_traverse(kobject->data.dir,name);
 		if(*dir) {
 			return 0;
 		} else {
@@ -328,13 +335,8 @@ int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dir
 int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		// XXX mkdir should return the newly created dirent.
-		int r = fs_dirent_mkdir(kobject->data.dir,name);
-		if(r<0) return r;
-
-		*dir = fs_dirent_namei(kobject->data.dir,name);
+		*dir = fs_dirent_mkdir(kobject->data.dir,name);
 		if(!*dir) return KERROR_NOT_FOUND;
-
 		return 0;
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
@@ -345,7 +347,7 @@ int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dir
 int kobject_dir_delete( struct kobject *kobject, const char *name )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		return fs_dirent_rmdir(kobject->data.dir,name);
+		return fs_dirent_remove(kobject->data.dir,name);
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
 	}

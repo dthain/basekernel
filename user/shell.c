@@ -98,7 +98,7 @@ int do_command(char *line)
 		char buffer[1024];
 		int fd = syscall_open_file(".",0,0);
 		if(fd>=0) {
-			int length = syscall_object_readdir(fd, buffer, 1024);
+			int length = syscall_object_list(fd, buffer, 1024);
 			syscall_object_close(fd);
 			print_directory(buffer, length);
 		}

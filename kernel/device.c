@@ -16,6 +16,7 @@ static struct device_driver *driver_list = 0;
 
 struct device {
 	struct device_driver *driver;
+	int refcount;
 	int unit;
 	int block_size;
 	int nblocks;
@@ -31,6 +32,7 @@ void device_driver_register( struct device_driver *d )
 static struct device *device_create( struct device_driver *dd, int unit, int nblocks, int block_size )
 {
 	struct device *d = kmalloc(sizeof(*d));
+	d->refcount = 1;
 	d->driver = dd;
 	d->unit = unit;
 	d->block_size = block_size;
@@ -72,6 +74,12 @@ struct device *device_open( const char *name, int unit )
 	return 0;
 }
 
+struct device *device_addref( struct device *d )
+{
+	d->refcount++;
+	return d;
+}
+
 int device_set_multiplier( struct device *d, int multiplier )
 {
 	if(multiplier<1 || multiplier*d->block_size>PAGE_SIZE ) {
@@ -85,7 +93,8 @@ int device_set_multiplier( struct device *d, int multiplier )
 
 void device_close( struct device *d )
 {
-	kfree(d);
+	d->refcount--;
+	if(d->refcount<1) kfree(d);
 }
 
 int device_read(struct device *d, void *data, int size, int offset)

@@ -333,7 +333,7 @@ int sys_process_heap(int delta)
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
-int sys_object_readdir( int fd, char *buffer, int length)
+int sys_object_list( int fd, char *buffer, int length)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(buffer,length)) return KERROR_INVALID_ADDRESS;
@@ -351,7 +351,7 @@ static int open_dirent( struct fs_dirent *d, const char *path, int mode, int fla
 	if(fs_dirent_isdir(d)) {
 		k = kobject_create_dir(d);
 	} else {
-		k = kobject_create_file(fs_file_open(d,mode));
+		k = kobject_create_file(d);
 	}
 
 	current->ktable[new_fd] = k;
@@ -404,7 +404,7 @@ int sys_open_file(const char *path, int mode, int flags)
 
 	// If we have no tag, use everything as a path.
 	if(!colon) {
-		struct fs_dirent *d = fs_dirent_namei(current->current_dir,path);
+		struct fs_dirent *d = fs_dirent_traverse(current->current_dir,path);
 		return open_dirent(d, path, mode, flags);
 	}
 
@@ -630,9 +630,17 @@ int sys_system_rtc( struct rtc_time *t )
 int sys_mkdir(const char *path)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
+       	int fd = process_available_fd(current);
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+
 	// XXX doesn't work -- separate parent and new directory.
 
-	return fs_dirent_mkdir(current->current_dir, path);
+	struct fs_dirent *d = fs_dirent_mkdir(current->current_dir, path);
+	if(!d) return KERROR_NOT_FOUND;
+
+	current->ktable[fd] = kobject_create_dir(d);
+	return fd;
 }
 
 int sys_rmdir(const char *path)
@@ -642,7 +650,7 @@ int sys_rmdir(const char *path)
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
 		// XXX this API doesn't make sense.
-		return fs_dirent_rmdir(d, path);
+		return fs_dirent_remove(d, path);
 	} else {
 		// XXX get error back from namei
 		return -1;
@@ -720,8 +728,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_read(a, (void *) b, c);
 	case SYSCALL_OBJECT_READ_NONBLOCK:
 		return sys_object_read_nonblock(a, (void *) b, c);
-	case SYSCALL_OBJECT_READDIR:
-		return sys_object_readdir(a, (char *) b, (int) c);
+	case SYSCALL_OBJECT_LIST:
+		return sys_object_list(a, (char *) b, (int) c);
 	case SYSCALL_OBJECT_WRITE:
 		return sys_object_write(a, (void *) b, c);
 	case SYSCALL_OBJECT_SEEK:

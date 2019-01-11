@@ -11,6 +11,7 @@ int  bcache_write_block( struct device *d, const char *data, int block );
 
 void bcache_flush_block( struct device *d, int block );
 void bcache_flush_device( struct device *d  );
+void bcache_flush_all();
 
 struct bcache_stats {
 	unsigned read_hits;
