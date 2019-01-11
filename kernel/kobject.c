@@ -110,7 +110,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		actual = fs_dirent_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
 	case KOBJECT_DIR:
-		actual = fs_dirent_list(kobject->data.dir, (char *)buffer, size );
+		return KERROR_INVALID_REQUEST;
 		break;
 	case KOBJECT_DEVICE:
 		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
@@ -162,6 +162,15 @@ int kobject_write(struct kobject *kobject, void *buffer, int size)
 		return 0;
 	}
 	return 0;
+}
+
+int kobject_list(struct kobject *kobject, void *buffer, int size)
+{
+	if(kobject->type==KOBJECT_DIR) {
+		return fs_dirent_list(kobject->data.dir,buffer,size);
+	} else {
+		return KERROR_NOT_A_DIRECTORY;
+	}
 }
 
 int kobject_copy( struct kobject *ksrc, struct kobject *kdst )

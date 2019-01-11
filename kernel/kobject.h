@@ -45,6 +45,7 @@ struct kobject *kobject_addref(struct kobject *k);
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
 int kobject_write(struct kobject *kobject, void *buffer, int size);
+int kobject_list( struct kobject *kobject, void *buffer, int size );
 int kobject_size(struct kobject *kobject, int *dimensions, int n);
 int kobject_copy( struct kobject *ksrc, struct kobject *kdst );
 int kobject_close(struct kobject *kobject);
