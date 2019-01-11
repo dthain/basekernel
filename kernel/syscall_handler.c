@@ -404,7 +404,7 @@ int sys_open_file(const char *path, int mode, int flags)
 
 	// If we have no tag, use everything as a path.
 	if(!colon) {
-		struct fs_dirent *d = fs_dirent_namei(current->current_dir,path);
+		struct fs_dirent *d = fs_dirent_traverse(current->current_dir,path);
 		return open_dirent(d, path, mode, flags);
 	}
 

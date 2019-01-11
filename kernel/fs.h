@@ -45,7 +45,7 @@ in the filesystem tree.  It contains the basic information about
 the object (size, type, etc) and may be read and written.
 */
 
-struct fs_dirent *fs_dirent_namei(struct fs_dirent *d, const char *path);
+struct fs_dirent *fs_dirent_traverse(struct fs_dirent *d, const char *path);
 struct fs_dirent *fs_dirent_mkdir(struct fs_dirent *d, const char *name);
 struct fs_dirent *fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 struct fs_dirent *fs_dirent_addref(struct fs_dirent *d);

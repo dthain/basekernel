@@ -12,9 +12,9 @@ static struct fs *fs_list = 0;
 struct fs_dirent *fs_resolve(const char *path)
 {
 	if(path[0] == '/') {
-		return fs_dirent_namei(current->root_dir, &path[1]);
+		return fs_dirent_traverse(current->root_dir, &path[1]);
 	} else {
-		return fs_dirent_namei(current->current_dir, path);
+		return fs_dirent_traverse(current->current_dir, path);
 	}
 }
 
@@ -118,7 +118,7 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 	}
 }
 
-struct fs_dirent *fs_dirent_namei(struct fs_dirent *parent, const char *path)
+struct fs_dirent *fs_dirent_traverse(struct fs_dirent *parent, const char *path)
 {
 	if(!parent || !path)
 		return 0;

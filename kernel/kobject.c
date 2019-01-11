@@ -311,7 +311,7 @@ int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dirent **dir )
 {
 	if(kobject->type==KOBJECT_DIR) {
-		*dir = fs_dirent_namei(kobject->data.dir,name);
+		*dir = fs_dirent_traverse(kobject->data.dir,name);
 		if(*dir) {
 			return 0;
 		} else {
