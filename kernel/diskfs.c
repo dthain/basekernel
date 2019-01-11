@@ -297,7 +297,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 	return 0;
 }
 
-int diskfs_dirent_readdir( struct fs_dirent *d, char *buffer, int length )
+int diskfs_dirent_list( struct fs_dirent *d, char *buffer, int length )
 {
 	struct diskfs_block *b = memory_alloc_page(0);
 
@@ -619,7 +619,7 @@ struct fs_ops diskfs_ops = {
 	.mkfile = diskfs_dirent_create_file,
 	.read_block = diskfs_dirent_read_block,
 	.write_block = diskfs_dirent_write_block,
-	.readdir = diskfs_dirent_readdir,
+	.list = diskfs_dirent_list,
 	.remove = diskfs_dirent_remove,
 	.resize = diskfs_dirent_resize,
 	.close = diskfs_dirent_close

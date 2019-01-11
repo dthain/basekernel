@@ -110,7 +110,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		actual = fs_dirent_read(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
 		break;
 	case KOBJECT_DIR:
-		actual = fs_dirent_readdir(kobject->data.dir, (char *)buffer, size );
+		actual = fs_dirent_list(kobject->data.dir, (char *)buffer, size );
 		break;
 	case KOBJECT_DEVICE:
 		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);

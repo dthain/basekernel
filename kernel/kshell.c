@@ -116,7 +116,7 @@ static int kshell_listdir(const char *path)
 		int buffer_length = 1024;
 		char *buffer = kmalloc(buffer_length);
 		if(buffer) {
-			int length = fs_dirent_readdir(d, buffer, buffer_length);
+			int length = fs_dirent_list(d, buffer, buffer_length);
 			if(length>=0) {
 				kshell_printdir(buffer, length);
 			} else {

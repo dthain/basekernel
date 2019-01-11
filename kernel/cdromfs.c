@@ -114,7 +114,7 @@ static int cdrom_dirent_close( struct fs_dirent *d )
 	return 0;
 }
 
-static int cdrom_dirent_read_dir(struct fs_dirent *dir, char *buffer, int buffer_length)
+static int cdrom_dirent_list(struct fs_dirent *dir, char *buffer, int buffer_length)
 {
 	if(!dir->isdir) return KERROR_NOT_A_DIRECTORY;
 
@@ -249,7 +249,7 @@ const static struct fs_ops cdrom_ops = {
 	.mkfile = 0,
 	.read_block = cdrom_dirent_read_block,
 	.write_block = 0,
-	.readdir = cdrom_dirent_read_dir,
+	.list = cdrom_dirent_list,
 	.remove = 0,
 	.resize = 0,
 	.close = cdrom_dirent_close,

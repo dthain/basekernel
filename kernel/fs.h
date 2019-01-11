@@ -51,7 +51,7 @@ struct fs_dirent *fs_dirent_mkfile(struct fs_dirent *d, const char *name);
 struct fs_dirent *fs_dirent_addref(struct fs_dirent *d);
 int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t offset);
 int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, uint32_t offset);
-int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length);
+int fs_dirent_list(struct fs_dirent *d, char *buffer, int buffer_length);
 int fs_dirent_remove(struct fs_dirent *d, const char *name);
 int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);

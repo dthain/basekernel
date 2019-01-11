@@ -53,7 +53,7 @@ struct fs_ops {
 
 	int (*read_block) (struct fs_dirent *d, char *buffer, uint32_t blocknum);
 	int (*write_block) (struct fs_dirent *d, const char *buffer, uint32_t blocknum);
-	int (*readdir) (struct fs_dirent *d, char *buffer, int buffer_length);
+	int (*list) (struct fs_dirent *d, char *buffer, int buffer_length);
 	int (*remove) (struct fs_dirent *d, const char *name);
 	int (*resize) (struct fs_dirent *d, uint32_t blocks);
 	int (*close) (struct fs_dirent *d);

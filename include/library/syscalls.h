@@ -43,7 +43,7 @@ int syscall_object_type(int fd);
 int syscall_object_dup(int fd1, int fd2);
 int syscall_object_read(int fd, void *data, int length);
 int syscall_object_read_nonblock(int fd, void *data, int length);
-int syscall_object_readdir( int fd, char *buffer, int buffer_len);
+int syscall_object_list( int fd, char *buffer, int buffer_len);
 int syscall_object_write(int fd, void *data, int length);
 int syscall_object_seek(int fd, int offset, int whence);
 int syscall_object_size(int fd, int * dims, int n);

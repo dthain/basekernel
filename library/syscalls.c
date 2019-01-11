@@ -128,9 +128,9 @@ int syscall_object_read_nonblock(int fd, void *data, int length)
 	return syscall(SYSCALL_OBJECT_READ_NONBLOCK, fd, (uint32_t) data, length, 0, 0);
 }
 
-int syscall_object_readdir( int fd, char *buffer, int n)
+int syscall_object_list( int fd, char *buffer, int n)
 {
-	return syscall(SYSCALL_OBJECT_READDIR, fd, (uint32_t) buffer, (uint32_t) n, 0, 0);
+	return syscall(SYSCALL_OBJECT_LIST, fd, (uint32_t) buffer, (uint32_t) n, 0, 0);
 }
 
 int syscall_object_write(int fd, void *data, int length)

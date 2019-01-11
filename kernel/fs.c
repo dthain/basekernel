@@ -93,12 +93,12 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 	return d;
 }
 
-int fs_dirent_readdir(struct fs_dirent *d, char *buffer, int buffer_length)
+int fs_dirent_list(struct fs_dirent *d, char *buffer, int buffer_length)
 {
 	const struct fs_ops *ops = d->v->fs->ops;
-	if(!ops->readdir)
+	if(!ops->list)
 		return KERROR_NOT_IMPLEMENTED;
-	return ops->readdir(d, buffer, buffer_length);
+	return ops->list(d, buffer, buffer_length);
 }
 
 static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
@@ -345,7 +345,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 {
 	char *buffer = memory_alloc_page(1);
 
-	int length = fs_dirent_readdir(src, buffer, PAGE_SIZE);
+	int length = fs_dirent_list(src, buffer, PAGE_SIZE);
 	if (length <= 0) goto failure;
 
 	char *name = buffer;

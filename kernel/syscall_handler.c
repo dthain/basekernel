@@ -333,7 +333,7 @@ int sys_process_heap(int delta)
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
-int sys_object_readdir( int fd, char *buffer, int length)
+int sys_object_list( int fd, char *buffer, int length)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(buffer,length)) return KERROR_INVALID_ADDRESS;
@@ -728,8 +728,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_read(a, (void *) b, c);
 	case SYSCALL_OBJECT_READ_NONBLOCK:
 		return sys_object_read_nonblock(a, (void *) b, c);
-	case SYSCALL_OBJECT_READDIR:
-		return sys_object_readdir(a, (char *) b, (int) c);
+	case SYSCALL_OBJECT_LIST:
+		return sys_object_list(a, (char *) b, (int) c);
 	case SYSCALL_OBJECT_WRITE:
 		return sys_object_write(a, (void *) b, c);
 	case SYSCALL_OBJECT_SEEK:
