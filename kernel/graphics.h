@@ -18,15 +18,7 @@ struct graphics_color {
 	uint8_t a;
 };
 
-struct clip {
-	uint32_t x;
-	uint32_t y;
-	uint32_t w;
-	uint32_t h;
-};
-
 struct graphics *graphics_create_root();
-
 struct graphics *graphics_create(struct graphics *parent );
 struct graphics *graphics_addref(struct graphics *g );
 void graphics_delete(struct graphics *g);

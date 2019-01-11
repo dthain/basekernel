@@ -1,5 +1,5 @@
 /*
-opyright (C) 2016 The University of Notre Dame
+Copyright (C) 2016 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -16,11 +16,18 @@ See the file LICENSE for details.
 
 #define FACTOR 256
 
+struct graphics_clip {
+	uint32_t x;
+	uint32_t y;
+	uint32_t w;
+	uint32_t h;
+};
+
 struct graphics {
 	struct bitmap *bitmap;
 	struct graphics_color fgcolor;
 	struct graphics_color bgcolor;
-	struct clip clip;
+	struct graphics_clip clip;
 	struct graphics *parent;
 	int refcount;
 };
