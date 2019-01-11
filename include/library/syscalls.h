@@ -67,8 +67,8 @@ These system calls are carryovers from Unix-like thinking
 and need to be reworked to fit the kernel object model.
 */
 
-int syscall_mkdir( const char *name );
-int syscall_rmdir( const char *path );
+int syscall_mkdir( int fd, const char *name );
+int syscall_rmdir( int fd, const char *name );
 int syscall_chdir( const char *path );
 
 #endif

@@ -589,34 +589,34 @@ int sys_system_rtc( struct rtc_time *t )
 	return 0;
 }
 
-int sys_mkdir(const char *path)
+int sys_mkdir( int fd, const char *path )
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	// XXX check for valid path element, not whole path
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-       	int fd = process_available_fd(current);
-	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+       	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	// XXX doesn't work -- separate parent and new directory.
+	struct fs_dirent *d;
+	int result = kobject_dir_create( current->ktable[fd], path, &d );
+	if(result>=0) {
+		current->ktable[newfd] = kobject_create_dir(d);
+		return fd;
+	} else {
+		return result;
+	}
 
-	struct fs_dirent *d = fs_dirent_mkdir(current->current_dir, path);
-	if(!d) return KERROR_NOT_FOUND;
-
-	current->ktable[fd] = kobject_create_dir(d);
 	return fd;
 }
 
-int sys_rmdir(const char *path)
+int sys_rmdir( int fd, const char *path)
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	// XXX check for valid path element, not whole path
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		// XXX this API doesn't make sense.
-		return fs_dirent_remove(d, path);
-	} else {
-		// XXX get error back from namei
-		return -1;
-	}
+	return kobject_dir_delete( current->ktable[fd], path );
 }
 
 int sys_chdir(const char *path)
@@ -719,9 +719,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_SYSTEM_RTC:
 		return sys_system_rtc((struct rtc_time *) a);
 	case SYSCALL_MKDIR:
-		return sys_mkdir((const char *) a);
+		return sys_mkdir(a,(const char *)b);
 	case SYSCALL_RMDIR:
-		return sys_rmdir((const char *) a);
+		return sys_rmdir(a,(const char *)b);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
 	default:

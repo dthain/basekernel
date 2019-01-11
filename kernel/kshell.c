@@ -247,8 +247,9 @@ static int kshell_execute(const char **argv, int argc)
 			printf("memory: %d/%d\n", memory_pages_free(), memory_pages_total());
 		}
 	} else if(!strcmp(cmd, "mkdir")) {
+	  // XXX pass in parent directory!
 		if(argc == 2) {
-			sys_mkdir(argv[1]);
+			sys_mkdir(0,argv[1]);
 		} else {
 			printf("mkdir: missing argument\n");
 		}
@@ -282,8 +283,9 @@ static int kshell_execute(const char **argv, int argc)
 		}
 
 	} else if(!strcmp(cmd, "rmdir")) {
+	  // XXX pass in parent directory!
 		if(argc == 2) {
-			sys_rmdir(argv[1]);
+			sys_rmdir(0,argv[1]);
 		} else {
 			printf("rmdir: missing argument\n");
 		}

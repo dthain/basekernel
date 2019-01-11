@@ -185,7 +185,7 @@ int syscall_system_stats(struct system_stats *s)
 
 int syscall_system_time( uint32_t *t )
 {
-  return syscall(SYSCALL_SYSTEM_TIME, (uint32_t)t, 0, 0, 0, 0);
+	return syscall(SYSCALL_SYSTEM_TIME, (uint32_t)t, 0, 0, 0, 0);
 }
 
 int syscall_system_rtc( struct rtc_time *time )
@@ -193,14 +193,14 @@ int syscall_system_rtc( struct rtc_time *time )
 	return syscall(SYSCALL_SYSTEM_RTC, (uint32_t)time, 0, 0, 0, 0);
 }
 
-int syscall_mkdir(const char *name)
+int syscall_mkdir( int fd, const char *name)
 {
-	return syscall(SYSCALL_MKDIR, (uint32_t) name, 0, 0, 0, 0);
+	return syscall(SYSCALL_MKDIR, fd, (uint32_t) name, 0, 0, 0);
 }
 
-int syscall_rmdir(const char *name)
+int syscall_rmdir(int fd, const char *name)
 {
-	return syscall(SYSCALL_RMDIR, (uint32_t) name, 0, 0, 0, 0);
+	return syscall(SYSCALL_RMDIR, fd, (uint32_t) name, 0, 0, 0 );
 }
 
 int syscall_chdir(const char *path)

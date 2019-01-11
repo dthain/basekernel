@@ -8,9 +8,9 @@ int sys_process_exec(const char *path, const char **argv, int argc);
 
 int sys_process_sleep(unsigned int ms);
 
-int sys_mkdir(const char *path);
-int sys_chdir(const char *path);
-int sys_rmdir(const char *path);
+int sys_mkdir( int fd, const char *path);
+int sys_rmdir(int fd, const char *path);
+int sys_chdir( const char *path);
 
 int sys_open_window(int wd, int x, int y, int w, int h);
 int sys_process_object_max();
