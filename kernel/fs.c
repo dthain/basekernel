@@ -5,6 +5,7 @@
 #include "string.h"
 #include "memory.h"
 #include "process.h"
+#include "bcache.h"
 
 static struct fs *fs_list = 0;
 
@@ -73,6 +74,7 @@ int fs_volume_close(struct fs_volume *v)
 	v->refcount--;
 	if(v->refcount <= 0) {
 		v->fs->ops->volume_close(v);
+		bcache_flush_device(v->device);
 		device_close(v->device);
 		kfree(v);
 	}
