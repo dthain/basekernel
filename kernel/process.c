@@ -39,7 +39,6 @@ void process_init()
 	current->ktable[1] = kobject_create_console(&console_root);
 	current->ktable[2] = kobject_addref(current->ktable[1]);
 	current->ktable[3] = kobject_create_graphics(&graphics_root);
-	graphics_root.count++;
 
 	current->state = PROCESS_STATE_READY;
 

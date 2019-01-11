@@ -16,6 +16,16 @@ See the file LICENSE for details.
 
 #define FACTOR 256
 
+struct graphics {
+	struct bitmap *bitmap;
+	struct graphics_color fgcolor;
+	struct graphics_color bgcolor;
+	struct clip clip;
+	uint32_t count;
+	struct graphics *parent;
+	int refcount;
+};
+
 static struct graphics_color color_black = { 0, 0, 0, 0 };
 static struct graphics_color color_white = { 255, 255, 255, 0 };
 
@@ -32,6 +42,8 @@ struct graphics *graphics_create_root()
 	g->clip.y = 0;
 	g->clip.w = g->bitmap->width;
 	g->clip.h = g->bitmap->height;
+	g->parent = 0;
+	g->refcount = 1;
 	return g;
 }
 
@@ -42,12 +54,25 @@ struct graphics *graphics_create(struct graphics *parent )
 
 	memcpy(g, parent, sizeof(*g));
 
+	g->parent = graphics_addref(parent);
+	g->refcount = 1;
+
+	return g;
+}
+
+struct graphics *graphics_addref( struct graphics *g )
+{
+	g->refcount++;
 	return g;
 }
 
 void graphics_delete( struct graphics *g )
 {
-	kfree(g);
+	g->refcount--;
+	if(g->refcount==0) {
+		graphics_delete(g->parent);
+		kfree(g);
+	}
 }
 
 int graphics_write(struct graphics *g, struct graphics_command *command)

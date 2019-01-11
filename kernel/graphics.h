@@ -25,17 +25,10 @@ struct clip {
 	uint32_t h;
 };
 
-struct graphics {
-	struct bitmap *bitmap;
-	struct graphics_color fgcolor;
-	struct graphics_color bgcolor;
-	struct clip clip;
-	uint32_t count;
-};
-
 struct graphics *graphics_create_root();
 
 struct graphics *graphics_create(struct graphics *parent );
+struct graphics *graphics_addref(struct graphics *g );
 void graphics_delete(struct graphics *g);
 
 int32_t graphics_width(struct graphics *g);
