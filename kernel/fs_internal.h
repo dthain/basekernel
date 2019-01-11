@@ -23,7 +23,7 @@ struct fs_volume {
 };
 
 struct fs_dirent {
-	struct fs_volume *v;
+	struct fs_volume *volume;
 	uint32_t size;
 	int inumber;
 	int refcount;
@@ -32,13 +32,6 @@ struct fs_dirent {
 		struct cdrom_dirent cdrom;
 		struct diskfs_inode disk;
 	};
-};
-
-struct fs_file {
-	struct fs_dirent *d;
-	uint32_t size;
-	int8_t mode;
-	int refcount;
 };
 
 struct fs_ops {

@@ -197,11 +197,11 @@ int diskfs_inode_read( struct fs_dirent *d, struct diskfs_block *b, uint32_t blo
 	if(block<DISKFS_DIRECT_POINTERS) {
 		actual = d->disk.direct[block];
 	} else {
-		diskfs_data_block_read(d->v,b,d->disk.indirect);
+		diskfs_data_block_read(d->volume,b,d->disk.indirect);
 		actual = b->pointers[block-DISKFS_DIRECT_POINTERS];
 	}
 		
-	return diskfs_data_block_read(d->v,b,actual);
+	return diskfs_data_block_read(d->volume,b,actual);
 }
 
 int diskfs_inode_write( struct fs_dirent *d, struct diskfs_block *b, uint32_t block )
@@ -213,41 +213,41 @@ int diskfs_inode_write( struct fs_dirent *d, struct diskfs_block *b, uint32_t bl
 	if(block<DISKFS_DIRECT_POINTERS) {
 		actual = i->direct[block];
 		if(actual==0) {
-			actual = diskfs_data_block_alloc(d->v);
+			actual = diskfs_data_block_alloc(d->volume);
 			if(actual==0) return KERROR_OUT_OF_SPACE;
 			i->direct[block] = actual;
-			diskfs_inode_save(d->v,d->inumber,i);	
+			diskfs_inode_save(d->volume,d->inumber,i);	
 		}
 	} else {
 		struct diskfs_block *iblock = memory_alloc_page(0);
 
 		if(i->indirect==0) {
-			actual = diskfs_data_block_alloc(d->v);
+			actual = diskfs_data_block_alloc(d->volume);
 			if(actual==0) {
 				memory_free_page(iblock);
 				return KERROR_OUT_OF_SPACE;
 			}
 			i->indirect = actual;
-			diskfs_inode_save(d->v,d->inumber,i);	
+			diskfs_inode_save(d->volume,d->inumber,i);	
 			memset(iblock,0,DISKFS_BLOCK_SIZE);
-			diskfs_data_block_write(d->v,iblock,i->indirect);
+			diskfs_data_block_write(d->volume,iblock,i->indirect);
 		}
 
-		diskfs_data_block_read(d->v,iblock,i->indirect);
+		diskfs_data_block_read(d->volume,iblock,i->indirect);
 		actual = iblock->pointers[block-DISKFS_DIRECT_POINTERS];
 		if(actual==0) {
-			actual = diskfs_data_block_alloc(d->v);
+			actual = diskfs_data_block_alloc(d->volume);
 			if(actual==0) {
 				memory_free_page(iblock);
 				return KERROR_OUT_OF_SPACE;
 			}
 			iblock->pointers[block-DISKFS_DIRECT_POINTERS] = actual;
-			diskfs_data_block_write(d->v,iblock,i->indirect);
+			diskfs_data_block_write(d->volume,iblock,i->indirect);
 		}
 		memory_free_page(iblock);
 	}
 
-	return diskfs_data_block_write(d->v,b,actual);
+	return diskfs_data_block_write(d->volume,b,actual);
 }
 
 struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber, int type )
@@ -257,7 +257,7 @@ struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber, 
 
 	diskfs_inode_load(volume,inumber,&d->disk);
 
-	d->v = volume;
+	d->volume = volume;
 	d->size = d->disk.size;
 	d->inumber = inumber;
 	d->refcount = 1;
@@ -269,7 +269,7 @@ struct fs_dirent * diskfs_dirent_create( struct fs_volume *volume, int inumber, 
 int diskfs_dirent_close( struct fs_dirent *d )
 {
 	// XXX check if inode dirty first
-	diskfs_inode_save(d->v,d->inumber,&d->disk);
+	diskfs_inode_save(d->volume,d->inumber,&d->disk);
 	return 0;
 }
 
@@ -288,7 +288,7 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
 				int inumber = r->inumber;
 				memory_free_page(b);
-				return diskfs_dirent_create(d->v,inumber,r->type);
+				return diskfs_dirent_create(d->volume,inumber,r->type);
 			}
 		}
 	}
@@ -374,7 +374,7 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 
 	diskfs_dirent_resize(d,d->size+sizeof(*r));
 	diskfs_inode_write(d,b,i);
-	diskfs_inode_save(d->v,d->inumber,&d->disk);
+	diskfs_inode_save(d->volume,d->inumber,&d->disk);
 
        	memory_free_page(b);
 	return 0;
@@ -388,16 +388,16 @@ struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const 
 		return 0;
 	}
 
-	int inumber = diskfs_inumber_alloc(d->v);
+	int inumber = diskfs_inumber_alloc(d->volume);
 	if(inumber==0) return 0; // KERROR_OUT_OF_SPACE
 
 	struct diskfs_inode inode;
 	memset(&inode,0,sizeof(inode));
 	inode.inuse = 1;
 	inode.size = 0;
-	diskfs_inode_save(d->v,inumber,&inode);
+	diskfs_inode_save(d->volume,inumber,&inode);
 	diskfs_dirent_add(d,name,type,inumber);
-	return diskfs_dirent_create(d->v,inumber,type);
+	return diskfs_dirent_create(d->volume,inumber,type);
 }
 
 struct fs_dirent * diskfs_dirent_create_file( struct fs_dirent *d, const char *name )
@@ -458,7 +458,7 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 
 				if(r->type==DISKFS_ITEM_DIR) {
 					struct diskfs_inode inode;
-					diskfs_inode_load(d->v,r->inumber,&inode);
+					diskfs_inode_load(d->volume,r->inumber,&inode);
 					if(inode.size>0) {
 						memory_free_page(b);
 						return KERROR_NOT_EMPTY;
@@ -468,7 +468,7 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 				int inumber = r->inumber;
 				r->type = DISKFS_ITEM_BLANK;
 				diskfs_inode_write(d,b,i);
-				diskfs_inode_delete(d->v,&d->disk,inumber);
+				diskfs_inode_delete(d->volume,&d->disk,inumber);
 				memory_free_page(b);
 				return 0;
 			}

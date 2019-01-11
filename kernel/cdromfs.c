@@ -21,7 +21,7 @@ static struct fs_dirent *cdrom_dirent_create(struct fs_volume *volume, int secto
 	struct fs_dirent *d = kmalloc(sizeof(*d));
 	if(!d) return 0;
 
-	d->v = volume;
+	d->volume = volume;
 	d->refcount = 1;
 	d->size = length;
 	d->isdir = isdir;
@@ -32,7 +32,7 @@ static struct fs_dirent *cdrom_dirent_create(struct fs_volume *volume, int secto
 
 static int cdrom_dirent_read_block(struct fs_dirent *d, char *buffer, uint32_t blocknum)
 {
-	int nblocks = bcache_read(d->v->device, buffer, 1, d->cdrom.sector + blocknum);
+	int nblocks = bcache_read(d->volume->device, buffer, 1, d->cdrom.sector + blocknum);
 	if(nblocks == 1) {
 		return CDROMFS_BLOCK_SIZE;
 	} else {
@@ -93,7 +93,7 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 			if(!strncmp(name,dname,dname_length)) {
 				struct fs_dirent *r;
 				r = cdrom_dirent_create(
-					dir->v,
+					dir->volume,
 					d->first_sector_little,
 					d->length_little,
 					d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY);

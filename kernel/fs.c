@@ -89,13 +89,13 @@ struct fs_dirent *fs_volume_root(struct fs_volume *v)
 		return 0;
 
 	struct fs_dirent *d = v->fs->ops->volume_root(v);
-	d->v = fs_volume_addref(v);
+	d->volume = fs_volume_addref(v);
 	return d;
 }
 
 int fs_dirent_list(struct fs_dirent *d, char *buffer, int buffer_length)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->list)
 		return KERROR_NOT_IMPLEMENTED;
 	return ops->list(d, buffer, buffer_length);
@@ -103,7 +103,7 @@ int fs_dirent_list(struct fs_dirent *d, char *buffer, int buffer_length)
 
 static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 
 	if(!ops->lookup)
 		return 0;
@@ -113,7 +113,7 @@ static struct fs_dirent *fs_dirent_lookup(struct fs_dirent *d, const char *name)
 		return fs_dirent_addref(d);
 	} else {
 		struct fs_dirent *r = ops->lookup(d, name);
-		if(r) r->v = fs_volume_addref(d->v);
+		if(r) r->volume = fs_volume_addref(d->volume);
 		return r;
 	}
 }
@@ -154,7 +154,7 @@ struct fs_dirent *fs_dirent_addref(struct fs_dirent *d)
 
 int fs_dirent_close(struct fs_dirent *d)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->close)
 		return KERROR_NOT_IMPLEMENTED;
 
@@ -162,7 +162,7 @@ int fs_dirent_close(struct fs_dirent *d)
 	if(d->refcount <= 0) {
 		ops->close(d);
 		// This close is paired with the addref in fs_dirent_lookup
-		fs_volume_close(d->v);
+		fs_volume_close(d->volume);
 		kfree(d);
 	}
 
@@ -172,9 +172,9 @@ int fs_dirent_close(struct fs_dirent *d)
 int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
-	int bs = d->v->block_size;
+	int bs = d->volume->block_size;
 
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->read_block)
 		return KERROR_INVALID_REQUEST;
 
@@ -231,12 +231,12 @@ int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t 
 
 struct fs_dirent * fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->mkdir) return 0;
 
 	struct fs_dirent *n = ops->mkdir(d, name);
 	if(n) {
-		n->v = fs_volume_addref(d->v);
+		n->volume = fs_volume_addref(d->volume);
 		return n;
 	}
 
@@ -245,12 +245,12 @@ struct fs_dirent * fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 
 struct fs_dirent * fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->mkfile) return 0;
 
 	struct fs_dirent *n = ops->mkfile(d, name);
 	if(n) {
-		n->v = fs_volume_addref(d->v);
+		n->volume = fs_volume_addref(d->volume);
 		return n;
 	}
 
@@ -259,7 +259,7 @@ struct fs_dirent * fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 
 int fs_dirent_remove(struct fs_dirent *d, const char *name)
 {
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->remove)
 		return 0;
 	return ops->remove(d, name);
@@ -268,9 +268,9 @@ int fs_dirent_remove(struct fs_dirent *d, const char *name)
 int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, uint32_t offset)
 {
 	int total = 0;
-	int bs = d->v->block_size;
+	int bs = d->volume->block_size;
 
-	const struct fs_ops *ops = d->v->fs->ops;
+	const struct fs_ops *ops = d->volume->fs->ops;
 	if(!ops->write_block || !ops->read_block)
 		return KERROR_INVALID_REQUEST;
 
