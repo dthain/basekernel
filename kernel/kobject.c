@@ -212,7 +212,7 @@ int kobject_close(struct kobject *kobject)
 			//device_close(kobject->data.device);
 			break;
 		case KOBJECT_PIPE:
-			pipe_close(kobject->data.pipe);
+			pipe_delete(kobject->data.pipe);
 			break;
 		default:
 			break;
@@ -284,7 +284,7 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		}
 	case KOBJECT_PIPE:
 		if(n==1) {
-			dims[0] = PIPE_SIZE;
+			dims[0] = pipe_size(kobject->data.pipe);
 			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;
