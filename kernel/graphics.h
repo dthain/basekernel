@@ -8,7 +8,6 @@ See the file LICENSE for details.
 #define GRAPHICS_H
 
 #include "kernel/types.h"
-#include "bitmap.h"
 #include "kernel/gfxstream.h"
 
 struct graphics_color {
@@ -18,39 +17,25 @@ struct graphics_color {
 	uint8_t a;
 };
 
-struct clip {
-	uint32_t x;
-	uint32_t y;
-	uint32_t w;
-	uint32_t h;
-};
-
-struct graphics {
-	struct bitmap *bitmap;
-	struct graphics_color fgcolor;
-	struct graphics_color bgcolor;
-	struct clip clip;
-	uint32_t count;
-};
+extern struct graphics graphics_root;
 
 struct graphics *graphics_create_root();
-
 struct graphics *graphics_create(struct graphics *parent );
+struct graphics *graphics_addref(struct graphics *g );
 void graphics_delete(struct graphics *g);
 
-int32_t graphics_width(struct graphics *g);
-int32_t graphics_height(struct graphics *g);
+uint32_t graphics_width(struct graphics *g);
+uint32_t graphics_height(struct graphics *g);
 void graphics_fgcolor(struct graphics *g, struct graphics_color c);
 void graphics_bgcolor(struct graphics *g, struct graphics_color c);
-int graphics_clip(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
+int  graphics_clip(struct graphics *g, int x, int y, int w, int h);
 
-void graphics_scrollup(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h, int32_t dy);
-void graphics_rect(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
-void graphics_clear(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
-void graphics_line(struct graphics *g, int32_t x, int32_t y, int32_t w, int32_t h);
-void graphics_char(struct graphics *g, int32_t x, int32_t y, unsigned char c);
+void graphics_scrollup(struct graphics *g, int x, int y, int w, int h, int dy);
+void graphics_rect(struct graphics *g, int x, int y, int w, int h);
+void graphics_clear(struct graphics *g, int x, int y, int w, int h);
+void graphics_line(struct graphics *g, int x, int y, int w, int h);
+void graphics_char(struct graphics *g, int x, int y, unsigned char c);
 
 int graphics_write(struct graphics *g, struct graphics_command *command);
 
-extern struct graphics graphics_root;
 #endif

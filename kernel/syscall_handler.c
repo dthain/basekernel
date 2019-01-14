@@ -463,7 +463,7 @@ int sys_open_pipe()
 	if(fd < 0) {
 		return KERROR_NOT_FOUND;
 	}
-	struct pipe *p = pipe_open();
+	struct pipe *p = pipe_create();
 	if(!p) {
 		return KERROR_NOT_FOUND;
 	}

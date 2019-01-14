@@ -17,6 +17,7 @@ struct console {
 	int xpos;
 	int ypos;
 	int onoff;
+	int refcount;
 };
 
 struct console console_root = {0};
@@ -113,16 +114,25 @@ void console_putstring( struct console *c, const char *str)
 struct console *console_create(struct graphics *g)
 {
 	struct console *c = kmalloc(sizeof(*c));
-	c->gx = g;
+	c->gx = graphics_addref(g);
+	c->refcount = 1;
 	console_reset(c);
+	return c;
+}
+
+struct console *console_addref( struct console *c )
+{
+	c->refcount++;
 	return c;
 }
 
 void console_delete( struct console *c )
 {
-	// XXX should we delete the underlying graphics object?
-	// XXX should we clear the area somehow to indicate unused?
-	kfree(c);
+	c->refcount--;
+	if(c->refcount==0) {
+		graphics_delete(c->gx);
+		kfree(c);
+	}
 }
 
 void console_size( struct console *c, int *xsize, int *ysize )

@@ -8,9 +8,21 @@
 #include "pipe.h"
 #include "kmalloc.h"
 #include "process.h"
+#include "list.h"
 
+#define PIPE_SIZE (1024)
 
-struct pipe *pipe_open()
+struct pipe {
+	char *buffer;
+	int read_pos;
+	int write_pos;
+	int blocking;
+	int flushed;
+	int refcount;
+	struct list queue;
+};
+
+struct pipe *pipe_create()
 {
 	struct pipe *p = kmalloc(sizeof(*p));
 	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
@@ -20,6 +32,13 @@ struct pipe *pipe_open()
 	p->flushed = 0;
 	p->queue.head = 0;
 	p->queue.tail = 0;
+	p->refcount = 1;
+	return p;
+}
+
+struct pipe *pipe_addref( struct pipe *p )
+{
+	p->refcount++;
 	return p;
 }
 
@@ -30,9 +49,12 @@ void pipe_flush(struct pipe *p)
 	}
 }
 
-void pipe_close(struct pipe *p)
+void pipe_delete(struct pipe *p)
 {
-	if(p) {
+	if(!p) return;
+
+	p->refcount--;
+	if(p->refcount==0) {
 		if(p->buffer) {
 			kfree(p->buffer);
 		}
@@ -112,7 +134,6 @@ int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 	return read;
 }
 
-
 int pipe_read(struct pipe *p, char *buffer, int size)
 {
 	return pipe_read_internal(p, buffer, size, 1);
@@ -121,4 +142,9 @@ int pipe_read(struct pipe *p, char *buffer, int size)
 int pipe_read_nonblock(struct pipe *p, char *buffer, int size)
 {
 	return pipe_read_internal(p, buffer, size, 0);
+}
+
+int pipe_size( struct pipe *p )
+{
+	return PIPE_SIZE;
 }
