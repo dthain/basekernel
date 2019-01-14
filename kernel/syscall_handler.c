@@ -26,6 +26,7 @@ See the file LICENSE for details.
 #include "memory.h"
 #include "ata.h"
 #include "graphics.h"
+#include "is_valid.h"
 
 /*
 syscall_handler() is responsible for decoding system calls
@@ -40,45 +41,6 @@ and simply make use of functionality within other kernel modules.
 sys_run/fork/exec are notable exceptions and could benefit
 from simplification.
 */
-
-// Get rid of this once we have a proper dirlist stream
-#define LSDIR_TEMP_BUFFER_SIZE 250
-
-// Return true if file desciptor is in range and refers to a live object.
-static int is_valid_object( int fd )
-{
-	return fd>=0 && fd<PROCESS_MAX_OBJECTS && current->ktable[fd];
-}
-
-// Return true if fd valid and object is also of indicated type.
-static int is_valid_object_type( int fd, kobject_type_t type )
-{
-	return is_valid_object(fd) && kobject_get_type(current->ktable[fd])==type;
-}
-
-// Return true if (ptr,length) describes a valid area in user space.
-// XXX Needs to be implemented!
-
-static int is_valid_pointer( void *ptr, int length )
-{
-	return 1;
-}
-
-// Return true if string points to a valid area in user space.
-// XXX Needs to be implemented!
-
-static int is_valid_string( const char *str )
-{
-	return 1;
-}
-
-// Return true if path only consists of allowable characters
-// XXX Needs to be implemented!
-
-static int is_valid_path( const char *str )
-{
-	return 1;
-}
 
 /*
 Here follow the handlers for each individual system call

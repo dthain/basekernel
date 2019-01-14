@@ -3,6 +3,7 @@
 #include "kernel/types.h"
 #include "library/user-io.h"
 #include "kernel/ascii.h"
+#include "library/errno.h"
 
 void print_directory(char *d, int length)
 {
@@ -58,7 +59,7 @@ int do_command(char *line)
 				printf("process %d exited with status %d\n", info.pid, info.exitcode);
 				syscall_process_reap(info.pid);
 			} else {
-				printf("Couldn't start %s\n", argv[1]);
+				printf("couldn't run %s: %s\n", argv[0],strerror(pid));
 			}
 		} else {
 			printf("run: requires argument\n");
