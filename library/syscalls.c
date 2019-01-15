@@ -83,14 +83,19 @@ extern void *syscall_process_heap(int a)
 	return (void *) syscall(SYSCALL_PROCESS_HEAP, a, 0, 0, 0, 0);
 }
 
-int syscall_open_file(const char *path, int mode, int flags)
+int syscall_open_file(const char *path, int mode, kernel_flags_t flags)
 {
 	return syscall(SYSCALL_OPEN_FILE, (uint32_t) path, mode, flags, 0, 0);
 }
 
-int syscall_open_file_relative( int fd, const char *path, int mode, int flags)
+int syscall_open_file_relative( int fd, const char *path, int mode, kernel_flags_t flags)
 {
 	return syscall(SYSCALL_OPEN_FILE_RELATIVE, fd, (uint32_t) path, mode, flags, 0);
+}
+
+int syscall_open_dir( int fd, const char *name, kernel_flags_t flags )
+{
+	return syscall(SYSCALL_OPEN_DIR, fd, (uint32_t) name, flags, 0, 0);
 }
 
 int syscall_open_window(int wd, int x, int y, int w, int h)
@@ -143,6 +148,11 @@ int syscall_object_seek(int fd, int offset, int whence)
 	return syscall(SYSCALL_OBJECT_SEEK, fd, offset, whence, 0, 0);
 }
 
+int syscall_object_remove(int fd, const char *name )
+{
+	return syscall(SYSCALL_OBJECT_REMOVE, fd, (uint32_t) name, 0, 0, 0 );
+}
+
 int syscall_object_close(int fd)
 {
 	return syscall(SYSCALL_OBJECT_CLOSE, fd, 0, 0, 0, 0);
@@ -191,16 +201,6 @@ int syscall_system_time( uint32_t *t )
 int syscall_system_rtc( struct rtc_time *time )
 {
 	return syscall(SYSCALL_SYSTEM_RTC, (uint32_t)time, 0, 0, 0, 0);
-}
-
-int syscall_mkdir( int fd, const char *name)
-{
-	return syscall(SYSCALL_MKDIR, fd, (uint32_t) name, 0, 0, 0);
-}
-
-int syscall_rmdir(int fd, const char *name)
-{
-	return syscall(SYSCALL_RMDIR, fd, (uint32_t) name, 0, 0, 0 );
 }
 
 int syscall_chdir(const char *path)

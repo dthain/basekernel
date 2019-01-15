@@ -342,7 +342,7 @@ int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dir
 	return 0;
 }
 
-int kobject_dir_delete( struct kobject *kobject, const char *name )
+int kobject_remove( struct kobject *kobject, const char *name )
 {
 	if(kobject->type==KOBJECT_DIR) {
 		return fs_dirent_remove(kobject->data.dir,name);

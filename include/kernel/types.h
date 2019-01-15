@@ -54,4 +54,13 @@ typedef enum {
 	KOBJECT_CONSOLE
 } kobject_type_t;
 
+typedef enum {
+	KERNEL_FLAGS_READ=0,
+	KERNEL_FLAGS_WRITE=1,
+	KERNEL_FLAGS_CREATE=2,
+	KERNEL_FLAGS_RANDOM=4,
+	KERNEL_FLAGS_DIRECT=8
+} kernel_flags_t;
+
+
 #endif
