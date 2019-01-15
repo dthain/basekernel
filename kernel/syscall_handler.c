@@ -303,34 +303,23 @@ int sys_object_list( int fd, char *buffer, int length)
 	return kobject_read(current->ktable[fd],buffer,length);
 }
 
-static int open_dirent( struct fs_dirent *d, const char *path, int mode, kernel_flags_t flags )
-{
-	int new_fd = process_available_fd(current);
-	if(new_fd<0) return KERROR_OUT_OF_OBJECTS;
-
-	struct kobject *k;
-
-	if(fs_dirent_isdir(d)) {
-		k = kobject_create_dir(d);
-	} else {
-		k = kobject_create_file(d);
-	}
-
-	current->ktable[new_fd] = k;
-
-	return new_fd;
-}
-
 int sys_open_file_relative( int fd, const char *path, int mode, kernel_flags_t flags)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	struct fs_dirent *d;
+	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	int r = kobject_dir_lookup(current->ktable[fd],path,&d);
-	if(r<0) return r;
+	struct kobject *newobj;
+	int result = kobject_lookup(current->ktable[fd],path,&newobj);
 
-	return open_dirent(d,path,mode,flags);
+	if(result>=0) {
+		current->ktable[newfd] = newobj;
+		return newfd;
+	} else {
+		return result;
+	}
 }
 
 int sys_open_dir( int fd, const char *path, kernel_flags_t flags )
@@ -341,76 +330,49 @@ int sys_open_dir( int fd, const char *path, kernel_flags_t flags )
        	int newfd = process_available_fd(current);
 	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	struct fs_dirent *d;
+	struct kobject *newobj;
 	int result;
 
 	if(flags&KERNEL_FLAGS_CREATE) {
-		result = kobject_dir_create( current->ktable[fd], path, &d );
+		newobj = kobject_create_dir_from_dir( current->ktable[fd], path );
+		if(newobj) {
+			result = 0;
+		} else {
+			result = KERROR_NOT_FOUND;
+		}
 	} else {
-		result = kobject_dir_lookup( current->ktable[fd], path, &d );
+		result = kobject_lookup( current->ktable[fd], path, &newobj );
 	}
 
 	if(result>=0) {
-		current->ktable[newfd] = kobject_create_dir(d);
+		current->ktable[newfd] = newobj;
 		return fd;
 	} else {
 		return result;
 	}
-
-	return fd;
-}
-
-static int find_kobject_by_intent( const char *intent )
-{
-	int i;
-
-	// Check if intent is index-specified.
-	if(intent[0] == '#') {
-		str2int(&intent[1], &i);
-	} else {
-		// Find an intent matching the tag.
-		int max = process_object_max(current);
-		for(int i = max; i >= 0; i--) {
-			if(!strcmp(current->ktable[i]->intent, intent)) {
-				return i;
-			}
-		}
-	}
-
-	return KERROR_NOT_FOUND;
 }
 
 int sys_open_file(const char *path, int mode, kernel_flags_t flags)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	const char *colon = strchr(path,':');
+	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	// If the colon comes at the end, then there is no path
-	if(colon && *(colon+1)==0 ) {
-		return KERROR_INVALID_REQUEST;
+	struct fs_dirent *d = fs_resolve(path);
+
+	if(fs_dirent_isdir(d)) {
+		fs_dirent_close(d);
+		return KERROR_NOT_A_FILE;
 	}
 
-	// If we have no tag, use everything as a path.
-	if(!colon) {
-		struct fs_dirent *d = fs_dirent_traverse(current->current_dir,path);
-		return open_dirent(d, path, mode, flags);
+	if(d) {
+		current->ktable[newfd] = kobject_create_file(d);
+		return newfd;
+	} else {
+		// XXX propagate better error
+		return KERROR_NOT_FOUND;
 	}
-
-	// The base path is whatever comes after the colon
-	const char *base_path = colon+1;
-
-	// Duplicate the intent path into a null terminated string.
-	char *intent = strndup(path,colon-path);
-	if(!intent) return KERROR_OUT_OF_MEMORY;
-
-	// Look up the corresponding object by intent
-	int fd = find_kobject_by_intent(intent);
-	kfree(intent);
-	if(fd<0) return fd;
-
-	// Open the file relative to that object.
-	return sys_open_file_relative(fd, base_path, mode, flags);
 }
 
 int sys_open_console(int wd)
@@ -418,9 +380,8 @@ int sys_open_console(int wd)
 	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
 
 	int fd = process_available_fd(current);
-	if(fd<0) {
-		return KERROR_NOT_FOUND;
-	}
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+
 	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
 	return fd;
 }

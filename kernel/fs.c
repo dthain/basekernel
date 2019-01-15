@@ -9,13 +9,67 @@
 
 static struct fs *fs_list = 0;
 
+static struct kobject * find_kobject_by_intent( const char *intent )
+{
+	int i;
+
+	// Check if intent is index-specified.
+	if(intent[0] == '#') {
+		str2int(&intent[1], &i);
+		return current->ktable[i];
+	} else {
+		// Find an intent matching the tag.
+		int max = process_object_max(current);
+		for(i=0;i<max;i++) {
+			struct kobject *k = current->ktable[i];
+			if(k && !strcmp(k->intent,intent)) {
+				return k;
+			}
+		}
+	}
+
+	return 0;
+}
+
 struct fs_dirent *fs_resolve(const char *path)
 {
+	// If the path begins with a slash, navigate from the root directory.
 	if(path[0] == '/') {
 		return fs_dirent_traverse(current->root_dir, &path[1]);
-	} else {
-		return fs_dirent_traverse(current->current_dir, path);
 	}
+
+	// If the path contains a colon, we are dealing with a tag.
+	const char *colon = strchr(path,':');
+	if(colon) {
+		// Length of tag is distance from colon to beginning.
+		int length = colon - path;
+
+		// Rest of path starts after the colon.
+		const char *rest = colon+1;
+
+		// Make a temporary string with the tag.
+		char *tagstr = strdup(path);
+		tagstr[length] = 0;
+
+		// Look up the object associated with that tag
+		struct kobject *tagobj = find_kobject_by_intent(tagstr);
+		kfree(tagstr);
+		if(!tagobj) return 0;
+		// XXX KERROR_NOT_FOUND;
+
+		// Make sure it is really a directory.
+		if(kobject_get_type(tagobj)!=KOBJECT_DIR) return 0;
+		// XXX KERROR_NOT_A_DIRECTORY;
+
+		// If there is no remaining path, just return that object.
+		if(!*rest) return fs_dirent_addref(tagobj->data.dir);
+
+		// Otherwise, navigate from that object.
+		return fs_dirent_traverse(tagobj->data.dir,path);
+	}
+
+	// If there was no tag, then navigate from the current working directory.
+	return fs_dirent_traverse(current->current_dir, path);
 }
 
 void fs_register(struct fs *f)

@@ -101,6 +101,38 @@ struct kobject *kobject_create_console_from_graphics( struct kobject *k )
 	return kobject_create_console(c);
 }
 
+struct kobject * kobject_create_file_from_dir( struct kobject *kobject, const char *name )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		struct fs_dirent *d = fs_dirent_mkfile(kobject->data.dir,name);
+		if(d) {
+			return kobject_create_file(d);
+		} else {
+			return 0;
+		}
+	} else {
+		return 0;
+		// XXX KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
+struct kobject * kobject_create_dir_from_dir( struct kobject *kobject, const char *name )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		struct fs_dirent *d = fs_dirent_mkdir(kobject->data.dir,name);
+		if(d) {
+			return kobject_create_dir(d);
+		} else {
+			return 0;
+		}
+	} else {
+		return 0;
+		// XXX KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
 int kobject_read(struct kobject *kobject, void *buffer, int size)
 {
 	int actual = 0;
@@ -173,6 +205,27 @@ int kobject_list(struct kobject *kobject, void *buffer, int size)
 	}
 }
 
+int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **newobj )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		struct fs_dirent *d;
+		d = fs_dirent_traverse(kobject->data.dir,name);
+		if(d) {
+			if(fs_dirent_isdir(d)) {
+				*newobj = kobject_create_dir(d);
+			} else {
+				*newobj = kobject_create_file(d);
+			}
+			return 0;
+		} else {
+			return KERROR_NOT_FOUND;
+		}
+	} else {
+		return KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
+}
+
 int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
 {
 	struct fs_dirent *src, *dst;
@@ -190,6 +243,16 @@ int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
 	}
 
 	return fs_dirent_copy(src,dst,0);
+}
+
+int kobject_remove( struct kobject *kobject, const char *name )
+{
+	if(kobject->type==KOBJECT_DIR) {
+		return fs_dirent_remove(kobject->data.dir,name);
+	} else {
+		return KERROR_NOT_IMPLEMENTED;
+	}
+	return 0;
 }
 
 int kobject_close(struct kobject *kobject)
@@ -314,42 +377,4 @@ int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
 	}
 	return 0;
 }
-
-int kobject_dir_lookup( struct kobject *kobject, const char *name, struct fs_dirent **dir )
-{
-	if(kobject->type==KOBJECT_DIR) {
-		*dir = fs_dirent_traverse(kobject->data.dir,name);
-		if(*dir) {
-			return 0;
-		} else {
-			return KERROR_NOT_FOUND;
-		}
-	} else {
-		return KERROR_NOT_IMPLEMENTED;
-	}
-	return 0;
-}
-
-int kobject_dir_create( struct kobject *kobject, const char *name, struct fs_dirent **dir )
-{
-	if(kobject->type==KOBJECT_DIR) {
-		*dir = fs_dirent_mkdir(kobject->data.dir,name);
-		if(!*dir) return KERROR_NOT_FOUND;
-		return 0;
-	} else {
-		return KERROR_NOT_IMPLEMENTED;
-	}
-	return 0;
-}
-
-int kobject_remove( struct kobject *kobject, const char *name )
-{
-	if(kobject->type==KOBJECT_DIR) {
-		return fs_dirent_remove(kobject->data.dir,name);
-	} else {
-		return KERROR_NOT_IMPLEMENTED;
-	}
-	return 0;
-}
-
 
