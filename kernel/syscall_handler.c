@@ -303,87 +303,76 @@ int sys_object_list( int fd, char *buffer, int length)
 	return kobject_read(current->ktable[fd],buffer,length);
 }
 
-static int open_dirent( struct fs_dirent *d, const char *path, int mode, int flags )
-{
-	int new_fd = process_available_fd(current);
-	if(new_fd<0) return KERROR_OUT_OF_OBJECTS;
-
-	struct kobject *k;
-
-	if(fs_dirent_isdir(d)) {
-		k = kobject_create_dir(d);
-	} else {
-		k = kobject_create_file(d);
-	}
-
-	current->ktable[new_fd] = k;
-
-	return new_fd;
-}
-
-int sys_open_file_relative( int fd, const char *path, int mode, int flags)
+int sys_open_file_relative( int fd, const char *path, int mode, kernel_flags_t flags)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	struct fs_dirent *d;
+	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	int r = kobject_dir_lookup(current->ktable[fd],path,&d);
-	if(r<0) return r;
+	struct kobject *newobj;
+	int result = kobject_lookup(current->ktable[fd],path,&newobj);
 
-	return open_dirent(d,path,mode,flags);
+	if(result>=0) {
+		current->ktable[newfd] = newobj;
+		return newfd;
+	} else {
+		return result;
+	}
 }
 
-static int find_kobject_by_intent( const char *intent )
+int sys_open_dir( int fd, const char *path, kernel_flags_t flags )
 {
-	int i;
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	// Check if intent is index-specified.
-	if(intent[0] == '#') {
-		str2int(&intent[1], &i);
-	} else {
-		// Find an intent matching the tag.
-		int max = process_object_max(current);
-		for(int i = max; i >= 0; i--) {
-			if(!strcmp(current->ktable[i]->intent, intent)) {
-				return i;
-			}
+       	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
+
+	struct kobject *newobj;
+	int result;
+
+	if(flags&KERNEL_FLAGS_CREATE) {
+		newobj = kobject_create_dir_from_dir( current->ktable[fd], path );
+		if(newobj) {
+			result = 0;
+		} else {
+			result = KERROR_NOT_FOUND;
 		}
+	} else {
+		result = kobject_lookup( current->ktable[fd], path, &newobj );
 	}
 
-	return KERROR_NOT_FOUND;
+	if(result>=0) {
+		current->ktable[newfd] = newobj;
+		return fd;
+	} else {
+		return result;
+	}
 }
 
-int sys_open_file(const char *path, int mode, int flags)
+int sys_open_file(const char *path, int mode, kernel_flags_t flags)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
-	const char *colon = strchr(path,':');
+	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
 
-	// If the colon comes at the end, then there is no path
-	if(colon && *(colon+1)==0 ) {
-		return KERROR_INVALID_REQUEST;
+	struct fs_dirent *d = fs_resolve(path);
+
+	if(fs_dirent_isdir(d)) {
+		fs_dirent_close(d);
+		return KERROR_NOT_A_FILE;
 	}
 
-	// If we have no tag, use everything as a path.
-	if(!colon) {
-		struct fs_dirent *d = fs_dirent_traverse(current->current_dir,path);
-		return open_dirent(d, path, mode, flags);
+	if(d) {
+		current->ktable[newfd] = kobject_create_file(d);
+		return newfd;
+	} else {
+		// XXX propagate better error
+		return KERROR_NOT_FOUND;
 	}
-
-	// The base path is whatever comes after the colon
-	const char *base_path = colon+1;
-
-	// Duplicate the intent path into a null terminated string.
-	char *intent = strndup(path,colon-path);
-	if(!intent) return KERROR_OUT_OF_MEMORY;
-
-	// Look up the corresponding object by intent
-	int fd = find_kobject_by_intent(intent);
-	kfree(intent);
-	if(fd<0) return fd;
-
-	// Open the file relative to that object.
-	return sys_open_file_relative(fd, base_path, mode, flags);
 }
 
 int sys_open_console(int wd)
@@ -391,9 +380,8 @@ int sys_open_console(int wd)
 	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
 
 	int fd = process_available_fd(current);
-	if(fd<0) {
-		return KERROR_NOT_FOUND;
-	}
+	if(fd<0) return KERROR_OUT_OF_OBJECTS;
+
 	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
 	return fd;
 }
@@ -499,6 +487,13 @@ int sys_object_seek(int fd, int offset, int whence)
 	return KERROR_NOT_IMPLEMENTED;
 }
 
+int sys_object_remove( int fd, const char *name )
+{
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_path(name)) return KERROR_INVALID_PATH;
+	return kobject_remove( current->ktable[fd], name );
+}
+
 int sys_object_close(int fd)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
@@ -589,36 +584,6 @@ int sys_system_rtc( struct rtc_time *t )
 	return 0;
 }
 
-int sys_mkdir(const char *path)
-{
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
-
-       	int fd = process_available_fd(current);
-	if(fd<0) return KERROR_OUT_OF_OBJECTS;
-
-	// XXX doesn't work -- separate parent and new directory.
-
-	struct fs_dirent *d = fs_dirent_mkdir(current->current_dir, path);
-	if(!d) return KERROR_NOT_FOUND;
-
-	current->ktable[fd] = kobject_create_dir(d);
-	return fd;
-}
-
-int sys_rmdir(const char *path)
-{
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
-
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		// XXX this API doesn't make sense.
-		return fs_dirent_remove(d, path);
-	} else {
-		// XXX get error back from namei
-		return -1;
-	}
-}
-
 int sys_chdir(const char *path)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
@@ -670,18 +635,18 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_process_stats((struct process_stats *) a, b);
 	case SYSCALL_PROCESS_HEAP:
 		return sys_process_heap(a);
-
 	case SYSCALL_OPEN_FILE:
 		return sys_open_file((const char *) a, b, c);
 	case SYSCALL_OPEN_FILE_RELATIVE:
 		return sys_open_file_relative(a, (const char *)b, c, d);
+	case SYSCALL_OPEN_DIR:
+		return sys_open_dir(a,(const char*)b,(kernel_flags_t)c);
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
 	case SYSCALL_OPEN_CONSOLE:
 		return sys_open_console(a);
 	case SYSCALL_OPEN_PIPE:
 		return sys_open_pipe();
-
 	case SYSCALL_OBJECT_TYPE:
 		return sys_object_type(a);
 	case SYSCALL_OBJECT_DUP:
@@ -696,6 +661,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_write(a, (void *) b, c);
 	case SYSCALL_OBJECT_SEEK:
 		return sys_object_seek(a, b, c);
+	case SYSCALL_OBJECT_REMOVE:
+		return sys_object_remove(a,(const char*)b);
 	case SYSCALL_OBJECT_CLOSE:
 		return sys_object_close(a);
 	case SYSCALL_OBJECT_STATS:
@@ -718,10 +685,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_system_time((uint32_t*)a);
 	case SYSCALL_SYSTEM_RTC:
 		return sys_system_rtc((struct rtc_time *) a);
-	case SYSCALL_MKDIR:
-		return sys_mkdir((const char *) a);
-	case SYSCALL_RMDIR:
-		return sys_rmdir((const char *) a);
+
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
 	default:

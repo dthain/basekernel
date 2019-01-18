@@ -247,10 +247,20 @@ static int kshell_execute(const char **argv, int argc)
 			printf("memory: %d/%d\n", memory_pages_free(), memory_pages_total());
 		}
 	} else if(!strcmp(cmd, "mkdir")) {
-		if(argc == 2) {
-			sys_mkdir(argv[1]);
+		if(argc == 3) {
+			struct fs_dirent *dir = fs_resolve(argv[1]);
+			if(dir) {
+				struct fs_dirent *n = fs_dirent_mkdir(dir,argv[2]);
+				if(!n) {
+					printf("mkdir: couldn't create %s\n",argv[2]);
+				}
+				fs_dirent_close(n);
+				fs_dirent_close(dir);
+			} else {
+				printf("mkdir: couldn't open %s\n",argv[1]);
+			}
 		} else {
-			printf("mkdir: missing argument\n");
+			printf("use: mkdir <parent-dir> <dirname>\n");
 		}
 	} else if(!strcmp(cmd, "format")) {
 		if(argc == 4) {
@@ -281,11 +291,20 @@ static int kshell_execute(const char **argv, int argc)
 			printf("install: expected unit #s for cdrom and disk\n");
 		}
 
-	} else if(!strcmp(cmd, "rmdir")) {
-		if(argc == 2) {
-			sys_rmdir(argv[1]);
+	} else if(!strcmp(cmd, "remove")) {
+		if(argc == 3) {
+			struct fs_dirent *dir = fs_resolve(argv[1]);
+			if(dir) {
+				int result = fs_dirent_remove(dir,argv[2]);
+				if(result<0) {
+					printf("remove: couldn't remove %s\n",argv[2]);
+				}
+				fs_dirent_close(dir);
+			} else {
+				printf("remove: couldn't open %s\n",argv[1]);
+			}
 		} else {
-			printf("rmdir: missing argument\n");
+			printf("use: remove <parent-dir> <filename>\n");
 		}
 	} else if(!strcmp(cmd, "chdir")) {
 		if(argc == 2) {
@@ -309,7 +328,7 @@ static int kshell_execute(const char **argv, int argc)
 	} else if(!strcmp(cmd,"bcache_flush")) {
 		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nrmdir <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

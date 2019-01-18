@@ -31,8 +31,9 @@ extern void *syscall_process_heap(int a);
 
 /* Syscalls that open or create new kernel objects for this process. */
 
-int syscall_open_file(const char *path, int mode, int flags);
-int syscall_open_file_relative(int fd, const char *path, int mode, int flags);
+int syscall_open_file(const char *path, int mode, kernel_flags_t flags);
+int syscall_open_file_relative(int fd, const char *path, int mode, kernel_flags_t flags);
+int syscall_open_dir( int fd, const char *name, kernel_flags_t flags );
 int syscall_open_window(int fd, int x, int y, int w, int h);
 int syscall_open_console(int fd);
 int syscall_open_pipe();
@@ -48,6 +49,7 @@ int syscall_object_write(int fd, void *data, int length);
 int syscall_object_seek(int fd, int offset, int whence);
 int syscall_object_size(int fd, int * dims, int n);
 int syscall_object_copy( int src, int dst );
+int syscall_object_remove( int fd, const char *name );
 int syscall_object_close(int fd);
 int syscall_object_stats(int fd, struct object_stats *stats );
 int syscall_object_set_intent(int fd, char *intent);
@@ -61,14 +63,11 @@ int syscall_system_stats(struct system_stats *s);
 int syscall_system_time( uint32_t *t );
 int syscall_system_rtc( struct rtc_time *t );
 
-
 /*
 These system calls are carryovers from Unix-like thinking
 and need to be reworked to fit the kernel object model.
 */
 
-int syscall_mkdir( const char *name );
-int syscall_rmdir( const char *path );
 int syscall_chdir( const char *path );
 
 #endif
