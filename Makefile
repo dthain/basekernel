@@ -9,11 +9,9 @@ KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 all: basekernel.iso
 
 run: basekernel.iso disk.img
-	cp disk.fresh disk.img
 	qemu-system-i386 -cdrom basekernel.iso -hda disk.img
 
 debug: basekernel.iso disk.img
-	cp disk.fresh disk.img
 	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
 
 disk.img:
