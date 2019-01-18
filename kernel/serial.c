@@ -1,3 +1,9 @@
+/*
+Copyright (C) 2016-2019 The University of Notre Dame
+This software is distributed under the GNU General Public License.
+See the file LICENSE for details.
+*/
+
 // Derived from: https://wiki.osdev.org/Serial_Ports#Example_Code
 // For more info:
 //     https://wiki.osdev.org/Serial_Ports

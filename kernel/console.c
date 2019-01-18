@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2015 The University of Notre Dame
+Copyright (C) 2015-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -51,9 +51,6 @@ int console_write( struct console *d, const char *data, int size )
 	int i;
 	for(i = 0; i < size; i++) {
 		char c = data[i];
-#ifdef TEST
-		serial_write(0, c);
-#endif
 		switch (c) {
 		case 13:
 		case 10:
