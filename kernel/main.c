@@ -39,9 +39,6 @@ int kernel_main()
 	struct graphics *g = graphics_create_root();
 
 	console_init(g);
-#ifdef TEST
-	serial_init();
-#endif
 
 	printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
 	printf("kernel: %d bytes\n", kernel_size);

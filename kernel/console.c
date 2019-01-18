@@ -51,9 +51,6 @@ int console_write( struct console *d, const char *data, int size )
 	int i;
 	for(i = 0; i < size; i++) {
 		char c = data[i];
-#ifdef TEST
-		serial_write(0, c);
-#endif
 		switch (c) {
 		case 13:
 		case 10:
