@@ -12,7 +12,7 @@ A trivial user level program to try out basic system calls.
 #include "library/string.h"
 #include "library/user-io.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	uint32_t j = 0;
 	syscall_chdir("/");

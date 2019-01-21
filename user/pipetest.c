@@ -2,7 +2,7 @@
 #include "library/user-io.h"
 #include "library/string.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	printf("%d: Running pipe test!\n", syscall_process_self());
 	int w = syscall_open_pipe();

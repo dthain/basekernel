@@ -9,7 +9,8 @@ See the file LICENSE for details.
 #include "kernel/stats.h"
 #include "library/string.h"
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[])
+{
 	if (argc <= 1) {
 		printf("No program to run\n");
 		return 1;

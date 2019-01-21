@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/malloc.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	printf("hello world, I am %d, and I have %d arguments!\n", syscall_process_self(), argc);
 

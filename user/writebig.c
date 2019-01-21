@@ -12,7 +12,7 @@ A trivial user level program to try out basic system calls.
 #include "library/string.h"
 #include "library/user-io.h"
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
 	syscall_chdir("/");
 	printf("got root\n");

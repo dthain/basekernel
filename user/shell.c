@@ -120,7 +120,7 @@ int do_command(char *line)
 	return 0;
 }
 
-int main(char **argv, int argc)
+int main(int argc, char *argv[])
 {
 	printf("User shell ready:\n");
 	char line[1024];

@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/user-io.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	syscall_chdir("/");
 	printf("got root\n");

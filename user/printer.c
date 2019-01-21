@@ -15,7 +15,7 @@ A fun graphics demo that features a line segment bouncing around the screen.
 #define WIDTH    (200)
 #define HEIGHT   (200)
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	draw_window(KNO_STDWIN);
 	draw_color(0, 0, 255);

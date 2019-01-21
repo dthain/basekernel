@@ -1,7 +1,7 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 
-int main()
+int main(int argc, char *argv[])
 {
 	int pid = syscall_process_fork();
 
