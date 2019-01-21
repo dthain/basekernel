@@ -15,9 +15,9 @@ must invoke the syscall_process_exit() system call to terminate the process.
 
 #include "library/syscalls.h"
 
-int main(const char *argv[], int argc);
+int main(int argc, const char *argv[]);
 
-void _start(const char **argv, int argc)
+void _start(int argc, const char **argv)
 {
-	syscall_process_exit(main(argv, argc));
+	syscall_process_exit(main(argc, argv));
 }
