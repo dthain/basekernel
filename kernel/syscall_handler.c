@@ -33,7 +33,7 @@ syscall_handler() is responsible for decoding system calls
 as they arrive, converting raw integers into the appropriate
 types, depending on the system call number.  Then, each
 individual handler routine checks the validity of each
-argument (fd in range, valid path, etc) and invokes the 
+argument (fd in range, valid path, etc) and invokes the
 underlying system within the kernel.  Ideally, each of these
 handler functions should be short (only a few lines)
 and simply make use of functionality within other kernel modules.
@@ -98,7 +98,7 @@ way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
-int sys_process_run(const char *path, const char **argv, int argc)
+int sys_process_run(const char *path, int argc, const char **argv)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -147,7 +147,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 }
 
 /* Function creates a child process with the standard window replaced by wd */
-int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, int fd_len)
+int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, int fd_len)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -197,7 +197,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, in
 	return p->pid;
 }
 
-int sys_process_exec(const char *path, const char **argv, int argc)
+int sys_process_exec(const char *path, int argc, const char **argv)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -612,13 +612,13 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_EXIT:
 		return sys_process_exit(a);
 	case SYSCALL_PROCESS_RUN:
-		return sys_process_run((const char *) a, (const char **) b, c);
+		return sys_process_run((const char *) a, b, (const char **)c);
 	case SYSCALL_PROCESS_WRUN:
-		return sys_process_wrun((const char *) a, (const char **) b, c, (int *) d, e);
+		return sys_process_wrun((const char *) a, b, (const char **) c, (int *) d, e);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
-		return sys_process_exec((const char *) a, (const char **) b, c);
+		return sys_process_exec((const char *) a, b, (const char **) c);
 	case SYSCALL_PROCESS_SELF:
 		return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:

@@ -6,7 +6,7 @@
 
 #define INTENT_BUFFER_SIZE 256
 
-int main(const char **argv, int argc)
+int main(int argc, char *argv[])
 {
 	char *intent_value = "A simple intent string";
 

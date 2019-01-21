@@ -1,7 +1,7 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	printf("hello world, I am %d.\n", syscall_process_self());
 	int x = syscall_process_fork();

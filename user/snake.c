@@ -35,7 +35,7 @@ void update_snake(struct coords *snake_coords, uint16_t x_next, uint16_t y_next,
 void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps, uint16_t y_steps);
 
 /* Main Execution */
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	uint16_t WIDTH = 200;
 	uint16_t HEIGHT = 200;

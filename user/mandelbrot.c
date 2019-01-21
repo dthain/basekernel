@@ -25,7 +25,7 @@ typedef struct Complex {
 int in_set(Complex c);
 void plot_point(int iter_val, int j, int k);
 
-int main(const char ** argv, int argc)
+int main(int argc, char *argv[])
 {
 	/* Set up params */
 	int dim = 400;

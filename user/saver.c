@@ -17,7 +17,7 @@ typedef unsigned int uint32_t;
 uint32_t randint(uint32_t min, uint32_t max);
 void move(int *x, int *d, int min, int max);
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	int r = 255;
 	int g = 0;

@@ -142,7 +142,7 @@ void process_inherit(struct process *parent, struct process *child)
 			fds[i] = i;
 		} else {
 			fds[i] = -1;
-		}	
+		}
 	}
 	process_selective_inherit(parent, child, fds, PROCESS_MAX_OBJECTS);
 	kfree(fds);
@@ -548,8 +548,8 @@ void process_pass_arguments(struct process *p, int argc, char **argv)
 	const char *addr_of_addr_of_argv = esp;
 
 	/* Push the arguments to main */
-	PUSH_INTEGER(argc);
 	PUSH_INTEGER(addr_of_addr_of_argv);
+	PUSH_INTEGER(argc);
 
 	/* Final stack pointer should be below the last item. */
 	esp -= 4;

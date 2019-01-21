@@ -10,7 +10,7 @@ See the file LICENSE for details.
 #include "library/user-io.h"
 #include "kernel/types.h"
 
-/* 
+/*
 	Display time in a window
 */
 
@@ -18,7 +18,7 @@ See the file LICENSE for details.
 void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b);
 void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b);
 
-int main(const char ** argv, int argc) 
+int main(int argc, char *argv[])
 {
 	/* Configure clock params */
 	int military = 0;
@@ -59,7 +59,7 @@ int main(const char ** argv, int argc)
 	return 0;
 }
 
-void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b) 
+void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b)
 {
 	draw_color(r, b, g);
 	draw_rect(x, y, w, thickness);
@@ -77,12 +77,12 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 
 	/* Configure time */
 	int tz_hour = (int)hour - timezone;
-	if (tz_hour < 0) 
+	if (tz_hour < 0)
 	{
 		tz_hour += 24;
 	}
 
-	if (military == 0 && tz_hour > 12) 
+	if (military == 0 && tz_hour > 12)
 	{
 		tz_hour -= 12;
 	}
@@ -91,13 +91,13 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 	uint_to_string(minute, m_str);
 
 	/* Format time string */
-	if (strlen(h_str) == 1) 
+	if (strlen(h_str) == 1)
 	{
 		strcat(time, " ");
 	}
 	strcat(time, (const char *) h_str);
 	strcat(time, ":");
-	if (strlen(m_str) == 1) 
+	if (strlen(m_str) == 1)
 	{
 		strcat(time, "0");
 	}

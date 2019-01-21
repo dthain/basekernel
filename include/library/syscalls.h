@@ -16,10 +16,10 @@ void syscall_debug(const char *str);
 
 void syscall_process_exit(int status);
 int syscall_process_yield();
-int syscall_process_run(const char *cmd, const char **argv, int argc);
-int syscall_process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
+int syscall_process_run(const char *cmd, int argc, const char **argv);
+int syscall_process_wrun(const char *cmd, int argc, const char **argv,  int * fds, int fd_len);
 int syscall_process_fork();
-int syscall_process_exec(const char *path, const char **argv, int argc);
+int syscall_process_exec(const char *path, int argc, const char **argv);
 int syscall_process_self();
 int syscall_process_parent();
 int syscall_process_kill(unsigned int pid);

@@ -10,7 +10,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/errno.h"
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
 	if(argc!=3) {
 		printf("%s: <sourcepath> <destpath>\n");

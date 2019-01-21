@@ -73,7 +73,7 @@ char *shakespeare[] = {
 	"Ordenance are shot off.",
 };
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	int i;
 	for(i = 0; i < sizeof(shakespeare) / sizeof(char *); i++) {
