@@ -23,14 +23,14 @@ int syscall_process_yield()
 	return syscall(SYSCALL_PROCESS_YIELD, 0, 0, 0, 0, 0);
 }
 
-int syscall_process_run(const char *cmd, const char **argv, int argc)
+int syscall_process_run(const char *cmd, int argc, const char **argv)
 {
-	return syscall(SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0);
+	return syscall(SYSCALL_PROCESS_RUN, (uint32_t) cmd, argc, (uint32_t) argv, 0, 0);
 }
 
-int syscall_process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len)
+int syscall_process_wrun(const char *cmd, int argc, const char **argv, int * fds, int fd_len)
 {
-	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) fds, fd_len);
+	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, argc, (uint32_t) argv, (uint32_t) fds, fd_len);
 }
 
 int syscall_process_fork()
@@ -38,9 +38,9 @@ int syscall_process_fork()
 	return syscall(SYSCALL_PROCESS_FORK, 0, 0, 0, 0, 0);
 }
 
-void syscall_process_exec(const char *path, const char **argv, int argc)
+void syscall_process_exec(const char *path, int argc, const char **argv)
 {
-	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
+	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, argc, (uint32_t) argv, 0, 0);
 }
 
 int syscall_process_self()
@@ -207,5 +207,3 @@ int syscall_chdir(const char *path)
 {
 	return syscall(SYSCALL_CHDIR, (uint32_t) path, 0, 0, 0, 0);
 }
-
-
