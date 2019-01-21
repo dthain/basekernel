@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		fds[p_i][2] = fds[p_i][1];
 
 		// Take in an array of FD's
-		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
+		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].argc, programs[p_i].args, fds[p_i], 4);
 		draw_window(KNO_STDWIN);
 		draw_border(placement[p_i][0] - 2*padding, placement[p_i][1] - 2*padding, programs[p_i].w + 4*padding, programs[p_i].h + 4*padding, padding, 255, 255, 255);
 		draw_flush();

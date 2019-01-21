@@ -36,7 +36,7 @@ int do_command(char *line)
 			if(pid != 0) {
 				printf("started process %d\n", pid);
 			} else {
-				syscall_process_exec(pch, argv, 2);
+				syscall_process_exec(pch, 2, argv);
 			}
 		} else
 			printf("start: missing argument\n");
@@ -50,7 +50,7 @@ int do_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = syscall_process_run(argv[0], &argv[0], i);
+			int pid = syscall_process_run(argv[0], i,  &argv[0]);
 			if(pid > 0) {
 				printf("started process %d\n", pid);
 				syscall_process_yield();
