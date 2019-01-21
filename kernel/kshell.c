@@ -131,13 +131,13 @@ static int kshell_listdir(const char *path)
 	return 0;
 }
 
-static int kshell_execute(const char **argv, int argc)
+static int kshell_execute(int argc, const char **argv)
 {
 	const char *cmd = argv[0];
 
 	if(!strcmp(cmd, "start")) {
 		if(argc > 1) {
-			int pid = sys_process_run(argv[1], &argv[1], argc - 1);
+			int pid = sys_process_run(argv[1], argc - 1,  &argv[1]);
 			if(pid > 0) {
 				printf("started process %d\n", pid);
 				process_yield();
@@ -149,7 +149,7 @@ static int kshell_execute(const char **argv, int argc)
 		}
 	} else if(!strcmp(cmd, "exec")) {
 		if(argc > 1) {
-			sys_process_exec(argv[1], &argv[1], argc - 1);
+			sys_process_exec(argv[1], argc - 1, &argv[1]);
 			process_yield();
 			printf("couldn't exec %s\n", argv[1]);
 		} else {
@@ -157,7 +157,7 @@ static int kshell_execute(const char **argv, int argc)
 		}
 	} else if(!strcmp(cmd, "run")) {
 		if(argc > 1) {
-			int pid = sys_process_run(argv[1], &argv[1], argc - 1);
+			int pid = sys_process_run(argv[1], argc - 1, &argv[1]);
 			if(pid > 0) {
 				printf("started process %d\n", pid);
 				process_yield();
@@ -234,7 +234,7 @@ static int kshell_execute(const char **argv, int argc)
 	} else if(!strcmp(cmd, "stress")) {
 		while(1) {
 			const char *argv[] = { "test.exe", "arg1", "arg2", "arg3", "arg4", "arg5", 0 };
-			int pid = sys_process_run("/bin/test.exe", argv, 6);
+			int pid = sys_process_run("/bin/test.exe", 6, argv);
 			if(pid > 0) {
 				struct process_info info;
 				process_wait_child(pid, &info, -1);
@@ -378,7 +378,7 @@ int kshell_launch()
 		}
 
 		if(argc > 0) {
-			kshell_execute(argv, argc);
+			kshell_execute(argc, argv);
 		}
 	}
 
