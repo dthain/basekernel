@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	syscall_chdir("/");
 	printf("got root\n");
 	int dir_fd = syscall_open_file("/", 0, 0);
-	syscall_object_set_intent(dir_fd, "ROOT");
+	syscall_object_set_tag(dir_fd, "ROOT");
 	printf("Opened root directory\n");
 	int fd = syscall_open_file("ROOT:/data/words", 0, 0);
 	char buffer[1000];

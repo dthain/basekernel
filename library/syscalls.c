@@ -158,14 +158,14 @@ int syscall_object_close(int fd)
 	return syscall(SYSCALL_OBJECT_CLOSE, fd, 0, 0, 0, 0);
 }
 
-int syscall_object_set_intent(int fd, char *intent)
+int syscall_object_set_tag(int fd, char *tag)
 {
-	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, (uint32_t)intent, 0, 0, 0);
+	return syscall(SYSCALL_OBJECT_SET_TAG, fd, (uint32_t)tag, 0, 0, 0);
 }
 
-int syscall_object_get_intent(int fd, char *buffer, int buffer_size)
+int syscall_object_get_tag(int fd, char *buffer, int buffer_size)
 {
-	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, (uint32_t)buffer, buffer_size, 0, 0);
+	return syscall(SYSCALL_OBJECT_GET_TAG, fd, (uint32_t)buffer, buffer_size, 0, 0);
 }
 
 int syscall_object_set_blocking(int fd, int b)

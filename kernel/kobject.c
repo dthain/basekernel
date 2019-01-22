@@ -22,7 +22,7 @@ static struct kobject *kobject_init()
 	struct kobject *k = kmalloc(sizeof(*k));
 	k->refcount = 1;
 	k->offset = 0;
-	k->intent = 0;
+	k->tag = 0;
 	return k;
 }
 
@@ -359,20 +359,20 @@ int kobject_get_type(struct kobject *kobject)
 	return kobject->type;
 }
 
-int kobject_set_intent(struct kobject *kobject, char *new_intent)
+int kobject_set_tag(struct kobject *kobject, char *new_tag)
 {
-	if(kobject->intent != 0) {
-		kfree(kobject->intent);
+	if(kobject->tag != 0) {
+		kfree(kobject->tag);
 	}
-	kobject->intent = kmalloc(strlen(new_intent) * sizeof(char));
-	strcpy(kobject->intent, new_intent);
+	kobject->tag = kmalloc(strlen(new_tag) * sizeof(char));
+	strcpy(kobject->tag, new_tag);
 	return 1;
 }
 
-int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size)
+int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
 {
-	if(kobject->intent != 0) {
-		strcpy(buffer, kobject->intent);
+	if(kobject->tag != 0) {
+		strcpy(buffer, kobject->tag);
 		return 1;
 	}
 	return 0;

@@ -27,7 +27,7 @@ struct kobject {
 	kobject_type_t type;
 	int refcount;
 	int offset;
-	char *intent;
+	char *tag;
 };
 
 struct kobject *kobject_create_file(struct fs_dirent *f);
@@ -56,7 +56,7 @@ int kobject_close(struct kobject *kobject);
 
 int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_type(struct kobject *kobject);
-int kobject_set_intent(struct kobject *kobject, char *new_intent);
-int kobject_get_intent(struct kobject *kobject, char *buffer, int buffer_size);
+int kobject_set_tag(struct kobject *kobject, char *new_tag);
+int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size);
 
 #endif

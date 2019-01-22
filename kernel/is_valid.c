@@ -54,7 +54,7 @@ int is_valid_tag(const char * s)
 }
 
 // Does this string point to a valid resource (i.e. is it a legitimate
-// intent-path concatenation)?
+// tag-path concatenation)?
 // CHARS		|	ASCII CODE
 // ':'			|	58
 
@@ -152,7 +152,7 @@ void is_valid_test()
 	s = "/root/is-valid.path";
 	if (!is_valid_path(s))
 		printf("ERROR: Did not validate %s\n", s);
-	s = "BAD-INTENT:p@th/:/root/dir";
+	s = "BAD-TAG:p@th/:/root/dir";
 	if (is_valid_location(s))
 		printf("ERROR: Did not invalidate %s\n", s);
 
