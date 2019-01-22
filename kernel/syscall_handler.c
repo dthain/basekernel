@@ -509,17 +509,17 @@ int sys_object_stats( int fd, struct object_stats *stats )
 	return KERROR_NOT_IMPLEMENTED;
 }
 
-int sys_object_set_intent(int fd, char *intent)
+int sys_object_set_tag(int fd, char *tag)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	kobject_set_intent(current->ktable[fd], intent);
+	kobject_set_tag(current->ktable[fd], tag);
 	return 0;
 }
 
-int sys_object_get_intent(int fd, char *buffer, int buffer_size)
+int sys_object_get_tag(int fd, char *buffer, int buffer_size)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
+	return kobject_get_tag(current->ktable[fd], buffer, buffer_size);
 }
 
 int sys_object_set_blocking(int fd, int b)
@@ -667,10 +667,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_close(a);
 	case SYSCALL_OBJECT_STATS:
 		return sys_object_stats(a, (struct object_stats *) b);
-	case SYSCALL_OBJECT_SET_INTENT:
-		return sys_object_set_intent(a, (char *) b);
-	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a, (char *) b, c);
+	case SYSCALL_OBJECT_SET_TAG:
+		return sys_object_set_tag(a, (char *) b);
+	case SYSCALL_OBJECT_GET_TAG:
+		return sys_object_get_tag(a, (char *) b, c);
 	case SYSCALL_OBJECT_SET_BLOCKING:
 		return sys_object_set_blocking(a, b);
 	case SYSCALL_OBJECT_SIZE:
