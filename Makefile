@@ -31,7 +31,7 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 	mkdir image image/boot image/bin image/data
 	cp kernel/basekernel.img image/boot
 	cp $(USER_PROGRAMS) image/bin
-	head -20001 /usr/share/dict/words > image/data/words
+	head -2000 /usr/share/dict/words > image/data/words
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
