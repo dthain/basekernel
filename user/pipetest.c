@@ -10,7 +10,7 @@ int main(const char *argv[], int argc)
 	int x = syscall_process_fork();
 	if(x) {
 		printf("%d: Writing...\n", syscall_process_self());
-		syscall_object_dup(w, KNO_STDOUT);
+		syscall_object_dup(KNO_STDOUT, w);
 		printf("Testing!\n");
 		syscall_process_sleep(1000);
 	} else {

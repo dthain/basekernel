@@ -27,7 +27,7 @@ int main(const char *argv[], int argc)
 		printf("Console open failed!\n");
 		return 2;
 	}
-	syscall_object_dup(cd, KNO_STDOUT);
+	syscall_object_dup(KNO_STDOUT, cd);
 
 	printf("hello world!\n");
 

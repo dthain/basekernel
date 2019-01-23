@@ -33,7 +33,7 @@ syscall_handler() is responsible for decoding system calls
 as they arrive, converting raw integers into the appropriate
 types, depending on the system call number.  Then, each
 individual handler routine checks the validity of each
-argument (fd in range, valid path, etc) and invokes the 
+argument (fd in range, valid path, etc) and invokes the
 underlying system within the kernel.  Ideally, each of these
 handler functions should be short (only a few lines)
 and simply make use of functionality within other kernel modules.
@@ -431,25 +431,22 @@ int sys_object_type(int fd)
 	return fd_type;
 }
 
-// XXX the direction of dup here is backwards from the typical unix,
-// which dups the second argument into the first.
-
 int sys_object_dup(int fd1, int fd2)
 {
-	if(!is_valid_object(fd1)) return KERROR_INVALID_OBJECT;
-	if(fd2>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object(fd2)) return KERROR_INVALID_OBJECT;
+	if(fd1>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
 
-	if(fd2 < 0) {
-		fd2 = process_available_fd(current);
-		if(!fd2) {
+	if(fd1 < 0) {
+		fd1 = process_available_fd(current);
+		if(!fd1) {
 			return KERROR_NOT_FOUND;
 		}
 	}
-	if(current->ktable[fd2]) {
-		kobject_close(current->ktable[fd2]);
+	if(current->ktable[fd1]) {
+		kobject_close(current->ktable[fd1]);
 	}
-	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
-	return fd2;
+	current->ktable[fd1] = kobject_addref(current->ktable[fd2]);
+	return fd1;
 }
 
 int sys_object_read(int fd, void *data, int length)
