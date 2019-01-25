@@ -1,10 +1,16 @@
+/*
+Copyright (C) 2016-2019 The University of Notre Dame
+This software is distributed under the GNU General Public License.
+See the file LICENSE for details.
+*/
+
 #ifndef SYSCALL_HANDLER_H
 #define SYSCALL_HANDLER_H
 
 /* Only kernel/syscall.handlers invoked by other parts of kernel code should be declared here. */
 
-int sys_process_run(const char *path, const char **argv, int argc);
-int sys_process_exec(const char *path, const char **argv, int argc);
+int sys_process_run(const char *path, int argc, const char **argv);
+int sys_process_exec(const char *path, int argc, const char **argv);
 
 int sys_process_sleep(unsigned int ms);
 

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2018 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -9,7 +9,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/user-io.h"
 
-/* 
+/*
 	Have a list of programs and windows that we want to run in certain sized windows
 	and place them across the screen
 */
@@ -30,7 +30,8 @@ void mergeSort(program * programs, int l, int r);
 void merge(program * arr, int l, int m, int r);
 
 
-int main(const char ** argv, int argc) {
+int main(int argc, char *argv[])
+{
 	/* Eventually, programs wont be hardcoded */
 	const char *args1[] = { "/bin/snake.exe" };
 	const char *args2[] = { "/bin/clock.exe", "08:40" };
@@ -109,7 +110,7 @@ int main(const char ** argv, int argc) {
 		fds[p_i][2] = fds[p_i][1];
 
 		// Take in an array of FD's
-		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].args, programs[p_i].argc, fds[p_i], 4);
+		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].argc, programs[p_i].args, fds[p_i], 4);
 		draw_window(KNO_STDWIN);
 		draw_border(placement[p_i][0] - 2*padding, placement[p_i][1] - 2*padding, programs[p_i].w + 4*padding, programs[p_i].h + 4*padding, padding, 255, 255, 255);
 		draw_flush();
@@ -137,7 +138,7 @@ int main(const char ** argv, int argc) {
 			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 255, 255, 255);
 			draw_flush();
 			p_act = (p_act + 1) % num_programs;
-			
+
 			/* Draw green window around active process and start it */
 			draw_window(KNO_STDWIN);
 			draw_border(placement[p_act][0] - 2*padding, placement[p_act][1] - 2*padding, programs[p_act].w + 4*padding, programs[p_act].h + 4*padding, padding, 0, 0, 255);

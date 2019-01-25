@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -23,14 +23,14 @@ int syscall_process_yield()
 	return syscall(SYSCALL_PROCESS_YIELD, 0, 0, 0, 0, 0);
 }
 
-int syscall_process_run(const char *cmd, const char **argv, int argc)
+int syscall_process_run(const char *cmd, int argc, const char **argv)
 {
-	return syscall(SYSCALL_PROCESS_RUN, (uint32_t) cmd, (uint32_t) argv, argc, 0, 0);
+	return syscall(SYSCALL_PROCESS_RUN, (uint32_t) cmd, argc, (uint32_t) argv, 0, 0);
 }
 
-int syscall_process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len)
+int syscall_process_wrun(const char *cmd, int argc, const char **argv, int * fds, int fd_len)
 {
-	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, (uint32_t) argv, argc, (uint32_t) fds, fd_len);
+	return syscall(SYSCALL_PROCESS_WRUN, (uint32_t) cmd, argc, (uint32_t) argv, (uint32_t) fds, fd_len);
 }
 
 int syscall_process_fork()
@@ -38,9 +38,9 @@ int syscall_process_fork()
 	return syscall(SYSCALL_PROCESS_FORK, 0, 0, 0, 0, 0);
 }
 
-void syscall_process_exec(const char *path, const char **argv, int argc)
+void syscall_process_exec(const char *path, int argc, const char **argv)
 {
-	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, (uint32_t) argv, (uint32_t) argc, 0, 0);
+	syscall(SYSCALL_PROCESS_EXEC, (uint32_t) path, argc, (uint32_t) argv, 0, 0);
 }
 
 int syscall_process_self()
@@ -158,14 +158,14 @@ int syscall_object_close(int fd)
 	return syscall(SYSCALL_OBJECT_CLOSE, fd, 0, 0, 0, 0);
 }
 
-int syscall_object_set_intent(int fd, char *intent)
+int syscall_object_set_tag(int fd, char *tag)
 {
-	return syscall(SYSCALL_OBJECT_SET_INTENT, fd, (uint32_t)intent, 0, 0, 0);
+	return syscall(SYSCALL_OBJECT_SET_TAG, fd, (uint32_t)tag, 0, 0, 0);
 }
 
-int syscall_object_get_intent(int fd, char *buffer, int buffer_size)
+int syscall_object_get_tag(int fd, char *buffer, int buffer_size)
 {
-	return syscall(SYSCALL_OBJECT_GET_INTENT, fd, (uint32_t)buffer, buffer_size, 0, 0);
+	return syscall(SYSCALL_OBJECT_GET_TAG, fd, (uint32_t)buffer, buffer_size, 0, 0);
 }
 
 int syscall_object_set_blocking(int fd, int b)
@@ -207,5 +207,3 @@ int syscall_chdir(const char *path)
 {
 	return syscall(SYSCALL_CHDIR, (uint32_t) path, 0, 0, 0, 0);
 }
-
-

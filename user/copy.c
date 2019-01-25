@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2018 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -10,7 +10,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/errno.h"
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
 	if(argc!=3) {
 		printf("%s: <sourcepath> <destpath>\n");

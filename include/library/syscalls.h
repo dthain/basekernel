@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -16,10 +16,10 @@ void syscall_debug(const char *str);
 
 void syscall_process_exit(int status);
 int syscall_process_yield();
-int syscall_process_run(const char *cmd, const char **argv, int argc);
-int syscall_process_wrun(const char *cmd, const char **argv, int argc, int * fds, int fd_len);
+int syscall_process_run(const char *cmd, int argc, const char **argv);
+int syscall_process_wrun(const char *cmd, int argc, const char **argv,  int * fds, int fd_len);
 int syscall_process_fork();
-int syscall_process_exec(const char *path, const char **argv, int argc);
+int syscall_process_exec(const char *path, int argc, const char **argv);
 int syscall_process_self();
 int syscall_process_parent();
 int syscall_process_kill(unsigned int pid);
@@ -52,8 +52,8 @@ int syscall_object_copy( int src, int dst );
 int syscall_object_remove( int fd, const char *name );
 int syscall_object_close(int fd);
 int syscall_object_stats(int fd, struct object_stats *stats );
-int syscall_object_set_intent(int fd, char *intent);
-int syscall_object_get_intent(int fd, char *buffer, int buffer_size);
+int syscall_object_set_tag(int fd, char *tag);
+int syscall_object_get_tag(int fd, char *buffer, int buffer_size);
 int syscall_object_set_blocking(int fd, int b);
 int syscall_object_max();
 

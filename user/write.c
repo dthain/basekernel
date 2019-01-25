@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -12,7 +12,7 @@ A trivial user level program to try out basic system calls.
 #include "library/string.h"
 #include "library/user-io.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	uint32_t j = 0;
 	syscall_chdir("/");

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -73,7 +73,7 @@ char *shakespeare[] = {
 	"Ordenance are shot off.",
 };
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	int i;
 	for(i = 0; i < sizeof(shakespeare) / sizeof(char *); i++) {

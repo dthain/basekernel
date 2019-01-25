@@ -1,3 +1,8 @@
+/*
+Copyright (C) 2016-2019 The University of Notre Dame
+This software is distributed under the GNU General Public License.
+See the file LICENSE for details.
+*/
 
 #include "fs.h"
 #include "fs_internal.h"
@@ -9,20 +14,20 @@
 
 static struct fs *fs_list = 0;
 
-static struct kobject * find_kobject_by_intent( const char *intent )
+static struct kobject * find_kobject_by_tag( const char *tag )
 {
 	int i;
 
-	// Check if intent is index-specified.
-	if(intent[0] == '#') {
-		str2int(&intent[1], &i);
+	// Check if tag is index-specified.
+	if(tag[0] == '#') {
+		str2int(&tag[1], &i);
 		return current->ktable[i];
 	} else {
-		// Find an intent matching the tag.
+		// Find an tag matching the tag.
 		int max = process_object_max(current);
 		for(i=0;i<max;i++) {
 			struct kobject *k = current->ktable[i];
-			if(k && !strcmp(k->intent,intent)) {
+			if(k && !strcmp(k->tag,tag)) {
 				return k;
 			}
 		}
@@ -52,7 +57,7 @@ struct fs_dirent *fs_resolve(const char *path)
 		tagstr[length] = 0;
 
 		// Look up the object associated with that tag
-		struct kobject *tagobj = find_kobject_by_intent(tagstr);
+		struct kobject *tagobj = find_kobject_by_tag(tagstr);
 		kfree(tagstr);
 		if(!tagobj) return 0;
 		// XXX KERROR_NOT_FOUND;

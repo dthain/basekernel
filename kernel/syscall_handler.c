@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2015 The University of Notre Dame
+Copyright (C) 2015-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -33,7 +33,7 @@ syscall_handler() is responsible for decoding system calls
 as they arrive, converting raw integers into the appropriate
 types, depending on the system call number.  Then, each
 individual handler routine checks the validity of each
-argument (fd in range, valid path, etc) and invokes the 
+argument (fd in range, valid path, etc) and invokes the
 underlying system within the kernel.  Ideally, each of these
 handler functions should be short (only a few lines)
 and simply make use of functionality within other kernel modules.
@@ -98,7 +98,7 @@ way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
-int sys_process_run(const char *path, const char **argv, int argc)
+int sys_process_run(const char *path, int argc, const char **argv)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -147,7 +147,7 @@ int sys_process_run(const char *path, const char **argv, int argc)
 }
 
 /* Function creates a child process with the standard window replaced by wd */
-int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, int fd_len)
+int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, int fd_len)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -197,7 +197,7 @@ int sys_process_wrun(const char *path, const char **argv, int argc, int *fds, in
 	return p->pid;
 }
 
-int sys_process_exec(const char *path, const char **argv, int argc)
+int sys_process_exec(const char *path, int argc, const char **argv)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
 
@@ -509,17 +509,17 @@ int sys_object_stats( int fd, struct object_stats *stats )
 	return KERROR_NOT_IMPLEMENTED;
 }
 
-int sys_object_set_intent(int fd, char *intent)
+int sys_object_set_tag(int fd, char *tag)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	kobject_set_intent(current->ktable[fd], intent);
+	kobject_set_tag(current->ktable[fd], tag);
 	return 0;
 }
 
-int sys_object_get_intent(int fd, char *buffer, int buffer_size)
+int sys_object_get_tag(int fd, char *buffer, int buffer_size)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	return kobject_get_intent(current->ktable[fd], buffer, buffer_size);
+	return kobject_get_tag(current->ktable[fd], buffer, buffer_size);
 }
 
 int sys_object_set_blocking(int fd, int b)
@@ -612,13 +612,13 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_EXIT:
 		return sys_process_exit(a);
 	case SYSCALL_PROCESS_RUN:
-		return sys_process_run((const char *) a, (const char **) b, c);
+		return sys_process_run((const char *) a, b, (const char **)c);
 	case SYSCALL_PROCESS_WRUN:
-		return sys_process_wrun((const char *) a, (const char **) b, c, (int *) d, e);
+		return sys_process_wrun((const char *) a, b, (const char **) c, (int *) d, e);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
-		return sys_process_exec((const char *) a, (const char **) b, c);
+		return sys_process_exec((const char *) a, b, (const char **) c);
 	case SYSCALL_PROCESS_SELF:
 		return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:
@@ -667,10 +667,10 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_close(a);
 	case SYSCALL_OBJECT_STATS:
 		return sys_object_stats(a, (struct object_stats *) b);
-	case SYSCALL_OBJECT_SET_INTENT:
-		return sys_object_set_intent(a, (char *) b);
-	case SYSCALL_OBJECT_GET_INTENT:
-		return sys_object_get_intent(a, (char *) b, c);
+	case SYSCALL_OBJECT_SET_TAG:
+		return sys_object_set_tag(a, (char *) b);
+	case SYSCALL_OBJECT_GET_TAG:
+		return sys_object_get_tag(a, (char *) b, c);
 	case SYSCALL_OBJECT_SET_BLOCKING:
 		return sys_object_set_blocking(a, b);
 	case SYSCALL_OBJECT_SIZE:

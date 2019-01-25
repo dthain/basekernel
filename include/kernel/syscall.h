@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -44,8 +44,8 @@ typedef enum {
 	SYSCALL_OBJECT_REMOVE,
 	SYSCALL_OBJECT_CLOSE,
 	SYSCALL_OBJECT_STATS,
-	SYSCALL_OBJECT_SET_INTENT,
-	SYSCALL_OBJECT_GET_INTENT,
+	SYSCALL_OBJECT_SET_TAG,
+	SYSCALL_OBJECT_GET_TAG,
 	SYSCALL_OBJECT_SET_BLOCKING,
 	SYSCALL_OBJECT_MAX,
 	SYSCALL_SYSTEM_STATS,

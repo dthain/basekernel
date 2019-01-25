@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -17,7 +17,7 @@ typedef unsigned int uint32_t;
 uint32_t randint(uint32_t min, uint32_t max);
 void move(int *x, int *d, int min, int max);
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	int r = 255;
 	int g = 0;

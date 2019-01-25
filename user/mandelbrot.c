@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2018 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -25,7 +25,7 @@ typedef struct Complex {
 int in_set(Complex c);
 void plot_point(int iter_val, int j, int k);
 
-int main(const char ** argv, int argc)
+int main(int argc, char *argv[])
 {
 	/* Set up params */
 	int dim = 400;

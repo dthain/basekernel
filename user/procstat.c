@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2018 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -9,7 +9,8 @@ See the file LICENSE for details.
 #include "kernel/stats.h"
 #include "library/string.h"
 
-int main(int argc, char const *argv[]) {
+int main(int argc, const char *argv[])
+{
 	if (argc <= 1) {
 		printf("No program to run\n");
 		return 1;
@@ -18,7 +19,7 @@ int main(int argc, char const *argv[]) {
 	syscall_system_time(&startTime);
 	int pid = syscall_process_fork();
 	if (pid == 0) { // child
-		syscall_process_exec(argv[1], &argv[1], argc-1);
+		syscall_process_exec(argv[1], argc-1, &argv[1]);
 		printf("exec failed\n");
 		return 1;
 	} else if (pid < 0) {

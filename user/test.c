@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/malloc.h"
 
-int main(const char *argv[], int argc)
+int main(int argc, char *argv[])
 {
 	printf("hello world, I am %d, and I have %d arguments!\n", syscall_process_self(), argc);
 

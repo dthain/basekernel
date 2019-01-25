@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2017 The University of Notre Dame
+Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
@@ -15,9 +15,9 @@ must invoke the syscall_process_exit() system call to terminate the process.
 
 #include "library/syscalls.h"
 
-int main(const char *argv[], int argc);
+int main(int argc, const char *argv[]);
 
-void _start(const char **argv, int argc)
+void _start(int argc, const char **argv)
 {
-	syscall_process_exit(main(argv, argc));
+	syscall_process_exit(main(argc, argv));
 }
