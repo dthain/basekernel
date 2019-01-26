@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "bcache.h"
 #include "list.h"
-#include "memory.h"
+#include "page.h"
 #include "kmalloc.h"
 #include "string.h"
 #include "kernel/error.h"
@@ -30,7 +30,7 @@ struct bcache_entry * bcache_entry_create( struct device *device, int block )
 
 	e->device = device;
 	e->block = block;
-	e->data = memory_alloc_page(1);
+	e->data = page_alloc(1);
 	if(!e->data) {
 		kfree(e);
 		return 0;
@@ -43,7 +43,7 @@ struct bcache_entry * bcache_entry_create( struct device *device, int block )
 void bcache_entry_delete( struct bcache_entry *e )
 {
 	if(e) {
-		if(e->data) memory_free_page(e->data);
+		if(e->data) page_free(e->data);
 		kfree(e);
 	}
 }

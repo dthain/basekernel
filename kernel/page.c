@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "console.h"
 #include "kernel/types.h"
-#include "memory.h"
+#include "page.h"
 #include "string.h"
 #include "memorylayout.h"
 #include "kernelcore.h"
@@ -24,7 +24,7 @@ static void *main_memory_start = (void *) MAIN_MEMORY_START;
 
 #define CELL_BITS (8*sizeof(*freemap))
 
-void memory_init()
+void page_init()
 {
 	int i;
 
@@ -42,7 +42,7 @@ void memory_init()
 
 	memset(freemap, 0xff, freemap_bytes);
 	for(i = 0; i < freemap_pages; i++)
-		memory_alloc_page(0);
+		page_alloc(0);
 
 	// This is ahack that I don't understand yet.
 	// vmware doesn't like the use of a particular page
@@ -53,17 +53,13 @@ void memory_init()
 	printf("memory: %d MB (%d KB) available\n", (pages_free * PAGE_SIZE) / MEGA, (pages_free * PAGE_SIZE) / KILO);
 }
 
-uint32_t memory_pages_free()
+void page_stats( uint32_t *nfree, uint32_t *ntotal )
 {
-	return pages_free;
+	*nfree = pages_free;
+	*ntotal = pages_total;
 }
 
-uint32_t memory_pages_total()
-{
-	return pages_total;
-}
-
-void *memory_alloc_page(bool zeroit)
+void *page_alloc(bool zeroit)
 {
 	uint32_t i, j;
 	uint32_t cellmask;
@@ -98,7 +94,7 @@ void *memory_alloc_page(bool zeroit)
 	return 0;
 }
 
-void memory_free_page(void *pageaddr)
+void page_free(void *pageaddr)
 {
 	uint32_t pagenumber = (pageaddr - main_memory_start) >> PAGE_BITS;
 	uint32_t cellnumber = pagenumber / CELL_BITS;

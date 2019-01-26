@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "pagetable.h"
-#include "memory.h"
+#include "page.h"
 #include "string.h"
 #include "kernelcore.h"
 
@@ -34,7 +34,7 @@ struct pagetable {
 
 struct pagetable *pagetable_create()
 {
-	return memory_alloc_page(1);
+	return page_alloc(1);
 }
 
 void pagetable_init(struct pagetable *p)
@@ -92,7 +92,7 @@ int pagetable_map(struct pagetable *p, unsigned vaddr, unsigned paddr, int flags
 	unsigned b = (vaddr >> 12) & 0x3ff;
 
 	if(flags & PAGE_FLAG_ALLOC) {
-		paddr = (unsigned) memory_alloc_page(flags & PAGE_FLAG_CLEAR);
+		paddr = (unsigned) page_alloc(flags & PAGE_FLAG_CLEAR);
 		if(!paddr)
 			return 0;
 	}
@@ -168,14 +168,14 @@ void pagetable_delete(struct pagetable *p)
 				if(e->present && e->avail) {
 					void *paddr;
 					paddr = (void *) (e->addr << 12);
-					memory_free_page(paddr);
+					page_free(paddr);
 				}
 			}
-			memory_free_page(q);
+			page_free(q);
 		}
 	}
 
-	memory_free_page(p);
+	page_free(p);
 }
 
 void pagetable_alloc(struct pagetable *p, unsigned vaddr, unsigned length, int flags)
@@ -212,7 +212,7 @@ void pagetable_free(struct pagetable *p, unsigned vaddr, unsigned length)
 		if(pagetable_getmap(p, vaddr, &paddr, &flags)) {
 			pagetable_unmap(p, vaddr);
 			if(flags & PAGE_FLAG_ALLOC)
-				memory_free_page((void *) paddr);
+				page_free((void *) paddr);
 		}
 		vaddr += PAGE_SIZE;
 		npages--;
@@ -272,7 +272,7 @@ struct pagetable *pagetable_duplicate(struct pagetable *sp)
 					paddr = (void *) (e->addr << 12);
 					void *new_paddr = 0;
 					if(e->avail) {
-						new_paddr = memory_alloc_page(0);
+						new_paddr = page_alloc(0);
 						if(!new_paddr)
 							goto cleanup;
 						memcpy(new_paddr, paddr, PAGE_SIZE);

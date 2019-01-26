@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "fs.h"
 #include "console.h"
 #include "kobject.h"
-#include "memory.h"
+#include "page.h"
 #include "string.h"
 #include "list.h"
 #include "x86.h"
@@ -202,7 +202,7 @@ struct process *process_create()
 {
 	struct process *p;
 
-	p = memory_alloc_page(1);
+	p = page_alloc(1);
 
 	p->pid = process_allocate_pid();
 	process_table[p->pid] = p;
@@ -216,7 +216,7 @@ struct process *process_create()
 	process_data_size_set(p, 2 * PAGE_SIZE);
 	process_stack_size_set(p, 2 * PAGE_SIZE);
 
-	p->kstack = memory_alloc_page(1);
+	p->kstack = page_alloc(1);
 	p->kstack_top = p->kstack + PAGE_SIZE - 8;
 	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
 
@@ -244,8 +244,8 @@ void process_delete(struct process *p)
 	fs_dirent_close(p->current_dir);
 	fs_dirent_close(p->root_dir);
 	pagetable_delete(p->pagetable);
-	memory_free_page(p->kstack);
-	memory_free_page(p);
+	page_free(p->kstack);
+	page_free(p);
 	process_table[p->pid] = 0;
 }
 

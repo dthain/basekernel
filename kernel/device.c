@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "device.h"
 #include "string.h"
-#include "memory.h"
+#include "page.h"
 #include "kmalloc.h"
 
 #include "kernel/types.h"
