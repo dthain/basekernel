@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "kernel/types.h"
 #include "kernel/error.h"
 #include "string.h"
-#include "memory.h"
+#include "page.h"
 #include "fs.h"
 #include "fs_internal.h"
 #include "cdromfs.h"
@@ -61,7 +61,7 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 {
 	if(!dir->isdir) return 0;
 
-	char *temp = memory_alloc_page(0);
+	char *temp = page_alloc(0);
 	if(!temp) return 0;
 
 	int nsectors = dir->size / CDROMFS_BLOCK_SIZE + (dir->size % CDROMFS_BLOCK_SIZE ? 1 : 0);
@@ -97,14 +97,14 @@ static struct fs_dirent *cdrom_dirent_lookup(struct fs_dirent *dir, const char *
 					d->first_sector_little,
 					d->length_little,
 					d->flags & ISO_9660_EXTENT_FLAG_DIRECTORY);
-				memory_free_page(temp);
+				page_free(temp);
 				return r;
 			}
 			d = (struct iso_9660_directory_entry *) ((char *) d + d->descriptor_length);
 		}
 	}
 
-	memory_free_page(temp);
+	page_free(temp);
 
 	return 0;
 }
@@ -118,7 +118,7 @@ static int cdrom_dirent_list(struct fs_dirent *dir, char *buffer, int buffer_len
 {
 	if(!dir->isdir) return KERROR_NOT_A_DIRECTORY;
 
-	char *temp = memory_alloc_page(0);
+	char *temp = page_alloc(0);
 	if(!temp) return KERROR_OUT_OF_MEMORY;
 
 	int nsectors = dir->size / CDROMFS_BLOCK_SIZE + (dir->size % CDROMFS_BLOCK_SIZE ? 1 : 0);
@@ -162,7 +162,7 @@ static int cdrom_dirent_list(struct fs_dirent *dir, char *buffer, int buffer_len
 		}
 	}
 
-	memory_free_page(temp);
+	page_free(temp);
 
 	return total;
 }
@@ -189,7 +189,7 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 {
 	struct fs_volume *v = cdrom_volume_create(device);
 
-	struct iso_9660_volume_descriptor *d = memory_alloc_page(0);
+	struct iso_9660_volume_descriptor *d = page_alloc(0);
 	if(!d) {
 		kfree(v);
 		return 0;
@@ -216,7 +216,7 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 
 			printf("cdromfs: mounted filesystem on %s-%d\n", device_name(v->device), device_unit(v->device));
 
-			memory_free_page(d);
+			page_free(d);
 
 			return v;
 
@@ -227,7 +227,7 @@ static struct fs_volume *cdrom_volume_open( struct device *device )
 		}
 	}
 
-	memory_free_page(d);
+	page_free(d);
 	cdrom_volume_close(v);
 
 	printf("cdromfs: no filesystem found\n");

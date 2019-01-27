@@ -13,7 +13,7 @@ See the file LICENSE for details.
 #include "string.h"
 #include "rtc.h"
 #include "kmalloc.h"
-#include "memory.h"
+#include "page.h"
 #include "process.h"
 #include "main.h"
 #include "fs.h"
@@ -249,7 +249,9 @@ static int kshell_execute(int argc, const char **argv)
 				printf("run failed\n");
 				clock_wait(1000);
 			}
-			printf("memory: %d/%d\n", memory_pages_free(), memory_pages_total());
+			uint32_t nfree, ntotal;
+			page_stats(&nfree,&ntotal);
+			printf("memory: %d/%d\n",nfree,ntotal);
 		}
 	} else if(!strcmp(cmd, "mkdir")) {
 		if(argc == 3) {

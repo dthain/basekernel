@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "console.h"
-#include "memory.h"
+#include "page.h"
 #include "process.h"
 #include "interrupt.h"
 #include "keyboard.h"
@@ -43,7 +43,7 @@ int kernel_main()
 	printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
 	printf("kernel: %d bytes\n", kernel_size);
 
-	memory_init();
+	page_init();
 	kmalloc_init((char *) KMALLOC_START, KMALLOC_LENGTH);
 	interrupt_init();
 	rtc_init();

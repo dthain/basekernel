@@ -23,7 +23,7 @@ See the file LICENSE for details.
 #include "rtc.h"
 #include "elf.h"
 #include "kmalloc.h"
-#include "memory.h"
+#include "page.h"
 #include "ata.h"
 #include "graphics.h"
 #include "is_valid.h"
