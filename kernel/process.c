@@ -119,7 +119,11 @@ void process_selective_inherit(struct process *parent, struct process *child, in
 	for (i = 0; i < fd_len; i++)
 	{
 		if(fds[i] > -1) {
-			child->ktable[i] = kobject_addref(parent->ktable[fds[i]]);
+			/*
+				kobject_copy copies that state of the kobject and then calls
+				kobject_addref which increments the correct data types refcount
+			*/
+			kobject_copy(parent->ktable[fds[i]], &(child->ktable[i]));
 		}
 	}
 
