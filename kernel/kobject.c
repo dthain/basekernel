@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016-2019 The University of Notre Dame This software is
  * distributed under the GNU General Public License. See the file LICENSE
- * for details. 
+ * for details.
  */
 
 #include "console.h"
@@ -20,9 +20,9 @@
 static struct kobject *kobject_init()
 {
 	struct kobject *k = kmalloc(sizeof(*k));
-	k->refcount = 1;
 	k->offset = 0;
 	k->tag = 0;
+	k->blocking = 1;
 	return k;
 }
 
@@ -76,7 +76,29 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 
 struct kobject *kobject_addref(struct kobject *k)
 {
-	k->refcount++;
+	/* Call addref on the appropriate underlying type */
+	switch (k->type) {
+		case KOBJECT_GRAPHICS:
+			graphics_addref(k->data.graphics);
+			break;
+		case KOBJECT_CONSOLE:
+			console_addref(k->data.console);
+			break;
+		case KOBJECT_DIR:
+			fs_dirent_addref(k->data.dir);
+			break;
+		case KOBJECT_FILE:
+			fs_dirent_addref(k->data.file);
+			break;
+		case KOBJECT_DEVICE:
+			device_addref(k->data.device);
+			break;
+		case KOBJECT_PIPE:
+			pipe_addref(k->data.pipe);
+			break;
+		default:
+			break;
+		}
 	return k;
 }
 
@@ -226,23 +248,21 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 	return 0;
 }
 
-int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
+int kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 {
-	struct fs_dirent *src, *dst;
+	/*
+		Shallow copy the state of ksrc to kdst and call addref for underlying
+		type.
+	*/
+	*kdst = kobject_init();
+	(*kdst)->data 			= ksrc->data;
+	(*kdst)->type 			= ksrc->type;
+	(*kdst)->offset 		= ksrc->offset;
+	(*kdst)->tag 			= ksrc->tag;
+	(*kdst)->blocking 	= ksrc->blocking;
+	kobject_addref(ksrc);
 
-	if(ksrc->type==KOBJECT_DIR) {
-		src = ksrc->data.dir;
-	} else {
-		return KERROR_NOT_A_FILE;
-	}
-
-	if(kdst->type==KOBJECT_DIR) {
-		dst = kdst->data.dir;
-	} else {
-		return KERROR_NOT_A_DIRECTORY;
-	}
-
-	return fs_dirent_copy(src,dst,0);
+	return 0;
 }
 
 int kobject_remove( struct kobject *kobject, const char *name )
@@ -255,11 +275,30 @@ int kobject_remove( struct kobject *kobject, const char *name )
 	return 0;
 }
 
+int kobject_getref(struct kobject *kobject)
+{
+	switch (kobject->type) {
+	case KOBJECT_GRAPHICS:
+		return graphics_getref(kobject->data.graphics);
+	case KOBJECT_CONSOLE:
+		return console_getref(kobject->data.console);
+	case KOBJECT_FILE:
+		return fs_dirent_getref(kobject->data.file);
+	case KOBJECT_DIR:
+		return fs_dirent_getref(kobject->data.dir);
+	case KOBJECT_DEVICE:
+		return device_getref(kobject->data.device);
+	case KOBJECT_PIPE:
+		return pipe_getref(kobject->data.pipe);
+	default:
+		return -1;
+	}
+}
+
 int kobject_close(struct kobject *kobject)
 {
-	kobject->refcount--;
-
-	if(kobject->refcount==0) {
+	int refcount = kobject_getref(kobject);
+	if (refcount == 0) {
 		switch (kobject->type) {
 		case KOBJECT_GRAPHICS:
 			graphics_delete(kobject->data.graphics);
@@ -278,28 +317,19 @@ int kobject_close(struct kobject *kobject)
 			break;
 		case KOBJECT_PIPE:
 			pipe_delete(kobject->data.pipe);
-			break;
 		default:
 			break;
 		}
-		kfree(kobject);
-		return 0;
-	} else if(kobject->refcount>1 ) {
-		if(kobject->type==KOBJECT_PIPE) {
+	} else if (refcount > 1 && kobject->type == KOBJECT_PIPE) {
 			pipe_flush(kobject->data.pipe);
-		}
 	}
+	kfree(kobject);
 	return 0;
 }
 
 int kobject_set_blocking(struct kobject *kobject, int b)
 {
-	switch (kobject->type) {
-	case KOBJECT_PIPE:
-		return pipe_set_blocking(kobject->data.pipe, b);
-	default:
-		return 0;
-	}
+	kobject->blocking = b;
 	return 0;
 }
 
@@ -377,4 +407,3 @@ int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
 	}
 	return 0;
 }
-
