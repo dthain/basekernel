@@ -42,6 +42,11 @@ struct pipe *pipe_addref( struct pipe *p )
 	return p;
 }
 
+int pipe_getref( struct pipe *p )
+{
+	return p->refcount;
+}
+
 void pipe_flush(struct pipe *p)
 {
 	if(p) {

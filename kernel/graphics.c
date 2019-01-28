@@ -71,6 +71,11 @@ struct graphics *graphics_addref( struct graphics *g )
 	return g;
 }
 
+int graphics_getref(struct graphics *g )
+{
+	return g->refcount;
+}
+
 void graphics_delete( struct graphics *g )
 {
 	if(!g) return;

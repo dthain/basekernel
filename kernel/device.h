@@ -23,6 +23,7 @@ void device_driver_register( struct device_driver *d );
 
 struct device *device_open(const char *name, int unit);
 struct device *device_addref( struct device *d );
+int device_getref( struct device *d );
 void device_close( struct device *d );
 
 int device_read(struct device *d, void *buffer, int size, int offset);

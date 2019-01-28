@@ -80,6 +80,11 @@ struct device *device_addref( struct device *d )
 	return d;
 }
 
+int device_getref( struct device *d )
+{
+	return d->refcount;
+}
+
 int device_set_multiplier( struct device *d, int multiplier )
 {
 	if(multiplier<1 || multiplier*d->block_size>PAGE_SIZE ) {

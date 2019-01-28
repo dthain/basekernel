@@ -211,6 +211,11 @@ struct fs_dirent *fs_dirent_addref(struct fs_dirent *d)
 	return d;
 }
 
+int fs_dirent_getref(struct fs_dirent *d)
+{
+	return d->refcount;
+}
+
 int fs_dirent_close(struct fs_dirent *d)
 {
 	const struct fs_ops *ops = d->volume->fs->ops;

@@ -5,6 +5,7 @@
 
 struct pipe *pipe_create();
 struct pipe *pipe_addref( struct pipe *p );
+int pipe_getref( struct pipe *p );
 void pipe_delete(struct pipe *p);
 void pipe_flush(struct pipe *p);
 int pipe_set_blocking(struct pipe *p, int b);
