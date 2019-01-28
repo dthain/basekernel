@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016-2019 The University of Notre Dame This software is
  * distributed under the GNU General Public License. See the file LICENSE
- * for details. 
+ * for details.
  */
 
 #ifndef KOBJECT_H
@@ -28,6 +28,7 @@ struct kobject {
 	int refcount;
 	int offset;
 	char *tag;
+	int blocking;
 };
 
 struct kobject *kobject_create_file(struct fs_dirent *f);
@@ -43,6 +44,7 @@ struct kobject *kobject_create_dir_from_dir( struct kobject *kobject, const char
 struct kobject *kobject_create_file_from_dir( struct kobject *kobject, const char *name );
 
 struct kobject *kobject_addref(struct kobject *k);
+int kobject_getref(struct kobject *k);
 
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
@@ -50,7 +52,7 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_list( struct kobject *kobject, void *buffer, int size );
 int kobject_size(struct kobject *kobject, int *dimensions, int n);
-int kobject_copy( struct kobject *ksrc, struct kobject *kdst );
+int kobject_copy( struct kobject *ksrc, struct kobject **kdst );
 int kobject_remove( struct kobject *kobject, const char *name );
 int kobject_close(struct kobject *kobject);
 
