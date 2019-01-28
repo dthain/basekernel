@@ -123,6 +123,11 @@ struct console *console_addref( struct console *c )
 	return c;
 }
 
+int console_getref( struct console *c )
+{
+	return c->refcount;
+}
+
 void console_delete( struct console *c )
 {
 	c->refcount--;
@@ -145,5 +150,3 @@ struct console * console_init(struct graphics *g)
 	console_putstring(&console_root,"\nconsole: initialized\n");
 	return &console_root;
 }
-
-
