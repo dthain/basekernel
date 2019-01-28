@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "fs_internal.h"
 #include "kmalloc.h"
 #include "string.h"
-#include "memory.h"
+#include "page.h"
 #include "process.h"
 #include "bcache.h"
 
@@ -245,7 +245,7 @@ int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t 
 		length = d->size - offset;
 	}
 
-	char *temp = memory_alloc_page(0);
+	char *temp = page_alloc(0);
 	if(!temp)
 		return -1;
 
@@ -278,11 +278,11 @@ int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t 
 		total += actual;
 	}
 
-	memory_free_page(temp);
+	page_free(temp);
 	return total;
 
       failure:
-	memory_free_page(temp);
+	page_free(temp);
 	if(total == 0)
 		return -1;
 	return total;
@@ -333,7 +333,7 @@ int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, ui
 	if(!ops->write_block || !ops->read_block)
 		return KERROR_INVALID_REQUEST;
 
-	char *temp = memory_alloc_page(0);
+	char *temp = page_alloc(0);
 
 	// if writing past the (current) end of the file, resize the file first
 	if (offset + length > d->size) {
@@ -380,11 +380,11 @@ int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, ui
 		total += actual;
 	}
 
-	memory_free_page(temp);
+	page_free(temp);
 	return total;
 
       failure:
-	memory_free_page(temp);
+	page_free(temp);
 	if(total == 0)
 		return -1;
 	return total;
@@ -402,7 +402,7 @@ int fs_dirent_isdir( struct fs_dirent *d )
 
 int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 {
-	char *buffer = memory_alloc_page(1);
+	char *buffer = page_alloc(1);
 
 	int length = fs_dirent_list(src, buffer, PAGE_SIZE);
 	if (length <= 0) goto failure;
@@ -444,7 +444,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 				goto next_entry;
 			}
 
-			char * filebuf = memory_alloc_page(0);
+			char * filebuf = page_alloc(0);
 			if (!filebuf) {
 				fs_dirent_close(new_src);
 				fs_dirent_close(new_dst);
@@ -461,7 +461,7 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 				offset += chunk;
 			}
 
-			memory_free_page(filebuf);
+			page_free(filebuf);
 
 			fs_dirent_close(new_dst);
 		}
@@ -472,10 +472,10 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 		name += strlen(name) + 1;
 	}
 
-	memory_free_page(buffer);
+	page_free(buffer);
 	return 0;
 
 failure:
-	memory_free_page(buffer);
+	page_free(buffer);
 	return KERROR_NOT_FOUND;
 }
