@@ -120,8 +120,8 @@ void process_selective_inherit(struct process *parent, struct process *child, in
 	{
 		if(fds[i] > -1) {
 			/*
-				kobject_copy copies that state of the kobject and then calls
-				kobject_addref which increments the correct data types refcount
+				kobject_copy copies the state of the parent and then calls
+				the kobject's addref function
 			*/
 			kobject_copy(parent->ktable[fds[i]], &(child->ktable[i]));
 		}
