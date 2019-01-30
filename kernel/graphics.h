@@ -22,7 +22,6 @@ extern struct graphics graphics_root;
 struct graphics *graphics_create_root();
 struct graphics *graphics_create(struct graphics *parent );
 struct graphics *graphics_addref(struct graphics *g );
-int graphics_getref(struct graphics *g );
 void graphics_delete(struct graphics *g);
 
 uint32_t graphics_width(struct graphics *g);

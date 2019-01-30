@@ -123,11 +123,6 @@ struct console *console_addref( struct console *c )
 	return c;
 }
 
-int console_getref( struct console *c )
-{
-	return c->refcount;
-}
-
 void console_delete( struct console *c )
 {
 	c->refcount--;
