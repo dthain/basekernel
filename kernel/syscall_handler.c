@@ -27,6 +27,7 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "graphics.h"
 #include "is_valid.h"
+#include "bcache.h"
 
 /*
 syscall_handler() is responsible for decoding system calls
@@ -568,6 +569,13 @@ int sys_system_stats(struct system_stats *s)
 	return 0;
 }
 
+int sys_bcache_stats(struct bcache_stats * s)
+{
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+	bcache_get_stats( s );
+	return 0;
+}
+
 int sys_system_time( uint32_t *tm )
 {
 	if(!is_valid_pointer(tm,sizeof(*tm))) return KERROR_INVALID_ADDRESS;
@@ -681,6 +689,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_copy(a,b);
 	case SYSCALL_SYSTEM_STATS:
 		return sys_system_stats((struct system_stats *) a);
+	case SYSCALL_BCACHE_STATS:
+		return sys_bcache_stats((struct bcache_stats *) a);
 	case SYSCALL_SYSTEM_TIME:
 		return sys_system_time((uint32_t*)a);
 	case SYSCALL_SYSTEM_RTC:
