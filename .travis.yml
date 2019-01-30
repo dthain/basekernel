@@ -1,0 +1,9 @@
+language: c
+compiler: gcc
+os:
+  - linux
+
+before_install:
+  - sudo apt-get install -y mkisofs
+
+script: make
