@@ -10,6 +10,14 @@ struct system_stats {
 	uint32_t blocks_written[4];
 };
 
+struct bcache_stats {
+	uint32_t read_hits;
+	uint32_t read_misses;
+	uint32_t write_hits;
+	uint32_t write_misses;
+	uint32_t writebacks;
+};
+
 struct object_stats {
 	uint32_t reads;
 	uint32_t writes;
