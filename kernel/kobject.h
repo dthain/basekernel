@@ -44,7 +44,6 @@ struct kobject *kobject_create_dir_from_dir( struct kobject *kobject, const char
 struct kobject *kobject_create_file_from_dir( struct kobject *kobject, const char *name );
 
 struct kobject *kobject_addref(struct kobject *k);
-int kobject_getref(struct kobject *k);
 
 int kobject_read(struct kobject *kobject, void *buffer, int size);
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size);
