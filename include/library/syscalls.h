@@ -60,6 +60,8 @@ int syscall_object_max();
 /* Syscalls that query or affect the whole system state. */
 
 int syscall_system_stats(struct system_stats *s);
+int syscall_bcache_stats(struct bcache_stats *bstats);
+
 int syscall_system_time( uint32_t *t );
 int syscall_system_rtc( struct rtc_time *t );
 
