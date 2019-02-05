@@ -23,7 +23,6 @@ static struct kobject *kobject_init()
 	k->refcount = 1;
 	k->offset = 0;
 	k->tag = 0;
-	k->blocking = 1;
 	return k;
 }
 
