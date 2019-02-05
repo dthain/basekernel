@@ -542,7 +542,9 @@ int sys_object_copy( int src, int dst )
 	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_object(dst)) return KERROR_INVALID_OBJECT;
 
-	return kobject_copy(current->ktable[src],&(current->ktable[dst]));
+	kobject_copy(current->ktable[src],&(current->ktable[dst]));
+
+	return 0;
 }
 
 int sys_object_max()
