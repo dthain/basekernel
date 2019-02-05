@@ -227,7 +227,7 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 	return 0;
 }
 
-int kobject_copy( struct kobject *ksrc, struct kobject **kdst )
+struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 {
 	/*
 		Shallow copy the state of ksrc to kdst and call addref for underlying
@@ -239,7 +239,6 @@ int kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 	(*kdst)->type 			= ksrc->type;
 	(*kdst)->offset 		= ksrc->offset;
 	(*kdst)->tag 				= ksrc->tag;
-	(*kdst)->blocking 	= ksrc->blocking;
 
 	switch (ksrc->type) {
 	case KOBJECT_GRAPHICS:
@@ -260,11 +259,9 @@ int kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 	case KOBJECT_PIPE:
 		pipe_addref(ksrc->data.pipe);
 		break;
-	default:
-		break;
 	}
 
-	return 0;
+	return *kdst;
 }
 
 int kobject_remove( struct kobject *kobject, const char *name )
@@ -316,8 +313,12 @@ int kobject_close(struct kobject *kobject)
 
 int kobject_set_blocking(struct kobject *kobject, int b)
 {
-	kobject->blocking = b;
-	return 0;
+	switch (kobject->type) {
+	case KOBJECT_PIPE:
+		return pipe_set_blocking(kobject->data.pipe, b);
+	default:
+		return 0;
+	}
 }
 
 int kobject_size(struct kobject *kobject, int *dims, int n)
