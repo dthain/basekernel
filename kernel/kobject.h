@@ -51,7 +51,7 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 int kobject_write(struct kobject *kobject, void *buffer, int size);
 int kobject_list( struct kobject *kobject, void *buffer, int size );
 int kobject_size(struct kobject *kobject, int *dimensions, int n);
-int kobject_copy( struct kobject *ksrc, struct kobject **kdst );
+struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst );
 int kobject_remove( struct kobject *kobject, const char *name );
 int kobject_close(struct kobject *kobject);
 
