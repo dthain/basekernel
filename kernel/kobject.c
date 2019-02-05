@@ -238,7 +238,8 @@ struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 	(*kdst)->data 			= ksrc->data;
 	(*kdst)->type 			= ksrc->type;
 	(*kdst)->offset 		= ksrc->offset;
-	(*kdst)->tag 				= ksrc->tag;
+	(*kdst)->tag = (char *)kmalloc(strlen(ksrc->tag) * sizeof(char));
+	strcpy(ksrc->tag, ksrc->tag);
 
 	switch (ksrc->type) {
 	case KOBJECT_GRAPHICS:
