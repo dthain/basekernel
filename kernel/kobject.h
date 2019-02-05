@@ -28,7 +28,6 @@ struct kobject {
 	int refcount;
 	int offset;
 	char *tag;
-	int blocking;
 };
 
 struct kobject *kobject_create_file(struct fs_dirent *f);
