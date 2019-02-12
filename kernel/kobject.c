@@ -7,6 +7,7 @@
 #include "console.h"
 #include "kobject.h"
 #include "kmalloc.h"
+#include "string.h"
 
 #include "device.h"
 #include "fs.h"
@@ -14,7 +15,6 @@
 #include "console.h"
 #include "pipe.h"
 
-#include "library/string.h"
 #include "kernel/error.h"
 
 static struct kobject *kobject_init()
@@ -233,12 +233,12 @@ struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 		type.
 	*/
 	*kdst = kobject_init();
-	(*kdst)->refcount 			= 1;
 	(*kdst)->data 			= ksrc->data;
 	(*kdst)->type 			= ksrc->type;
 	(*kdst)->offset 		= ksrc->offset;
-	(*kdst)->tag = (char *)kmalloc(strlen(ksrc->tag) * sizeof(char));
-	strcpy(ksrc->tag, ksrc->tag);
+
+	if (ksrc->tag)
+		(*kdst)->tag = strdup(ksrc->tag);
 
 	switch (ksrc->type) {
 	case KOBJECT_GRAPHICS:
@@ -301,6 +301,8 @@ int kobject_close(struct kobject *kobject)
 		default:
 			break;
 		}
+		if (kobject->tag)
+			kfree(kobject->tag);
 		kfree(kobject);
 		return 0;
 	} else if(kobject->refcount>1 ) {
