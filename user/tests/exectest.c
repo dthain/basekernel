@@ -1,6 +1,8 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 
+/* Fork and exec test program */
+
 int main(int argc, char *argv[])
 {
 	int pid = syscall_process_fork();

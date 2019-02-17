@@ -1,6 +1,8 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 
+/* Simple test to make sure fork works */
+
 int main(int argc, char *argv[])
 {
 	printf("hello world, I am %d.\n", syscall_process_self());
