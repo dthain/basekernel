@@ -2,8 +2,13 @@ include Makefile.config
 
 LIBRARY_SOURCES=$(wildcard library/*.c)
 LIBRARY_HEADERS=$(wildcard library/*.h)
-USER_SOURCES=$(wildcard user/*.c)
-USER_PROGRAMS=$(USER_SOURCES:c=exe)
+
+USER_MAIN_SOURCES=$(wildcard user/*.c)
+USER_TEST_SOURCES=$(wildcard user/tests/*.c)
+USER_MAIN_PROGRAMS=$(USER_MAIN_SOURCES:c=exe)
+USER_TEST_PROGRAMS=$(USER_TEST_SOURCES:c=exe)
+USER_PROGRAMS=$(USER_MAIN_PROGRAMS) $(USER_TEST_PROGRAMS)
+
 KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 
 all: basekernel.iso
@@ -20,7 +25,7 @@ disk.img:
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
 
-$(USER_PROGRAMS): $(USER_SOURCES) library/baselib.a $(LIBRARY_HEADERS)
+$(USER_PROGRAMS): $(USER_MAIN_SOURCES) $(USER_TEST_SOURCES) library/baselib.a $(LIBRARY_HEADERS)
 	cd user && make
 
 kernel/basekernel.img: $(KERNEL_SOURCES) $(LIBRARY_HEADERS)
@@ -28,9 +33,10 @@ kernel/basekernel.img: $(KERNEL_SOURCES) $(LIBRARY_HEADERS)
 
 image: kernel/basekernel.img $(USER_PROGRAMS)
 	rm -rf image
-	mkdir image image/boot image/bin image/data
+	mkdir image image/boot image/bin image/data image/bin/tests
 	cp kernel/basekernel.img image/boot
-	cp $(USER_PROGRAMS) image/bin
+	cp $(USER_MAIN_PROGRAMS) image/bin
+	cp $(USER_TEST_PROGRAMS) image/bin/tests
 	head -2000 /usr/share/dict/words > image/data/words
 
 basekernel.iso: image

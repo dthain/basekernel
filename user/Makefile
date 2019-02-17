@@ -1,9 +1,14 @@
 
 include ../Makefile.config
 
-USER_PROGRAMS=test.exe long.exe printer.exe forktest.exe errcodes.exe exectest.exe filedescribetest.exe saver.exe ball.exe write.exe shell.exe pipetest.exe snake.exe sysstat.exe procstat.exe writebig.exe manager.exe clock.exe mandelbrot.exe open.exe copy.exe
+MAIN_PROGRAMS=saver.exe ball.exe shell.exe snake.exe manager.exe clock.exe mandelbrot.exe copy.exe
+TEST_SOURCES=$(wildcard tests/*.c)
+TEST_PROGRAMS=$(TEST_SOURCES:c=exe)
 
-all: $(USER_PROGRAMS)
+all: $(MAIN_PROGRAMS) $(TEST_PROGRAMS)
+
+$(TEST_PROGRAMS): $(TEST_SOURCES)
+	cd tests && make
 
 %.o: %.c
 	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
@@ -13,3 +18,4 @@ all: $(USER_PROGRAMS)
 
 clean:
 	rm -rf *.exe *.o
+	cd tests && make clean
