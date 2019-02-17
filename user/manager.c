@@ -34,17 +34,17 @@ int main(int argc, char *argv[])
 {
 	/* Eventually, programs wont be hardcoded */
 	const char *args1[] = { "/bin/snake.exe" };
-	const char *args2[] = { "/bin/clock.exe", "08:40" };
+	const char *args2[] = { "/bin/clock.exe" };
 	const char *args3[] = { "/bin/shell.exe" };
 	const char *args4[] = { "/bin/mandelbrot.exe" };
 
 
 	int padding = 4;
 	program programs[] = {
-			{ .w = 55 , .h = 25 , .exec = "bin/clock.exe", .args = args2, .argc = 2 },
-			{ .w = 500, .h = 400, .exec = "bin/shell.exe", .args = args3, .argc = 3 },
-			{ .w = 200, .h = 200, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 400, .h = 400, .exec = "bin/mandelbrot.exe", .args = args4, .argc = 1 }
+			{ .w = 55 , .h = 25 , .exec = "/bin/clock.exe", .args = args2, .argc = 1 },
+			{ .w = 500, .h = 400, .exec = "/bin/shell.exe", .args = args3, .argc = 1 },
+			{ .w = 200, .h = 200, .exec = "/bin/snake.exe", .args = args1, .argc = 1 },
+			{ .w = 400, .h = 400, .exec = "/bin/mandelbrot.exe", .args = args4, .argc = 1 }
 	};
 
 
@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
 				// If it is the first element in the row, x == 0
 				// And, all of the rows havent been set, set the val of the next row
 				if (current_pos[row][0] == 0) {
-					// Probably need to keep track of y coords
 					// If the program overlaps, we cant place it
 					if (current_pos[row][1] + programs[p_i].h + 4*padding > std_dims[1]) {
 						break;
@@ -102,7 +101,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		fds[p_i][0] = syscall_open_pipe();
+		fds[p_i][0] = syscall_open_pipe(); // pipe is used to redirect input to manager to the user program
 		fds[p_i][3] = syscall_open_window(KNO_STDWIN, placement[p_i][0], placement[p_i][1], programs[p_i].w, programs[p_i].h);
 
 		// Standard output and error get console
@@ -111,6 +110,8 @@ int main(int argc, char *argv[])
 
 		// Take in an array of FD's
 		pids[p_i] = syscall_process_wrun(programs[p_i].exec, programs[p_i].argc, programs[p_i].args, fds[p_i], 4);
+
+		// Used to setup the border
 		draw_window(KNO_STDWIN);
 		draw_border(placement[p_i][0] - 2*padding, placement[p_i][1] - 2*padding, programs[p_i].w + 4*padding, programs[p_i].h + 4*padding, padding, 255, 255, 255);
 		draw_flush();

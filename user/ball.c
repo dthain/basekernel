@@ -5,7 +5,8 @@ See the file LICENSE for details.
 */
 
 /*
-A fun graphics demo that features text bouncing around the screen.
+A fun graphics demo that features text bouncing around the screen. This program could
+potentially be used as a screen saver
 */
 
 #include "library/syscalls.h"
@@ -19,6 +20,7 @@ void move(int *x, int *d, int min, int max);
 
 int main(int argc, char *argv[])
 {
+	/* Set up coordinates and colors for the text */
 	int r = 255;
 	int g = 0;
 	int b = 0;
@@ -30,13 +32,19 @@ int main(int argc, char *argv[])
 	int dg = 2;
 	int db = 3;
 
+	/*
+		Object size system call is used to get the dimensions of an object. The
+		first argument that is passed is the FD of the object, then an array that will
+		be filled in by the call and then the expected number of dimensions that should be
+		filled in.
+	*/
 	int dims[2];
 	syscall_object_size(KNO_STDWIN, dims, 2);
 
 	int width = dims[0];
 	int height = dims[1];
 
-	draw_window(KNO_STDWIN);
+	draw_window(KNO_STDWIN); // specifies which Window to draw to
 	draw_clear(0, 0, width, height);
 	draw_flush();
 
