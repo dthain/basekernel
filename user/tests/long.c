@@ -11,7 +11,7 @@ A trivial user level program to try out basic system calls.
 #include "library/syscalls.h"
 #include "library/string.h"
 
-char *shakespeare2[] = {
+char *shakespeare[] = {
 	"[Horatio] Now cracke a Noble heart:",
 	"Goodnight sweet Prince,",
 	"And flights of Angels sing thee to thy rest,",
@@ -76,9 +76,6 @@ char *shakespeare2[] = {
 int main(int argc, char *argv[])
 {
 	int i;
-	char shakespeare[2];
-	shakespeare[0] = 'a';
-	shakespeare[1] = 'a';
 	for(i = 0; i < sizeof(shakespeare) / sizeof(char *); i++) {
 		printf("%s\n", shakespeare[i]);
 		syscall_process_sleep(1000);
