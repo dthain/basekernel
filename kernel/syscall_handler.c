@@ -505,9 +505,11 @@ int sys_object_close(int fd)
 	return 0;
 }
 
-int sys_object_stats( int fd, struct object_stats *stats )
+int sys_object_stats( int fd, void * s, int level )
 {
-	return KERROR_NOT_IMPLEMENTED;
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+	kobject_get_stats( fd, s, level );
+	return 0;
 }
 
 int sys_object_set_tag(int fd, char *tag)
@@ -598,6 +600,12 @@ int sys_system_rtc( struct rtc_time *t )
 	return 0;
 }
 
+int sys_device_driver_stats(char * name, struct device_driver_stats * stats)
+{
+	device_driver_get_stats(name, stats);
+	return 0;
+}
+
 int sys_chdir(const char *path)
 {
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
@@ -680,7 +688,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_OBJECT_CLOSE:
 		return sys_object_close(a);
 	case SYSCALL_OBJECT_STATS:
-		return sys_object_stats(a, (struct object_stats *) b);
+		return sys_object_stats(a, (void *) b, c);
 	case SYSCALL_OBJECT_SET_TAG:
 		return sys_object_set_tag(a, (char *) b);
 	case SYSCALL_OBJECT_GET_TAG:
@@ -703,7 +711,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_system_time((uint32_t*)a);
 	case SYSCALL_SYSTEM_RTC:
 		return sys_system_rtc((struct rtc_time *) a);
-
+	case SYSCALL_DEVICE_DRIVER_STATS:
+		return sys_device_driver_stats((char *) a, (struct device_driver_stats *) b);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
 	default:
