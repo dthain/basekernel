@@ -508,7 +508,7 @@ int sys_object_close(int fd)
 int sys_object_stats( int fd, void * s, int level )
 {
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
-	kobject_get_stats( fd, s, level );
+	kobject_get_stats(fd, s, level);
 	return 0;
 }
 
