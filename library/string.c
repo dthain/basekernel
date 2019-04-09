@@ -59,6 +59,14 @@ int strncmp(const char *a, const char *b, unsigned length)
 	return 0;
 }
 
+char *strdup(const char *s)
+{
+	char *new = malloc(strlen(s) + 1);
+	if(new)
+		strcpy(new, s);
+	return new;
+}
+
 unsigned strlen(const char *s)
 {
 	unsigned len = 0;
