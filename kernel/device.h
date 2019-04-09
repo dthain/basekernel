@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 
 struct device_driver {
@@ -16,6 +17,7 @@ struct device_driver {
 	int (*read_nonblock) ( int unit, void *buffer, int nblocks, int block_offset);
 	int (*write) ( int unit, const void *buffer, int nblocks, int block_offset);
 	int multiplier;
+	struct device_driver_stats stats;
 	struct device_driver *next;
 };
 
@@ -32,5 +34,8 @@ int device_block_size( struct device *d );
 int device_nblocks( struct device *d );
 int device_unit( struct device *d );
 const char * device_name( struct device *d );
+
+void device_driver_get_stats(char * name, struct device_driver_stats * s);
+void device_get_stats( struct device *d, struct device_stats * s, int level );
 
 #endif
