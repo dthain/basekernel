@@ -505,13 +505,6 @@ int sys_object_close(int fd)
 	return 0;
 }
 
-int sys_object_stats( int fd, void * s, int level )
-{
-	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
-	kobject_get_stats(fd, s, level);
-	return 0;
-}
-
 int sys_object_set_tag(int fd, char *tag)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
@@ -687,8 +680,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_remove(a,(const char*)b);
 	case SYSCALL_OBJECT_CLOSE:
 		return sys_object_close(a);
-	case SYSCALL_OBJECT_STATS:
-		return sys_object_stats(a, (void *) b, c);
 	case SYSCALL_OBJECT_SET_TAG:
 		return sys_object_set_tag(a, (char *) b);
 	case SYSCALL_OBJECT_GET_TAG:
