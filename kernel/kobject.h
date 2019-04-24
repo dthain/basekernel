@@ -1,13 +1,12 @@
 /*
  * Copyright (C) 2016-2019 The University of Notre Dame This software is
  * distributed under the GNU General Public License. See the file LICENSE
- * for details.
+ * for details. 
  */
 
 #ifndef KOBJECT_H
 #define KOBJECT_H
 
-#include "kernel/stats.h"
 #include "kernel/types.h"
 
 #include "fs.h"
@@ -59,7 +58,5 @@ int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_type(struct kobject *kobject);
 int kobject_set_tag(struct kobject *kobject, char *new_tag);
 int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size);
-
-void kobject_get_stats( struct object_stats *s );
 
 #endif
