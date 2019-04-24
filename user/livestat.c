@@ -362,8 +362,6 @@ void help() {
   printf("    bytes_read\n");
   printf("    bytes_written\n");
   printf("    syscall_count\n\n");
-  //TODO - memory utilization
-
 
   printf("\nDriver STAT_NAME options:\n");
   printf("    blocks_read\n");
@@ -373,6 +371,7 @@ void help() {
   printf("    time\n");
   printf("    blocks_read\n");
   printf("    blocks_written\n\n");
+  
   //TODO memory utilizations (page), kernel malloc
 
 }
