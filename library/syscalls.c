@@ -188,11 +188,6 @@ int syscall_object_max()
 	return syscall(SYSCALL_OBJECT_MAX, 0, 0, 0, 0, 0);
 }
 
-int syscall_object_stats(int fd, void * s, int level)
-{
-	return syscall(SYSCALL_OBJECT_STATS, fd, (uint32_t) s, level, 0, 0);
-}
-
 int syscall_system_stats(struct system_stats *s)
 {
 	return syscall(SYSCALL_SYSTEM_STATS, (uint32_t) s, 0, 0, 0, 0);

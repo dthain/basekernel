@@ -51,7 +51,6 @@ int syscall_object_size(int fd, int * dims, int n);
 int syscall_object_copy( int src, int dst );
 int syscall_object_remove( int fd, const char *name );
 int syscall_object_close(int fd);
-int syscall_object_stats(int fd, void * stats, int level);
 int syscall_object_set_tag(int fd, char *tag);
 int syscall_object_get_tag(int fd, char *buffer, int buffer_size);
 int syscall_object_set_blocking(int fd, int b);
