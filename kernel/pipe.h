@@ -1,7 +1,6 @@
 #ifndef PIPE_H
 #define PIPE_H
 
-#include "kernel/stats.h"
 #include "kernel/types.h"
 
 struct pipe *pipe_create();
@@ -14,7 +13,5 @@ int pipe_write(struct pipe *p, char *buffer, int size);
 int pipe_read(struct pipe *p, char *buffer, int size);
 int pipe_read_nonblock(struct pipe *p, char *buffer, int size);
 int pipe_size( struct pipe *p);
-
-void pipe_get_stats(struct pipe *p, struct pipe_stats * stats, int level);
 
 #endif

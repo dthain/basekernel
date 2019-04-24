@@ -4,7 +4,6 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "kernel/stats.h"
 #include "kernel/types.h"
 #include "pipe.h"
 #include "kmalloc.h"
@@ -21,7 +20,6 @@ struct pipe {
 	int flushed;
 	int refcount;
 	struct list queue;
-	struct pipe_stats stats;
 };
 
 struct pipe *pipe_create()
@@ -35,7 +33,6 @@ struct pipe *pipe_create()
 	p->queue.head = 0;
 	p->queue.tail = 0;
 	p->refcount = 1;
-	p->stats = (struct pipe_stats){0};
 	return p;
 }
 
@@ -85,7 +82,6 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 			while((p->write_pos + 1) % PIPE_SIZE == p->read_pos) {
 				if(p->flushed) {
 					p->flushed = 0;
-					p->stats.writes++;
 					return written;
 				}
 				process_wait(&p->queue);
@@ -102,7 +98,6 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 		}
 	}
 	p->flushed = 0;
-	p->stats.writes++;
 	return written;
 }
 
@@ -141,26 +136,15 @@ int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 
 int pipe_read(struct pipe *p, char *buffer, int size)
 {
-	int status = pipe_read_internal(p, buffer, size, 1);
-	if (status > 0)
-		p->stats.reads++;
-	return status;
+	return pipe_read_internal(p, buffer, size, 1);
 }
 
 int pipe_read_nonblock(struct pipe *p, char *buffer, int size)
 {
-	int status = pipe_read_internal(p, buffer, size, 0);
-	if (status > 0)
-		p->stats.reads++;
-	return status;
+	return pipe_read_internal(p, buffer, size, 0);
 }
 
 int pipe_size( struct pipe *p )
 {
 	return PIPE_SIZE;
-}
-
-void pipe_get_stats(struct pipe *p, struct pipe_stats * stats, int level)
-{
-	memcpy(stats,&(p->stats),sizeof(*stats));
 }
