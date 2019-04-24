@@ -21,7 +21,6 @@ struct device {
 	int block_size;
 	int nblocks;
 	int multiplier;
-	struct device_stats stats;
 };
 
 void device_driver_register( struct device_driver *d )
@@ -39,7 +38,6 @@ static struct device *device_create( struct device_driver *dd, int unit, int nbl
 	d->unit = unit;
 	d->block_size = block_size;
 	d->nblocks = nblocks;
-	d->stats = (const struct device_stats){ 0 };
 
 /*
 If the device driver specifies a non-zero default multiplier,
@@ -106,7 +104,6 @@ int device_read(struct device *d, void *data, int size, int offset)
 	if(d->driver->read) {
 		status = d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
-			d->stats.reads++;
 			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
 		}
 		return status;
@@ -121,7 +118,6 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 	if(d->driver->read_nonblock) {
 		status = d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
-			d->stats.reads++;
 			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
 		}
 		return status;
@@ -136,7 +132,6 @@ int device_write(struct device *d, const void *data, int size, int offset)
 	if(d->driver->write) {
 		status = d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (!status) {
-			d->stats.writes++;
 			d->driver->stats.blocks_written += size*d->multiplier;
 		}
 		return status;
@@ -178,9 +173,4 @@ void device_driver_get_stats(char * name, struct device_driver_stats * s)
 	if (dd) {
 		memcpy(s, &(dd->stats), sizeof(*s));
 	}
-}
-
-void device_get_stats( struct device *d, struct device_stats * s, int level )
-{
-	memcpy(s,&(d->stats),sizeof(*s));
 }
