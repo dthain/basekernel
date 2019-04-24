@@ -38,7 +38,7 @@ void help();
 void stat_live_2_str(STAT_LIVE stat_l, char * str);
 void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
 int  extract_statistic(struct stat_args args);
-void plot_points(int * most_recent_vals, int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
+void plot_bars(int * most_recent_vals, int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
 void run_stats(struct stat_args args);
 
 int main(int argc, const char * argv[]) {
@@ -170,7 +170,7 @@ void run_stats(struct stat_args args) {
     }
 
     /* Replot points */
-    plot_points(most_recent_vals, max, window_width, window_height, plot_width, plot_height, thickness, char_offset);
+    plot_bars(most_recent_vals, max, window_width, window_height, plot_width, plot_height, thickness, char_offset);
 
     /* Sleep for 6 seconds and then continue */
     sleep:
@@ -283,7 +283,7 @@ void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int wi
 }
 
 /* Plot all of the points on the graph and print the max */
-void plot_points(int most_recent_vals[POINTS], int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
+void plot_bars(int most_recent_vals[POINTS], int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
   /* Clear the graph */
   int x_offset      = (window_width - plot_width) / 2;
   int y_offset      = (window_height - plot_height) / 2;
@@ -314,7 +314,7 @@ void plot_points(int most_recent_vals[POINTS], int max, int window_width, int wi
 
     current_point[0] = x_offset + (int)(x_step*(i+1));
     current_point[1] = y_offset + plot_height - (int)(y_step*most_recent_vals[i]);
-    draw_rect(current_point[0], current_point[1], thickness, thickness);
+    draw_rect(current_point[0], current_point[1], thickness, (int)(y_step*most_recent_vals[i]));
   }
   draw_flush();
   draw_color(255, 255, 255);
