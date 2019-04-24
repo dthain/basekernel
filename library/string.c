@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 #include "kernel/ascii.h"
+#include "library/malloc.h"
 #include "library/string.h"
 #include "stdarg.h"
 
