@@ -18,7 +18,6 @@ struct console {
 	int ypos;
 	int onoff;
 	int refcount;
-	struct console_stats stats;
 };
 
 struct console console_root = {0};
@@ -93,9 +92,8 @@ int console_write( struct console *d, const char *data, int size )
 			graphics_bgcolor(d->gx, bgcolor);
 			graphics_clear(d->gx, 0, 0, graphics_width(d->gx), graphics_height(d->gx));
 		}
-		d->stats.bytes_written++;
+
 	}
-	d->stats.writes++;
 	graphics_char(d->gx, d->xpos * 8, d->ypos * 8, '_');
 	return i;
 }
@@ -148,9 +146,4 @@ struct console * console_init(struct graphics *g)
 	return &console_root;
 }
 
-void console_get_stats( struct console *c, struct console_stats *s, int level)
-{
-	if (level == 1) {
-		memcpy(s,&(c->stats),sizeof(*s));
-	}
-}
+
