@@ -3,12 +3,12 @@ Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
-#include "ata.h"
 #include "device.h"
 #include "string.h"
 #include "page.h"
 #include "kmalloc.h"
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 #include "kernel/error.h"
 
