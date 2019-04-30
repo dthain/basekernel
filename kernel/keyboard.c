@@ -20,11 +20,11 @@ See the file LICENSE for details.
 #define SPECIAL_SHIFTLOCK 4
 
 /* sent before certain keys such as up, down, left, or right. */
-#define KEYCODE_EXTRA (char)0xE0
-#define KEYCODE_UP    (char)0x48
-#define KEYCODE_DOWN  (char)0x42
-#define KEYCODE_LEFT  (char)0x4B
-#define KEYCODE_RIGHT (char)0x4D
+#define KEYCODE_EXTRA (uint8_t)0xE0
+#define KEYCODE_UP    (uint8_t)0x48
+#define KEYCODE_DOWN  (uint8_t)0x42
+#define KEYCODE_LEFT  (uint8_t)0x4B
+#define KEYCODE_RIGHT (uint8_t)0x4D
 
 #define BUFFER_SIZE 256
 
@@ -97,16 +97,17 @@ static char keyboard_map(int code)
 
 static int expect_extra = 0;
 
-static void keyboard_interrupt(int i, int code)
+static void keyboard_interrupt(int i, int intr_code)
 {
-	char c = inb(KEYBOARD_PORT);
+	uint8_t code = inb(KEYBOARD_PORT);
+	char c = KEY_INVALID;
 
-	if(c == KEYCODE_EXTRA) {
+	if(code == KEYCODE_EXTRA) {
 		expect_extra = 1;
 		return;
 	} else if(expect_extra) {
 		expect_extra = 0;
-		switch((unsigned)c) {
+		switch(code) {
 			case KEYCODE_UP:
 				c = KEY_UP;
 				break;
@@ -124,7 +125,7 @@ static void keyboard_interrupt(int i, int code)
 				break;
 		}
 	} else {
-		c = keyboard_map(c);
+		c = keyboard_map(code);
 	}
 
 	if(c == KEY_INVALID) return;
