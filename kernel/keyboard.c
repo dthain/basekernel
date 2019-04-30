@@ -31,7 +31,7 @@ struct keymap {
 	char special;
 };
 static struct keymap keymap[] = {
-#include "keymap.us.c"
+#include "keymap.us.pc.c"
 };
 
 static char buffer[BUFFER_SIZE];
