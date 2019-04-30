@@ -14,13 +14,17 @@ See the file LICENSE for details.
 
 #define KEYBOARD_PORT 0x60
 
-#define KEY_INVALID 127
-#define KEY_EXTRA   -32		/*sent before certain keys such as up, down, left, or right( */
-
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
 #define SPECIAL_CTRL  3
 #define SPECIAL_SHIFTLOCK 4
+
+/* sent before certain keys such as up, down, left, or right. */
+#define KEYCODE_EXTRA (char)0xE0
+#define KEYCODE_UP    (char)0x48
+#define KEYCODE_DOWN  (char)0x42
+#define KEYCODE_LEFT  (char)0x4B
+#define KEYCODE_RIGHT (char)0x4D
 
 #define BUFFER_SIZE 256
 
@@ -91,19 +95,40 @@ static char keyboard_map(int code)
 	}
 }
 
+static int expect_extra = 0;
+
 static void keyboard_interrupt(int i, int code)
 {
-	static char mod = 0x00;
 	char c = inb(KEYBOARD_PORT);
-	if(c == KEY_EXTRA) {
-		mod = 0x80;
+
+	if(c == KEYCODE_EXTRA) {
+		expect_extra = 1;
 		return;
+	} else if(expect_extra) {
+		expect_extra = 0;
+		switch((unsigned)c) {
+			case KEYCODE_UP:
+				c = KEY_UP;
+				break;
+			case KEYCODE_DOWN:
+				c = KEY_DOWN;
+				break;
+			case KEYCODE_LEFT:
+				c = KEY_LEFT;
+				break;
+			case KEYCODE_RIGHT:
+				c = KEY_RIGHT;
+				break;
+			default:
+				c = KEY_INVALID;
+				break;
+		}
 	} else {
-		c = keyboard_map(c) | mod;
-		mod = 0x00;
+		c = keyboard_map(c);
 	}
-	if(c == KEY_INVALID)
-		return;
+
+	if(c == KEY_INVALID) return;
+
 	if((keyboard_buffer_write + 1) == (keyboard_buffer_read % BUFFER_SIZE))
 		return;
 	buffer[keyboard_buffer_write] = c;
