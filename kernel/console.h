@@ -34,5 +34,6 @@ void console_putchar( struct console *c, char ch );
 void console_putstring( struct console *c, const char *str );
 void console_heartbeat( struct console *c );
 void console_size( struct console *c, int *xsize, int *ysize );
+struct console *console_addref( struct console *c );
 
 #endif

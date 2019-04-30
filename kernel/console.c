@@ -128,7 +128,7 @@ void console_delete( struct console *c )
 	c->refcount--;
 	if(c->refcount==0) {
 		graphics_delete(c->gx);
-		kfree(c);
+		if (c != &console_root) kfree(c);
 	}
 }
 
@@ -145,5 +145,3 @@ struct console * console_init(struct graphics *g)
 	console_putstring(&console_root,"\nconsole: initialized\n");
 	return &console_root;
 }
-
-
