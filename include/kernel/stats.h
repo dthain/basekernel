@@ -4,13 +4,15 @@
 #include "kernel/types.h"
 #include "kernel/syscall.h"
 
-#define OBJECT_STATS_LEVEL 1
-#define CONSOLE_STATS_LEVEL 2
-#define GRAPHICS_STATS_LEVEL 2
-#define DEVICE_STATS_LEVEL 2
-#define PIPE_STATS_LEVEL 2
-#define FILE_STATS_LEVEL 2
-#define DIR_STATS_LEVEL 2
+typedef enum {
+	OBJECT_TYPE,
+	PIPE_TYPE,
+	FILE_TYPE,
+	DIR_TYPE,
+	CONSOLE_TYPE,
+	GRAPHICS_TYPE,
+	DEVICE_TYPE
+} object_type_t;
 
 struct system_stats {
 	int time;
@@ -41,7 +43,7 @@ struct console_stats {
 	uint64_t bytes_written;
 };
 
-struct file_stats {
+struct dirent_stats {
 	int reads;
 	int writes;
 };
