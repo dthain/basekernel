@@ -29,6 +29,7 @@ struct kobject {
 	int refcount;
 	int offset;
 	char *tag;
+	struct object_stats stats;
 };
 
 struct kobject *kobject_create_file(struct fs_dirent *f);
@@ -60,6 +61,6 @@ int kobject_get_type(struct kobject *kobject);
 int kobject_set_tag(struct kobject *kobject, char *new_tag);
 int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size);
 
-void kobject_get_stats( struct object_stats *s );
+void kobject_get_stats(struct kobject * kobject, void * stats, int object_type);
 
 #endif

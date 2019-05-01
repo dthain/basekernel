@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016-2019 The University of Notre Dame This software is
  * distributed under the GNU General Public License. See the file LICENSE
- * for details. 
+ * for details.
  */
 
 #include "console.h"
@@ -16,6 +16,7 @@
 
 #include "library/string.h"
 #include "kernel/error.h"
+#include "kernel/stats.h"
 
 static struct kobject *kobject_init()
 {
@@ -23,6 +24,7 @@ static struct kobject *kobject_init()
 	k->refcount = 1;
 	k->offset = 0;
 	k->tag = 0;
+	k->stats = (const struct object_stats) {0};
 	return k;
 }
 
@@ -143,7 +145,6 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		break;
 	case KOBJECT_DIR:
 		return KERROR_INVALID_REQUEST;
-		break;
 	case KOBJECT_DEVICE:
 		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 		break;
@@ -155,45 +156,72 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		break;
 	}
 
-	if(actual > 0) kobject->offset += actual;
+	if(actual > 0) {
+			kobject->offset += actual;
+			kobject->stats.bytes_read += actual;
+			kobject->stats.reads++;
+	}
 
 	return actual;
 }
 
 int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 {
+	int actual = 0;
+
 	switch (kobject->type) {
 	case KOBJECT_DEVICE:
-		return device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		actual = device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		break;
 	case KOBJECT_PIPE:
-		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
+		actual = pipe_read_nonblock(kobject->data.pipe, buffer, size);
+		break;
 	default:
-		return kobject_read(kobject,buffer,size);
+		actual = kobject_read(kobject,buffer,size);
+		break;
 	}
-	return 0;
+
+	if(actual > 0) {
+			kobject->offset += actual;
+			kobject->stats.bytes_read += actual;
+			kobject->stats.reads++;
+	}
+
+	return actual;
 }
 
 int kobject_write(struct kobject *kobject, void *buffer, int size)
 {
+	int actual = 0;
+
 	switch (kobject->type) {
 	case KOBJECT_GRAPHICS:
-		return graphics_write(kobject->data.graphics, (struct graphics_command *) buffer);
+		actual = graphics_write(kobject->data.graphics, (struct graphics_command *) buffer);
+		break;
 	case KOBJECT_CONSOLE:
-		return console_write(kobject->data.console, buffer, size );
-	case KOBJECT_FILE:{
-			int actual = fs_dirent_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
-			if(actual > 0)
-				kobject->offset += actual;
-			return actual;
-		}
+		actual = console_write(kobject->data.console, buffer, size );
+		break;
+	case KOBJECT_FILE:
+		actual = fs_dirent_write(kobject->data.file, (char *) buffer, (uint32_t) size, kobject->offset);
+		if(actual > 0)
+			kobject->offset += actual;
+		break;
 	case KOBJECT_DEVICE:
-		return device_write(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		actual = device_write(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		break;
 	case KOBJECT_PIPE:
-		return pipe_write(kobject->data.pipe, buffer, size);
+		actual = pipe_write(kobject->data.pipe, buffer, size);
+		break;
 	default:
-		return 0;
+		break;
 	}
-	return 0;
+
+	if (actual > 0) {
+		kobject->stats.bytes_written += actual;
+		kobject->stats.writes++;
+	}
+
+	return actual;
 }
 
 int kobject_list(struct kobject *kobject, void *buffer, int size)
@@ -378,3 +406,33 @@ int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
 	return 0;
 }
 
+
+void kobject_get_stats(struct kobject * kobject, void * stats, int object_type)
+{
+	switch (object_type) {
+	case OBJECT_TYPE:
+		memcpy(stats, &(kobject->stats), sizeof(struct object_stats));
+		break;
+	case PIPE_TYPE:
+		pipe_get_stats(kobject->data.pipe, (struct pipe_stats *) stats);
+		break;
+	case FILE_TYPE:
+		fs_dirent_get_stats(kobject->data.file, (struct dirent_stats *) stats, FILE_TYPE);
+		break;
+	case DIR_TYPE:
+		fs_dirent_get_stats(kobject->data.dir, (struct dirent_stats *) stats, DIR_TYPE);
+		break;
+	case DEVICE_TYPE:
+		fs_dirent_get_stats(kobject->data.file, (struct dirent_stats *) stats, DEVICE_TYPE);
+		break;
+	case CONSOLE_TYPE:
+		console_get_stats(kobject->data.console, (struct console_stats *) stats, object_type);
+		break;
+	case GRAPHICS_TYPE:
+		console_get_stats(kobject->data.console, (struct console_stats *) stats, object_type);
+		break;
+
+	default:
+		break;
+	}
+}
