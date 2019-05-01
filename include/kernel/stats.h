@@ -25,11 +25,6 @@ struct device_stats {
 	int writes;
 };
 
-struct device_driver_stats {
-	int blocks_written;
-	int blocks_read;
-};
-
 struct console_stats {
 	int writes;
 	uint64_t bytes_written;
