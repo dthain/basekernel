@@ -28,7 +28,6 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "graphics.h"
 #include "is_valid.h"
-#include "bcache.h"
 
 /*
 syscall_handler() is responsible for decoding system calls
