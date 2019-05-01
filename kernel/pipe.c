@@ -160,7 +160,7 @@ int pipe_size( struct pipe *p )
 	return PIPE_SIZE;
 }
 
-void pipe_get_stats(struct pipe *p, struct pipe_stats * stats, int level)
+void pipe_get_stats(struct pipe *p, struct pipe_stats * stats)
 {
 	memcpy(stats,&(p->stats),sizeof(*stats));
 }
