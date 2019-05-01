@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "kernel/syscall.h"
 #include "kernel/gfxstream.h"
+#include "kernel/stats.h"
 #include "syscall_handler.h"
 #include "console.h"
 #include "keyboard.h"
@@ -505,10 +506,11 @@ int sys_object_close(int fd)
 	return 0;
 }
 
-int sys_object_stats( int fd, void * s, int level )
+int sys_object_stats( int fd, void * s, int object_type )
 {
+	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
-	kobject_get_stats(fd, s, level);
+	kobject_get_stats(current->ktable[fd], s, object_type);
 	return 0;
 }
 
