@@ -148,9 +148,16 @@ struct console * console_init(struct graphics *g)
 	return &console_root;
 }
 
-void console_get_stats( struct console *c, struct console_stats *s, int level)
+void console_get_stats( struct console *c, void *s, int object_type)
 {
-	if (level == 1) {
-		memcpy(s,&(c->stats),sizeof(*s));
+	switch (object_type) {
+		case CONSOLE_TYPE:
+			memcpy(s,&(c->stats),sizeof(struct console_stats));
+			break;
+		case GRAPHICS_TYPE:
+			graphics_get_stats(c->gx, (struct graphics_stats *) s);
+			break;
+		default:
+			break;
 	}
 }

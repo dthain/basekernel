@@ -36,6 +36,6 @@ void console_putstring( struct console *c, const char *str );
 void console_heartbeat( struct console *c );
 void console_size( struct console *c, int *xsize, int *ysize );
 
-void console_get_stats( struct console *c, struct console_stats *s, int level);
+void console_get_stats( struct console *c, void *s, int object_type);
 
 #endif
