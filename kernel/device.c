@@ -3,7 +3,7 @@ Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
-#include "ata.h"
+
 #include "device.h"
 #include "string.h"
 #include "page.h"
@@ -27,7 +27,6 @@ struct device {
 void device_driver_register( struct device_driver *d )
 {
 	d->next = driver_list;
-	d->stats = (struct device_driver_stats){0};
 	driver_list = d;
 }
 
@@ -39,8 +38,7 @@ static struct device *device_create( struct device_driver *dd, int unit, int nbl
 	d->unit = unit;
 	d->block_size = block_size;
 	d->nblocks = nblocks;
-	d->stats = (const struct device_stats){ 0 };
-
+	d->stats = (const struct device_stats){0};
 /*
 If the device driver specifies a non-zero default multiplier,
 then save it in this device instance.  It gives the effect of
@@ -107,7 +105,6 @@ int device_read(struct device *d, void *data, int size, int offset)
 		status = d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
 			d->stats.reads++;
-			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
 		}
 		return status;
 	} else {
@@ -122,7 +119,6 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 		status = d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
 			d->stats.reads++;
-			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
 		}
 		return status;
 	} else {
@@ -137,7 +133,6 @@ int device_write(struct device *d, const void *data, int size, int offset)
 		status = d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (!status) {
 			d->stats.writes++;
-			d->driver->stats.blocks_written += size*d->multiplier;
 		}
 		return status;
 	} else {
@@ -163,21 +158,6 @@ int device_unit( struct device *d )
 const char * device_name( struct device *d )
 {
 	return d->driver->name;
-}
-
-void device_driver_get_stats(char * name, struct device_driver_stats * s)
-{
-	/* Look up driver of the given name */
-	struct device_driver *dd = driver_list;
-	for(dd=driver_list; dd; dd=dd->next) {
-		if(!strcmp(dd->name, name)) {
-			break;
-		}
-	}
-
-	if (dd) {
-		memcpy(s, &(dd->stats), sizeof(*s));
-	}
 }
 
 void device_get_stats( struct device *d, struct device_stats * s)
