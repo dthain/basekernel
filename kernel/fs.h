@@ -63,6 +63,7 @@ int fs_dirent_size(struct fs_dirent *d );
 int fs_dirent_isdir(struct fs_dirent *d);
 int fs_dirent_close(struct fs_dirent *d);
 int fs_dirent_copy( struct fs_dirent *src, struct fs_dirent *dst, int depth );
+void fs_dirent_get_stats(struct fs_dirent *d, void * stats, int object_type);
 
 /*
 Register a new filesystem type, typically at system startup.

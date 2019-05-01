@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #ifndef FS_INTERNAL
 #define FS_INTERNAL
 
+#include "kernel/stats.h"
+
 #include "fs.h"
 #include "cdromfs.h"
 #include "diskfs.h"
@@ -38,6 +40,7 @@ struct fs_dirent {
 		struct cdrom_dirent cdrom;
 		struct diskfs_inode disk;
 	};
+	struct dirent_stats stats;
 };
 
 struct fs_ops {

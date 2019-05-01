@@ -278,6 +278,7 @@ int fs_dirent_read(struct fs_dirent *d, char *buffer, uint32_t length, uint32_t 
 		total += actual;
 	}
 
+	d->stats.reads++;
 	page_free(temp);
 	return total;
 
@@ -296,6 +297,7 @@ struct fs_dirent * fs_dirent_mkdir(struct fs_dirent *d, const char *name)
 	struct fs_dirent *n = ops->mkdir(d, name);
 	if(n) {
 		n->volume = fs_volume_addref(d->volume);
+		n->stats = (const struct dirent_stats) {0};
 		return n;
 	}
 
@@ -310,6 +312,7 @@ struct fs_dirent * fs_dirent_mkfile(struct fs_dirent *d, const char *name)
 	struct fs_dirent *n = ops->mkfile(d, name);
 	if(n) {
 		n->volume = fs_volume_addref(d->volume);
+		n->stats = (const struct dirent_stats) {0};
 		return n;
 	}
 
@@ -380,6 +383,7 @@ int fs_dirent_write(struct fs_dirent *d, const char *buffer, uint32_t length, ui
 		total += actual;
 	}
 
+	d->stats.writes++;
 	page_free(temp);
 	return total;
 
@@ -478,4 +482,22 @@ int fs_dirent_copy(struct fs_dirent *src, struct fs_dirent *dst, int depth )
 failure:
 	page_free(buffer);
 	return KERROR_NOT_FOUND;
+}
+
+void fs_dirent_get_stats(struct fs_dirent *d, void * stats, int object_type)
+{
+	switch (object_type) {
+		case FILE_TYPE:
+			memcpy(stats,&(d->stats),sizeof(sizeof(struct dirent_stats)));
+			break;
+		case DIR_TYPE:
+			memcpy(stats,&(d->stats),sizeof(sizeof(struct dirent_stats)));
+			break;
+		case DEVICE_TYPE:
+			device_get_stats(d->volume->device, (struct device_stats *) stats);
+			break;
+		default:
+			break;
+	}
+
 }
