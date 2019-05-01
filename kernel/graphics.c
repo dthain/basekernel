@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "graphics.h"
 #include "kernel/types.h"
+#include "kernel/stats.h"
 #include "ioports.h"
 #include "font.h"
 #include "string.h"
@@ -29,6 +30,7 @@ struct graphics {
 	struct graphics_color bgcolor;
 	struct graphics_clip clip;
 	struct graphics *parent;
+	struct graphics_stats stats;
 	int refcount;
 };
 
@@ -49,6 +51,7 @@ struct graphics *graphics_create_root()
 	g->clip.h = g->bitmap->height;
 	g->parent = 0;
 	g->refcount = 1;
+	g->stats = (const struct graphics_stats) {0};
 	return g;
 }
 
@@ -61,7 +64,7 @@ struct graphics *graphics_create(struct graphics *parent )
 
 	g->parent = graphics_addref(parent);
 	g->refcount = 1;
-
+	g->stats = (const struct graphics_stats) {0};
 	return g;
 }
 
@@ -94,12 +97,14 @@ int graphics_write(struct graphics *g, struct graphics_command *command)
 	while(command && command->type) {
 		switch (command->type) {
 		case GRAPHICS_WINDOW:
+			g->stats.writes++;
 			window = command->args[0];
 			if(window < 0) {
 				return -1;
 			}
 			break;
 		case GRAPHICS_COLOR:
+			g->stats.writes++;
 			c.r = command->args[0];
 			c.g = command->args[1];
 			c.b = command->args[2];
@@ -107,15 +112,19 @@ int graphics_write(struct graphics *g, struct graphics_command *command)
 			graphics_fgcolor(g, c);
 			break;
 		case GRAPHICS_RECT:
+			g->stats.writes++;
 			graphics_rect(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_CLEAR:
+			g->stats.writes++;
 			graphics_clear(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_LINE:
+			g->stats.writes++;
 			graphics_line(g, command->args[0], command->args[1], command->args[2], command->args[3]);
 			break;
 		case GRAPHICS_TEXT:
+			g->stats.writes++;
 			str = (char *) command->args[2];
 			int i;
 			for(i = 0; str[i]; i++) {
@@ -394,4 +403,9 @@ void graphics_scrollup(struct graphics *g, int x, int y, int w, int h, int dy)
 	}
 
 	graphics_clear(g, x, y + h - dy, w, dy);
+}
+
+void graphics_get_stats(struct graphics *g, struct graphics_stats *s)
+{
+	memcpy(s, &(g->stats), sizeof(*s));
 }

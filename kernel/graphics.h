@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #define GRAPHICS_H
 
 #include "kernel/types.h"
+#include "kernel/stats.h"
 #include "kernel/gfxstream.h"
 
 struct graphics_color {
@@ -37,5 +38,7 @@ void graphics_line(struct graphics *g, int x, int y, int w, int h);
 void graphics_char(struct graphics *g, int x, int y, unsigned char c);
 
 int graphics_write(struct graphics *g, struct graphics_command *command);
+
+void graphics_get_stats(struct graphics *g, struct graphics_stats *s);
 
 #endif
