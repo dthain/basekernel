@@ -7,6 +7,7 @@ See the file LICENSE for details.
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 
 struct device_driver {
