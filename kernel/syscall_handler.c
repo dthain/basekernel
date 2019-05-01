@@ -573,13 +573,6 @@ int sys_system_stats(struct system_stats *s)
 	return 0;
 }
 
-int sys_bcache_stats(struct bcache_stats * s)
-{
-	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
-	bcache_get_stats( s );
-	return 0;
-}
-
 int sys_system_time( uint32_t *tm )
 {
 	if(!is_valid_pointer(tm,sizeof(*tm))) return KERROR_INVALID_ADDRESS;
