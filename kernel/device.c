@@ -180,7 +180,7 @@ void device_driver_get_stats(char * name, struct device_driver_stats * s)
 	}
 }
 
-void device_get_stats( struct device *d, struct device_stats * s, int level )
+void device_get_stats( struct device *d, struct device_stats * s)
 {
 	memcpy(s,&(d->stats),sizeof(*s));
 }
