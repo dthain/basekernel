@@ -30,14 +30,6 @@ struct device_driver_stats {
 	int blocks_read;
 };
 
-struct bcache_stats {
-	int read_hits;
-	int read_misses;
-	int write_hits;
-	int write_misses;
-	int writebacks;
-};
-
 struct console_stats {
 	int writes;
 	uint64_t bytes_written;
