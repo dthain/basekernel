@@ -12,7 +12,7 @@ void mutex_lock(struct mutex *m)
 {
 	interrupt_block();
 	while(m->locked) {
-		process_wait(&m->waitqueue);
+		process_wait(&m->queue);
 		interrupt_block();
 	}
 	m->locked = 1;
@@ -23,6 +23,15 @@ void mutex_unlock(struct mutex *m)
 {
 	interrupt_block();
 	m->locked = 0;
-	process_wakeup(&m->waitqueue);
+	process_wakeup(&m->queue);
 	interrupt_unblock();
+}
+
+void mutex_unlock_and_wait( struct mutex *m, struct list *queue )
+{
+	interrupt_block();
+	m->locked = 0;
+	process_wakeup(&m->queue);
+	process_wait(queue);
+	/* process wait unblocks interrupts on process switch */
 }
