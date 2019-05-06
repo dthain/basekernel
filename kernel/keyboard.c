@@ -66,49 +66,43 @@ static char keyboard_map(int code)
 		direction = 1;
 	}
 
-	if(keymap[code].special == SPECIAL_SHIFT) {
+	struct keymap *k = &keymap[code];
+
+	if(k->special == SPECIAL_SHIFT) {
 		shift_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_ALT) {
+	} else if(k->special == SPECIAL_ALT) {
 		alt_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_CTRL) {
+	} else if(k->special == SPECIAL_CTRL) {
 		ctrl_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_CAPSLOCK) {
-		if(direction == 0)
-			capslock_mode = !capslock_mode;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_NUMLOCK) {
-		if(direction == 0)
-			numlock_mode = !numlock_mode;
-		return KEY_INVALID;
+	} else if(k->special == SPECIAL_CAPSLOCK) {
+		if(direction == 0) capslock_mode = !capslock_mode;
+	} else if(k->special == SPECIAL_NUMLOCK) {
+		if(direction == 0) numlock_mode = !numlock_mode;
 	} else if(direction) {
-		if(ctrl_mode && alt_mode && keymap[code].normal == ASCII_DEL) {
+		if(ctrl_mode && alt_mode && k->normal == ASCII_DEL) {
 			reboot();
-			return KEY_INVALID;
 		} else if(capslock_mode) {
-			if(keymap[code].special==SPECIAL_ALPHA && !shift_mode) {
-				return keymap[code].shifted;
+			if(k->special==SPECIAL_ALPHA && !shift_mode) {
+				return k->shifted;
 			} else {
-				return keymap[code].normal;
+				return k->normal;
 			}	
 		} else if(numlock_mode) {
-			if(keymap[code].special==SPECIAL_NUMPAD && !shift_mode) {
-				return keymap[code].shifted;
+			if(k->special==SPECIAL_NUMPAD && !shift_mode) {
+				return k->shifted;
 			} else {
-				return keymap[code].normal;
+				return k->normal;
 			}	
 		} else if(shift_mode) {
-			return keymap[code].shifted;
+			return k->shifted;
 		} else if(ctrl_mode) {
-			return keymap[code].ctrled;
+			return k->ctrled;
 		} else {
-			return keymap[code].normal;
+			return k->normal;
 		}
-	} else {
-		return KEY_INVALID;
 	}
+
+	return KEY_INVALID;
 }
 
 static int expect_extra = 0;
