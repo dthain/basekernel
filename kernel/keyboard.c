@@ -17,7 +17,8 @@ See the file LICENSE for details.
 #define SPECIAL_SHIFT 1
 #define SPECIAL_ALT   2
 #define SPECIAL_CTRL  3
-#define SPECIAL_SHIFTLOCK 4
+#define SPECIAL_CAPSLOCK 4
+#define SPECIAL_NUMLOCK 5
 
 /* sent before certain keys such as up, down, left, or right. */
 #define KEYCODE_EXTRA (uint8_t)0xE0
@@ -34,6 +35,7 @@ struct keymap {
 	char ctrled;
 	char special;
 };
+
 static struct keymap keymap[] = {
 #include "keymap.us.pc.c"
 };
@@ -47,7 +49,8 @@ static struct list queue = { 0, 0 };
 static int shift_mode = 0;
 static int alt_mode = 0;
 static int ctrl_mode = 0;
-static int shiftlock_mode = 0;
+static int capslock_mode = 0;
+static int numlock_mode = 0;
 
 static char keyboard_map(int code)
 {
@@ -69,20 +72,24 @@ static char keyboard_map(int code)
 	} else if(keymap[code].special == SPECIAL_CTRL) {
 		ctrl_mode = direction;
 		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_SHIFTLOCK) {
+	} else if(keymap[code].special == SPECIAL_CAPSLOCK) {
 		if(direction == 0)
-			shiftlock_mode = !shiftlock_mode;
+			capslock_mode = !capslock_mode;
+		return KEY_INVALID;
+	} else if(keymap[code].special == SPECIAL_NUMLOCK) {
+		if(direction == 0)
+			numlock_mode = !numlock_mode;
 		return KEY_INVALID;
 	} else if(direction) {
 		if(ctrl_mode && alt_mode && keymap[code].normal == ASCII_DEL) {
 			reboot();
 			return KEY_INVALID;
-		} else if(shiftlock_mode) {
-			if(shift_mode) {
-				return keymap[code].normal;
-			} else {
-				return keymap[code].shifted;
-			}
+		} else if(capslock_mode && !shift_mode) {
+//check if keyboard
+			return keymap[code].shifted;
+		} else if(numlock_mode && !shift_mode) {
+// check if numpad
+			return keymap[code].shifted;
 		} else if(shift_mode) {
 			return keymap[code].shifted;
 		} else if(ctrl_mode) {
@@ -101,6 +108,8 @@ static void keyboard_interrupt(int i, int intr_code)
 {
 	uint8_t code = inb(KEYBOARD_PORT);
 	char c = KEY_INVALID;
+
+	printf("CODE: %d\n",code);
 
 	if(code == KEYCODE_EXTRA) {
 		expect_extra = 1;
