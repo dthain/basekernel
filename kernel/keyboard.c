@@ -14,14 +14,13 @@ See the file LICENSE for details.
 
 #define KEYBOARD_PORT 0x60
 
-#define SPECIAL_SHIFT 1
-#define SPECIAL_ALT   2
-#define SPECIAL_CTRL  3
-#define SPECIAL_CAPSLOCK 4
-#define SPECIAL_NUMLOCK 5
-
-#define SPECIAL_ALPHA 6
-#define SPECIAL_NUMPAD 8
+#define KEYMAP_SHIFT 1
+#define KEYMAP_ALT   2
+#define KEYMAP_CTRL  3
+#define KEYMAP_CAPSLOCK 4
+#define KEYMAP_NUMLOCK 5
+#define KEYMAP_ALPHA 6
+#define KEYMAP_NUMPAD 8
 
 /* sent before certain keys such as up, down, left, or right. */
 #define KEYCODE_EXTRA (uint8_t)0xE0
@@ -68,27 +67,27 @@ static char keyboard_map(int code)
 
 	struct keymap *k = &keymap[code];
 
-	if(k->special == SPECIAL_SHIFT) {
+	if(k->special == KEYMAP_SHIFT) {
 		shift_mode = direction;
-	} else if(k->special == SPECIAL_ALT) {
+	} else if(k->special == KEYMAP_ALT) {
 		alt_mode = direction;
-	} else if(k->special == SPECIAL_CTRL) {
+	} else if(k->special == KEYMAP_CTRL) {
 		ctrl_mode = direction;
-	} else if(k->special == SPECIAL_CAPSLOCK) {
+	} else if(k->special == KEYMAP_CAPSLOCK) {
 		if(direction == 0) capslock_mode = !capslock_mode;
-	} else if(k->special == SPECIAL_NUMLOCK) {
+	} else if(k->special == KEYMAP_NUMLOCK) {
 		if(direction == 0) numlock_mode = !numlock_mode;
 	} else if(direction) {
 		if(ctrl_mode && alt_mode && k->normal == ASCII_DEL) {
 			reboot();
 		} else if(capslock_mode) {
-			if(k->special==SPECIAL_ALPHA && !shift_mode) {
+			if(k->special==KEYMAP_ALPHA && !shift_mode) {
 				return k->shifted;
 			} else {
 				return k->normal;
 			}	
 		} else if(numlock_mode) {
-			if(k->special==SPECIAL_NUMPAD && !shift_mode) {
+			if(k->special==KEYMAP_NUMPAD && !shift_mode) {
 				return k->shifted;
 			} else {
 				return k->normal;
