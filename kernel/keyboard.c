@@ -14,13 +14,20 @@ See the file LICENSE for details.
 
 #define KEYBOARD_PORT 0x60
 
-#define KEY_INVALID 127
-#define KEY_EXTRA   -32		/*sent before certain keys such as up, down, left, or right( */
+#define KEYMAP_SHIFT 1
+#define KEYMAP_ALT   2
+#define KEYMAP_CTRL  3
+#define KEYMAP_CAPSLOCK 4
+#define KEYMAP_NUMLOCK 5
+#define KEYMAP_ALPHA 6
+#define KEYMAP_NUMPAD 8
 
-#define SPECIAL_SHIFT 1
-#define SPECIAL_ALT   2
-#define SPECIAL_CTRL  3
-#define SPECIAL_SHIFTLOCK 4
+/* sent before certain keys such as up, down, left, or right. */
+#define KEYCODE_EXTRA (uint8_t)0xE0
+#define KEYCODE_UP    (uint8_t)0x48
+#define KEYCODE_DOWN  (uint8_t)0x42
+#define KEYCODE_LEFT  (uint8_t)0x4B
+#define KEYCODE_RIGHT (uint8_t)0x4D
 
 #define BUFFER_SIZE 256
 
@@ -30,8 +37,9 @@ struct keymap {
 	char ctrled;
 	char special;
 };
+
 static struct keymap keymap[] = {
-#include "keymap.us.c"
+#include "keymap.us.pc.c"
 };
 
 static char buffer[BUFFER_SIZE];
@@ -43,7 +51,8 @@ static struct list queue = { 0, 0 };
 static int shift_mode = 0;
 static int alt_mode = 0;
 static int ctrl_mode = 0;
-static int shiftlock_mode = 0;
+static int capslock_mode = 0;
+static int numlock_mode = 0;
 
 static char keyboard_map(int code)
 {
@@ -56,54 +65,80 @@ static char keyboard_map(int code)
 		direction = 1;
 	}
 
-	if(keymap[code].special == SPECIAL_SHIFT) {
+	struct keymap *k = &keymap[code];
+
+	if(k->special == KEYMAP_SHIFT) {
 		shift_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_ALT) {
+	} else if(k->special == KEYMAP_ALT) {
 		alt_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_CTRL) {
+	} else if(k->special == KEYMAP_CTRL) {
 		ctrl_mode = direction;
-		return KEY_INVALID;
-	} else if(keymap[code].special == SPECIAL_SHIFTLOCK) {
-		if(direction == 0)
-			shiftlock_mode = !shiftlock_mode;
-		return KEY_INVALID;
+	} else if(k->special == KEYMAP_CAPSLOCK) {
+		if(direction == 0) capslock_mode = !capslock_mode;
+	} else if(k->special == KEYMAP_NUMLOCK) {
+		if(direction == 0) numlock_mode = !numlock_mode;
 	} else if(direction) {
-		if(ctrl_mode && alt_mode && keymap[code].normal == ASCII_DEL) {
+		if(ctrl_mode && alt_mode && k->normal == ASCII_DEL) {
 			reboot();
-			return KEY_INVALID;
-		} else if(shiftlock_mode) {
-			if(shift_mode) {
-				return keymap[code].normal;
+		} else if(capslock_mode) {
+			if(k->special==KEYMAP_ALPHA && !shift_mode) {
+				return k->shifted;
 			} else {
-				return keymap[code].shifted;
-			}
+				return k->normal;
+			}	
+		} else if(numlock_mode) {
+			if(k->special==KEYMAP_NUMPAD && !shift_mode) {
+				return k->shifted;
+			} else {
+				return k->normal;
+			}	
 		} else if(shift_mode) {
-			return keymap[code].shifted;
+			return k->shifted;
 		} else if(ctrl_mode) {
-			return keymap[code].ctrled;
+			return k->ctrled;
 		} else {
-			return keymap[code].normal;
+			return k->normal;
 		}
-	} else {
-		return KEY_INVALID;
 	}
+
+	return KEY_INVALID;
 }
 
-static void keyboard_interrupt(int i, int code)
+static int expect_extra = 0;
+
+static void keyboard_interrupt(int i, int intr_code)
 {
-	static char mod = 0x00;
-	char c = inb(KEYBOARD_PORT);
-	if(c == KEY_EXTRA) {
-		mod = 0x80;
+	uint8_t code = inb(KEYBOARD_PORT);
+	char c = KEY_INVALID;
+
+	if(code == KEYCODE_EXTRA) {
+		expect_extra = 1;
 		return;
+	} else if(expect_extra) {
+		expect_extra = 0;
+		switch(code) {
+			case KEYCODE_UP:
+				c = KEY_UP;
+				break;
+			case KEYCODE_DOWN:
+				c = KEY_DOWN;
+				break;
+			case KEYCODE_LEFT:
+				c = KEY_LEFT;
+				break;
+			case KEYCODE_RIGHT:
+				c = KEY_RIGHT;
+				break;
+			default:
+				c = KEY_INVALID;
+				break;
+		}
 	} else {
-		c = keyboard_map(c) | mod;
-		mod = 0x00;
+		c = keyboard_map(code);
 	}
-	if(c == KEY_INVALID)
-		return;
+
+	if(c == KEY_INVALID) return;
+
 	if((keyboard_buffer_write + 1) == (keyboard_buffer_read % BUFFER_SIZE))
 		return;
 	buffer[keyboard_buffer_write] = c;
