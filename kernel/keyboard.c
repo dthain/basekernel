@@ -20,6 +20,9 @@ See the file LICENSE for details.
 #define SPECIAL_CAPSLOCK 4
 #define SPECIAL_NUMLOCK 5
 
+#define SPECIAL_ALPHA 6
+#define SPECIAL_NUMPAD 8
+
 /* sent before certain keys such as up, down, left, or right. */
 #define KEYCODE_EXTRA (uint8_t)0xE0
 #define KEYCODE_UP    (uint8_t)0x48
@@ -84,12 +87,18 @@ static char keyboard_map(int code)
 		if(ctrl_mode && alt_mode && keymap[code].normal == ASCII_DEL) {
 			reboot();
 			return KEY_INVALID;
-		} else if(capslock_mode && !shift_mode) {
-//check if keyboard
-			return keymap[code].shifted;
-		} else if(numlock_mode && !shift_mode) {
-// check if numpad
-			return keymap[code].shifted;
+		} else if(capslock_mode) {
+			if(keymap[code].special==SPECIAL_ALPHA && !shift_mode) {
+				return keymap[code].shifted;
+			} else {
+				return keymap[code].normal;
+			}	
+		} else if(numlock_mode) {
+			if(keymap[code].special==SPECIAL_NUMPAD && !shift_mode) {
+				return keymap[code].shifted;
+			} else {
+				return keymap[code].normal;
+			}	
 		} else if(shift_mode) {
 			return keymap[code].shifted;
 		} else if(ctrl_mode) {
@@ -108,8 +117,6 @@ static void keyboard_interrupt(int i, int intr_code)
 {
 	uint8_t code = inb(KEYBOARD_PORT);
 	char c = KEY_INVALID;
-
-	printf("CODE: %d\n",code);
 
 	if(code == KEYCODE_EXTRA) {
 		expect_extra = 1;
