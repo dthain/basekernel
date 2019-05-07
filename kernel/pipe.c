@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "process.h"
 #include "list.h"
+#include "monitor.h"
 
 #define PIPE_SIZE (1024)
 
@@ -19,7 +20,7 @@ struct pipe {
 	int blocking;
 	int flushed;
 	int refcount;
-	struct list queue;
+	struct monitor monitor;
 };
 
 struct pipe *pipe_create()
@@ -30,8 +31,7 @@ struct pipe *pipe_create()
 	p->write_pos = 0;
 	p->blocking = 1;
 	p->flushed = 0;
-	p->queue.head = 0;
-	p->queue.tail = 0;
+	p->monitor = (struct monitor) MONITOR_INIT_PROCESS_SAFE;
 	p->refcount = 1;
 	return p;
 }
@@ -77,19 +77,19 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 		return -1;
 	}
 	int written = 0;
+
+	monitor_lock(&p->monitor);
+
 	if(p->blocking) {
 		for(written = 0; written < size; written++) {
 			while((p->write_pos + 1) % PIPE_SIZE == p->read_pos) {
-				if(p->flushed) {
-					p->flushed = 0;
-					return written;
-				}
-				process_wait(&p->queue);
+				if(p->flushed) goto done;
+				monitor_wait(&p->monitor);
 			}
 			p->buffer[p->write_pos] = buffer[written];
 			p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
 		}
-		process_wakeup_all(&p->queue);
+		monitor_notify_all(&p->monitor);
 	} else {
 		while(written < size && p->write_pos != (p->read_pos - 1) % PIPE_SIZE) {
 			p->buffer[p->write_pos] = buffer[written];
@@ -97,7 +97,10 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 			written++;
 		}
 	}
+
+	done:
 	p->flushed = 0;
+	monitor_unlock(&p->monitor);
 	return written;
 }
 
@@ -107,22 +110,23 @@ int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 		return -1;
 	}
 	int read = 0;
+
+	monitor_lock(&p->monitor);
+
 	if(p->blocking) {
 		for(read = 0; read < size; read++) {
 			while(p->write_pos == p->read_pos) {
-				if(p->flushed) {
-					p->flushed = 0;
-					return read;
+				if(p->flushed) goto done;
+				if(block == 0) {
+					read = -1;
+					goto done;
 				}
-				if (block == 0) {
-					return -1;
-				}
-				process_wait(&p->queue);
+				monitor_wait(&p->monitor);
 			}
 			buffer[read] = p->buffer[p->read_pos];
 			p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
 		}
-		process_wakeup_all(&p->queue);
+		monitor_notify_all(&p->monitor);
 	} else {
 		while(read < size && p->read_pos != p->write_pos) {
 			buffer[read] = p->buffer[p->read_pos];
@@ -130,7 +134,10 @@ int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 			read++;
 		}
 	}
-	p->flushed = 0;
+
+	done:
+	p->flushed = 0;	
+	monitor_unlock(&p->monitor);
 	return read;
 }
 
