@@ -42,7 +42,7 @@ static struct keymap keymap[] = {
 #include "keymap.us.pc.c"
 };
 
-static char buffer[BUFFER_SIZE];
+static uint8_t buffer[BUFFER_SIZE];
 static int keyboard_buffer_read = 0;
 static int keyboard_buffer_write = 0;
 
@@ -54,7 +54,7 @@ static int ctrl_mode = 0;
 static int capslock_mode = 0;
 static int numlock_mode = 0;
 
-static char keyboard_map(int code)
+static uint8_t keyboard_map( uint8_t code)
 {
 	int direction;
 
@@ -109,7 +109,7 @@ static int expect_extra = 0;
 static void keyboard_interrupt(int i, int intr_code)
 {
 	uint8_t code = inb(KEYBOARD_PORT);
-	char c = KEY_INVALID;
+	uint8_t c = KEY_INVALID;
 
 	if(code == KEYCODE_EXTRA) {
 		expect_extra = 1;
