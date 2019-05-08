@@ -6,7 +6,6 @@ int main(int argc, char *argv[])
 {
 	printf("%d: Running pipe test!\n", syscall_process_self());
 	int w = syscall_open_pipe();
-	syscall_object_set_blocking(w, 0);
 	int x = syscall_process_fork();
 	if(x) {
 		printf("%d: Writing...\n", syscall_process_self());

@@ -17,7 +17,6 @@ struct pipe {
 	char *buffer;
 	int read_pos;
 	int write_pos;
-	int blocking;
 	int flushed;
 	int refcount;
 	struct monitor monitor;
@@ -29,7 +28,6 @@ struct pipe *pipe_create()
 	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
 	p->read_pos = 0;
 	p->write_pos = 0;
-	p->blocking = 1;
 	p->flushed = 0;
 	p->monitor = (struct monitor) MONITOR_INIT_PROCESS_SAFE;
 	p->refcount = 1;
@@ -62,15 +60,6 @@ void pipe_delete(struct pipe *p)
 	}
 }
 
-int pipe_set_blocking(struct pipe *p, int b)
-{
-	if(p) {
-		p->blocking = b;
-		return 1;
-	}
-	return 0;
-}
-
 static int pipe_is_full( struct pipe *p )
 {
 	return (p->write_pos + 1) % PIPE_SIZE == p->read_pos;
@@ -89,7 +78,7 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 
 	for(written = 0; written < size; written++) {
 		while(pipe_is_full(p)) {
-			if(!p->blocking || p->flushed ) break;
+			if(p->flushed ) break;
 			monitor_notify_all(&p->monitor);
 			monitor_wait(&p->monitor);
 		}
@@ -111,7 +100,7 @@ static int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 
 	for(read = 0; read < size; read++) {
 		while(pipe_is_empty(p)) {
-			if(p->flushed || !p->blocking || !block) break;
+			if(p->flushed || !block) break;
 			monitor_notify_all(&p->monitor);
 			monitor_wait(&p->monitor);
 		}

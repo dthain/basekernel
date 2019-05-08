@@ -313,16 +313,6 @@ int kobject_close(struct kobject *kobject)
 	return 0;
 }
 
-int kobject_set_blocking(struct kobject *kobject, int b)
-{
-	switch (kobject->type) {
-	case KOBJECT_PIPE:
-		return pipe_set_blocking(kobject->data.pipe, b);
-	default:
-		return 0;
-	}
-}
-
 int kobject_size(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
