@@ -71,71 +71,54 @@ int pipe_set_blocking(struct pipe *p, int b)
 	return 0;
 }
 
+static int pipe_is_full( struct pipe *p )
+{
+	return (p->write_pos + 1) % PIPE_SIZE == p->read_pos;
+}
+
+static int pipe_is_empty( struct pipe *p )
+{
+	return p->write_pos==p->read_pos;
+}
+
 int pipe_write(struct pipe *p, char *buffer, int size)
 {
-	if(!p || !buffer) {
-		return -1;
-	}
 	int written = 0;
 
 	monitor_lock(&p->monitor);
 
-	if(p->blocking) {
-		for(written = 0; written < size; written++) {
-			while((p->write_pos + 1) % PIPE_SIZE == p->read_pos) {
-				if(p->flushed) goto done;
-				monitor_wait(&p->monitor);
-			}
-			p->buffer[p->write_pos] = buffer[written];
-			p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
+	for(written = 0; written < size; written++) {
+		while(pipe_is_full(p)) {
+			if(!p->blocking || p->flushed ) break;
+			monitor_notify_all(&p->monitor);
+			monitor_wait(&p->monitor);
 		}
-		monitor_notify_all(&p->monitor);
-	} else {
-		while(written < size && p->write_pos != (p->read_pos - 1) % PIPE_SIZE) {
-			p->buffer[p->write_pos] = buffer[written];
-			p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
-			written++;
-		}
+		p->buffer[p->write_pos] = buffer[written];
+		p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
 	}
 
-	done:
+	monitor_notify_all(&p->monitor);
 	p->flushed = 0;
 	monitor_unlock(&p->monitor);
 	return written;
 }
 
-int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
+static int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 {
-	if(!p || !buffer) {
-		return -1;
-	}
 	int read = 0;
 
 	monitor_lock(&p->monitor);
 
-	if(p->blocking) {
-		for(read = 0; read < size; read++) {
-			while(p->write_pos == p->read_pos) {
-				if(p->flushed) goto done;
-				if(block == 0) {
-					read = -1;
-					goto done;
-				}
-				monitor_wait(&p->monitor);
-			}
-			buffer[read] = p->buffer[p->read_pos];
-			p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
+	for(read = 0; read < size; read++) {
+		while(pipe_is_empty(p)) {
+			if(p->flushed || !p->blocking || !block) break;
+			monitor_notify_all(&p->monitor);
+			monitor_wait(&p->monitor);
 		}
-		monitor_notify_all(&p->monitor);
-	} else {
-		while(read < size && p->read_pos != p->write_pos) {
-			buffer[read] = p->buffer[p->read_pos];
-			p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
-			read++;
-		}
+		buffer[read] = p->buffer[p->read_pos];
+		p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
 	}
 
-	done:
 	p->flushed = 0;	
 	monitor_unlock(&p->monitor);
 	return read;
