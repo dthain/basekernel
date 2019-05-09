@@ -593,8 +593,11 @@ int sys_system_rtc( struct rtc_time *t )
 	return 0;
 }
 
-int sys_device_driver_stats(char * name, struct device_driver_stats * stats)
+int sys_device_driver_stats(const char * name, struct device_driver_stats * stats)
 {
+	if(!is_valid_string(name)) return KERROR_INVALID_ADDRESS;
+	if(!is_valid_pointer(stats,sizeof(*stats))) return KERROR_INVALID_ADDRESS;
+
 	device_driver_get_stats(name, stats);
 	return 0;
 }
