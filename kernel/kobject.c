@@ -1,12 +1,13 @@
 /*
  * Copyright (C) 2016-2019 The University of Notre Dame This software is
  * distributed under the GNU General Public License. See the file LICENSE
- * for details. 
+ * for details.
  */
 
 #include "console.h"
 #include "kobject.h"
 #include "kmalloc.h"
+#include "string.h"
 
 #include "device.h"
 #include "fs.h"
@@ -14,7 +15,6 @@
 #include "console.h"
 #include "pipe.h"
 
-#include "library/string.h"
 #include "kernel/error.h"
 
 static struct kobject *kobject_init()
@@ -226,23 +226,42 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 	return 0;
 }
 
-int kobject_copy( struct kobject *ksrc, struct kobject *kdst )
+struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 {
-	struct fs_dirent *src, *dst;
+	/*
+		Shallow copy the state of ksrc to kdst and call addref for underlying
+		type.
+	*/
+	*kdst = kobject_init();
+	(*kdst)->data 			= ksrc->data;
+	(*kdst)->type 			= ksrc->type;
+	(*kdst)->offset 		= ksrc->offset;
 
-	if(ksrc->type==KOBJECT_DIR) {
-		src = ksrc->data.dir;
-	} else {
-		return KERROR_NOT_A_FILE;
+	if (ksrc->tag)
+		(*kdst)->tag = strdup(ksrc->tag);
+
+	switch (ksrc->type) {
+	case KOBJECT_GRAPHICS:
+		graphics_addref(ksrc->data.graphics);
+		break;
+	case KOBJECT_CONSOLE:
+		console_addref(ksrc->data.console);
+		break;
+	case KOBJECT_FILE:
+		fs_dirent_addref(ksrc->data.file);
+		break;
+	case KOBJECT_DIR:
+		fs_dirent_addref(ksrc->data.dir);
+		break;
+	case KOBJECT_DEVICE:
+		device_addref(ksrc->data.device);
+		break;
+	case KOBJECT_PIPE:
+		pipe_addref(ksrc->data.pipe);
+		break;
 	}
 
-	if(kdst->type==KOBJECT_DIR) {
-		dst = kdst->data.dir;
-	} else {
-		return KERROR_NOT_A_DIRECTORY;
-	}
-
-	return fs_dirent_copy(src,dst,0);
+	return *kdst;
 }
 
 int kobject_remove( struct kobject *kobject, const char *name )
@@ -282,6 +301,8 @@ int kobject_close(struct kobject *kobject)
 		default:
 			break;
 		}
+		if (kobject->tag)
+			kfree(kobject->tag);
 		kfree(kobject);
 		return 0;
 	} else if(kobject->refcount>1 ) {
@@ -300,7 +321,6 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 int kobject_size(struct kobject *kobject, int *dims, int n)
@@ -377,4 +397,3 @@ int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
 	}
 	return 0;
 }
-

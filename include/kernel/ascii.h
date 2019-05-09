@@ -130,9 +130,41 @@
 #define ASCII_TILDE	126
 #define ASCII_DEL	127
 
-#define KEY_UP	(char)0xB8
-#define KEY_DOWN	(char)0xB2
-#define KEY_LEFT	(char)0xBB
-#define KEY_RIGHT	(char)0xBD
+/*
+The following are not 7-bit ASCII values,
+but abstract keycodes for commonly used keys,
+which we put in the upper half of a character
+value returned by the keyboard driver.
+*/
+
+#define KEY_INSERT 128
+#define KEY_DELETE 129
+#define KEY_HOME 130
+#define KEY_END 131
+#define KEY_PAGE_UP 132
+#define KEY_PAGE_DOWN 133
+#define KEY_UP 134
+#define KEY_DOWN 135
+#define KEY_LEFT 136
+#define KEY_RIGHT 137
+#define KEY_HELP 138
+
+#define KEY_F1 140
+#define KEY_F2 141 
+#define KEY_F3 142
+#define KEY_F4 143
+#define KEY_F5 144
+#define KEY_F6 145
+#define KEY_F7 146
+#define KEY_F8 147
+#define KEY_F9 148
+#define KEY_F10 149
+#define KEY_F11 150
+#define KEY_F12 151
+#define KEY_F13 152
+#define KEY_F14 153
+#define KEY_F15 154
+
+#define KEY_INVALID 255
 
 #endif

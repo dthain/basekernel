@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #include "kernel/ascii.h"
 #include "library/malloc.h"
 #include "library/string.h"
+#include "library/malloc.h"
 #include "stdarg.h"
 
 void strcpy(char *d, const char *s)
@@ -24,6 +25,16 @@ void strncpy(char *d, const char *s, unsigned length)
 		*d++ = *s++;
 	}
 	*d = 0;
+}
+
+char * strdup(const char *s)
+{
+	char * d = (char *)malloc(strlen(s) * sizeof(char));
+	while(*s) {
+		*d++ = *s++;
+	}
+	*d = 0;
+	return d;
 }
 
 int strcmp(const char *a, const char *b)
