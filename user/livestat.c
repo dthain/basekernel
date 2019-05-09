@@ -37,9 +37,9 @@ struct stat_args {
 void help();
 void stat_live_2_str(STAT_LIVE stat_l, char * str);
 void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
-int  extract_statistic(struct stat_args args);
+int  extract_statistic(struct stat_args * args);
 void plot_bars(int * most_recent_vals, int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
-void run_stats(struct stat_args args);
+void run_stats(struct stat_args * args);
 
 int main(int argc, const char * argv[]) {
   /* Setup program parameters */
@@ -94,14 +94,14 @@ int main(int argc, const char * argv[]) {
   }
 
   /* Start tracking stats */
-  run_stats(args);
+  run_stats(&args);
 
   return 0;
 }
 
 /** HELPER FUNCTIONS **/
 /* Create graph and continuously update it */
-void run_stats(struct stat_args args) {
+void run_stats(struct stat_args * args) {
   /* Initialize variables for graph and stats collection */
   int window_width  = 270;
   int window_height = 270;
@@ -111,14 +111,14 @@ void run_stats(struct stat_args args) {
   int char_offset   = 8;
 
   /* Generate the graph with correct labels */
-  if (args.stat_type == BCACHE_LIVE) {
-    create_graph(args.stat_type, args.stat_name, 0, window_width, window_height, plot_width, plot_height, thickness, char_offset);
-  } else if (args.stat_type == PROCESS_LIVE) {
-    create_graph(args.stat_type, args.stat_name, args.pid_s, window_width, window_height, plot_width, plot_height, thickness, char_offset);
-  } else if (args.stat_type == DRIVER_LIVE) {
-    create_graph(args.stat_type, args.stat_name, args.driver_name, window_width, window_height, plot_width, plot_height, thickness, char_offset);
-  } else if (args.stat_type == SYSTEM_LIVE) {
-    create_graph(args.stat_type, args.stat_name, 0, window_width, window_height, plot_width, plot_height, thickness, char_offset);
+  if (args->stat_type == BCACHE_LIVE) {
+    create_graph(args->stat_type, args->stat_name, 0, window_width, window_height, plot_width, plot_height, thickness, char_offset);
+  } else if (args->stat_type == PROCESS_LIVE) {
+    create_graph(args->stat_type, args->stat_name, args->pid_s, window_width, window_height, plot_width, plot_height, thickness, char_offset);
+  } else if (args->stat_type == DRIVER_LIVE) {
+    create_graph(args->stat_type, args->stat_name, args->driver_name, window_width, window_height, plot_width, plot_height, thickness, char_offset);
+  } else if (args->stat_type == SYSTEM_LIVE) {
+    create_graph(args->stat_type, args->stat_name, 0, window_width, window_height, plot_width, plot_height, thickness, char_offset);
   }
 
   /* Start tracking stats */
@@ -137,14 +137,14 @@ void run_stats(struct stat_args args) {
     if (quit == 'q') break;
 
     /* Get the correct stats */
-    if (args.stat_type  == BCACHE_LIVE) {
-      syscall_bcache_stats(args.statistics);
-    } else if (args.stat_type  == PROCESS_LIVE) {
-      syscall_process_stats(args.statistics, args.pid);
-    } else if (args.stat_type == DRIVER_LIVE) {
-      syscall_device_driver_stats(args.driver_name, args.statistics);
-    } else if (args.stat_type  == SYSTEM_LIVE) {
-      syscall_system_stats(args.statistics);
+    if (args->stat_type  == BCACHE_LIVE) {
+      syscall_bcache_stats(args->statistics);
+    } else if (args->stat_type  == PROCESS_LIVE) {
+      syscall_process_stats(args->statistics, args->pid);
+    } else if (args->stat_type == DRIVER_LIVE) {
+      syscall_device_driver_stats(args->driver_name, args->statistics);
+    } else if (args->stat_type  == SYSTEM_LIVE) {
+      syscall_system_stats(args->statistics);
     }
 
     /* Grab the specified statistic of interest */
@@ -181,48 +181,48 @@ void run_stats(struct stat_args args) {
 }
 
 /* Return one stat from statistics structure */
-int extract_statistic(struct stat_args args) {
+int extract_statistic(struct stat_args * args) {
 
-  if (args.stat_type == BCACHE_LIVE) {
-    if (!strcmp(args.stat_name, "read_hits")) {
-      return ((struct bcache_stats *)args.statistics)->read_hits;
-    } else if (!strcmp(args.stat_name, "read_misses")) {
-      return ((struct bcache_stats *)args.statistics)->read_misses;
-    } else if (!strcmp(args.stat_name, "write_hits")) {
-      return ((struct bcache_stats *)args.statistics)->write_hits;
-    } else if (!strcmp(args.stat_name, "write_misses")) {
-      return ((struct bcache_stats *)args.statistics)->write_misses;
-    } else if (!strcmp(args.stat_name, "writebacks")) {
-      return ((struct bcache_stats *)args.statistics)->writebacks;
+  if (args->stat_type == BCACHE_LIVE) {
+    if (!strcmp(args->stat_name, "read_hits")) {
+      return ((struct bcache_stats *)args->statistics)->read_hits;
+    } else if (!strcmp(args->stat_name, "read_misses")) {
+      return ((struct bcache_stats *)args->statistics)->read_misses;
+    } else if (!strcmp(args->stat_name, "write_hits")) {
+      return ((struct bcache_stats *)args->statistics)->write_hits;
+    } else if (!strcmp(args->stat_name, "write_misses")) {
+      return ((struct bcache_stats *)args->statistics)->write_misses;
+    } else if (!strcmp(args->stat_name, "writebacks")) {
+      return ((struct bcache_stats *)args->statistics)->writebacks;
     }
   }
-  else if (args.stat_type == PROCESS_LIVE) {
-    if (!strcmp(args.stat_name, "blocks_read")) {
-      return ((struct process_stats *)args.statistics)->blocks_read;
-    } else if (!strcmp(args.stat_name, "blocks_written")) {
-      return ((struct process_stats *)args.statistics)->blocks_written;
-    } else if (!strcmp(args.stat_name, "bytes_read")) {
-      return ((struct process_stats *)args.statistics)->bytes_read;
-    } else if (!strcmp(args.stat_name, "bytes_written")) {
-      return ((struct process_stats *)args.statistics)->bytes_written;
-    } else if (!strcmp(args.stat_name, "syscall_count")) {
-      return ((struct process_stats *)args.statistics)->syscall_count[args.syscall_index];
+  else if (args->stat_type == PROCESS_LIVE) {
+    if (!strcmp(args->stat_name, "blocks_read")) {
+      return ((struct process_stats *)args->statistics)->blocks_read;
+    } else if (!strcmp(args->stat_name, "blocks_written")) {
+      return ((struct process_stats *)args->statistics)->blocks_written;
+    } else if (!strcmp(args->stat_name, "bytes_read")) {
+      return ((struct process_stats *)args->statistics)->bytes_read;
+    } else if (!strcmp(args->stat_name, "bytes_written")) {
+      return ((struct process_stats *)args->statistics)->bytes_written;
+    } else if (!strcmp(args->stat_name, "syscall_count")) {
+      return ((struct process_stats *)args->statistics)->syscall_count[args->syscall_index];
     }
   }
-  else if (args.stat_type == DRIVER_LIVE) {
-      if (!strcmp(args.stat_name, "blocks_read")) {
-        return ((struct device_driver_stats *)args.statistics)->blocks_read;
-      } else if (!strcmp(args.stat_name, "blocks_written")) {
-        return ((struct device_driver_stats *)args.statistics)->blocks_written;
+  else if (args->stat_type == DRIVER_LIVE) {
+      if (!strcmp(args->stat_name, "blocks_read")) {
+        return ((struct device_driver_stats *)args->statistics)->blocks_read;
+      } else if (!strcmp(args->stat_name, "blocks_written")) {
+        return ((struct device_driver_stats *)args->statistics)->blocks_written;
       }
   }
-  else if (args.stat_type == SYSTEM_LIVE) {
-    if (!strcmp(args.stat_name, "time")) {
-      return ((struct system_stats *)args.statistics)->time;
-    } else if (!strcmp(args.stat_name, "blocks_read")) {
-      return ((struct system_stats *)args.statistics)->blocks_read[args.device_unit];
-    } else if (!strcmp(args.stat_name, "blocks_written")) {
-      return ((struct system_stats *)args.statistics)->blocks_written[args.device_unit];
+  else if (args->stat_type == SYSTEM_LIVE) {
+    if (!strcmp(args->stat_name, "time")) {
+      return ((struct system_stats *)args->statistics)->time;
+    } else if (!strcmp(args->stat_name, "blocks_read")) {
+      return ((struct system_stats *)args->statistics)->blocks_read[args->device_unit];
+    } else if (!strcmp(args->stat_name, "blocks_written")) {
+      return ((struct system_stats *)args->statistics)->blocks_written[args->device_unit];
     }
   }
 
@@ -371,7 +371,7 @@ void help() {
   printf("    time\n");
   printf("    blocks_read\n");
   printf("    blocks_written\n\n");
-  
+
   //TODO memory utilizations (page), kernel malloc
 
 }
