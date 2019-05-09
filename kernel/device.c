@@ -60,16 +60,9 @@ struct device *device_open( const char *name, int unit )
 	int nblocks, block_size;
 	char info[64];
 
-	struct device_driver *dd = driver_list;
-
-	for(dd=driver_list;dd;dd=dd->next) {
-		if(!strcmp(dd->name,name)) {
-			if(dd->probe(unit,&nblocks,&block_size,info)) {
-				return device_create(dd,unit,nblocks,block_size);
-			} else {
-				return 0;
-			}
-		}
+	struct device_driver *dd = device_driver_lookup(name);
+	if (dd && dd->probe(unit,&nblocks,&block_size,info)) {
+		return device_create(dd,unit,nblocks,block_size);
 	}
 
 	return 0;
@@ -160,16 +153,23 @@ const char * device_name( struct device *d )
 	return d->driver->name;
 }
 
-void device_driver_get_stats(char * name, struct device_driver_stats * s)
+struct device_driver * device_driver_lookup(const char *name)
 {
-	/* Look up driver of the given name */
 	struct device_driver *dd = driver_list;
 	for(dd=driver_list; dd; dd=dd->next) {
 		if(!strcmp(dd->name, name)) {
 			break;
 		}
 	}
+	return dd;
+}
 
+void device_driver_get_stats(char * name, struct device_driver_stats * s)
+{
+	/* Get the device driver */
+	struct device_driver *dd = device_driver_lookup(name);
+
+	/* Copy stats into struct */
 	if (dd) {
 		memcpy(s, &(dd->stats), sizeof(*s));
 	}
