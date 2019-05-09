@@ -35,7 +35,7 @@ int device_nblocks( struct device *d );
 int device_unit( struct device *d );
 const char * device_name( struct device *d );
 
-void device_driver_get_stats(char * name, struct device_driver_stats * s);
+void device_driver_get_stats(const char * name, struct device_driver_stats * s);
 struct device_driver * device_driver_lookup(const char *name);
 
 #endif

@@ -164,7 +164,7 @@ struct device_driver * device_driver_lookup(const char *name)
 	return dd;
 }
 
-void device_driver_get_stats(char * name, struct device_driver_stats * s)
+void device_driver_get_stats(const char * name, struct device_driver_stats * s)
 {
 	/* Get the device driver */
 	struct device_driver *dd = device_driver_lookup(name);
