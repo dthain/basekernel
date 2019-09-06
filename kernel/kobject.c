@@ -305,10 +305,6 @@ int kobject_close(struct kobject *kobject)
 			kfree(kobject->tag);
 		kfree(kobject);
 		return 0;
-	} else if(kobject->refcount>1 ) {
-		if(kobject->type==KOBJECT_PIPE) {
-			pipe_flush(kobject->data.pipe);
-		}
 	}
 	return 0;
 }

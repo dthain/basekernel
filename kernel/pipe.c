@@ -11,7 +11,7 @@ See the file LICENSE for details.
 #include "list.h"
 #include "monitor.h"
 
-#define PIPE_SIZE (1024)
+#define PIPE_SIZE PAGE_SIZE
 
 struct pipe {
 	char *buffer;
@@ -24,7 +24,7 @@ struct pipe {
 
 struct pipe *pipe_create()
 {
-	struct pipe *p = kmalloc(sizeof(*p));
+	struct pipe *p = page_alloc(0);
 	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
 	p->read_pos = 0;
 	p->write_pos = 0;
@@ -42,9 +42,7 @@ struct pipe *pipe_addref( struct pipe *p )
 
 void pipe_flush(struct pipe *p)
 {
-	if(p) {
-		p->flushed = 1;
-	}
+	p->flushed = 1;
 }
 
 void pipe_delete(struct pipe *p)
@@ -53,9 +51,7 @@ void pipe_delete(struct pipe *p)
 
 	p->refcount--;
 	if(p->refcount==0) {
-		if(p->buffer) {
-			kfree(p->buffer);
-		}
+		if(p->buffer) page_free(p->buffer);
 		kfree(p);
 	}
 }
@@ -87,7 +83,6 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 	}
 
 	monitor_notify_all(&p->monitor);
-	p->flushed = 0;
 	monitor_unlock(&p->monitor);
 	return written;
 }
@@ -108,7 +103,7 @@ static int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 		p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
 	}
 
-	p->flushed = 0;	
+	monitor_notify_all(&p->monitor);
 	monitor_unlock(&p->monitor);
 	return read;
 }
