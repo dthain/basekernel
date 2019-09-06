@@ -5,24 +5,30 @@
 #include "kernel/syscall.h"
 
 struct system_stats {
-	uint32_t time;
-	uint32_t blocks_read[4];
-	uint32_t blocks_written[4];
+	int time;
+	int blocks_read[4];
+	int blocks_written[4];
 };
 
-struct object_stats {
-	uint32_t reads;
-	uint32_t writes;
-	uint64_t bytes_read;
-	uint64_t bytes_written;
+struct device_driver_stats {
+	int blocks_written;
+	int blocks_read;
+};
+
+struct bcache_stats {
+	int read_hits;
+	int read_misses;
+	int write_hits;
+	int write_misses;
+	int writebacks;
 };
 
 struct process_stats {
-	uint32_t blocks_read;
-	uint32_t blocks_written;
-	uint32_t bytes_read;
-	uint32_t bytes_written;
-	uint32_t syscall_count[MAX_SYSCALL];
+	int blocks_read;
+	int blocks_written;
+	int bytes_read;
+	int bytes_written;
+	int syscall_count[MAX_SYSCALL];
 };
 
 #endif

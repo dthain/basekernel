@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 #include "kernel/ascii.h"
+#include "library/malloc.h"
 #include "library/string.h"
 #include "library/malloc.h"
 #include "stdarg.h"
@@ -28,11 +29,12 @@ void strncpy(char *d, const char *s, unsigned length)
 
 char * strdup(const char *s)
 {
-	char * d = (char *)malloc(strlen(s) * sizeof(char));
+	char * d = (char *)malloc((strlen(s)+1) * sizeof(char));
+	char * tmp = d;
 	while(*s) {
-		*d++ = *s++;
+		*tmp++ = *s++;
 	}
-	*d = 0;
+	*tmp = 0;
 	return d;
 }
 

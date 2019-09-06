@@ -27,6 +27,7 @@ See the file LICENSE for details.
 #include "ata.h"
 #include "graphics.h"
 #include "is_valid.h"
+#include "bcache.h"
 
 /*
 syscall_handler() is responsible for decoding system calls
@@ -504,11 +505,6 @@ int sys_object_close(int fd)
 	return 0;
 }
 
-int sys_object_stats( int fd, struct object_stats *stats )
-{
-	return KERROR_NOT_IMPLEMENTED;
-}
-
 int sys_object_set_tag(int fd, char *tag)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
@@ -570,6 +566,19 @@ int sys_system_stats(struct system_stats *s)
 	return 0;
 }
 
+int sys_bcache_stats(struct bcache_stats * s)
+{
+	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+	bcache_get_stats( s );
+	return 0;
+}
+
+int sys_bcache_flush()
+{
+	bcache_flush_all();
+	return 0;
+}
+
 int sys_system_time( uint32_t *tm )
 {
 	if(!is_valid_pointer(tm,sizeof(*tm))) return KERROR_INVALID_ADDRESS;
@@ -583,6 +592,15 @@ int sys_system_rtc( struct rtc_time *t )
 {
 	if(!is_valid_pointer(t,sizeof(*t))) return KERROR_INVALID_ADDRESS;
 	rtc_read(t);
+	return 0;
+}
+
+int sys_device_driver_stats(const char * name, struct device_driver_stats * stats)
+{
+	if(!is_valid_string(name)) return KERROR_INVALID_ADDRESS;
+	if(!is_valid_pointer(stats,sizeof(*stats))) return KERROR_INVALID_ADDRESS;
+
+	device_driver_get_stats(name, stats);
 	return 0;
 }
 
@@ -667,8 +685,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_remove(a,(const char*)b);
 	case SYSCALL_OBJECT_CLOSE:
 		return sys_object_close(a);
-	case SYSCALL_OBJECT_STATS:
-		return sys_object_stats(a, (struct object_stats *) b);
 	case SYSCALL_OBJECT_SET_TAG:
 		return sys_object_set_tag(a, (char *) b);
 	case SYSCALL_OBJECT_GET_TAG:
@@ -683,11 +699,16 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_copy(a,b);
 	case SYSCALL_SYSTEM_STATS:
 		return sys_system_stats((struct system_stats *) a);
+	case SYSCALL_BCACHE_STATS:
+		return sys_bcache_stats((struct bcache_stats *) a);
+	case SYSCALL_BCACHE_FLUSH:
+		return sys_bcache_flush();
 	case SYSCALL_SYSTEM_TIME:
 		return sys_system_time((uint32_t*)a);
 	case SYSCALL_SYSTEM_RTC:
 		return sys_system_rtc((struct rtc_time *) a);
-
+	case SYSCALL_DEVICE_DRIVER_STATS:
+		return sys_device_driver_stats((char *) a, (struct device_driver_stats *) b);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
 	default:

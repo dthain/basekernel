@@ -14,6 +14,7 @@ void strncpy(char *d, const char *s, unsigned length);
 char * strdup(const char *s);
 int strcmp(const char *a, const char *b);
 int strncmp(const char *a, const char *b, unsigned length);
+char *strdup(const char *s);
 unsigned strlen(const char *s);
 char *strcat(char *d, const char *s);
 char *uint_to_string(uint32_t u, char *str);

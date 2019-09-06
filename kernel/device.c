@@ -3,12 +3,12 @@ Copyright (C) 2016-2019 The University of Notre Dame
 This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
-
 #include "device.h"
 #include "string.h"
 #include "page.h"
 #include "kmalloc.h"
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 #include "kernel/error.h"
 
@@ -26,6 +26,7 @@ struct device {
 void device_driver_register( struct device_driver *d )
 {
 	d->next = driver_list;
+	d->stats = (struct device_driver_stats){0};
 	driver_list = d;
 }
 
@@ -59,16 +60,9 @@ struct device *device_open( const char *name, int unit )
 	int nblocks, block_size;
 	char info[64];
 
-	struct device_driver *dd = driver_list;
-
-	for(dd=driver_list;dd;dd=dd->next) {
-		if(!strcmp(dd->name,name)) {
-			if(dd->probe(unit,&nblocks,&block_size,info)) {
-				return device_create(dd,unit,nblocks,block_size);
-			} else {
-				return 0;
-			}
-		}
+	struct device_driver *dd = device_driver_lookup(name);
+	if (dd && dd->probe(unit,&nblocks,&block_size,info)) {
+		return device_create(dd,unit,nblocks,block_size);
 	}
 
 	return 0;
@@ -99,8 +93,13 @@ void device_close( struct device *d )
 
 int device_read(struct device *d, void *data, int size, int offset)
 {
+	int status;
 	if(d->driver->read) {
-		return d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		status = d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		if (status) {
+			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
+		}
+		return status;
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
 	}
@@ -108,8 +107,13 @@ int device_read(struct device *d, void *data, int size, int offset)
 
 int device_read_nonblock(struct device *d, void *data, int size, int offset)
 {
+	int status;
 	if(d->driver->read_nonblock) {
-		return d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		status = d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		if (status) {
+			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
+		}
+		return status;
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
 	}
@@ -117,8 +121,13 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 
 int device_write(struct device *d, const void *data, int size, int offset)
 {
+	int status;
 	if(d->driver->write) {
-		return d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		status = d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
+		if (!status) {
+			d->driver->stats.blocks_written += size*d->multiplier;
+		}
+		return status;
 	} else {
 		return KERROR_NOT_IMPLEMENTED;
 	}
@@ -142,4 +151,26 @@ int device_unit( struct device *d )
 const char * device_name( struct device *d )
 {
 	return d->driver->name;
+}
+
+struct device_driver * device_driver_lookup(const char *name)
+{
+	struct device_driver *dd = driver_list;
+	for(dd=driver_list; dd; dd=dd->next) {
+		if(!strcmp(dd->name, name)) {
+			break;
+		}
+	}
+	return dd;
+}
+
+void device_driver_get_stats(const char * name, struct device_driver_stats * s)
+{
+	/* Get the device driver */
+	struct device_driver *dd = device_driver_lookup(name);
+
+	/* Copy stats into struct */
+	if (dd) {
+		memcpy(s, &(dd->stats), sizeof(*s));
+	}
 }
