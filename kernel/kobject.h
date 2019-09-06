@@ -54,7 +54,6 @@ struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst );
 int kobject_remove( struct kobject *kobject, const char *name );
 int kobject_close(struct kobject *kobject);
 
-int kobject_set_blocking(struct kobject *kobject, int b);
 int kobject_get_type(struct kobject *kobject);
 int kobject_set_tag(struct kobject *kobject, char *new_tag);
 int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size);

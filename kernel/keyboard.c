@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "ioports.h"
 #include "interrupt.h"
 #include "kernel/ascii.h"
-#include "process.h"
+#include "monitor.h"
 #include "device.h"
 #include "kernelcore.h"
 
@@ -46,7 +46,7 @@ static uint8_t buffer[BUFFER_SIZE];
 static int keyboard_buffer_read = 0;
 static int keyboard_buffer_write = 0;
 
-static struct list queue = { 0, 0 };
+static struct monitor monitor = MONITOR_INIT_INTERRUPT_SAFE;
 
 static int shift_mode = 0;
 static int alt_mode = 0;
@@ -143,17 +143,22 @@ static void keyboard_interrupt(int i, int intr_code)
 		return;
 	buffer[keyboard_buffer_write] = c;
 	keyboard_buffer_write = (keyboard_buffer_write + 1) % BUFFER_SIZE;
-	process_wakeup(&queue);
+	monitor_notify(&monitor);
 }
 
 char keyboard_read( int non_blocking )
 {
+	monitor_lock(&monitor);
 	while(keyboard_buffer_read == keyboard_buffer_write) {
-		if(non_blocking) return -1;
-		process_wait(&queue);
+		if(non_blocking) {
+			monitor_unlock(&monitor);
+			return -1;
+		}
+		monitor_wait(&monitor);
 	}
 	char c = buffer[keyboard_buffer_read];
 	keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
+	monitor_unlock(&monitor);
 	return c;
 }
 

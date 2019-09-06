@@ -168,11 +168,6 @@ int syscall_object_get_tag(int fd, char *buffer, int buffer_size)
 	return syscall(SYSCALL_OBJECT_GET_TAG, fd, (uint32_t)buffer, buffer_size, 0, 0);
 }
 
-int syscall_object_set_blocking(int fd, int b)
-{
-	return syscall(SYSCALL_OBJECT_SET_BLOCKING, fd, b, 0, 0, 0);
-}
-
 int syscall_object_size(int fd, int *dims, int n)
 {
 	return syscall(SYSCALL_OBJECT_SIZE, fd, (uint32_t) dims, n, 0, 0);

@@ -305,22 +305,8 @@ int kobject_close(struct kobject *kobject)
 			kfree(kobject->tag);
 		kfree(kobject);
 		return 0;
-	} else if(kobject->refcount>1 ) {
-		if(kobject->type==KOBJECT_PIPE) {
-			pipe_flush(kobject->data.pipe);
-		}
 	}
 	return 0;
-}
-
-int kobject_set_blocking(struct kobject *kobject, int b)
-{
-	switch (kobject->type) {
-	case KOBJECT_PIPE:
-		return pipe_set_blocking(kobject->data.pipe, b);
-	default:
-		return 0;
-	}
 }
 
 int kobject_size(struct kobject *kobject, int *dims, int n)

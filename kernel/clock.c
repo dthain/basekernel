@@ -9,6 +9,7 @@ See the file LICENSE for details.
 #include "clock.h"
 #include "ioports.h"
 #include "process.h"
+#include "monitor.h"
 
 #define CLICKS_PER_SECOND 10
 
@@ -21,12 +22,12 @@ See the file LICENSE for details.
 static uint32_t clicks = 0;
 static uint32_t seconds = 0;
 
-static struct list queue = { 0, 0 };
+static struct monitor monitor = MONITOR_INIT_INTERRUPT_SAFE;
 
 static void clock_interrupt(int i, int code)
 {
 	clicks++;
-	process_wakeup_all(&queue);
+	monitor_notify_all(&monitor);
 	if(clicks >= CLICKS_PER_SECOND) {
 		clicks = 0;
 		seconds++;
@@ -35,11 +36,21 @@ static void clock_interrupt(int i, int code)
 	}
 }
 
-clock_t clock_read()
+static clock_t clock_read_unlocked()
 {
 	clock_t result;
+
 	result.seconds = seconds;
 	result.millis = 1000 * clicks / CLICKS_PER_SECOND;
+
+	return result;
+}
+
+clock_t clock_read()
+{
+	monitor_lock(&monitor);
+	clock_t result = clock_read_unlocked();
+	monitor_unlock(&monitor);
 	return result;
 }
 
@@ -60,12 +71,16 @@ void clock_wait(uint32_t millis)
 	clock_t start, elapsed;
 	uint32_t total;
 
-	start = clock_read();
+	monitor_lock(&monitor);
+
+	start = clock_read_unlocked();
 	do {
-		process_wait(&queue);
-		elapsed = clock_diff(start, clock_read());
+		monitor_wait(&monitor);
+		elapsed = clock_diff(start, clock_read_unlocked());
 		total = elapsed.millis + elapsed.seconds * 1000;
 	} while(total < millis);
+
+	monitor_unlock(&monitor);
 }
 
 void clock_init()

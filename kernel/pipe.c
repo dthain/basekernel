@@ -9,29 +9,27 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "process.h"
 #include "list.h"
+#include "monitor.h"
 
-#define PIPE_SIZE (1024)
+#define PIPE_SIZE PAGE_SIZE
 
 struct pipe {
 	char *buffer;
 	int read_pos;
 	int write_pos;
-	int blocking;
 	int flushed;
 	int refcount;
-	struct list queue;
+	struct monitor monitor;
 };
 
 struct pipe *pipe_create()
 {
-	struct pipe *p = kmalloc(sizeof(*p));
+	struct pipe *p = page_alloc(0);
 	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
 	p->read_pos = 0;
 	p->write_pos = 0;
-	p->blocking = 1;
 	p->flushed = 0;
-	p->queue.head = 0;
-	p->queue.tail = 0;
+	p->monitor = (struct monitor) MONITOR_INIT_PROCESS_SAFE;
 	p->refcount = 1;
 	return p;
 }
@@ -44,9 +42,7 @@ struct pipe *pipe_addref( struct pipe *p )
 
 void pipe_flush(struct pipe *p)
 {
-	if(p) {
-		p->flushed = 1;
-	}
+	p->flushed = 1;
 }
 
 void pipe_delete(struct pipe *p)
@@ -55,82 +51,60 @@ void pipe_delete(struct pipe *p)
 
 	p->refcount--;
 	if(p->refcount==0) {
-		if(p->buffer) {
-			kfree(p->buffer);
-		}
+		if(p->buffer) page_free(p->buffer);
 		kfree(p);
 	}
 }
 
-int pipe_set_blocking(struct pipe *p, int b)
+static int pipe_is_full( struct pipe *p )
 {
-	if(p) {
-		p->blocking = b;
-		return 1;
-	}
-	return 0;
+	return (p->write_pos + 1) % PIPE_SIZE == p->read_pos;
+}
+
+static int pipe_is_empty( struct pipe *p )
+{
+	return p->write_pos==p->read_pos;
 }
 
 int pipe_write(struct pipe *p, char *buffer, int size)
 {
-	if(!p || !buffer) {
-		return -1;
-	}
 	int written = 0;
-	if(p->blocking) {
-		for(written = 0; written < size; written++) {
-			while((p->write_pos + 1) % PIPE_SIZE == p->read_pos) {
-				if(p->flushed) {
-					p->flushed = 0;
-					return written;
-				}
-				process_wait(&p->queue);
-			}
-			p->buffer[p->write_pos] = buffer[written];
-			p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
+
+	monitor_lock(&p->monitor);
+
+	for(written = 0; written < size; written++) {
+		while(pipe_is_full(p)) {
+			if(p->flushed ) break;
+			monitor_notify_all(&p->monitor);
+			monitor_wait(&p->monitor);
 		}
-		process_wakeup_all(&p->queue);
-	} else {
-		while(written < size && p->write_pos != (p->read_pos - 1) % PIPE_SIZE) {
-			p->buffer[p->write_pos] = buffer[written];
-			p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
-			written++;
-		}
+		p->buffer[p->write_pos] = buffer[written];
+		p->write_pos = (p->write_pos + 1) % PIPE_SIZE;
 	}
-	p->flushed = 0;
+
+	monitor_notify_all(&p->monitor);
+	monitor_unlock(&p->monitor);
 	return written;
 }
 
-int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
+static int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
 {
-	if(!p || !buffer) {
-		return -1;
-	}
 	int read = 0;
-	if(p->blocking) {
-		for(read = 0; read < size; read++) {
-			while(p->write_pos == p->read_pos) {
-				if(p->flushed) {
-					p->flushed = 0;
-					return read;
-				}
-				if (block == 0) {
-					return -1;
-				}
-				process_wait(&p->queue);
-			}
-			buffer[read] = p->buffer[p->read_pos];
-			p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
+
+	monitor_lock(&p->monitor);
+
+	for(read = 0; read < size; read++) {
+		while(pipe_is_empty(p)) {
+			if(p->flushed || !block) break;
+			monitor_notify_all(&p->monitor);
+			monitor_wait(&p->monitor);
 		}
-		process_wakeup_all(&p->queue);
-	} else {
-		while(read < size && p->read_pos != p->write_pos) {
-			buffer[read] = p->buffer[p->read_pos];
-			p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
-			read++;
-		}
+		buffer[read] = p->buffer[p->read_pos];
+		p->read_pos = (p->read_pos + 1) % PIPE_SIZE;
 	}
-	p->flushed = 0;
+
+	monitor_notify_all(&p->monitor);
+	monitor_unlock(&p->monitor);
 	return read;
 }
 
