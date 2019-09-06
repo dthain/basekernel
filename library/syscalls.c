@@ -188,21 +188,6 @@ int syscall_object_max()
 	return syscall(SYSCALL_OBJECT_MAX, 0, 0, 0, 0, 0);
 }
 
-int syscall_system_stats(struct system_stats *s)
-{
-	return syscall(SYSCALL_SYSTEM_STATS, (uint32_t) s, 0, 0, 0, 0);
-}
-
-int syscall_bcache_stats(struct bcache_stats *bstats)
-{
-	return syscall(SYSCALL_BCACHE_STATS, (uint32_t) bstats, 0, 0, 0, 0);
-}
-
-int syscall_bcache_flush()
-{
-	return syscall(SYSCALL_BCACHE_FLUSH, 0, 0, 0, 0, 0);
-}
-
 int syscall_system_time( uint32_t *t )
 {
 	return syscall(SYSCALL_SYSTEM_TIME, (uint32_t)t, 0, 0, 0, 0);
@@ -211,6 +196,21 @@ int syscall_system_time( uint32_t *t )
 int syscall_system_rtc( struct rtc_time *time )
 {
 	return syscall(SYSCALL_SYSTEM_RTC, (uint32_t)time, 0, 0, 0, 0);
+}
+
+int syscall_bcache_flush()
+{
+	return syscall(SYSCALL_BCACHE_FLUSH, 0, 0, 0, 0, 0);
+}
+
+int syscall_system_stats(struct system_stats *s)
+{
+	return syscall(SYSCALL_SYSTEM_STATS, (uint32_t) s, 0, 0, 0, 0);
+}
+
+int syscall_bcache_stats(struct bcache_stats *bstats)
+{
+	return syscall(SYSCALL_BCACHE_STATS, (uint32_t) bstats, 0, 0, 0, 0);
 }
 
 int syscall_device_driver_stats(char * name, void * stats)
