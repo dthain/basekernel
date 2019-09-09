@@ -326,7 +326,7 @@ static int kshell_execute(int argc, const char **argv)
 	} else if(!strcmp(cmd, "reboot")) {
 		reboot();
 	} else if(!strcmp(cmd, "bcache_stats")) {
-		struct bcache_stats stats;
+		struct kernel_bcache_stats stats;
 		bcache_get_stats(&stats);
 		printf("%d rhit %d rmiss %d whit %d wmiss %d wback\n",
 			stats.read_hits,stats.read_misses,

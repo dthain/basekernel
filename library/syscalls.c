@@ -73,9 +73,9 @@ int syscall_process_sleep(unsigned int ms)
 	return syscall(SYSCALL_PROCESS_SLEEP, ms, 0, 0, 0, 0);
 }
 
-int syscall_process_stats(struct process_stats *s, unsigned int pid)
+int syscall_process_stats(unsigned int pid, struct kernel_io_stats *s )
 {
-	return syscall(SYSCALL_PROCESS_STATS, (uint32_t) s, pid, 0, 0, 0);
+	return syscall(SYSCALL_PROCESS_STATS, pid, (uint32_t) s, 0, 0, 0);
 }
 
 extern void *syscall_process_heap(int a)
@@ -203,12 +203,12 @@ int syscall_bcache_flush()
 	return syscall(SYSCALL_BCACHE_FLUSH, 0, 0, 0, 0, 0);
 }
 
-int syscall_system_stats(struct system_stats *s)
+int syscall_system_stats(struct kernel_io_stats *s)
 {
 	return syscall(SYSCALL_SYSTEM_STATS, (uint32_t) s, 0, 0, 0, 0);
 }
 
-int syscall_bcache_stats(struct bcache_stats *bstats)
+int syscall_bcache_stats(struct kernel_bcache_stats *bstats)
 {
 	return syscall(SYSCALL_BCACHE_STATS, (uint32_t) bstats, 0, 0, 0, 0);
 }

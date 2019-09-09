@@ -26,7 +26,7 @@ int syscall_process_kill(unsigned int pid);
 int syscall_process_reap(unsigned int pid);
 int syscall_process_wait(struct process_info *info, int timeout);
 int syscall_process_sleep(unsigned int ms);
-int syscall_process_stats(struct process_stats *s, unsigned int pid);
+int syscall_process_stats(unsigned int pid, struct kernel_io_stats *s );
 extern void *syscall_process_heap(int a);
 
 /* Syscalls that open or create new kernel objects for this process. */
@@ -58,9 +58,9 @@ int syscall_object_max();
 
 /* Syscalls that query for subsystem stats. */
 
-int syscall_system_stats(struct system_stats *s);
-int syscall_bcache_stats(struct bcache_stats *s);
-int syscall_device_driver_stats(char * name, struct device_driver_stats * stats);
+int syscall_system_stats(struct kernel_io_stats *s);
+int syscall_bcache_stats(struct kernel_bcache_stats *s);
+int syscall_device_driver_stats(char * name, struct kernel_io_stats * stats);
 
 /* Syscalls that query or affect the whole system state. */
 

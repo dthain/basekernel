@@ -236,10 +236,10 @@ int ata_read(int id, void *buffer, int nblocks, int offset)
 	mutex_lock(&ata_mutex);
 	result = ata_read_unlocked(id, buffer, nblocks, offset);
 	mutex_unlock(&ata_mutex);
-	counters.blocks_read[id] += nblocks;
+	counters.read_ops[id] += nblocks;
 	if (current) {
-		current->stats.blocks_read += nblocks;
-		current->stats.bytes_read += nblocks*ATA_BLOCKSIZE;
+		current->stats.read_ops += nblocks;
+		current->stats.read_bytes += nblocks*ATA_BLOCKSIZE;
 	}
 	return result;
 }
@@ -332,10 +332,10 @@ int atapi_read(int id, void *buffer, int nblocks, int offset)
 	mutex_lock(&ata_mutex);
 	result = atapi_read_unlocked(id, buffer, nblocks, offset);
 	mutex_unlock(&ata_mutex);
-	counters.blocks_read[id] += nblocks;
+	counters.read_ops[id] += nblocks;
 	if (current) {
-		current->stats.blocks_read += nblocks;
-		current->stats.bytes_read += nblocks * ATAPI_BLOCKSIZE;
+		current->stats.read_ops += nblocks;
+		current->stats.read_bytes += nblocks * ATAPI_BLOCKSIZE;
 	}
 	return result;
 }
@@ -369,10 +369,10 @@ int ata_write(int id, const void *buffer, int nblocks, int offset)
 	mutex_lock(&ata_mutex);
 	result = ata_write_unlocked(id, buffer, nblocks, offset);
 	mutex_unlock(&ata_mutex);
-	counters.blocks_written[id] += nblocks;
+	counters.write_ops[id] += nblocks;
 	if (current) {
-		current->stats.blocks_written += nblocks;
-		current->stats.bytes_written += nblocks * ATA_BLOCKSIZE;
+		current->stats.write_ops += nblocks;
+		current->stats.write_bytes += nblocks * ATA_BLOCKSIZE;
 	}
 	return result;
 }
@@ -510,8 +510,8 @@ void ata_init()
 
 	char longname[256];
 	for (int i = 0; i < 4; i++) {
-		counters.blocks_read[i] = 0;
-		counters.blocks_written[i] = 0;
+		counters.read_ops[i] = 0;
+		counters.write_ops[i] = 0;
 	}
 
 	printf("ata: setting up interrupts\n");

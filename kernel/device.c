@@ -26,7 +26,7 @@ struct device {
 void device_driver_register( struct device_driver *d )
 {
 	d->next = driver_list;
-	d->stats = (struct device_driver_stats){0};
+	d->stats = (struct kernel_io_stats){0};
 	driver_list = d;
 }
 
@@ -97,7 +97,7 @@ int device_read(struct device *d, void *data, int size, int offset)
 	if(d->driver->read) {
 		status = d->driver->read(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
-			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
+			d->driver->stats.read_ops += size*d->multiplier; // number of blocks
 		}
 		return status;
 	} else {
@@ -111,7 +111,7 @@ int device_read_nonblock(struct device *d, void *data, int size, int offset)
 	if(d->driver->read_nonblock) {
 		status = d->driver->read_nonblock(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (status) {
-			d->driver->stats.blocks_read += size*d->multiplier; // number of blocks
+			d->driver->stats.read_ops += size*d->multiplier; // number of blocks
 		}
 		return status;
 	} else {
@@ -125,7 +125,7 @@ int device_write(struct device *d, const void *data, int size, int offset)
 	if(d->driver->write) {
 		status = d->driver->write(d->unit,data,size*d->multiplier,offset*d->multiplier);
 		if (!status) {
-			d->driver->stats.blocks_written += size*d->multiplier;
+			d->driver->stats.write_ops += size*d->multiplier;
 		}
 		return status;
 	} else {
@@ -164,7 +164,7 @@ struct device_driver * device_driver_lookup(const char *name)
 	return dd;
 }
 
-void device_driver_get_stats(const char * name, struct device_driver_stats * s)
+void device_driver_get_stats(const char * name, struct kernel_io_stats * s)
 {
 	/* Get the device driver */
 	struct device_driver *dd = device_driver_lookup(name);

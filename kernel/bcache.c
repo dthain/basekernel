@@ -20,7 +20,7 @@ struct bcache_entry {
 };
 
 static struct list cache = LIST_INIT;
-static struct bcache_stats stats = {0};
+static struct kernel_bcache_stats stats = {0};
 static int max_cache_size = 100;
 
 struct bcache_entry * bcache_entry_create( struct device *device, int block )
@@ -218,7 +218,7 @@ void bcache_flush_all()
 	}
 }
 
-void bcache_get_stats( struct bcache_stats *s )
+void bcache_get_stats( struct kernel_bcache_stats *s )
 {
 	memcpy(s,&stats,sizeof(*s));
 }

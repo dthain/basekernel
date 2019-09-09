@@ -20,6 +20,6 @@ void bcache_flush_block( struct device *d, int block );
 void bcache_flush_device( struct device *d  );
 void bcache_flush_all();
 
-void bcache_get_stats( struct bcache_stats *s );
+void bcache_get_stats( struct kernel_bcache_stats *s );
 
 #endif

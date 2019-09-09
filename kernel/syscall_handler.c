@@ -50,6 +50,8 @@ greater indiciates success, and return of less than zero
 indicates an error and the reason.
 */
 
+static struct kernel_io_stats global_stats = {0};
+
 int sys_debug(const char *str)
 {
 	if(!is_valid_string(str)) return KERROR_INVALID_ADDRESS;
@@ -284,7 +286,7 @@ int sys_process_sleep(unsigned int ms)
 	return 0;
 }
 
-int sys_process_stats(struct process_stats *s, int pid)
+int sys_process_stats(int pid, struct kernel_io_stats *s)
 {
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 	return process_stats(pid, s);
@@ -458,6 +460,9 @@ int sys_object_read(int fd, void *data, int length)
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
 
+	global_stats.read_bytes += length;
+	global_stats.read_ops++;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_read(p, data, length);
 }
@@ -467,6 +472,9 @@ int sys_object_read_nonblock(int fd, void *data, int length)
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
 
+	global_stats.read_bytes += length;
+	global_stats.read_ops++;
+
 	struct kobject *p = current->ktable[fd];
 	return kobject_read_nonblock(p, data, length);
 }
@@ -475,6 +483,9 @@ int sys_object_write(int fd, void *data, int length)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
+
+	global_stats.write_bytes += length;
+	global_stats.write_ops++;
 
 	struct kobject *p = current->ktable[fd];
 	return kobject_write(p, data, length);
@@ -549,24 +560,20 @@ int sys_object_max()
 	return max_fd;
 }
 
-int sys_system_stats(struct system_stats *s)
+int sys_system_stats(struct kernel_io_stats *s)
 {
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
+
+	*s = global_stats;
 
 	struct rtc_time t = { 0 };
 	rtc_read(&t);
 	s->time = rtc_time_to_timestamp(&t) - boottime;
 
-	struct ata_count a = ata_stats();
-	for(int i = 0; i < 4; i++) {
-		s->blocks_written[i] = a.blocks_written[i];
-		s->blocks_read[i] = a.blocks_read[i];
-	}
-
 	return 0;
 }
 
-int sys_bcache_stats(struct bcache_stats * s)
+int sys_bcache_stats(struct kernel_bcache_stats * s)
 {
 	if(!is_valid_pointer(s,sizeof(*s))) return KERROR_INVALID_ADDRESS;
 	bcache_get_stats( s );
@@ -595,7 +602,7 @@ int sys_system_rtc( struct rtc_time *t )
 	return 0;
 }
 
-int sys_device_driver_stats(const char * name, struct device_driver_stats * stats)
+int sys_device_driver_stats(const char * name, struct kernel_io_stats * stats)
 {
 	if(!is_valid_string(name)) return KERROR_INVALID_ADDRESS;
 	if(!is_valid_pointer(stats,sizeof(*stats))) return KERROR_INVALID_ADDRESS;
@@ -621,9 +628,12 @@ int sys_chdir(const char *path)
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
-	if((n < MAX_SYSCALL) && current) {
-		current->stats.syscall_count[n]++;
+	global_stats.syscall_count++;
+
+	if(current) {
+		current->stats.syscall_count++;
 	}
+
 	switch (n) {
 	case SYSCALL_DEBUG:
 		return sys_debug((const char *) a);
@@ -652,7 +662,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_SLEEP:
 		return sys_process_sleep(a);
 	case SYSCALL_PROCESS_STATS:
-		return sys_process_stats((struct process_stats *) a, b);
+		return sys_process_stats(a,(struct kernel_io_stats *)b);
 	case SYSCALL_PROCESS_HEAP:
 		return sys_process_heap(a);
 	case SYSCALL_OPEN_FILE:
@@ -697,18 +707,18 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_max(a);
 	case SYSCALL_OBJECT_COPY:
 		return sys_object_copy(a,b);
-	case SYSCALL_SYSTEM_STATS:
-		return sys_system_stats((struct system_stats *) a);
-	case SYSCALL_BCACHE_STATS:
-		return sys_bcache_stats((struct bcache_stats *) a);
-	case SYSCALL_BCACHE_FLUSH:
-		return sys_bcache_flush();
 	case SYSCALL_SYSTEM_TIME:
 		return sys_system_time((uint32_t*)a);
 	case SYSCALL_SYSTEM_RTC:
 		return sys_system_rtc((struct rtc_time *) a);
+	case SYSCALL_BCACHE_FLUSH:
+		return sys_bcache_flush();
+	case SYSCALL_SYSTEM_STATS:
+		return sys_system_stats((struct kernel_io_stats *) a);
+	case SYSCALL_BCACHE_STATS:
+		return sys_bcache_stats((struct kernel_bcache_stats *) a);
 	case SYSCALL_DEVICE_DRIVER_STATS:
-		return sys_device_driver_stats((char *) a, (struct device_driver_stats *) b);
+		return sys_device_driver_stats((char *) a, (struct kernel_io_stats *) b);
 	case SYSCALL_CHDIR:
 		return sys_chdir((const char *) a);
 	default:

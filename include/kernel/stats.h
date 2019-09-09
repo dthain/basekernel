@@ -4,31 +4,19 @@
 #include "kernel/types.h"
 #include "kernel/syscall.h"
 
-struct system_stats {
-	int time;
-	int blocks_read[4];
-	int blocks_written[4];
+struct kernel_io_stats {
+	unsigned time; // temporary
+	unsigned syscall_count;
+	unsigned read_ops, write_ops;
+	unsigned read_bytes, write_bytes;
 };
 
-struct device_driver_stats {
-	int blocks_written;
-	int blocks_read;
-};
-
-struct bcache_stats {
+struct kernel_bcache_stats {
 	int read_hits;
 	int read_misses;
 	int write_hits;
 	int write_misses;
 	int writebacks;
-};
-
-struct process_stats {
-	int blocks_read;
-	int blocks_written;
-	int bytes_read;
-	int bytes_written;
-	int syscall_count[MAX_SYSCALL];
 };
 
 #endif

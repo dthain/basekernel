@@ -56,20 +56,20 @@ int main(int argc, const char * argv[]) {
       help(); return 0;
     }
     else if (!strcmp(argv[current_arg], "-b")) {
-      args.statistics = malloc(sizeof(struct bcache_stats));
+      args.statistics = malloc(sizeof(struct kernel_bcache_stats));
       args.stat_type = BCACHE_LIVE;
     }
     else if (!strcmp(argv[current_arg], "-dr")) {
-      args.statistics = malloc(sizeof(struct device_driver_stats));
+      args.statistics = malloc(sizeof(struct kernel_io_stats));
       args.stat_type = DRIVER_LIVE;
       args.driver_name = strdup(argv[++current_arg]);
     }
     else if (!strcmp(argv[current_arg], "-sys")) {
-      args.statistics = malloc(sizeof(struct system_stats));
+      args.statistics = malloc(sizeof(struct kernel_io_stats));
       args.stat_type = SYSTEM_LIVE;
     }
     else if (!strcmp(argv[current_arg], "-p")) {
-      args.statistics = malloc(sizeof(struct process_stats));
+      args.statistics = malloc(sizeof(struct kernel_io_stats));
       args.stat_type = PROCESS_LIVE;
       args.pid_s = strdup(argv[++current_arg]);
       str2int(args.pid_s, &(args.pid));
@@ -140,7 +140,7 @@ void run_stats(struct stat_args * args) {
     if (args->stat_type  == BCACHE_LIVE) {
       syscall_bcache_stats(args->statistics);
     } else if (args->stat_type  == PROCESS_LIVE) {
-      syscall_process_stats(args->statistics, args->pid);
+      syscall_process_stats(args->pid,args->statistics);
     } else if (args->stat_type == DRIVER_LIVE) {
       syscall_device_driver_stats(args->driver_name, args->statistics);
     } else if (args->stat_type  == SYSTEM_LIVE) {
@@ -185,44 +185,44 @@ int extract_statistic(struct stat_args * args) {
 
   if (args->stat_type == BCACHE_LIVE) {
     if (!strcmp(args->stat_name, "read_hits")) {
-      return ((struct bcache_stats *)args->statistics)->read_hits;
+      return ((struct kernel_bcache_stats *)args->statistics)->read_hits;
     } else if (!strcmp(args->stat_name, "read_misses")) {
-      return ((struct bcache_stats *)args->statistics)->read_misses;
+      return ((struct kernel_bcache_stats *)args->statistics)->read_misses;
     } else if (!strcmp(args->stat_name, "write_hits")) {
-      return ((struct bcache_stats *)args->statistics)->write_hits;
+      return ((struct kernel_bcache_stats *)args->statistics)->write_hits;
     } else if (!strcmp(args->stat_name, "write_misses")) {
-      return ((struct bcache_stats *)args->statistics)->write_misses;
+      return ((struct kernel_bcache_stats *)args->statistics)->write_misses;
     } else if (!strcmp(args->stat_name, "writebacks")) {
-      return ((struct bcache_stats *)args->statistics)->writebacks;
+      return ((struct kernel_bcache_stats *)args->statistics)->writebacks;
     }
   }
   else if (args->stat_type == PROCESS_LIVE) {
-    if (!strcmp(args->stat_name, "blocks_read")) {
-      return ((struct process_stats *)args->statistics)->blocks_read;
-    } else if (!strcmp(args->stat_name, "blocks_written")) {
-      return ((struct process_stats *)args->statistics)->blocks_written;
-    } else if (!strcmp(args->stat_name, "bytes_read")) {
-      return ((struct process_stats *)args->statistics)->bytes_read;
-    } else if (!strcmp(args->stat_name, "bytes_written")) {
-      return ((struct process_stats *)args->statistics)->bytes_written;
+    if (!strcmp(args->stat_name, "read_ops")) {
+      return ((struct kernel_io_stats *)args->statistics)->read_ops;
+    } else if (!strcmp(args->stat_name, "write_ops")) {
+      return ((struct kernel_io_stats *)args->statistics)->write_ops;
+    } else if (!strcmp(args->stat_name, "read_bytes")) {
+      return ((struct kernel_io_stats *)args->statistics)->read_bytes;
+    } else if (!strcmp(args->stat_name, "write_bytes")) {
+      return ((struct kernel_io_stats *)args->statistics)->write_bytes;
     } else if (!strcmp(args->stat_name, "syscall_count")) {
-      return ((struct process_stats *)args->statistics)->syscall_count[args->syscall_index];
+      return ((struct kernel_io_stats *)args->statistics)->syscall_count;
     }
   }
   else if (args->stat_type == DRIVER_LIVE) {
-      if (!strcmp(args->stat_name, "blocks_read")) {
-        return ((struct device_driver_stats *)args->statistics)->blocks_read;
-      } else if (!strcmp(args->stat_name, "blocks_written")) {
-        return ((struct device_driver_stats *)args->statistics)->blocks_written;
+      if (!strcmp(args->stat_name, "read_ops")) {
+        return ((struct kernel_io_stats *)args->statistics)->read_ops;
+      } else if (!strcmp(args->stat_name, "write_ops")) {
+        return ((struct kernel_io_stats *)args->statistics)->write_ops;
       }
   }
   else if (args->stat_type == SYSTEM_LIVE) {
     if (!strcmp(args->stat_name, "time")) {
-      return ((struct system_stats *)args->statistics)->time;
-    } else if (!strcmp(args->stat_name, "blocks_read")) {
-      return ((struct system_stats *)args->statistics)->blocks_read[args->device_unit];
-    } else if (!strcmp(args->stat_name, "blocks_written")) {
-      return ((struct system_stats *)args->statistics)->blocks_written[args->device_unit];
+      return ((struct kernel_io_stats *)args->statistics)->time;
+    } else if (!strcmp(args->stat_name, "read_ops")) {
+      return ((struct kernel_io_stats *)args->statistics)->read_ops;
+    } else if (!strcmp(args->stat_name, "write_ops")) {
+      return ((struct kernel_io_stats *)args->statistics)->write_ops;
     }
   }
 
@@ -357,20 +357,20 @@ void help() {
   printf("    writebacks\n\n");
 
   printf("\nProcess STAT_NAME options:\n");
-  printf("    blocks_read\n");
-  printf("    blocks_written\n");
-  printf("    bytes_read\n");
-  printf("    bytes_written\n");
+  printf("    read_ops\n");
+  printf("    write_ops\n");
+  printf("    read_bytes\n");
+  printf("    write_bytes\n");
   printf("    syscall_count\n\n");
 
   printf("\nDriver STAT_NAME options:\n");
-  printf("    blocks_read\n");
-  printf("    blocks_written\n\n");
+  printf("    read_ops\n");
+  printf("    write_ops\n\n");
 
   printf("\nSystem STAT_NAME options:\n");
   printf("    time\n");
-  printf("    blocks_read\n");
-  printf("    blocks_written\n\n");
+  printf("    read_ops\n");
+  printf("    write_ops\n\n");
 
   //TODO memory utilizations (page), kernel malloc
 
