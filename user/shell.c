@@ -5,6 +5,8 @@
 #include "kernel/ascii.h"
 #include "library/errno.h"
 
+#define MAX_LINE_LENGTH 1024
+
 void print_directory(char *d, int length)
 {
 	while(length > 0) {
@@ -120,34 +122,43 @@ int do_command(char *line)
 	return 0;
 }
 
+int readline( char *line, int length )
+{
+	int i = 0;
+	char c;
+	while(1) {
+		syscall_object_read(0, &c, 1);
+		if(c == ASCII_CR) {
+			printf_putchar(c);
+			flush();
+			line[i] = 0;
+			return i;
+		} else if(c == ASCII_BS) {
+		       	if(i>0) {
+				i--;
+				printf_putchar(c);
+				flush();
+			}
+		} else {
+			if(i<(length-1)) {
+				line[i] = c;
+				i++;
+				printf_putchar(c);
+				flush();
+			}
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	printf("User shell ready:\n");
-	char line[1024];
-	char *pos = line;
-	char c;
-	printf("u$ ");
+	char line[MAX_LINE_LENGTH];
+
 	while(1) {
+		printf("ushell> ");
 		flush();
-		syscall_object_read(0, &c, 1);
-		if(pos == line && c == ASCII_BS)
-			continue;
-		printf_putchar(c);
-		flush();
-		if(c == ASCII_CR) {
-			int res = do_command(line);
-			if(res < 0) {
-				break;
-			}
-			pos = line;
-			printf("u$ ");
-		} else if(c == ASCII_BS) {
-			pos--;
-		} else {
-			*pos = c;
-			pos++;
+		if(readline(line,sizeof(line))) {
+			do_command(line);
 		}
-		*pos = 0;
 	}
-	return 0;
 }
