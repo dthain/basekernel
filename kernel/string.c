@@ -98,10 +98,12 @@ char *strcat(char *d, const char *s)
 
 const char *strchr(const char *s, char ch)
 {
-	while(*s) {
-		if(*s == ch)
+	for (; *s; s++)
+	{
+		if (*s == ch)
+		{
 			return s;
-		s++;
+		}
 	}
 	return 0;
 }
