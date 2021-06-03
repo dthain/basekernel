@@ -260,8 +260,9 @@ static int kshell_execute(int argc, const char **argv)
 				struct fs_dirent *n = fs_dirent_mkdir(dir,argv[2]);
 				if(!n) {
 					printf("mkdir: couldn't create %s\n",argv[2]);
+				} else {
+					fs_dirent_close(n);
 				}
-				fs_dirent_close(n);
 				fs_dirent_close(dir);
 			} else {
 				printf("mkdir: couldn't open %s\n",argv[1]);
