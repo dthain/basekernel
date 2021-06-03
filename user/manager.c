@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	const char *args1[] = { "/bin/snake.exe" };
 	const char *args2[] = { "/bin/clock.exe", "08:40" };
 	const char *args3[] = { "/bin/shell.exe" };
-	const char *args4[] = { "/bin/mandelbrot.exe" };
+	const char *args4[] = { "/bin/fractal.exe" };
 
 
 	int padding = 4;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 			{ .w = 55 , .h = 25 , .exec = "bin/clock.exe", .args = args2, .argc = 2 },
 			{ .w = 500, .h = 400, .exec = "bin/shell.exe", .args = args3, .argc = 3 },
 			{ .w = 200, .h = 200, .exec = "bin/snake.exe", .args = args1, .argc = 1 },
-			{ .w = 400, .h = 400, .exec = "bin/mandelbrot.exe", .args = args4, .argc = 1 }
+			{ .w = 400, .h = 400, .exec = "bin/fractal.exe", .args = args4, .argc = 1 }
 	};
 
 
