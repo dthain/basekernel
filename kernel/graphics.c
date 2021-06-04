@@ -189,36 +189,37 @@ static inline void plot_pixel(struct bitmap *b, int x, int y, struct graphics_co
 	}
 }
 
-void graphics_rect(struct graphics *g, int x, int y, int w, int h)
+static void graphics_rect_internal(struct graphics *g, int x, int y, int w, int h, struct graphics_color c )
 {
 	int i, j;
 
+	if(x<0) { w+=x; x=0; }
+	if(y<0) { h+=y; y=0; }
+
+	if(x>g->clip.w || y>g->clip.h) return;
+
 	w = MIN(g->clip.w - x, w);
 	h = MIN(g->clip.h - y, h);
+
 	x += g->clip.x;
 	y += g->clip.y;
 
 	for(j = 0; j < h; j++) {
 		for(i = 0; i < w; i++) {
-			plot_pixel(g->bitmap, x + i, y + j, g->fgcolor);
+			plot_pixel(g->bitmap, x + i, y + j,c);
 		}
 	}
 }
 
+
+void graphics_rect(struct graphics *g, int x, int y, int w, int h )
+{
+	graphics_rect_internal(g,x,y,w,h,g->fgcolor);
+}
+
 void graphics_clear(struct graphics *g, int x, int y, int w, int h)
 {
-	int i, j;
-
-	w = MIN(g->clip.w - x, w);
-	h = MIN(g->clip.h - y, h);
-	x += g->clip.x;
-	y += g->clip.y;
-
-	for(j = 0; j < h; j++) {
-		for(i = 0; i < w; i++) {
-			plot_pixel(g->bitmap, x + i, y + j, g->bgcolor);
-		}
-	}
+	graphics_rect_internal(g,x,y,w,h,g->bgcolor);
 }
 
 static inline void graphics_line_vert(struct graphics *g, int x, int y, int w, int h)
