@@ -54,11 +54,17 @@ Use the <tt>list</tt> command to examine the root directory:
 list /
 </pre>
 
-And use the <tt>run</tt> command to run a program:
+And use the <tt>run</tt> command to run a program.
+For example, <tt>/bin/manager.exe</tt> runs a simple
+four-pane window manager with several tasks in parallel.
+(Use TAB to switch focus between programs, and tilde
+to cancel out of the window manager.)
 
 <pre>
-run /bin/saver.exe
+run /bin/manager.exe
 </pre>
+
+<img src=screenshot-windows.png align=center>
 
 ## Cross-Compiling Instructions
 
