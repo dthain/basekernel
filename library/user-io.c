@@ -92,7 +92,7 @@ void draw_line(int x, int y, int w, int h)
 	draw_set_buffer(GRAPHICS_LINE, x, y, w, h);
 }
 
-void draw_string(int x, int y, char *s)
+void draw_string(int x, int y, const char *s)
 {
 	draw_set_buffer(GRAPHICS_TEXT, x, y, (int) s, 0);
 }
