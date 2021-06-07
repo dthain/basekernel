@@ -9,46 +9,38 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/user-io.h"
 
-#define ITER_THRES 100
-#define VAL_THRES 2
-#define STEPS 5
+#define MAX_ITERS 2000
 
-/*
-	Compute and graph the mandelbrot set
-*/
-
-typedef struct Complex {
-	float r;
-	float i;
-} Complex;
-
-int in_set(Complex c);
-void plot_point(int iter_val, int j, int k);
+int in_set( float x, float y );
+void plot_point(int iter, int j, int k);
 
 int main(int argc, char *argv[])
 {
-	/* Set up params */
-	int dim = 400;
-	float r_init = 0.3;
-	float i_init = -0.19;
-	float factor = 0.001;
+	/* measure size of window */
+        int size[2];
+        syscall_object_size(KNO_STDWIN, size, 2);
+
+	int xsize = size[0];
+	int ysize = size[1];
+
+	float xlow = -2.0;
+	float ylow = -1.5;
+	float xfactor = 2.5/xsize;
+	float yfactor = 3.0/ysize;
 
 	/* Setup the window */
 	draw_window(KNO_STDWIN);
-	draw_clear(0, 0, dim, dim);
+	draw_clear(0, 0,xsize,ysize);
 
 	/* For each point, see if it is in the Mandelbrot set */
-	Complex current;
-	int iter_val, j, k;
+	int iter,i,j;
 
-	for (j = 0; j < dim; ++j)
-	{
-		for (k = 0; k < dim; ++k)
-		{
-			current.r = (float)j*factor + r_init;
-			current.i = (float)k*factor + i_init;
-			iter_val = in_set(current);
-			plot_point(iter_val, j, k);
+	for(i=0;i<xsize;i++) {
+		for(j=0;j<ysize;j++) {
+			float x = i*xfactor + xlow;
+			float y = j*yfactor + ylow;
+			iter = in_set(x,y);
+			plot_point(iter,i,j);
 			draw_flush();
 		}
 		syscall_process_yield();
@@ -57,45 +49,31 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int in_set(Complex c)
+int in_set( float x0, float y0 )
 {
-	/*
-		Checks if the number is in the set
-		Returns iteration it exceeded the threshold
-		If it does not, return one greater than Threshold
-	*/
-	Complex z = { .r = 0, .i = 0};
-	int i = 0;
-	for (i = 0; i < ITER_THRES; ++i)
-	{
-		z.r = z.r*z.r + -1*z.i*z.i + c.r;
-		z.i = 2*z.r*z.i + c.i;
+	int i=0;
+	float x=x0;
+	float y=y0;
 
-		if (z.r > VAL_THRES) {
-			return i;
-		}
+	while( x*x + y*y < 4 && i<MAX_ITERS) {
+		float t = x*x - y*y + x0;
+		y = 2*x*y + y0;
+		x = t;
+		i++;
 	}
-
-	return ITER_THRES + 1;
+	return i;
 }
 
-void plot_point(int iter_val, int j, int k)
+void plot_point(int iter, int j, int k)
 {
-	/* Plot the point based on the color */
-	int step_size = ITER_THRES/STEPS;
-	int colors[STEPS][3] = {{255,255,0},{255,215,0},{50,205,50},{0,0,205},{165,42,42}};
-
-	if (iter_val > ITER_THRES) {
-		draw_color(255, 255, 255);
-		draw_rect(j, k, 1, 1);
+	if(iter==MAX_ITERS) {
+		draw_color(0,0,0);
 	} else {
-		for (int i = 0; i < STEPS; ++i)
-		{
-			if (iter_val <= step_size*(i+1)) {
-				draw_color(colors[i][0], colors[i][1], colors[i][2]);
-				draw_rect(j, k, 1, 1);
-				break;
-			}
-		}
+		int color[3];
+		color[0] = iter   % 256;
+		color[1] = iter*3 % 256;
+		color[2] = iter*7 % 256;
+		draw_color(color[0],color[1],color[2]);
 	}
+	draw_rect(j,k,1,1);
 }
