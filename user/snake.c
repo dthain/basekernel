@@ -26,7 +26,6 @@ void init_snake_coords(struct coords *snake_coords, uint16_t x_steps, uint16_t y
 uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords *apple, uint8_t * board);
 uint16_t randint(uint16_t min, uint16_t max);
 int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b);
-int draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b);
 void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick);
 int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_steps, uint16_t y_steps, uint8_t * board, char in);
 int check_snake_collision(struct coords *snake_coords);
@@ -144,10 +143,6 @@ int main(int argc, char *argv[])
 			in = tin;
 			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
 			draw_clear(0, 0, game_width, game_height);
-			if(draw_border(0, 0, game_width, game_height, thick, 255, 255, 255) < 0) {
-				printf("Border create failed!\n");
-				return -1;
-			}
 		}
 	}
 
@@ -222,28 +217,9 @@ int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, ui
 	/* draw initial window */
 	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, w_b, h_b);
-	if(draw_border(0, 0, w_b, h_b, thick, r_b, g_b, b_b) < 0) {
-		printf("Border create failed!\n");
-		return -1;
-	}
 	draw_flush();
 
 	return KNO_STDWIN;
-}
-
-// Draws the border with the colors specified
-int draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b)
-{
-	// Color the border appropriately
-	draw_color(r, b, g);
-
-	// Draw 4 rectangles to represent the border
-	draw_rect(x, y, w, thickness);
-	draw_rect(x, y, thickness, h);
-	draw_rect(x + w - thickness, y, thickness, h);
-	draw_rect(x, y + h - thickness, w, thickness);
-
-	return 0;
 }
 
 void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick)
