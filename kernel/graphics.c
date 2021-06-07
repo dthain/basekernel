@@ -314,6 +314,7 @@ static inline void graphics_line_hozo(struct graphics *g, int x, int y, int w, i
 
 void graphics_line(struct graphics *g, int x, int y, int w, int h)
 {
+	// If width is negative, reverse direction to simplify.
 	if(w < 0) {
 		x = x + w;
 		y = y + h;
@@ -321,25 +322,32 @@ void graphics_line(struct graphics *g, int x, int y, int w, int h)
 		h = -h;
 	}
 
+	// If line falls outside of clip region, bail out.
+	if(x<0 || y<0 || x>g->clip.w || y>g->clip.h) return;
+	if((x+w)>=g->clip.w || (y+h)>=g->clip.h || (y+h)<0 ) return;
+
+	// Adjust origin to clip region.
 	x += g->clip.x;
 	y += g->clip.y;
-
-	if(h > 0) {
-		if(w == 0) {
+	
+	if(h>0) {
+		if(w==0) {
 			graphics_line_vert(g, x, y, w, h);
 		} else if(h > w) {
 			graphics_line_q1(g, x, y, w, h);
 		} else {
 			graphics_line_q2(g, x, y, w, h);
 		}
-	} else {
-		if(h == 0) {
-			graphics_line_hozo(g, x, y, w, h);
+	} else if(h<0) {
+		if(w==0) {
+			graphics_line_vert(g, x, y+h, w, -h);
 		} else if(h > -w) {
 			graphics_line_q3(g, x, y, w, h);
 		} else {
 			graphics_line_q4(g, x, y, w, h);
 		}
+	} else { //h==0
+		graphics_line_hozo(g, x, y, w, h);
 	}
 }
 
