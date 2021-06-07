@@ -81,16 +81,27 @@ int main(int argc, char *argv[])
 	draw_clear(0, 0, size[0], size[1]);
 	draw_flush();
 
-	// Problem: this only works if it's a local variable!
-struct window windows[NWINDOWS] = {
-	{ .x=0, .y=0, .w = 400, .h = 400, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
-	{ .x=400, .y=0, .w = 400, .h = 400, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
-	{ .x=0, .y=400, .w = 400, .h = 300, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
-	{ .x=400, .y=400, .w = 400, .h = 300, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
-};
+	// This structure only works if it is declared on the stack.
+	// Indicates some problem with our program loading/layout
+	//
+	struct window windows[NWINDOWS] = {
+		{ .x=0, .y=0, .w = 400, .h = 400, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
+		{ .x=400, .y=0, .w = 400, .h = 400, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
+		{ .x=0, .y=400, .w = 400, .h = 300, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
+		{ .x=400, .y=400, .w = 400, .h = 300, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
+	};
 
+	windows[1].x = size[0]/2;
+	windows[2].y = size[1]/2;
+	windows[3].x = size[0]/2;
+	windows[3].y = size[1]/2;
 
 	int i;
+	for(i=0;i<NWINDOWS;i++) {
+		windows[i].w = size[0]/2;
+		windows[i].h = size[1]/2;
+	}
+
 	for(i=0;i<NWINDOWS;i++) {
 		struct window *w = &windows[i];
 
