@@ -16,13 +16,14 @@ events to each based on which one currently has the focus.
 #define NWINDOWS 4
 
 #define WINDOW_TITLE_HEIGHT 14
-#define WINDOW_TITLE_COLOR 50,50,255
+#define WINDOW_TITLE_ACTIVE_COLOR 100,100,255
+#define WINDOW_TITLE_INACTIVE_COLOR 25,25,50
 #define WINDOW_TITLE_TEXT_COLOR 255,255,255
 #define WINDOW_BORDER_COLOR 200,200,200
 #define WINDOW_BORDER 3
 #define WINDOW_TEXT_PADDING 3
 
-#define CLOSE_BOX_PADDING 2
+#define CLOSE_BOX_PADDING 3
 #define CLOSE_BOX_SIZE (WINDOW_TITLE_HEIGHT-CLOSE_BOX_PADDING*2)
 #define CLOSE_BOX_COLOR 100,100,100
 
@@ -35,7 +36,7 @@ struct window {
 	int fds[4];
 };
 
-void draw_border( struct window *win )
+void draw_border( struct window *win, int isactive )
 {
 	int x=win->x;
 	int y=win->y;
@@ -43,7 +44,11 @@ void draw_border( struct window *win )
 	int w=win->w;
 
 	// Title bar
-	draw_color(WINDOW_TITLE_COLOR);
+	if(isactive) {
+		draw_color(WINDOW_TITLE_ACTIVE_COLOR);
+	} else {
+		draw_color(WINDOW_TITLE_INACTIVE_COLOR);
+	}
 	draw_rect(x,y,w,WINDOW_TITLE_HEIGHT);
 
 	// Close box
@@ -51,7 +56,7 @@ void draw_border( struct window *win )
 	draw_rect(x+CLOSE_BOX_PADDING,y+CLOSE_BOX_PADDING,CLOSE_BOX_SIZE,CLOSE_BOX_SIZE);
 	// Title text
 	draw_color(WINDOW_TITLE_TEXT_COLOR);
-	draw_string(x+CLOSE_BOX_SIZE+CLOSE_BOX_PADDING*2,y+WINDOW_TEXT_PADDING,"Window Title");
+	draw_string(x+CLOSE_BOX_SIZE+CLOSE_BOX_PADDING*2,y+WINDOW_TEXT_PADDING,win->exec);
 
 	// Border box
 	draw_color(WINDOW_BORDER_COLOR);
@@ -66,9 +71,6 @@ void draw_border( struct window *win )
 
 	draw_line(x+w,y,0,h);
 	draw_line(x+w+1,y,0,h);
-
-	// Recover old color here
-	draw_color(255,255,255);
 }
 
 int main(int argc, char *argv[])
@@ -109,9 +111,7 @@ struct window windows[NWINDOWS] = {
 		  return 0;
 		}
 
-		draw_window(KNO_STDWIN);
-		draw_color(255,255,255);
-		draw_border(w);
+		draw_border(w,0);
 		draw_flush();
 	}
 
@@ -120,9 +120,7 @@ struct window windows[NWINDOWS] = {
 	char tin = 0;
 
 	/* Draw green window around active process and start it */
-	draw_window(KNO_STDWIN);
-	draw_color(0,255,0);
-	draw_border(&windows[active]);
+	draw_border(&windows[active],1);
 	draw_flush();
 
 	while (tin != '~') {
@@ -134,19 +132,13 @@ struct window windows[NWINDOWS] = {
 		/* If tab entered, go to the next process */
 		syscall_object_read(0, &tin, 1);
 		if (tin == '\t') {
-			draw_window(KNO_STDWIN);
-			draw_color(255,255,255);
-			draw_border(&windows[active]);
+			draw_border(&windows[active],0);
 			draw_flush();
 			active = (active + 1) % NWINDOWS;
 
 			/* Draw green window around active process and start it */
-			draw_window(KNO_STDWIN);
-			draw_color(0,255,0);
-			draw_border(&windows[active]);
+			draw_border(&windows[active],1);
 			draw_flush();
-			// need to return to prior color
-			draw_color(255, 255, 255);
 			continue;
 		}
 		/* Write 1 character to the correct pipe */
@@ -159,7 +151,6 @@ struct window windows[NWINDOWS] = {
 	}
 
 	/* Clean up the window */
-	draw_color(255, 255, 255);
 	draw_clear(0, 0, size[0], size[1]);
 	draw_flush();
 	return 0;
