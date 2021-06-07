@@ -24,18 +24,21 @@ void event_post( uint16_t type, uint16_t code, int16_t x, int16_t y )
 
 int event_read( struct event *e, int timeout )
 {
+	int result;
+
 	interrupt_block();
 
 	if(head==tail) {
-		interrupt_unblock();
-		return 0;
+		result = 0;
+	} else {
+		*e = buffer[tail];
+		tail = (tail+1) % EVENT_BUFFER_SIZE;
+		result = 1;
 	}
 
-	*e = buffer[tail];
-	tail = (tail+1) % EVENT_BUFFER_SIZE;
-
 	interrupt_unblock();
-	return 1;
+
+	return result;
 }
 
 
