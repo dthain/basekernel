@@ -37,8 +37,11 @@ void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps
 /* Main Execution */
 int main(int argc, char *argv[])
 {
-	uint16_t WIDTH = 200;
-	uint16_t HEIGHT = 200;
+	int size[2];
+	syscall_object_size(KNO_STDWIN, size, 2);
+
+	uint16_t WIDTH = size[0];
+	uint16_t HEIGHT = size[1];
 	uint16_t thick = 4;
 
 	// Snake values
