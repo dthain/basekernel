@@ -14,8 +14,6 @@ See the file LICENSE for details.
 	Display time in a window
 */
 
-/* Function declarations */
-void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b);
 void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b);
 
 int main(int argc, char *argv[])
@@ -40,7 +38,6 @@ int main(int argc, char *argv[])
 	/* Set up window  */
 	draw_window(KNO_STDWIN);
 	draw_clear(0, 0, CLOCK_W, CLOCK_H);
-	draw_border(0, 0, CLOCK_W, CLOCK_H, thickness, 255, 255, 255);
 	draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);
 	draw_flush();
 
@@ -57,15 +54,6 @@ int main(int argc, char *argv[])
 	}
 
 	return 0;
-}
-
-void draw_border(int x, int y, int w, int h, int thickness, int r, int g, int b)
-{
-	draw_color(r, b, g);
-	draw_rect(x, y, w, thickness);
-	draw_rect(x, y, thickness, h);
-	draw_rect(x + w - thickness, y, thickness, h);
-	draw_rect(x, y + h - thickness, w, thickness);
 }
 
 void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b) {
