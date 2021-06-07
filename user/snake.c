@@ -84,16 +84,16 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	draw_string(thick * 3, thick * 4, "Press any key to start");
-	draw_string(thick * 3, thick * 8, "j: up");
-	draw_string(thick * 3, thick * 12, "n: down");
-	draw_string(thick * 3, thick * 16, "m: right");
-	draw_string(thick * 3, thick * 20, "b: left");
+	draw_string(thick * 3, thick * 8, "w: up");
+	draw_string(thick * 3, thick * 12, "s: down");
+	draw_string(thick * 3, thick * 16, "a: left");
+	draw_string(thick * 3, thick * 20, "d: right");
 	draw_flush();
 
 
 	syscall_object_read(0, &tin, 1);
-	if(tin != 'm' && tin != 'n') {
-		in = 'm';
+	if(tin != 'a' && tin != 'd') {
+		in = 'a';
 	} else {
 		in = tin;
 	}
@@ -110,9 +110,9 @@ int main(int argc, char *argv[])
 		syscall_object_read_nonblock(0, &tin, 1);
 
 		// Skip if the user goes reverse direction
-		if((tin == 'b' && in == 'm') || (tin == 'm' && in == 'b') || (tin == 'j' && in == 'n') || (tin == 'n' && in == 'j'))
+		if((tin == 'a' && in == 'd') || (tin == 'd' && in == 'a') || (tin == 'w' && in == 's') || (tin == 's' && in == 'w'))
 			in = in;
-		else if(tin > 0 && (tin == 'b' || tin == 'm' || tin == 'n' || tin == 'j'))
+		else if(tin > 0 && (tin == 'w' || tin == 'a' || tin == 's' || tin == 'd'))
 			in = tin;
 
 		// Try to move the snake
@@ -138,8 +138,8 @@ int main(int argc, char *argv[])
 				printf("Snake exiting\n");
 				return 1;
 			}
-			if(tin != 'm' && tin != 'n') {
-				tin = 'm';
+			if(tin != 'a' && tin != 'd') {
+				tin = 'a';
 			}
 			in = tin;
 			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
@@ -271,25 +271,25 @@ int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_ste
 	// Set snakes next coordinates
 	uint16_t x_next, y_next;
 	switch (in) {
-	case ('b'):
+	case ('a'):
 		if(snake_coords[0].x_c == 0)
 			return -1;
 		x_next = snake_coords[0].x_c - 1;
 		y_next = snake_coords[0].y_c;
 		break;
-	case ('m'):
+	case ('d'):
 		if(snake_coords[0].x_c == x_steps - 1)
 			return -1;
 		x_next = snake_coords[0].x_c + 1;
 		y_next = snake_coords[0].y_c;
 		break;
-	case ('j'):
+	case ('w'):
 		if(snake_coords[0].y_c == 0)
 			return -1;
 		x_next = snake_coords[0].x_c;
 		y_next = snake_coords[0].y_c - 1;
 		break;
-	case ('n'):
+	case ('s'):
 		if(snake_coords[0].y_c == y_steps - 1)
 			return -1;
 		x_next = snake_coords[0].x_c;
