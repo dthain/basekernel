@@ -198,7 +198,7 @@ static void mouse_interrupt(int i, int code)
 		}
 	}
 
-	if(state.x!=last_state.x || state.y!=last_state.y) {
+	if(state.x!=last_state.x || state.y!=last_state.y) {	
 		event_post(EVENT_MOUSE_MOVE,0,state.x,state.y);
 	}
 }

@@ -51,7 +51,8 @@ typedef enum {
 	KOBJECT_DEVICE,
 	KOBJECT_GRAPHICS,
 	KOBJECT_PIPE,
-	KOBJECT_CONSOLE
+	KOBJECT_CONSOLE,
+	KOBJECT_EVENT
 } kobject_type_t;
 
 typedef enum {
