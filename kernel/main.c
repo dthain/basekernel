@@ -8,8 +8,7 @@ See the file LICENSE for details.
 #include "page.h"
 #include "process.h"
 #include "interrupt.h"
-#include "keyboard.h"
-#include "mouse.h"
+#include "event.h"
 #include "clock.h"
 #include "ata.h"
 #include "device.h"
@@ -49,8 +48,7 @@ int kernel_main()
 	interrupt_init();
 	rtc_init();
 	clock_init();
-	mouse_init();
-	keyboard_init();
+	event_init();
 	process_init();
 	ata_init();
 	cdrom_init();
@@ -60,7 +58,7 @@ int kernel_main()
 	kshell_launch();
 
 	while(1) {
-		console_putchar(&console_root,keyboard_read(0));
+		console_putchar(&console_root,event_read_keyboard());
 	}
 
 	return 0;

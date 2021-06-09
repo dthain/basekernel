@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "kernel/error.h"
 #include "kernel/ascii.h"
 #include "kshell.h"
-#include "keyboard.h"
+#include "event.h"
 #include "console.h"
 #include "string.h"
 #include "rtc.h"
@@ -347,7 +347,7 @@ int kshell_readline(char *line, int length)
 {
 	int i = 0;
 	while(i < (length - 1)) {
-		char c = keyboard_read(0);
+		char c = event_read_keyboard();
 		if(c == ASCII_CR) {
 			line[i] = 0;
 			printf("\n");

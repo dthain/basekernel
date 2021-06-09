@@ -9,13 +9,13 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 
-struct mouse_event {
+struct mouse_state {
 	uint8_t buttons;
-	int32_t x;
-	int32_t y;
+	uint16_t x;
+	uint16_t y;
 };
 
-void mouse_read(struct mouse_event *e);
+void mouse_read( struct mouse_state *s );
 void mouse_init();
 
 #endif

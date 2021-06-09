@@ -8,9 +8,8 @@ See the file LICENSE for details.
 #include "ioports.h"
 #include "interrupt.h"
 #include "kernel/ascii.h"
-#include "process.h"
-#include "device.h"
 #include "kernelcore.h"
+#include "event.h"
 
 #define KEYBOARD_PORT 0x60
 
@@ -42,27 +41,24 @@ static struct keymap keymap[] = {
 #include "keymap.us.pc.c"
 };
 
-static uint8_t buffer[BUFFER_SIZE];
-static int keyboard_buffer_read = 0;
-static int keyboard_buffer_write = 0;
-
-static struct list queue = { 0, 0 };
-
 static int shift_mode = 0;
 static int alt_mode = 0;
 static int ctrl_mode = 0;
 static int capslock_mode = 0;
 static int numlock_mode = 0;
 
-static uint8_t keyboard_map( uint8_t code)
+static void keyboard_interrupt_l2( uint8_t code )
 {
 	int direction;
+	int event;
 
 	if(code & 0x80) {
 		direction = 0;
+		event = EVENT_KEY_UP;
 		code = code & 0x7f;
 	} else {
 		direction = 1;
+		event = EVENT_KEY_DOWN;
 	}
 
 	struct keymap *k = &keymap[code];
@@ -77,31 +73,29 @@ static uint8_t keyboard_map( uint8_t code)
 		if(direction == 0) capslock_mode = !capslock_mode;
 	} else if(k->special == KEYMAP_NUMLOCK) {
 		if(direction == 0) numlock_mode = !numlock_mode;
-	} else if(direction) {
-		if(ctrl_mode && alt_mode && k->normal == ASCII_DEL) {
+	} else {
+		if(direction && ctrl_mode && alt_mode && k->normal == ASCII_DEL) {
 			reboot();
 		} else if(capslock_mode) {
 			if(k->special==KEYMAP_ALPHA && !shift_mode) {
-				return k->shifted;
+				event_post(event,k->shifted,0,0);
 			} else {
-				return k->normal;
+				event_post(event,k->normal,0,0);
 			}	
 		} else if(numlock_mode) {
 			if(k->special==KEYMAP_NUMPAD && !shift_mode) {
-				return k->shifted;
+				event_post(event,k->shifted,0,0);
 			} else {
-				return k->normal;
+				event_post(event,k->normal,0,0);
 			}	
 		} else if(shift_mode) {
-			return k->shifted;
+			event_post(event,k->shifted,0,0);
 		} else if(ctrl_mode) {
-			return k->ctrled;
+			event_post(event,k->ctrled,0,0);
 		} else {
-			return k->normal;
+			event_post(event,k->normal,0,0);
 		}
 	}
-
-	return KEY_INVALID;
 }
 
 static int expect_extra = 0;
@@ -130,80 +124,19 @@ static void keyboard_interrupt(int i, int intr_code)
 				c = KEY_RIGHT;
 				break;
 			default:
-				c = KEY_INVALID;
-				break;
+				return;
 		}
 	} else {
-		c = keyboard_map(code);
+		c = code;
 	}
 
-	if(c == KEY_INVALID) return;
-
-	if((keyboard_buffer_write + 1) == (keyboard_buffer_read % BUFFER_SIZE))
-		return;
-	buffer[keyboard_buffer_write] = c;
-	keyboard_buffer_write = (keyboard_buffer_write + 1) % BUFFER_SIZE;
-	process_wakeup(&queue);
+	keyboard_interrupt_l2(c);
 }
-
-char keyboard_read( int non_blocking )
-{
-	while(keyboard_buffer_read == keyboard_buffer_write) {
-		if(non_blocking) return -1;
-		process_wait(&queue);
-	}
-	char c = buffer[keyboard_buffer_read];
-	keyboard_buffer_read = (keyboard_buffer_read + 1) % BUFFER_SIZE;
-	return c;
-}
-
-int keyboard_device_probe( int unit, int *nblocks, int *blocksize, char *name )
-{
-       if(unit==0) {
-		strcpy(name,"keyboard");
-		*nblocks = 0;
-		*blocksize = 1;
-		return 1;
-       } else {
-		return 0;
-       }
-
-}
-
-int keyboard_device_read( int unit, void *data, int size, int offset)
-{
-	int i;
-	char *cdata = data;
-	for(i = 0; i < size; i++) {
-		cdata[i] = keyboard_read(0);
-	}
-	return size;
-}
-
-int keyboard_device_read_nonblock( int unit, void *data, int size, int offset)
-{
-	int i;
-	char *cdata = data;
-	for(i = 0; i < size; i++) {
-		cdata[i] = keyboard_read(1);
-		if(cdata[i]==-1) return i;
-	}
-	return size;
-}
-
-static struct device_driver keyboard_driver = {
-	.name          = "keyboard",
-	.probe         = keyboard_device_probe,
-	.read          = keyboard_device_read,
-	.read_nonblock = keyboard_device_read_nonblock,
-	0,
-};
 
 void keyboard_init()
 {
 	interrupt_register(33, keyboard_interrupt);
 	interrupt_enable(33);
-	device_driver_register(&keyboard_driver);
 	printf("keyboard: ready\n");
 }
 

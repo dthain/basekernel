@@ -14,6 +14,7 @@
 #include "graphics.h"
 #include "console.h"
 #include "pipe.h"
+#include "event.h"
 
 struct kobject {
 	union {
@@ -36,6 +37,7 @@ struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_graphics(struct graphics *g);
 struct kobject *kobject_create_console(struct console *c);
 struct kobject *kobject_create_pipe(struct pipe *p);
+struct kobject *kobject_create_event();
 
 struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h );
 struct kobject *kobject_create_console_from_graphics( struct kobject *k );

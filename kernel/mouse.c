@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "kernel/ascii.h"
 #include "process.h"
 #include "kernelcore.h"
+#include "event.h"
 
 /*
 The PS2 interface uses a data port and a command port.
@@ -153,7 +154,8 @@ void ps2_config_set(uint8_t config)
 	ps2_write_data(config);
 }
 
-static struct mouse_event state;
+static struct mouse_state state = {0,0,0};
+static struct mouse_state last_state = {0,0,0};
 
 /*
 On each interrupt, read three bytes from the PS 2 port, which
@@ -169,6 +171,8 @@ static void mouse_interrupt(int i, int code)
 	uint8_t m2 = inb(PS2_DATA_PORT);
 	uint8_t m3 = inb(PS2_DATA_PORT);
 
+	last_state = state;
+
 	state.buttons = m1 & 0x03;
 	state.x += m1 & 0x10 ? 0xffffff00 | m2 : m2;
 	state.y -= m1 & 0x20 ? 0xffffff00 | m3 : m3;
@@ -181,6 +185,22 @@ static void mouse_interrupt(int i, int code)
 		state.x = video_xres - 1;
 	if(state.y >= video_yres)
 		state.y = video_yres - 1;
+
+	if(state.buttons!=last_state.buttons) {
+		int i;
+		for(i=0;i<8;i++) {
+			uint8_t mask = (1<<i);
+			if( (state.buttons&mask) && !(last_state.buttons&mask) ) {
+				event_post(EVENT_BUTTON_DOWN,i,state.x,state.y);
+			} else if( !(state.buttons&mask) && (last_state.buttons&mask) ) {
+				event_post(EVENT_BUTTON_UP,i,state.x,state.y);
+			}
+		}
+	}
+
+	if(state.x!=last_state.x || state.y!=last_state.y) {	
+		event_post(EVENT_MOUSE_MOVE,0,state.x,state.y);
+	}
 }
 
 /*
@@ -188,7 +208,7 @@ Do a non-blocking read of the current mouse state.
 Block interrupts while reading, to avoid inconsistent state.
 */
 
-void mouse_read(struct mouse_event *e)
+void mouse_read(struct mouse_state *e)
 {
 	interrupt_disable(44);
 	*e = state;
@@ -221,5 +241,6 @@ void mouse_init()
 
 	interrupt_register(44, mouse_interrupt);
 	interrupt_enable(44);
+
 	printf("mouse: ready\n");
 }
