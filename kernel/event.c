@@ -84,7 +84,7 @@ int event_read_keyboard()
 {
 	struct event e;
 	while(event_read(&e,sizeof(e))) {
-		if(e.type==EVENT_KEY_UP) {
+		if(e.type==EVENT_KEY_DOWN) {
 			return e.code;
 		}
 	}
