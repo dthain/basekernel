@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 }
 
 void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b) {
-	draw_color(r, b, g);
+	draw_fgcolor(r, b, g);
 
 	char h_str[100];
 	char m_str[100];

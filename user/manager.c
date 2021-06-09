@@ -45,21 +45,21 @@ void draw_border( struct window *win, int isactive )
 
 	// Title bar
 	if(isactive) {
-		draw_color(WINDOW_TITLE_ACTIVE_COLOR);
+		draw_bgcolor(WINDOW_TITLE_ACTIVE_COLOR);
 	} else {
-		draw_color(WINDOW_TITLE_INACTIVE_COLOR);
+		draw_bgcolor(WINDOW_TITLE_INACTIVE_COLOR);
 	}
-	draw_rect(x,y,w,WINDOW_TITLE_HEIGHT);
+	draw_clear(x,y,w,WINDOW_TITLE_HEIGHT);
 
 	// Close box
-	draw_color(CLOSE_BOX_COLOR);
+	draw_fgcolor(CLOSE_BOX_COLOR);
 	draw_rect(x+CLOSE_BOX_PADDING,y+CLOSE_BOX_PADDING,CLOSE_BOX_SIZE,CLOSE_BOX_SIZE);
 	// Title text
-	draw_color(WINDOW_TITLE_TEXT_COLOR);
+	draw_fgcolor(WINDOW_TITLE_TEXT_COLOR);
 	draw_string(x+CLOSE_BOX_SIZE+CLOSE_BOX_PADDING*2,y+WINDOW_TEXT_PADDING,win->exec);
 
 	// Border box
-	draw_color(WINDOW_BORDER_COLOR);
+	draw_fgcolor(WINDOW_BORDER_COLOR);
 	draw_line(x,y,w,0);
 	draw_line(x,y+WINDOW_TITLE_HEIGHT-1,w,0);
 
@@ -71,6 +71,8 @@ void draw_border( struct window *win, int isactive )
 
 	draw_line(x+w,y,0,h);
 	draw_line(x+w+1,y,0,h);
+
+	draw_bgcolor(0,0,0);
 }
 
 int main(int argc, char *argv[])

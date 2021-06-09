@@ -67,13 +67,13 @@ int in_set( float x0, float y0 )
 void plot_point(int iter, int j, int k)
 {
 	if(iter==MAX_ITERS) {
-		draw_color(0,0,0);
+		draw_fgcolor(0,0,0);
 	} else {
 		int color[3];
 		color[0] = iter   % 256;
 		color[1] = iter*3 % 256;
 		color[2] = iter*7 % 256;
-		draw_color(color[0],color[1],color[2]);
+		draw_fgcolor(color[0],color[1],color[2]);
 	}
 	draw_rect(j,k,1,1);
 }

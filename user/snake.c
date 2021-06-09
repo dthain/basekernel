@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 			init_snake_coords(snake_coords, x_steps, y_steps, x, y);
 
 			draw_flush();
-			draw_color(255, 255, 255);
+			draw_fgcolor(255, 255, 255);
 			draw_string(thick * 3, thick * 4, "You lose!");
 			draw_string(thick * 3, thick * 8, "Enter q to quit");
 			draw_string(thick * 3, thick * 12, "Press any key to start");
@@ -227,7 +227,7 @@ void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, ui
 	draw_clear(x_0, y_0, game_width, game_height);
 	draw_window(wd);
 	// Draw the snake
-	draw_color(0, 255, 0);
+	draw_fgcolor(0, 255, 0);
 	for(uint16_t i = 0; i < x_steps * y_steps; i++) {
 		if(snake_coords[i].x_c == 255) {
 			break;
@@ -236,7 +236,7 @@ void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, ui
 	}
 
 	// Draw the apple
-	draw_color(255, 0, 0);
+	draw_fgcolor(255, 0, 0);
 	draw_rect(apple.x_c * thick + x_0, apple.y_c * thick + y_0, thick, thick);
 
 	draw_flush();
