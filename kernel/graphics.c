@@ -99,12 +99,19 @@ int graphics_write(struct graphics *g, struct graphics_command *command)
 				return -1;
 			}
 			break;
-		case GRAPHICS_COLOR:
+		case GRAPHICS_FGCOLOR:
 			c.r = command->args[0];
 			c.g = command->args[1];
 			c.b = command->args[2];
 			c.a = 0;
 			graphics_fgcolor(g, c);
+			break;
+		case GRAPHICS_BGCOLOR:
+			c.r = command->args[0];
+			c.g = command->args[1];
+			c.b = command->args[2];
+			c.a = 0;
+			graphics_bgcolor(g, c);
 			break;
 		case GRAPHICS_RECT:
 			graphics_rect(g, command->args[0], command->args[1], command->args[2], command->args[3]);

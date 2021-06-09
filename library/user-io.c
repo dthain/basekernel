@@ -72,9 +72,14 @@ void draw_window(int wd)
 	window_fd = wd;
 }
 
-void draw_color(int r, int g, int b)
+void draw_fgcolor(int r, int g, int b)
 {
-	draw_set_buffer(GRAPHICS_COLOR, r, g, b, 0);
+	draw_set_buffer(GRAPHICS_FGCOLOR, r, g, b, 0);
+}
+
+void draw_bgcolor(int r, int g, int b)
+{
+	draw_set_buffer(GRAPHICS_BGCOLOR, r, g, b, 0);
 }
 
 void draw_rect(int x, int y, int w, int h)

@@ -17,7 +17,8 @@ void printf_putstring(char *s);
 void flush();
 
 void draw_window(int wd);
-void draw_color(int r, int g, int b);
+void draw_fgcolor(int r, int g, int b);
+void draw_bgcolor(int r, int g, int b);
 void draw_rect(int x, int y, int w, int h);
 void draw_clear(int x, int y, int w, int h);
 void draw_line(int x, int y, int w, int h);

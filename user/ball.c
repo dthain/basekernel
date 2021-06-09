@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		move(&r, &dr, 0, 255);
 		move(&g, &dg, 0, 255);
 		move(&b, &db, 0, 255);
-		draw_color(r, g, b);
+		draw_fgcolor(r, g, b);
 		draw_string(x1, y1, "basekernel");
 		draw_flush();
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 		syscall_object_read_nonblock(KNO_STDIN,&stop,1);
 	}
 	draw_clear(0, 0, width, height);
-	draw_color(255, 255, 255);
+	draw_fgcolor(255, 255, 255);
 	draw_flush();
 	return 0;
 }
