@@ -21,20 +21,23 @@ static struct list queue = LIST_INIT;
 
 void event_post( uint16_t type, uint16_t code, int16_t x, int16_t y )
 {
-	if(((head+1)%EVENT_BUFFER_SIZE)==tail) {
+	/* If ring buffer is full, return immediately. */
+	int next = (head+1) % EVENT_BUFFER_SIZE;
+	if(next==tail) {
 		overflow_count++;
 		return;
 	}
 
+	/* Copy event to current buffer position */
 	struct event *e = &buffer[head];
 	e->type = type;
 	e->code = code;
 	e->x = x;
 	e->y = y;
 
-	head = (head+1) % EVENT_BUFFER_SIZE;
+	/* Advance head pointer and wake up waiting process (if any) */
+	head = next;
 	process_wakeup(&queue);
-	return;
 }
 
 int event_read_raw( struct event *e, int size, int blocking )
