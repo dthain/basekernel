@@ -4,7 +4,7 @@
 #include "library/user-io.h"
 #include "kernel/ascii.h"
 #include "library/errno.h"
-#include "library/objno.h"
+#include "library/kernel_object_string.h"
 
 #define MAX_LINE_LENGTH 1024
 
@@ -26,8 +26,9 @@ void do_table()
 	for(i=0;i<=max;i++) {
 		int type = syscall_object_type(i);
 		if(type>=0) {
+			tag[0] = 0;
 			syscall_object_get_tag(i,tag,sizeof(tag));
-			printf("%d: %s (%s)\n",i,strobjno(type),tag);
+			printf("%d: %s (%s)\n",i,kernel_object_string(type),tag);
 		}
 	}
 	printf("\n");
