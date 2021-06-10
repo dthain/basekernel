@@ -17,6 +17,20 @@ void print_directory(char *d, int length)
 	}
 }
 
+void show_fds()
+{
+	char tag[16];
+	int i;
+	for(i=0;i<128;i++) {
+		int type = syscall_object_type(i);
+		if(type>=0) {
+			syscall_object_get_tag(i,tag,sizeof(tag));
+			printf("fd %d type %d tag %s\n",i,type,tag);
+		}
+	}
+}
+
+
 int do_command(char *line)
 {
 	const char *pch = strtok(line, " ");
@@ -98,8 +112,10 @@ int do_command(char *line)
 			}
 		}
 	} else if(pch && !strcmp(pch, "list")) {
+		const char *arg = strtok(0," ");
+		if(!arg) arg = "/";
 		char buffer[1024];
-		int fd = syscall_open_file(".",0,0);
+		int fd = syscall_open_dir(arg,0);
 		if(fd>=0) {
 			int length = syscall_object_list(fd, buffer, 1024);
 			syscall_object_close(fd);
@@ -154,6 +170,7 @@ int main(int argc, char *argv[])
 {
 	char line[MAX_LINE_LENGTH];
 
+	show_fds();
 	while(1) {
 		printf("ushell> ");
 		flush();

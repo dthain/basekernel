@@ -301,7 +301,7 @@ int sys_object_list( int fd, char *buffer, int length)
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(buffer,length)) return KERROR_INVALID_ADDRESS;
 	if(kobject_get_type(current->ktable[fd])!=KOBJECT_DIR) return KERROR_NOT_A_DIRECTORY;
-	return kobject_read(current->ktable[fd],buffer,length);
+	return kobject_list(current->ktable[fd],buffer,length);
 }
 
 int sys_open_file_relative( int fd, const char *path, int mode, kernel_flags_t flags)
@@ -323,7 +323,7 @@ int sys_open_file_relative( int fd, const char *path, int mode, kernel_flags_t f
 	}
 }
 
-int sys_open_dir( int fd, const char *path, kernel_flags_t flags )
+int sys_open_dir_relative( int fd, const char *path, kernel_flags_t flags )
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
@@ -350,6 +350,29 @@ int sys_open_dir( int fd, const char *path, kernel_flags_t flags )
 		return fd;
 	} else {
 		return result;
+	}
+}
+
+int sys_open_dir(const char *path, kernel_flags_t flags)
+{
+	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+
+	int newfd = process_available_fd(current);
+	if(newfd<0) return KERROR_OUT_OF_OBJECTS;
+
+	struct fs_dirent *d = fs_resolve(path);
+
+	if(!fs_dirent_isdir(d)) {
+		fs_dirent_close(d);
+		return KERROR_NOT_A_DIRECTORY;
+	}
+
+	if(d) {
+		current->ktable[newfd] = kobject_create_dir(d);
+		return newfd;
+	} else {
+		// XXX propagate better error
+		return KERROR_NOT_FOUND;
 	}
 }
 
@@ -660,7 +683,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_OPEN_FILE_RELATIVE:
 		return sys_open_file_relative(a, (const char *)b, c, d);
 	case SYSCALL_OPEN_DIR:
-		return sys_open_dir(a,(const char*)b,(kernel_flags_t)c);
+		return sys_open_dir((const char*)a, b );
+	case SYSCALL_OPEN_DIR_RELATIVE:
+		return sys_open_dir_relative(a, (const char *)b, c );
 	case SYSCALL_OPEN_WINDOW:
 		return sys_open_window(a, b, c, d, e);
 	case SYSCALL_OPEN_CONSOLE:
