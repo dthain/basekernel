@@ -4,6 +4,7 @@
 #include "library/user-io.h"
 #include "kernel/ascii.h"
 #include "library/errno.h"
+#include "library/objno.h"
 
 #define MAX_LINE_LENGTH 1024
 
@@ -17,17 +18,19 @@ void print_directory(char *d, int length)
 	}
 }
 
-void show_fds()
+void do_table()
 {
+	printf("Object Table:\n");
 	char tag[16];
-	int i;
-	for(i=0;i<128;i++) {
+	int i, max = syscall_object_max();
+	for(i=0;i<=max;i++) {
 		int type = syscall_object_type(i);
 		if(type>=0) {
 			syscall_object_get_tag(i,tag,sizeof(tag));
-			printf("fd %d type %d tag %s\n",i,type,tag);
+			printf("%d: %s (%s)\n",i,strobjno(type),tag);
 		}
 	}
+	printf("\n");
 }
 
 
@@ -128,8 +131,10 @@ int do_command(char *line)
 			return 1;
 		}
 		syscall_chdir(path);
+	} else if(pch && !strcmp(pch,"table")) {
+		do_table();
 	} else if(pch && !strcmp(pch, "help")) {
-		printf("Commands:\necho <text>\nrun <path>\nmount <unit_no> <fs_type>\nlist\nstart <path>\nkill <pid>\nreap <pid>\nwait\nhelp\nexit\n");
+		printf("Commands:\necho <text>\nrun <path>\nmount <unit_no> <fs_type>\nlist\nstart <path>\nkill <pid>\nreap <pid>\nwait\ntable\nhelp\nexit\n");
 	} else if(pch && !strcmp(pch, "exit")) {
 		return -1;
 	} else if(pch) {
@@ -170,9 +175,10 @@ int main(int argc, char *argv[])
 {
 	char line[MAX_LINE_LENGTH];
 
-	show_fds();
+	do_table();
+
 	while(1) {
-		printf("ushell> ");
+		printf("shell> ");
 		flush();
 		if(readline(line,sizeof(line))) {
 			do_command(line);
