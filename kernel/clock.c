@@ -4,7 +4,6 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "console.h"
 #include "interrupt.h"
 #include "clock.h"
 #include "ioports.h"
@@ -30,7 +29,6 @@ static void clock_interrupt(int i, int code)
 	if(clicks >= CLICKS_PER_SECOND) {
 		clicks = 0;
 		seconds++;
-		console_heartbeat(&console_root);
 		process_preempt();
 	}
 }
