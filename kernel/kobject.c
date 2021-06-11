@@ -11,7 +11,7 @@
 
 #include "device.h"
 #include "fs.h"
-#include "graphics.h"
+#include "window.h"
 #include "console.h"
 #include "pipe.h"
 #include "event.h"
@@ -52,11 +52,11 @@ struct kobject *kobject_create_device(struct device *d)
 	return k;
 }
 
-struct kobject *kobject_create_graphics(struct graphics *g)
+struct kobject *kobject_create_window(struct window *g)
 {
 	struct kobject *k = kobject_init();
-	k->type = KOBJECT_GRAPHICS;
-	k->data.graphics = g;
+	k->type = KOBJECT_WINDOW;
+	k->data.window = g;
 	return k;
 }
 
@@ -89,23 +89,22 @@ struct kobject *kobject_addref(struct kobject *k)
 	return k;
 }
 
-struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h )
+struct kobject *kobject_create_window_from_window( struct kobject *k, int x, int y, int width, int height )
 {
-	if(k->type!=KOBJECT_GRAPHICS) return 0;
+	if(k->type!=KOBJECT_WINDOW) return 0;
 
-	struct graphics *g = graphics_create(k->data.graphics);
-	if(graphics_clip(g,x,y,w,h)) {
-		return kobject_create_graphics(g);
+	struct window *w = window_create(k->data.window,x,y,width,height);
+	if(w) {
+		return kobject_create_window(w);
 	} else {
-		graphics_delete(g);
 		return 0;
 	}
 }
 
-struct kobject *kobject_create_console_from_graphics( struct kobject *k )
+struct kobject *kobject_create_console_from_window( struct kobject *k )
 {
-	if(k->type!=KOBJECT_GRAPHICS) return 0;
-	struct console *c = console_create(k->data.graphics);
+	if(k->type!=KOBJECT_WINDOW) return 0;
+	struct console *c = console_create(k->data.window);
 	if(!c) return 0;
 	return kobject_create_console(c);
 }
@@ -159,6 +158,9 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_PIPE:
 		actual = pipe_read(kobject->data.pipe, buffer, size);
 		break;
+	case KOBJECT_WINDOW:
+		actual = window_read_events(kobject->data.window, buffer, size);
+		break;
 	case KOBJECT_EVENT:
 		* (char *)buffer = event_read_keyboard();
 		actual = 1;
@@ -189,8 +191,8 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 int kobject_write(struct kobject *kobject, void *buffer, int size)
 {
 	switch (kobject->type) {
-	case KOBJECT_GRAPHICS:
-		return graphics_write(kobject->data.graphics, (struct graphics_command *) buffer);
+	case KOBJECT_WINDOW:
+		return window_write_graphics(kobject->data.window, (struct graphics_command *) buffer);
 	case KOBJECT_CONSOLE:
 		return console_write(kobject->data.console, buffer, size );
 	case KOBJECT_FILE:{
@@ -254,8 +256,8 @@ struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 		(*kdst)->tag = strdup(ksrc->tag);
 
 	switch (ksrc->type) {
-	case KOBJECT_GRAPHICS:
-		graphics_addref(ksrc->data.graphics);
+	case KOBJECT_WINDOW:
+		window_addref(ksrc->data.window);
 		break;
 	case KOBJECT_CONSOLE:
 		console_addref(ksrc->data.console);
@@ -295,8 +297,8 @@ int kobject_close(struct kobject *kobject)
 
 	if(kobject->refcount==0) {
 		switch (kobject->type) {
-		case KOBJECT_GRAPHICS:
-			graphics_delete(kobject->data.graphics);
+		case KOBJECT_WINDOW:
+			window_delete(kobject->data.window);
 			break;
 		case KOBJECT_CONSOLE:
 			console_delete(kobject->data.console);
@@ -341,10 +343,10 @@ int kobject_set_blocking(struct kobject *kobject, int b)
 int kobject_size(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
-	case KOBJECT_GRAPHICS:
+	case KOBJECT_WINDOW:
 		if(n==2) {
-			dims[0] = graphics_width(kobject->data.graphics);
-			dims[1] = graphics_height(kobject->data.graphics);
+			dims[0] = window_width(kobject->data.window);
+			dims[1] = window_height(kobject->data.window);
 			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;

@@ -11,7 +11,7 @@
 
 #include "fs.h"
 #include "device.h"
-#include "graphics.h"
+#include "window.h"
 #include "console.h"
 #include "pipe.h"
 #include "event.h"
@@ -21,7 +21,7 @@ struct kobject {
 		struct device *device;
 		struct fs_dirent *file;
 		struct fs_dirent *dir;
-		struct graphics *graphics;
+		struct window *window;
 		struct console *console;
 		struct pipe *pipe;
 	} data;
@@ -34,13 +34,13 @@ struct kobject {
 struct kobject *kobject_create_file(struct fs_dirent *f);
 struct kobject *kobject_create_dir(struct fs_dirent *d);
 struct kobject *kobject_create_device(struct device *d);
-struct kobject *kobject_create_graphics(struct graphics *g);
+struct kobject *kobject_create_window(struct window *g);
 struct kobject *kobject_create_console(struct console *c);
 struct kobject *kobject_create_pipe(struct pipe *p);
 struct kobject *kobject_create_event();
 
-struct kobject *kobject_create_graphics_from_graphics( struct kobject *k, int x, int y, int w, int h );
-struct kobject *kobject_create_console_from_graphics( struct kobject *k );
+struct kobject *kobject_create_window_from_window( struct kobject *k, int x, int y, int w, int h );
+struct kobject *kobject_create_console_from_window( struct kobject *k );
 struct kobject *kobject_create_dir_from_dir( struct kobject *kobject, const char *name );
 struct kobject *kobject_create_file_from_dir( struct kobject *kobject, const char *name );
 

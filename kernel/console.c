@@ -11,6 +11,7 @@ See the file LICENSE for details.
 #include "string.h"
 
 struct console {
+	struct window *window;
 	struct graphics *gx;
 	int xsize;
 	int ysize;
@@ -108,10 +109,11 @@ void console_putstring( struct console *c, const char *str)
 	console_write(c,str,strlen(str));
 }
 
-struct console *console_create(struct graphics *g)
+struct console *console_create( struct window *w )
 {
 	struct console *c = kmalloc(sizeof(*c));
-	c->gx = graphics_addref(g);
+	c->window = window_addref(w);
+	c->gx = w->graphics;
 	c->refcount = 1;
 	console_reset(c);
 	return c;
@@ -125,10 +127,12 @@ struct console *console_addref( struct console *c )
 
 void console_delete( struct console *c )
 {
+	if(c==&console_root) return;
+
 	c->refcount--;
 	if(c->refcount==0) {
-		graphics_delete(c->gx);
-		if (c != &console_root) kfree(c);
+		window_delete(c->window);
+		kfree(c);
 	}
 }
 
@@ -138,9 +142,10 @@ void console_size( struct console *c, int *xsize, int *ysize )
 	*ysize = c->ysize;
 }
 
-struct console * console_init(struct graphics *g)
+struct console * console_init( struct window *w )
 {
-	console_root.gx = g;
+	console_root.window = w;
+	console_root.gx = w->graphics;
 	console_reset(&console_root);
 	console_putstring(&console_root,"\nconsole: initialized\n");
 	return &console_root;

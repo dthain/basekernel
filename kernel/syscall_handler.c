@@ -25,7 +25,7 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "page.h"
 #include "ata.h"
-#include "graphics.h"
+#include "window.h"
 #include "is_valid.h"
 #include "bcache.h"
 
@@ -401,26 +401,26 @@ int sys_open_file(const char *path, int mode, kernel_flags_t flags)
 
 int sys_open_console(int wd)
 {
-	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object_type(wd,KOBJECT_WINDOW)) return KERROR_INVALID_OBJECT;
 
 	int fd = process_available_fd(current);
 	if(fd<0) return KERROR_OUT_OF_OBJECTS;
 
-	current->ktable[fd] = kobject_create_console_from_graphics(current->ktable[wd]);
+	current->ktable[fd] = kobject_create_console_from_window(current->ktable[wd]);
 	return fd;
 }
 
 
 int sys_open_window(int wd, int x, int y, int w, int h)
 {
-	if(!is_valid_object_type(wd,KOBJECT_GRAPHICS)) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object_type(wd,KOBJECT_WINDOW)) return KERROR_INVALID_OBJECT;
 
 	struct kobject *k = current->ktable[wd];
 
 	int fd = process_available_fd(current);
 	if(fd<0) return KERROR_OUT_OF_OBJECTS;
 
-	k = kobject_create_graphics_from_graphics(k,x,y,w,h);
+	k = kobject_create_window_from_window(k,x,y,w,h);
 	if(!k) {
 		// XXX choose better errno
 		return KERROR_INVALID_REQUEST;

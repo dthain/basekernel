@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #define CONSOLE_H
 
 #include "kernel/types.h"
-#include "graphics.h"
+#include "window.h"
 #include "device.h"
 #include "string.h"
 
@@ -20,14 +20,14 @@ startup before memory allocation is available.
 */
 
 extern struct console console_root;
-struct console * console_init( struct graphics *g );
+struct console * console_init( struct window *w );
 
 /*
 Any number of other consoles can be created and manipulated
 on top of existing windows.
 */
 
-struct console * console_create( struct graphics *g );
+struct console * console_create( struct window *w );
 void console_delete( struct console *c );
 int  console_write( struct console *c, const char *data, int length );
 void console_putchar( struct console *c, char ch );

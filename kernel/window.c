@@ -1,0 +1,77 @@
+
+#include "window.h"
+#include "graphics.h"
+#include "kmalloc.h"
+
+struct window window_root = {0};
+
+struct window * window_create_root()
+{
+	struct window *w = &window_root;
+	w->parent = 0;
+	w->graphics = graphics_create_root();
+	//w->queue = event_queue_create()
+	w->refcount = 1;
+	return w;
+}
+
+struct window * window_create( struct window *parent, int x, int y, int width, int height )
+{
+	struct window *w = kmalloc(sizeof(*w));
+	w->parent = parent;
+	w->graphics = graphics_create(parent->graphics);
+	graphics_clip(w->graphics,x,y,width,height);
+	//w->queue = event_queue_create();
+	w->refcount = 1;
+	w->parent->refcount++;
+	return w;
+}
+
+struct window * window_addref( struct window *w )
+{
+	w->refcount++;
+	return w;
+}
+
+void window_delete( struct window *w )
+{
+	if(!w) return;
+
+	if(w==&window_root) return;
+
+	w->refcount--;
+	if(w->refcount==0) {
+		graphics_delete(w->graphics);
+		//event_queue_delete(w->event_queue);
+		window_delete(w->parent);
+		kfree(w);
+	}
+}
+
+int  window_width( struct window *w )
+{
+	return graphics_width(w->graphics);
+}
+
+int  window_height( struct window *w )
+{
+	return graphics_height(w->graphics);
+}
+
+void window_event_post( struct window *w, struct event *e )
+{
+	//event_queue_post(w->queue,e);
+}
+
+int  window_read_events( struct window *w, struct event *e, int size )
+{
+	return event_read(e,size);
+	//event_queue_read(w->queue,event,size);
+}
+
+int  window_write_graphics( struct window *w, struct graphics_command *command )
+{
+	return graphics_write(w->graphics,command);	
+}
+
+
