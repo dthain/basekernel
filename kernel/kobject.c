@@ -153,6 +153,9 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 	case KOBJECT_WINDOW:
 		actual = window_read_events(kobject->data.window, buffer, size);
 		break;
+	case KOBJECT_CONSOLE:
+		actual = console_read(kobject->data.console,buffer,size);
+		break;
 	default:
 		actual = 0;
 		break;
@@ -172,6 +175,8 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
 	case KOBJECT_WINDOW:
 		return window_read_events_nonblock(kobject->data.window, buffer, size );
+	case KOBJECT_CONSOLE:
+                return console_read_nonblock(kobject->data.console,buffer,size);
 	default:
 		return kobject_read(kobject,buffer,size);
 	}
