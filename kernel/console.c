@@ -26,7 +26,16 @@ struct console console_root = {0};
 static struct graphics_color bgcolor = { 0, 0, 0 };
 static struct graphics_color fgcolor = { 255, 255, 255 };
 
-static void console_reset( struct console *d )
+struct console * console_create_root()
+{
+	console_root.window = window_create_root();
+	console_root.gx = window_graphics(console_root.window);
+	console_reset(&console_root);
+	console_putstring(&console_root,"\nconsole: initialized\n");
+	return &console_root;
+}
+
+void console_reset( struct console *d )
 {
 	if(!d || !d->gx) return;
 	d->xpos = d->ypos = 0;
@@ -99,6 +108,33 @@ int console_write( struct console *d, const char *data, int size )
 	return i;
 }
 
+int console_read( struct console *c, char *data, int length )
+{
+	int total=0;
+
+	struct event e;
+	while(length>0 && window_read_events(c->window,&e,sizeof(e))) {
+		if(e.type==EVENT_KEY_DOWN) {
+			*data = e.code;
+			length--;
+			total++;
+			data++;
+		}
+	}
+
+	return total;
+}
+
+int console_getchar( struct console *c )
+{
+	char ch;
+	if(console_read(c,&ch,1)>0) {
+		return ch;
+	} else {
+		return 0;
+	}
+}
+
 void console_putchar( struct console *c, char ch )
 {
 	console_write(c,&ch,1);
@@ -113,7 +149,7 @@ struct console *console_create( struct window *w )
 {
 	struct console *c = kmalloc(sizeof(*c));
 	c->window = window_addref(w);
-	c->gx = w->graphics;
+	c->gx = window_graphics(w);
 	c->refcount = 1;
 	console_reset(c);
 	return c;
@@ -142,11 +178,3 @@ void console_size( struct console *c, int *xsize, int *ysize )
 	*ysize = c->ysize;
 }
 
-struct console * console_init( struct window *w )
-{
-	console_root.window = w;
-	console_root.gx = w->graphics;
-	console_reset(&console_root);
-	console_putstring(&console_root,"\nconsole: initialized\n");
-	return &console_root;
-}

@@ -7,7 +7,6 @@ See the file LICENSE for details.
 #include "printf.h"
 #include "string.h"
 #include "console.h"
-#include "event.h"
 #include <stdarg.h>
 
 static void printf_putchar( char c )
@@ -17,7 +16,7 @@ static void printf_putchar( char c )
 
 char getchar()
 {
-	return event_read_keyboard();
+	return console_getchar(&console_root);
 }
 
 void putchar( char c)

@@ -8,7 +8,6 @@ See the file LICENSE for details.
 #include "page.h"
 #include "process.h"
 #include "interrupt.h"
-#include "event.h"
 #include "clock.h"
 #include "ata.h"
 #include "device.h"
@@ -35,10 +34,8 @@ Now we initialize each subsystem in the proper order:
 
 int kernel_main()
 {
-	struct window *w = window_create_root();
-
-	console_init(w);
-	console_addref(&console_root);
+	struct console *console = console_create_root();
+	console_addref(console);
 
 	printf("video: %d x %d\n", video_xres, video_yres, video_xbytes);
 	printf("kernel: %d bytes\n", kernel_size);
@@ -46,9 +43,10 @@ int kernel_main()
 	page_init();
 	kmalloc_init((char *) KMALLOC_START, KMALLOC_LENGTH);
 	interrupt_init();
+	mouse_init();
+	keyboard_init();
 	rtc_init();
 	clock_init();
-	event_init();
 	process_init();
 	ata_init();
 	cdrom_init();
@@ -58,7 +56,7 @@ int kernel_main()
 	kshell_launch();
 
 	while(1) {
-		console_putchar(&console_root,event_read_keyboard());
+		console_putchar(console,console_getchar(console));
 	}
 
 	return 0;

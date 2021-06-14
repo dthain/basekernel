@@ -14,7 +14,6 @@
 #include "window.h"
 #include "console.h"
 #include "pipe.h"
-#include "event.h"
 
 #include "kernel/error.h"
 
@@ -73,13 +72,6 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 	struct kobject *k = kobject_init();
 	k->type = KOBJECT_PIPE;
 	k->data.pipe = p;
-	return k;
-}
-
-struct kobject *kobject_create_event()
-{
-	struct kobject *k = kobject_init();
-	k->type = KOBJECT_EVENT;
 	return k;
 }
 
@@ -160,10 +152,6 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		break;
 	case KOBJECT_WINDOW:
 		actual = window_read_events(kobject->data.window, buffer, size);
-		break;
-	case KOBJECT_EVENT:
-		* (char *)buffer = event_read_keyboard();
-		actual = 1;
 		break;
 	default:
 		actual = 0;
@@ -273,8 +261,6 @@ struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
 		break;
 	case KOBJECT_PIPE:
 		pipe_addref(ksrc->data.pipe);
-		break;
-	case KOBJECT_EVENT:
 		break;
 	}
 
@@ -387,8 +373,6 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
-	case KOBJECT_EVENT:
-		return KERROR_INVALID_REQUEST;
 	}
 	return KERROR_INVALID_REQUEST;
 }
