@@ -476,31 +476,22 @@ int sys_object_dup(int fd1, int fd2)
 	return fd2;
 }
 
-int sys_object_read(int fd, void *data, int length)
+int sys_object_read(int fd, void *data, int length, kernel_io_flags_t flags )
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
 
 	struct kobject *p = current->ktable[fd];
-	return kobject_read(p, data, length);
+	return kobject_read(p, data, length, flags);
 }
 
-int sys_object_read_nonblock(int fd, void *data, int length)
+int sys_object_write(int fd, void *data, int length, kernel_io_flags_t flags )
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
 
 	struct kobject *p = current->ktable[fd];
-	return kobject_read_nonblock(p, data, length);
-}
-
-int sys_object_write(int fd, void *data, int length)
-{
-	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	if(!is_valid_pointer(data,length)) return KERROR_INVALID_ADDRESS;
-
-	struct kobject *p = current->ktable[fd];
-	return kobject_write(p, data, length);
+	return kobject_write(p, data, length, flags);
 }
 
 int sys_object_seek(int fd, int offset, int whence)
@@ -697,13 +688,11 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_OBJECT_DUP:
 		return sys_object_dup(a, b);
 	case SYSCALL_OBJECT_READ:
-		return sys_object_read(a, (void *) b, c);
-	case SYSCALL_OBJECT_READ_NONBLOCK:
-		return sys_object_read_nonblock(a, (void *) b, c);
+		return sys_object_read(a, (void *) b, c, d );
 	case SYSCALL_OBJECT_LIST:
 		return sys_object_list(a, (char *) b, (int) c);
 	case SYSCALL_OBJECT_WRITE:
-		return sys_object_write(a, (void *) b, c);
+		return sys_object_write(a, (void *) b, c, d);
 	case SYSCALL_OBJECT_SEEK:
 		return sys_object_seek(a, b, c);
 	case SYSCALL_OBJECT_REMOVE:

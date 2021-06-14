@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	char c = 0;
 	while(c != 'q')
 	{
-		syscall_object_read_nonblock(0, &c, 1);
+		syscall_object_read(0, &c, 1, KERNEL_IO_NONBLOCK);
 		syscall_process_sleep(2000);
 		syscall_system_rtc(&time);
 		draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);

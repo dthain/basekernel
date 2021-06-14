@@ -133,7 +133,7 @@ void run_stats(struct stat_args * args) {
 
   while(1) {
     /* Check to exit */
-    syscall_object_read_nonblock(0, &quit, 1);
+    syscall_object_read(0, &quit, 1, KERNEL_IO_NONBLOCK);
     if (quit == 'q') break;
 
     /* Get the correct stats */

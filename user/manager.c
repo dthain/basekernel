@@ -13,6 +13,7 @@ events to each based on which one currently has the focus.
 #include "library/string.h"
 #include "library/user-io.h"
 #include "kernel/events.h"
+#include "library/kernel_object_string.h"
 
 #define NWINDOWS 4
 
@@ -38,9 +39,26 @@ struct window {
 	int fds[4];
 };
 
+void do_table()
+{
+        printf("Object Table:\n");
+        char tag[16];
+        int i, max = syscall_object_max();
+        for(i=0;i<=max;i++) {
+                int type = syscall_object_type(i);
+                if(type>=0) {
+                        tag[0] = 0;
+                        syscall_object_get_tag(i,tag,sizeof(tag));
+                        printf("%d: %s (%s)\n",i,kernel_object_string(type),tag);
+                }
+        }
+        printf("\n");
+}
+
+
 int read_event( struct event *e )
 {
-	return syscall_object_read(KNO_STDWIN,e,sizeof(*e));
+	return syscall_object_read(KNO_STDWIN,e,sizeof(*e),0);
 }
 
 void draw_border( struct window *win, int isactive )
@@ -90,6 +108,9 @@ int main(int argc, char *argv[])
 	draw_clear(0, 0, size[0], size[1]);
 	draw_flush();
 
+	struct event e;
+
+
 	// This structure only works if it is declared on the stack.
 	// Indicates some problem with our program loading/layout
 	//
@@ -112,9 +133,9 @@ int main(int argc, char *argv[])
 		w->fds[3] = syscall_open_window(KNO_STDWIN, w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
 
 		if(w->console_mode) {
-			w->fds[0] = syscall_open_console(w->fds[3]);
-			w->fds[1] = w->fds[0];
-			w->fds[2] = w->fds[0];
+			w->fds[0] = syscall_open_pipe();
+			w->fds[1] = syscall_open_console(w->fds[3]);
+			w->fds[2] = w->fds[2];
 		} else {
 			w->fds[0] = syscall_open_pipe();
 			w->fds[1] = w->fds[3];
@@ -143,7 +164,7 @@ int main(int argc, char *argv[])
 	draw_border(&windows[active],1);
 	draw_flush();
 
-	struct event e;
+	//struct event e;
 	while (read_event(&e)) {
 
 		if(e.type==EVENT_CLOSE) break;
@@ -168,10 +189,10 @@ int main(int argc, char *argv[])
 		} else {
 			if(windows[active].console_mode) {
 				// Send the cooked character to the process.
-				syscall_object_write(windows[active].fds[0],&c,1);
+				syscall_object_write(windows[active].fds[0],&c,1,0);
 			} else {
 				// Send a full event down the pipe.	
-				syscall_object_write(windows[active].fds[0],&e,sizeof(e));
+				syscall_object_write(windows[active].fds[0],&e,sizeof(e),0);
 			}
 		}
 	}

@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
 	int dr = -1;
 	int dg = 2;
 	int db = 3;
-
 	int dims[2];
 	syscall_object_size(KNO_STDWIN, dims, 2);
 
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
 		draw_flush();
 
 		syscall_process_sleep(75);
-		syscall_object_read_nonblock(KNO_STDIN,&stop,1);
+		syscall_object_read(KNO_STDIN,&stop,1,KERNEL_IO_NONBLOCK);
 	}
 	draw_clear(0, 0, width, height);
 	draw_fgcolor(255, 255, 255);

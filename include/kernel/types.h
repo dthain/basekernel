@@ -62,5 +62,10 @@ typedef enum {
 	KERNEL_FLAGS_DIRECT=8
 } kernel_flags_t;
 
+typedef enum {
+	KERNEL_IO_NONBLOCK=1,
+	KERNEL_IO_POST=2,
+	KERNEL_IO_DIRECT=4,
+} kernel_io_flags_t;
 
 #endif

@@ -133,7 +133,7 @@ struct kobject * kobject_create_dir_from_dir( struct kobject *kobject, const cha
 	return 0;
 }
 
-int kobject_read(struct kobject *kobject, void *buffer, int size)
+int kobject_read(struct kobject *kobject, void *buffer, int size, kernel_io_flags_t flags )
 {
 	int actual = 0;
 
@@ -145,16 +145,33 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 		return KERROR_INVALID_REQUEST;
 		break;
 	case KOBJECT_DEVICE:
-		actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		if(flags&KERNEL_IO_NONBLOCK) {
+			actual = device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		} else {
+			actual = device_read(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
+		}
 		break;
 	case KOBJECT_PIPE:
-		actual = pipe_read(kobject->data.pipe, buffer, size);
+		if(flags&KERNEL_IO_NONBLOCK) {
+			actual = pipe_read_nonblock(kobject->data.pipe, buffer, size);
+		} else {
+			actual = pipe_read(kobject->data.pipe, buffer, size);
+		}
 		break;
 	case KOBJECT_WINDOW:
-		actual = window_read_events(kobject->data.window, buffer, size);
+		if(flags&KERNEL_IO_NONBLOCK) {
+			actual = window_read_events_nonblock(kobject->data.window, buffer, size);
+		} else {
+			actual = window_read_events(kobject->data.window, buffer, size);
+		}
 		break;
 	case KOBJECT_CONSOLE:
-		actual = console_read(kobject->data.console,buffer,size);
+		if(flags&KERNEL_IO_NONBLOCK) {
+			actual = console_read_nonblock(kobject->data.console,buffer,size);
+		} else {
+			actual = console_read(kobject->data.console,buffer,size);
+		}
+
 		break;
 	default:
 		actual = 0;
@@ -166,24 +183,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size)
 	return actual;
 }
 
-int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
-{
-	switch (kobject->type) {
-	case KOBJECT_DEVICE:
-		return device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
-	case KOBJECT_PIPE:
-		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
-	case KOBJECT_WINDOW:
-		return window_read_events_nonblock(kobject->data.window, buffer, size );
-	case KOBJECT_CONSOLE:
-                return console_read_nonblock(kobject->data.console,buffer,size);
-	default:
-		return kobject_read(kobject,buffer,size);
-	}
-	return 0;
-}
-
-int kobject_write(struct kobject *kobject, void *buffer, int size)
+int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_flags_t flags )
 {
 	switch (kobject->type) {
 	case KOBJECT_WINDOW:

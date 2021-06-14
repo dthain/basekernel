@@ -23,7 +23,7 @@ static int window_fd = KNO_STDWIN;
 
 void flush()
 {
-	syscall_object_write(KNO_STDOUT, stdio_buffer, stdio_buffer_index);
+	syscall_object_write(KNO_STDOUT, stdio_buffer, stdio_buffer_index, 0);
 	stdio_buffer_index = 0;
 	stdio_buffer[0] = 0;
 }
@@ -63,7 +63,7 @@ static void draw_set_buffer(int t, int a0, int a1, int a2, int a3)
 void draw_flush()
 {
 	draw_set_buffer(GRAPHICS_END, 0, 0, 0, 0);
-	syscall_object_write(window_fd, graphics_buffer, graphics_buffer_index);
+	syscall_object_write(window_fd, graphics_buffer, graphics_buffer_index, 0);
 	graphics_buffer_index = 0;
 }
 

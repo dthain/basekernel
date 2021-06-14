@@ -37,14 +37,8 @@ char read_key( int blocking )
 {
 	struct event e;
 	while(1) {
-		int r;
-		if(blocking) {
-			r = syscall_object_read(KNO_STDWIN,&e,sizeof(e));
-		} else {
-			r = syscall_object_read_nonblock(KNO_STDWIN,&e,sizeof(e));
-		}
+		int r = syscall_object_read(KNO_STDWIN,&e,sizeof(e),blocking==0 ? KERNEL_IO_NONBLOCK : 0);
 		if(!r) return 0;
-
 		if(e.type==EVENT_KEY_DOWN) {
 			return e.code;
        		}
