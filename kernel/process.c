@@ -36,8 +36,8 @@ void process_init()
 
 	//set up initial kobject descriptors
 	current->ktable[0] = kobject_create_console(&console_root);
-	current->ktable[1] = kobject_addref(current->ktable[1]);
-	current->ktable[2] = kobject_addref(current->ktable[1]);
+	current->ktable[1] = kobject_addref(current->ktable[0]);
+	current->ktable[2] = kobject_addref(current->ktable[0]);
 	current->ktable[3] = kobject_create_window(&window_root);
 
 	current->state = PROCESS_STATE_READY;
