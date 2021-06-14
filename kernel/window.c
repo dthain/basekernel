@@ -71,9 +71,18 @@ struct graphics * window_graphics( struct window *w )
 	return w->graphics;
 }
 
-void window_event_post( struct window *w, struct event *e )
+int window_post_events( struct window *w, struct event *e, int size )
 {
-	event_queue_post(w->queue,e);
+	int total = 0;
+
+	while(size>=sizeof(struct event)) {
+		event_queue_post(w->queue,e);
+		size -= sizeof(*e);
+		e++;
+		total += sizeof(*e);
+	}
+
+	return total;
 }
 
 int  window_read_events( struct window *w, struct event *e, int size )

@@ -54,6 +54,26 @@ void console_heartbeat( struct console *d )
 	d->onoff = !d->onoff;
 }
 
+int console_post( struct console *c, const char *data, int size )
+{
+	int total = 0;
+
+	struct event e;
+	e.type = EVENT_KEY_UP;
+	e.x = 0;
+	e.y = 0;
+
+	while(size>0) {
+		e.code = *data;
+		window_post_events(c->window,&e,sizeof(e));
+		size--;
+		data++;
+		total++;
+	}
+
+	return total;
+}
+
 int console_write( struct console *d, const char *data, int size )
 {
 	graphics_char(d->gx, d->xpos * 8, d->ypos * 8, ' ');

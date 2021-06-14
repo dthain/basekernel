@@ -133,11 +133,11 @@ int main(int argc, char *argv[])
 		w->fds[3] = syscall_open_window(KNO_STDWIN, w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
 
 		if(w->console_mode) {
-			w->fds[0] = syscall_open_pipe();
-			w->fds[1] = syscall_open_console(w->fds[3]);
+			w->fds[0] = syscall_open_console(w->fds[3]);
+			w->fds[1] = w->fds[1];
 			w->fds[2] = w->fds[2];
 		} else {
-			w->fds[0] = syscall_open_pipe();
+			w->fds[0] = w->fds[3];
 			w->fds[1] = w->fds[3];
 			w->fds[2] = w->fds[3]; // Not right place for stderr...
 		}
@@ -188,11 +188,11 @@ int main(int argc, char *argv[])
 			break;
 		} else {
 			if(windows[active].console_mode) {
-				// Send the cooked character to the process.
-				syscall_object_write(windows[active].fds[0],&c,1,0);
+				// Post a single character to the console.
+				syscall_object_write(windows[active].fds[0],&c,1,KERNEL_IO_POST);
 			} else {
-				// Send a full event down the pipe.	
-				syscall_object_write(windows[active].fds[0],&e,sizeof(e),0);
+				// Post a complete event to the window.
+				syscall_object_write(windows[active].fds[0],&e,sizeof(e),KERNEL_IO_POST);
 			}
 		}
 	}

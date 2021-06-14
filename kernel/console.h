@@ -33,6 +33,7 @@ struct console * console_addref( struct console *c );
 void console_delete( struct console *c );
 
 void console_reset( struct console *c );
+int  console_post( struct console *c, const char *data, int length );
 int  console_write( struct console *c, const char *data, int length );
 int  console_read( struct console *c, char *data, int length );
 int  console_read_nonblock( struct console *c, char *data, int length );
