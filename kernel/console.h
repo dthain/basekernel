@@ -35,6 +35,7 @@ void console_delete( struct console *c );
 void console_reset( struct console *c );
 int  console_write( struct console *c, const char *data, int length );
 int  console_read( struct console *c, char *data, int length );
+int  console_read_nonblock( struct console *c, char *data, int length );
 int  console_getchar( struct console *c );
 void console_putchar( struct console *c, char ch );
 void console_putstring( struct console *c, const char *str );

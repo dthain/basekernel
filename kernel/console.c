@@ -125,6 +125,23 @@ int console_read( struct console *c, char *data, int length )
 	return total;
 }
 
+int console_read_nonblock( struct console *c, char *data, int length )
+{
+	int total=0;
+
+	struct event e;
+	while(length>0 && window_read_events_nonblock(c->window,&e,sizeof(e))) {
+		if(e.type==EVENT_KEY_DOWN) {
+			*data = e.code;
+			length--;
+			total++;
+			data++;
+		}
+	}
+
+	return total;
+}
+
 int console_getchar( struct console *c )
 {
 	char ch;
