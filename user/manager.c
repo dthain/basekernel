@@ -134,8 +134,8 @@ int main(int argc, char *argv[])
 
 		if(w->console_mode) {
 			w->fds[0] = syscall_open_console(w->fds[3]);
-			w->fds[1] = w->fds[1];
-			w->fds[2] = w->fds[2];
+			w->fds[1] = w->fds[0];
+			w->fds[2] = w->fds[0];
 		} else {
 			w->fds[0] = w->fds[3];
 			w->fds[1] = w->fds[3];
