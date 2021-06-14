@@ -11,11 +11,30 @@ A fun graphics demo that features a line segment bouncing around the screen.
 #include "library/syscalls.h"
 #include "library/user-io.h"
 #include "library/string.h"
+#include "kernel/events.h"
 
 typedef unsigned int uint32_t;
 
 uint32_t randint(uint32_t min, uint32_t max);
 void move(int *x, int *d, int min, int max);
+
+char read_key( int blocking )
+{
+	struct event e;
+	while(1) {
+		int r;
+		if(blocking) {
+			r = syscall_object_read(KNO_STDWIN,&e,sizeof(e));
+		} else {
+			r = syscall_object_read_nonblock(KNO_STDWIN,&e,sizeof(e));
+		}
+		if(!r) return 0;
+
+		if(e.type==EVENT_KEY_DOWN) {
+			return e.code;
+       		}
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -44,8 +63,7 @@ int main(int argc, char *argv[])
 	draw_clear(0, 0, width, height);
 	draw_flush();
 
-	char stop = -1;
-	while(stop == -1) {
+	while(read_key(0)!='q') {
 		move(&x1, &dx1, 0, width - 1);
 		move(&y1, &dy1, 0, height - 1);
 		move(&x2, &dx2, 0, width - 1);
@@ -58,8 +76,8 @@ int main(int argc, char *argv[])
 
 		draw_line(x1, y1, x2 - x1, y2 - y1);
 		draw_flush();
-		syscall_process_sleep(25);
-		syscall_object_read_nonblock(KNO_STDIN,&stop, 1);
+
+		syscall_process_sleep(5);
 	}
 	draw_clear(0, 0, width, height);
 	draw_fgcolor(255, 255, 255);

@@ -6,9 +6,9 @@ See the file LICENSE for details.
 
 /* Snake Game */
 #include "library/string.h"
-
 #include "library/syscalls.h"
 #include "library/user-io.h"
+#include "kernel/events.h"
 
 typedef unsigned int uint32_t;
 
@@ -32,6 +32,24 @@ int check_snake_collision(struct coords *snake_coords);
 uint8_t check_snake_ate_apple(uint16_t x_next, uint16_t y_next, struct coords *apple);
 void update_snake(struct coords *snake_coords, uint16_t x_next, uint16_t y_next, uint8_t grow);
 void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps, uint16_t y_steps);
+
+char read_key( int blocking )
+{
+	struct event e;
+	while(1) {
+		int r;
+		if(blocking) {
+			r = syscall_object_read(KNO_STDWIN,&e,sizeof(e));
+		} else {
+			r = syscall_object_read_nonblock(KNO_STDWIN,&e,sizeof(e));
+		}
+		if(!r) return 0;
+
+		if(e.type==EVENT_KEY_DOWN) {
+			return e.code;
+       		}
+	}
+}
 
 /* Main Execution */
 int main(int argc, char *argv[])
@@ -90,14 +108,6 @@ int main(int argc, char *argv[])
 	draw_flush();
 
 
-	syscall_object_read(0, &tin, 1);
-	if(tin != 'a' && tin != 'd') {
-		in = 'a';
-	} else {
-		in = tin;
-	}
-
-
 	while(1) {
 		// Draw the board
 		draw_board(wd, thick, thick, game_width, game_height, x_steps, y_steps, snake_coords, apple, thick);
@@ -106,7 +116,7 @@ int main(int argc, char *argv[])
 		syscall_process_sleep(100);
 
 		// Get users next input -- non-blocking
-		syscall_object_read_nonblock(0, &tin, 1);
+		tin = read_key(0);
 
 		// Skip if the user goes reverse direction
 		if((tin == 'a' && in == 'd') || (tin == 'd' && in == 'a') || (tin == 'w' && in == 's') || (tin == 's' && in == 'w'))
@@ -131,7 +141,7 @@ int main(int argc, char *argv[])
 			draw_string(thick * 3, thick * 8, "Enter q to quit");
 			draw_string(thick * 3, thick * 12, "Press any key to start");
 			draw_flush();
-			syscall_object_read(0, &tin, 1);
+			tin = read_key(1);
 			if (tin == 'q')
 			{
 				printf("Snake exiting\n");

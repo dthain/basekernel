@@ -12,6 +12,7 @@ events to each based on which one currently has the focus.
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
+#include "kernel/events.h"
 
 #define NWINDOWS 4
 
@@ -29,12 +30,18 @@ events to each based on which one currently has the focus.
 
 struct window {
 	int w,h,x,y;
+	int console_mode;
 	const char * exec;
 	const char * arg;
 	int argc;
 	int pid;
 	int fds[4];
 };
+
+int read_event( struct event *e )
+{
+	return syscall_object_read(KNO_STDWIN,e,sizeof(*e));
+}
 
 void draw_border( struct window *win, int isactive )
 {
@@ -87,16 +94,11 @@ int main(int argc, char *argv[])
 	// Indicates some problem with our program loading/layout
 	//
 	struct window windows[NWINDOWS] = {
-		{ .x=0, .y=0, .w = 400, .h = 400, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
-		{ .x=400, .y=0, .w = 400, .h = 400, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
-		{ .x=0, .y=400, .w = 400, .h = 300, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
-		{ .x=400, .y=400, .w = 400, .h = 300, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
+		{ .x=0,         .y=0,         .console_mode=1, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
+		{ .x=size[0]/2, .y=0,         .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
+		{ .x=0,         .y=size[1]/2, .console_mode=0, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
+		{ .x=size[0]/2, .y=size[1]/2, .console_mode=1, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
 	};
-
-	windows[1].x = size[0]/2;
-	windows[2].y = size[1]/2;
-	windows[3].x = size[0]/2;
-	windows[3].y = size[1]/2;
 
 	int i;
 	for(i=0;i<NWINDOWS;i++) {
@@ -109,9 +111,15 @@ int main(int argc, char *argv[])
 
 		w->fds[3] = syscall_open_window(KNO_STDWIN, w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
 
-		w->fds[0] = syscall_open_pipe();
-		w->fds[1] = syscall_open_console(w->fds[3]);
-		w->fds[2] = w->fds[1];
+		if(w->console_mode) {
+			w->fds[0] = syscall_open_console(w->fds[3]);
+			w->fds[1] = w->fds[0];
+			w->fds[2] = w->fds[0];
+		} else {
+			w->fds[0] = syscall_open_pipe();
+			w->fds[1] = w->fds[3];
+			w->fds[2] = w->fds[3]; // Not right place for stderr...
+		}
 
 		const char *args[3];
 		args[0] = w->exec;
@@ -120,8 +128,8 @@ int main(int argc, char *argv[])
 
 		w->pid = syscall_process_wrun(w->exec, w->argc, args, w->fds, 4);
 		if(w->pid<0) {
-		  printf("couldn't exec %d\n",w->pid);
-		  return 0;
+			printf("couldn't exec %d\n",w->pid);
+			return 0;
 		}
 
 		draw_border(w,0);
@@ -130,38 +138,50 @@ int main(int argc, char *argv[])
 
 	/* Finally, allow the user to switch between windows*/
 	int active = 0;
-	char tin = 0;
 
-	/* Draw green window around active process and start it */
+	/* Draw green window around active process */
 	draw_border(&windows[active],1);
 	draw_flush();
 
-	while (tin != '~') {
-		if (windows[active].pid == 0) {
-			active = (active + 1) % NWINDOWS;
-			continue;
-		}
+	struct event e;
+	while (read_event(&e)) {
 
-		/* If tab entered, go to the next process */
-		syscall_object_read(0, &tin, 1);
-		if (tin == '\t') {
+		if(e.type==EVENT_CLOSE) break;
+		if(e.type!=EVENT_KEY_DOWN) continue;
+
+		char c = e.code;
+
+		if (c == '\t') {
+			/* If tab entered, go to the next process */
+
+			/* Draw white boundary around old window. */
 			draw_border(&windows[active],0);
 			draw_flush();
 			active = (active + 1) % NWINDOWS;
 
-			/* Draw green window around active process and start it */
+			/* Draw green window around new window. */
 			draw_border(&windows[active],1);
 			draw_flush();
-			continue;
+		} else if (c=='~') {
+			/* If tilde entered, cancel the whole thing. */
+			break;
+		} else {
+			if(windows[active].console_mode) {
+				// Send the cooked character to the process.
+				syscall_object_write(windows[active].fds[0],&c,1);
+			} else {
+				// Send a full event down the pipe.	
+				syscall_object_write(windows[active].fds[0],&e,sizeof(e));
+			}
 		}
-		/* Write 1 character to the correct pipe */
-		syscall_object_write(windows[active].fds[0], &tin, 1);
 	}
 
 	/* Reap all children processes */
 	for (i=0;i<NWINDOWS;i++) {
 		syscall_process_reap(windows[i].pid);
 	}
+
+	/* XXX should kill child process here */
 
 	/* Clean up the window */
 	draw_clear(0, 0, size[0], size[1]);
