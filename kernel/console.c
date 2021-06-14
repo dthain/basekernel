@@ -59,7 +59,7 @@ int console_post( struct console *c, const char *data, int size )
 	int total = 0;
 
 	struct event e;
-	e.type = EVENT_KEY_UP;
+	e.type = EVENT_KEY_DOWN;
 	e.x = 0;
 	e.y = 0;
 
