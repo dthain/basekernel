@@ -17,6 +17,7 @@ int  window_height( struct window *w );
 struct graphics * window_graphics( struct window *w );
 void window_event_post( struct window *w, struct event *e );
 int  window_read_events( struct window *w, struct event *e, int size );
+int  window_read_events_nonblock( struct window *w, struct event *e, int size );
 int  window_write_graphics( struct window *w, struct graphics_command *command );
 
 void window_event_post_root( uint16_t type, uint16_t code, int16_t x, int16_t y );

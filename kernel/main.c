@@ -7,6 +7,8 @@ See the file LICENSE for details.
 #include "console.h"
 #include "page.h"
 #include "process.h"
+#include "keyboard.h"
+#include "mouse.h"
 #include "interrupt.h"
 #include "clock.h"
 #include "ata.h"

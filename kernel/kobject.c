@@ -170,6 +170,8 @@ int kobject_read_nonblock(struct kobject *kobject, void *buffer, int size)
 		return device_read_nonblock(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 	case KOBJECT_PIPE:
 		return pipe_read_nonblock(kobject->data.pipe, buffer, size);
+	case KOBJECT_WINDOW:
+		return window_read_events_nonblock(kobject->data.window, buffer, size );
 	default:
 		return kobject_read(kobject,buffer,size);
 	}
