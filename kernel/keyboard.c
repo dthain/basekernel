@@ -9,7 +9,7 @@ See the file LICENSE for details.
 #include "interrupt.h"
 #include "kernel/ascii.h"
 #include "kernelcore.h"
-#include "event.h"
+#include "event_queue.h"
 
 #define KEYBOARD_PORT 0x60
 
@@ -78,22 +78,22 @@ static void keyboard_interrupt_l2( uint8_t code )
 			reboot();
 		} else if(capslock_mode) {
 			if(k->special==KEYMAP_ALPHA && !shift_mode) {
-				event_post(event,k->shifted,0,0);
+				event_queue_post_root(event,k->shifted,0,0);
 			} else {
-				event_post(event,k->normal,0,0);
+				event_queue_post_root(event,k->normal,0,0);
 			}	
 		} else if(numlock_mode) {
 			if(k->special==KEYMAP_NUMPAD && !shift_mode) {
-				event_post(event,k->shifted,0,0);
+				event_queue_post_root(event,k->shifted,0,0);
 			} else {
-				event_post(event,k->normal,0,0);
+				event_queue_post_root(event,k->normal,0,0);
 			}	
 		} else if(shift_mode) {
-			event_post(event,k->shifted,0,0);
+			event_queue_post_root(event,k->shifted,0,0);
 		} else if(ctrl_mode) {
-			event_post(event,k->ctrled,0,0);
+			event_queue_post_root(event,k->ctrled,0,0);
 		} else {
-			event_post(event,k->normal,0,0);
+			event_queue_post_root(event,k->normal,0,0);
 		}
 	}
 }

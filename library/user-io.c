@@ -4,7 +4,6 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-#include "kernel/gfxstream.h"
 #include "kernel/types.h"
 #include "library/user-io.h"
 #include "library/syscalls.h"
@@ -15,15 +14,9 @@ static char stdio_buffer[PAGE_SIZE] = { 0 };
 
 static uint32_t stdio_buffer_index = 0;
 
-static struct graphics_command graphics_buffer[PAGE_SIZE] = { {0} };
-
-static uint32_t graphics_buffer_index = 0;
-
-static int window_fd = KNO_STDWIN;
-
 void flush()
 {
-	syscall_object_write(KNO_STDOUT, stdio_buffer, stdio_buffer_index);
+	syscall_object_write(KNO_STDOUT, stdio_buffer, stdio_buffer_index, 0);
 	stdio_buffer_index = 0;
 	stdio_buffer[0] = 0;
 }
@@ -52,52 +45,4 @@ void printf_putchar(char c)
 void printf_putstring(char *s)
 {
 	printf_buffer(s, strlen(s));
-}
-
-static void draw_set_buffer(int t, int a0, int a1, int a2, int a3)
-{
-	struct graphics_command c = { t, {a0, a1, a2, a3} };
-	graphics_buffer[graphics_buffer_index++] = c;
-}
-
-void draw_flush()
-{
-	draw_set_buffer(GRAPHICS_END, 0, 0, 0, 0);
-	syscall_object_write(window_fd, graphics_buffer, graphics_buffer_index);
-	graphics_buffer_index = 0;
-}
-
-void draw_window(int wd)
-{
-	window_fd = wd;
-}
-
-void draw_fgcolor(int r, int g, int b)
-{
-	draw_set_buffer(GRAPHICS_FGCOLOR, r, g, b, 0);
-}
-
-void draw_bgcolor(int r, int g, int b)
-{
-	draw_set_buffer(GRAPHICS_BGCOLOR, r, g, b, 0);
-}
-
-void draw_rect(int x, int y, int w, int h)
-{
-	draw_set_buffer(GRAPHICS_RECT, x, y, w, h);
-}
-
-void draw_clear(int x, int y, int w, int h)
-{
-	draw_set_buffer(GRAPHICS_CLEAR, x, y, w, h);
-}
-
-void draw_line(int x, int y, int w, int h)
-{
-	draw_set_buffer(GRAPHICS_LINE, x, y, w, h);
-}
-
-void draw_string(int x, int y, const char *s)
-{
-	draw_set_buffer(GRAPHICS_TEXT, x, y, (int) s, 0);
 }

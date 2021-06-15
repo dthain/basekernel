@@ -12,6 +12,8 @@ A fun graphics demo that features text bouncing around the screen.
 #include "library/user-io.h"
 #include "library/string.h"
 
+#include "library/nanowin.h"
+
 typedef unsigned int uint32_t;
 
 uint32_t randint(uint32_t min, uint32_t max);
@@ -30,34 +32,29 @@ int main(int argc, char *argv[])
 	int dg = 2;
 	int db = 3;
 
-	int dims[2];
-	syscall_object_size(KNO_STDWIN, dims, 2);
+	struct nwindow *nw = nw_create_default();
 
-	int width = dims[0];
-	int height = dims[1];
+	int width = nw_width(nw);
+	int height = nw_height(nw);
 
-	draw_window(KNO_STDWIN);
-	draw_clear(0, 0, width, height);
-	draw_flush();
+	nw_clear(nw,0, 0, width, height);
+	nw_flush(nw);
 
-	char stop = -1;
-	while(stop == -1) {
-		draw_window(KNO_STDWIN);
+	while(nw_getchar(nw,0)!='q') {
 		move(&x1, &dx1, 0, width - 80);
 		move(&y1, &dy1, 0, height - 1);
 		move(&r, &dr, 0, 255);
 		move(&g, &dg, 0, 255);
 		move(&b, &db, 0, 255);
-		draw_fgcolor(r, g, b);
-		draw_string(x1, y1, "basekernel");
-		draw_flush();
+		nw_fgcolor(nw,r, g, b);
+		nw_string(nw,x1, y1, "basekernel");
+		nw_flush(nw);
 
 		syscall_process_sleep(75);
-		syscall_object_read_nonblock(KNO_STDIN,&stop,1);
 	}
-	draw_clear(0, 0, width, height);
-	draw_fgcolor(255, 255, 255);
-	draw_flush();
+	nw_clear(nw,0, 0, width, height);
+	nw_fgcolor(nw,255, 255, 255);
+	nw_flush(nw);
 	return 0;
 }
 

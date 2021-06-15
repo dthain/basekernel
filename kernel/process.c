@@ -35,10 +35,10 @@ void process_init()
 	pagetable_enable();
 
 	//set up initial kobject descriptors
-	current->ktable[0] = kobject_create_event();
-	current->ktable[1] = kobject_create_console(&console_root);
-	current->ktable[2] = kobject_addref(current->ktable[1]);
-	current->ktable[3] = kobject_create_graphics(&graphics_root);
+	current->ktable[0] = kobject_create_console(&console_root);
+	current->ktable[1] = kobject_addref(current->ktable[0]);
+	current->ktable[2] = kobject_addref(current->ktable[0]);
+	current->ktable[3] = kobject_create_window(&window_root);
 
 	current->state = PROCESS_STATE_READY;
 

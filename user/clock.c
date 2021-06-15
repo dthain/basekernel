@@ -8,23 +8,18 @@ See the file LICENSE for details.
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
-#include "kernel/types.h"
+#include "library/nanowin.h"
 
 /*
 	Display time in a window
 */
 
-void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b);
+void draw_clock( struct nwindow *nw, uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b);
 
 int main(int argc, char *argv[])
 {
-	/* Configure clock params */
-	int military = 0;
-	if (argc > 1 && strcmp(argv[1], "military") == 0)
-	{
-		military = 1;
-	}
 	int timezone = 5;
+	int military = 0;
 
 	/* Get initial time */
 	struct rtc_time time;
@@ -36,29 +31,22 @@ int main(int argc, char *argv[])
 	int thickness = 4;
 
 	/* Set up window  */
-	draw_window(KNO_STDWIN);
-	draw_clear(0, 0, CLOCK_W, CLOCK_H);
-	draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);
-	draw_flush();
+	struct nwindow *nw = nw_create_default();
 
 	/* Run Clock */
-	char c = 0;
-	while(c != 'q')
+	while(nw_getchar(nw,0)!='q') 
 	{
-		syscall_object_read_nonblock(0, &c, 1);
-		syscall_process_sleep(2000);
 		syscall_system_rtc(&time);
-		draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);
-		draw_flush();
-
+		nw_clear(nw,0, 0, CLOCK_W, CLOCK_H);
+		draw_clock(nw,time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);
+		syscall_process_sleep(2000);
 	}
 
 	return 0;
 }
 
-void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b) {
-	draw_fgcolor(r, b, g);
-
+void draw_clock( struct nwindow *nw, uint32_t hour, uint32_t minute, int timezone, int military, int x, int y, int padding, int r, int g, int b)
+{
 	char h_str[100];
 	char m_str[100];
 	char time[100] = "";
@@ -91,5 +79,7 @@ void draw_clock(uint32_t hour, uint32_t minute, int timezone, int military, int 
 	}
 	strcat(time, (const char *) m_str);
 
-	draw_string(x + padding, y + padding, time);
+	nw_fgcolor(nw,r,g,b);
+	nw_string(nw,x + padding, y + padding, time);
+	nw_flush(nw);
 }

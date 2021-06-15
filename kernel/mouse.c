@@ -11,7 +11,7 @@ See the file LICENSE for details.
 #include "kernel/ascii.h"
 #include "process.h"
 #include "kernelcore.h"
-#include "event.h"
+#include "event_queue.h"
 
 /*
 The PS2 interface uses a data port and a command port.
@@ -186,20 +186,23 @@ static void mouse_interrupt(int i, int code)
 	if(state.y >= video_yres)
 		state.y = video_yres - 1;
 
+	// XXX skip mouse events for now!
+	return;
+
 	if(state.buttons!=last_state.buttons) {
 		int i;
 		for(i=0;i<8;i++) {
 			uint8_t mask = (1<<i);
 			if( (state.buttons&mask) && !(last_state.buttons&mask) ) {
-				event_post(EVENT_BUTTON_DOWN,i,state.x,state.y);
+				event_queue_post_root(EVENT_BUTTON_DOWN,i,state.x,state.y);
 			} else if( !(state.buttons&mask) && (last_state.buttons&mask) ) {
-				event_post(EVENT_BUTTON_UP,i,state.x,state.y);
+				event_queue_post_root(EVENT_BUTTON_UP,i,state.x,state.y);
 			}
 		}
 	}
 
 	if(state.x!=last_state.x || state.y!=last_state.y) {	
-		event_post(EVENT_MOUSE_MOVE,0,state.x,state.y);
+		event_queue_post_root(EVENT_MOUSE_MOVE,0,state.x,state.y);
 	}
 }
 

@@ -2,6 +2,7 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
+#include "library/nanowin.h"
 
 /**
  * Livestat is a command line utility to display a graph of operating system
@@ -40,6 +41,8 @@ void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int wi
 int  extract_statistic(struct stat_args * args);
 void plot_bars(int * most_recent_vals, int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset);
 void run_stats(struct stat_args * args);
+
+struct nwindow *nw = 0;
 
 int main(int argc, const char * argv[]) {
   /* Setup program parameters */
@@ -93,6 +96,8 @@ int main(int argc, const char * argv[]) {
     help(); return 1;
   }
 
+  nw = nw_create_default();
+
   /* Start tracking stats */
   run_stats(&args);
 
@@ -101,7 +106,8 @@ int main(int argc, const char * argv[]) {
 
 /** HELPER FUNCTIONS **/
 /* Create graph and continuously update it */
-void run_stats(struct stat_args * args) {
+void run_stats(struct stat_args * args)
+{
   /* Initialize variables for graph and stats collection */
   int window_width  = 270;
   int window_height = 270;
@@ -133,7 +139,7 @@ void run_stats(struct stat_args * args) {
 
   while(1) {
     /* Check to exit */
-    syscall_object_read_nonblock(0, &quit, 1);
+    quit = nw_getchar(nw,0);
     if (quit == 'q') break;
 
     /* Get the correct stats */
@@ -176,8 +182,8 @@ void run_stats(struct stat_args * args) {
     sleep:
     syscall_process_sleep(6000);
   }
-  draw_fgcolor(255, 255, 255);
-  draw_flush();
+  nw_fgcolor(nw,255, 255, 255);
+  nw_flush(nw);
 }
 
 /* Return one stat from statistics structure */
@@ -230,7 +236,7 @@ int extract_statistic(struct stat_args * args) {
 }
 
 /* Create the graph template for the display */
-void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
+void create_graph( STAT_LIVE stat_type, char * stat_name, char * stat_arg, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
   /* Initialize Parameters */
   int i;
   int x_offset      = (window_width - plot_width) / 2;
@@ -244,60 +250,59 @@ void create_graph(STAT_LIVE stat_type, char * stat_name, char * stat_arg, int wi
   }
 
   /* Draw border around window */
-  draw_window(KNO_STDWIN);
-  draw_clear(0, 0, window_width, window_height);
-  draw_rect(0, 0, window_width, thickness);
-  draw_rect(0, 0, thickness, window_height);
-  draw_rect(window_width - thickness, 0, thickness, window_height);
-  draw_rect(0, window_height - thickness, window_width, thickness);
+  nw_clear(nw,0, 0, window_width, window_height);
+  nw_rect(nw,0, 0, window_width, thickness);
+  nw_rect(nw,0, 0, thickness, window_height);
+  nw_rect(nw,window_width - thickness, 0, thickness, window_height);
+  nw_rect(nw,0, window_height - thickness, window_width, thickness);
 
   /* Draw X, Y axis in center of window */
-  draw_rect(x_offset, y_offset+plot_height, plot_width, thickness);
-  draw_rect(x_offset, y_offset, thickness, plot_height);
+  nw_rect(nw,x_offset, y_offset+plot_height, plot_width, thickness);
+  nw_rect(nw,x_offset, y_offset, thickness, plot_height);
 
   /* Draw title, x_axis label, y_axis label */
-  draw_string(window_width/2 - 70, 8, title);
-  draw_string(window_width/2 - 34, window_height - 16, "Time (6s)");
+  nw_string(nw,window_width/2 - 70, 8, title);
+  nw_string(nw,window_width/2 - 34, window_height - 16, "Time (6s)");
 
   /* Setup Y axis */
   char y[2] = { 0 };
   for (i = 0; i < strlen(stat_name); i++) {
       y[0] = stat_name[i];
-      draw_string(10, window_height/2 - 20 + i*char_offset, y);
-      draw_flush();
+      nw_string(nw,10, window_height/2 - 20 + i*char_offset, y);
+      nw_flush(nw);
   }
 
   /* For tick marks on x axis -- always keep the most recent minute - 10 ticks */
   int x_tick_width = plot_width/10;
   for (i = 0; i < 10+1; i++) {
-    draw_rect(x_offset+i*x_tick_width, y_offset+plot_height, thickness, 6);
+    nw_rect(nw,x_offset+i*x_tick_width, y_offset+plot_height, thickness, 6);
   }
 
   /* For tick marks on y axis -- max will be dynamically set */
   int y_tick_width = plot_height/10;
   for (i = 0; i < 10+1; i++) {
-    draw_rect(x_offset - 4, y_offset + plot_height - i * y_tick_width, 6, thickness);
+    nw_rect(nw,x_offset - 4, y_offset + plot_height - i * y_tick_width, 6, thickness);
   }
 
-  draw_flush();
+  nw_flush(nw);
 }
 
 /* Plot all of the points on the graph and print the max */
-void plot_bars(int most_recent_vals[POINTS], int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
+void plot_bars( int most_recent_vals[POINTS], int max, int window_width, int window_height, int plot_width, int plot_height, int thickness, int char_offset) {
   /* Clear the graph */
   int x_offset      = (window_width - plot_width) / 2;
   int y_offset      = (window_height - plot_height) / 2;
-  draw_clear(x_offset, y_offset,  plot_width+thickness, plot_height);
+  nw_clear(nw,x_offset, y_offset,  plot_width+thickness, plot_height);
 
   /* Redraw the axis */
-  draw_rect(x_offset, y_offset+plot_height, plot_width, thickness);
-  draw_rect(x_offset, y_offset, thickness, plot_height);
+  nw_rect(nw,x_offset, y_offset+plot_height, plot_width, thickness);
+  nw_rect(nw,x_offset, y_offset, thickness, plot_height);
 
   /* Create string of the max */
   char max_str[32];
   uint_to_string((uint32_t) max, max_str);
-  draw_string(x_offset - 26, y_offset - 10, max_str);
-  draw_flush();
+  nw_string(nw,x_offset - 26, y_offset - 10, max_str);
+  nw_flush(nw);
 
   /* Plot the points */
   int i, current_point[2] = { 0 };
@@ -306,7 +311,7 @@ void plot_bars(int most_recent_vals[POINTS], int max, int window_width, int wind
   float x_step = (float)plot_width/POINTS;
   float y_step = (float)plot_height/max;
 
-  draw_fgcolor(0, 255, 0);
+  nw_fgcolor(nw,0, 255, 0);
 
   for (i = 0; i < POINTS; i++) {
     if (most_recent_vals[i] == -1)
@@ -314,10 +319,10 @@ void plot_bars(int most_recent_vals[POINTS], int max, int window_width, int wind
 
     current_point[0] = x_offset + (int)(x_step*(i+1));
     current_point[1] = y_offset + plot_height - (int)(y_step*most_recent_vals[i]);
-    draw_rect(current_point[0], current_point[1], thickness, (int)(y_step*most_recent_vals[i]));
+    nw_rect(nw,current_point[0], current_point[1], thickness, (int)(y_step*most_recent_vals[i]));
   }
-  draw_flush();
-  draw_fgcolor(255, 255, 255);
+  nw_flush(nw);
+  nw_fgcolor(nw,255, 255, 255);
 }
 
 /* Convert stat type to string */

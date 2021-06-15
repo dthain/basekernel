@@ -17,14 +17,12 @@ const char *kernel_object_string( kobject_type_t type )
 			return "directory";	
 		case KOBJECT_DEVICE:
 			return "device";
-		case KOBJECT_GRAPHICS:
-			return "graphics";
+		case KOBJECT_WINDOW:
+			return "window";
 		case KOBJECT_CONSOLE:
 			return "console";
 		case KOBJECT_PIPE:
 			return "pipe";
-		case KOBJECT_EVENT:
-			return "event";
 		default:
 			return "unknown";
 	}

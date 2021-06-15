@@ -128,14 +128,9 @@ int syscall_object_dup(int fd1, int fd2)
 	return syscall(SYSCALL_OBJECT_DUP, fd1, fd2, 0, 0, 0);
 }
 
-int syscall_object_read(int fd, void *data, int length)
+int syscall_object_read(int fd, void *data, int length, kernel_io_flags_t flags )
 {
-	return syscall(SYSCALL_OBJECT_READ, fd, (uint32_t) data, length, 0, 0);
-}
-
-int syscall_object_read_nonblock(int fd, void *data, int length)
-{
-	return syscall(SYSCALL_OBJECT_READ_NONBLOCK, fd, (uint32_t) data, length, 0, 0);
+	return syscall(SYSCALL_OBJECT_READ, fd, (uint32_t) data, length, flags, 0);
 }
 
 int syscall_object_list( int fd, char *buffer, int n)
@@ -143,9 +138,9 @@ int syscall_object_list( int fd, char *buffer, int n)
 	return syscall(SYSCALL_OBJECT_LIST, fd, (uint32_t) buffer, (uint32_t) n, 0, 0);
 }
 
-int syscall_object_write(int fd, void *data, int length)
+int syscall_object_write(int fd, const void *data, int length, kernel_io_flags_t flags )
 {
-	return syscall(SYSCALL_OBJECT_WRITE, fd, (uint32_t) data, length, 0, 0);
+	return syscall(SYSCALL_OBJECT_WRITE, fd, (uint32_t) data, length, flags, 0);
 }
 
 int syscall_object_seek(int fd, int offset, int whence)
