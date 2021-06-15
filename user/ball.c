@@ -11,6 +11,7 @@ A fun graphics demo that features text bouncing around the screen.
 #include "library/syscalls.h"
 #include "library/user-io.h"
 #include "library/string.h"
+#include "kernel/events.h"
 
 typedef unsigned int uint32_t;
 
@@ -39,8 +40,7 @@ int main(int argc, char *argv[])
 	draw_clear(0, 0, width, height);
 	draw_flush();
 
-	char stop = -1;
-	while(stop == -1) {
+	while(window_getchar(0)!='q') {
 		draw_window(KNO_STDWIN);
 		move(&x1, &dx1, 0, width - 80);
 		move(&y1, &dy1, 0, height - 1);
@@ -52,7 +52,6 @@ int main(int argc, char *argv[])
 		draw_flush();
 
 		syscall_process_sleep(75);
-		syscall_object_read(KNO_STDIN,&stop,1,KERNEL_IO_NONBLOCK);
 	}
 	draw_clear(0, 0, width, height);
 	draw_fgcolor(255, 255, 255);

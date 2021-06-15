@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "kernel/gfxstream.h"
 #include "kernel/types.h"
+#include "kernel/events.h"
 #include "library/user-io.h"
 #include "library/syscalls.h"
 #include "library/string.h"
@@ -100,4 +101,16 @@ void draw_line(int x, int y, int w, int h)
 void draw_string(int x, int y, const char *s)
 {
 	draw_set_buffer(GRAPHICS_TEXT, x, y, (int) s, 0);
+}
+
+char window_getchar( int blocking )
+{
+	struct event e;
+	while(1) {
+		int r = syscall_object_read(KNO_STDWIN,&e,sizeof(e),blocking==0 ? KERNEL_IO_NONBLOCK : 0);
+		if(!r) return 0;
+		if(e.type==EVENT_KEY_DOWN) {
+			return e.code;
+       		}
+	}
 }

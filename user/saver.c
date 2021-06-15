@@ -19,18 +19,6 @@ typedef unsigned int uint32_t;
 uint32_t randint(uint32_t min, uint32_t max);
 void move(int *x, int *d, int min, int max);
 
-char read_key( int blocking )
-{
-	struct event e;
-	while(1) {
-		int r = syscall_object_read(KNO_STDWIN,&e,sizeof(e),blocking==0 ? KERNEL_IO_NONBLOCK : 0);
-		if(!r) return 0;
-		if(e.type==EVENT_KEY_DOWN) {
-			return e.code;
-       		}
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	int r = 255;
@@ -58,7 +46,7 @@ int main(int argc, char *argv[])
 	draw_clear(0, 0, width, height);
 	draw_flush();
 
-	while(read_key(0)!='q') {
+	while(window_getchar(0)!='q') {
 		move(&x1, &dx1, 0, width - 1);
 		move(&y1, &dy1, 0, height - 1);
 		move(&x2, &dx2, 0, width - 1);

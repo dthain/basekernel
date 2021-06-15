@@ -33,18 +33,6 @@ uint8_t check_snake_ate_apple(uint16_t x_next, uint16_t y_next, struct coords *a
 void update_snake(struct coords *snake_coords, uint16_t x_next, uint16_t y_next, uint8_t grow);
 void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps, uint16_t y_steps);
 
-char read_key( int blocking )
-{
-	struct event e;
-	while(1) {
-		int r = syscall_object_read(KNO_STDWIN,&e,sizeof(e),blocking==0 ? KERNEL_IO_NONBLOCK : 0);
-		if(!r) return 0;
-		if(e.type==EVENT_KEY_DOWN) {
-			return e.code;
-       		}
-	}
-}
-
 /* Main Execution */
 int main(int argc, char *argv[])
 {
@@ -110,7 +98,7 @@ int main(int argc, char *argv[])
 		syscall_process_sleep(100);
 
 		// Get users next input -- non-blocking
-		tin = read_key(0);
+		tin = window_getchar(0);
 
 		// Skip if the user goes reverse direction
 		if((tin == 'a' && in == 'd') || (tin == 'd' && in == 'a') || (tin == 'w' && in == 's') || (tin == 's' && in == 'w'))
@@ -135,7 +123,7 @@ int main(int argc, char *argv[])
 			draw_string(thick * 3, thick * 8, "Enter q to quit");
 			draw_string(thick * 3, thick * 12, "Press any key to start");
 			draw_flush();
-			tin = read_key(1);
+			tin = window_getchar(1);
 			if (tin == 'q')
 			{
 				printf("Snake exiting\n");
@@ -146,7 +134,6 @@ int main(int argc, char *argv[])
 			}
 			in = tin;
 			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
-			draw_clear(0, 0, game_width, game_height);
 		}
 	}
 
@@ -228,8 +215,6 @@ int initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, ui
 
 void draw_board(uint16_t wd, uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick)
 {
-	draw_clear(x_0, y_0, game_width, game_height);
-	draw_window(wd);
 	// Draw the snake
 	draw_fgcolor(0, 255, 0);
 	for(uint16_t i = 0; i < x_steps * y_steps; i++) {

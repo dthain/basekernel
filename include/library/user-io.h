@@ -26,4 +26,6 @@ void draw_char(int x, int y, char c);
 void draw_string(int x, int y, const char *s);
 void draw_flush();
 
+char window_getchar( int blocking );
+
 #endif

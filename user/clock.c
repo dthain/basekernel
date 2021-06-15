@@ -42,10 +42,8 @@ int main(int argc, char *argv[])
 	draw_flush();
 
 	/* Run Clock */
-	char c = 0;
-	while(c != 'q')
+	while(window_getchar(0)!='q') 
 	{
-		syscall_object_read(0, &c, 1, KERNEL_IO_NONBLOCK);
 		syscall_process_sleep(2000);
 		syscall_system_rtc(&time);
 		draw_clock(time.hour, time.minute, timezone, military, 0, 0, 2*thickness, 255, 255, 255);

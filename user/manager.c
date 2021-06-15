@@ -55,7 +55,6 @@ void do_table()
         printf("\n");
 }
 
-
 int read_event( struct event *e )
 {
 	return syscall_object_read(KNO_STDWIN,e,sizeof(*e),0);
