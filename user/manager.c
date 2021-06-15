@@ -12,8 +12,8 @@ events to each based on which one currently has the focus.
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/user-io.h"
-#include "kernel/events.h"
 #include "library/kernel_object_string.h"
+#include "library/nanowin.h"
 
 #define NWINDOWS 4
 
@@ -39,10 +39,7 @@ struct window {
 	int fds[4];
 };
 
-int read_event( struct event *e )
-{
-	return syscall_object_read(KNO_STDWIN,e,sizeof(*e),0);
-}
+struct nwindow *nw = 0;
 
 void draw_border( struct window *win, int isactive )
 {
@@ -53,63 +50,64 @@ void draw_border( struct window *win, int isactive )
 
 	// Title bar
 	if(isactive) {
-		draw_bgcolor(WINDOW_TITLE_ACTIVE_COLOR);
+		nw_bgcolor(nw,WINDOW_TITLE_ACTIVE_COLOR);
 	} else {
-		draw_bgcolor(WINDOW_TITLE_INACTIVE_COLOR);
+		nw_bgcolor(nw,WINDOW_TITLE_INACTIVE_COLOR);
 	}
-	draw_clear(x,y,w,WINDOW_TITLE_HEIGHT);
+	nw_clear(nw,x,y,w,WINDOW_TITLE_HEIGHT);
 
 	// Close box
-	draw_fgcolor(CLOSE_BOX_COLOR);
-	draw_rect(x+CLOSE_BOX_PADDING,y+CLOSE_BOX_PADDING,CLOSE_BOX_SIZE,CLOSE_BOX_SIZE);
+	nw_fgcolor(nw,CLOSE_BOX_COLOR);
+	nw_rect(nw,x+CLOSE_BOX_PADDING,y+CLOSE_BOX_PADDING,CLOSE_BOX_SIZE,CLOSE_BOX_SIZE);
 	// Title text
-	draw_fgcolor(WINDOW_TITLE_TEXT_COLOR);
-	draw_string(x+CLOSE_BOX_SIZE+CLOSE_BOX_PADDING*2,y+WINDOW_TEXT_PADDING,win->exec);
+	nw_fgcolor(nw,WINDOW_TITLE_TEXT_COLOR);
+	nw_string(nw,x+CLOSE_BOX_SIZE+CLOSE_BOX_PADDING*2,y+WINDOW_TEXT_PADDING,win->exec);
 
 	// Border box
-	draw_fgcolor(WINDOW_BORDER_COLOR);
-	draw_line(x,y,w,0);
-	draw_line(x,y+WINDOW_TITLE_HEIGHT-1,w,0);
+	nw_fgcolor(nw,WINDOW_BORDER_COLOR);
+	nw_line(nw,x,y,w,0);
+	nw_line(nw,x,y+WINDOW_TITLE_HEIGHT-1,w,0);
 
-	draw_line(x,y,0,h);
-	draw_line(x+1,y,0,h);
+	nw_line(nw,x,y,0,h);
+	nw_line(nw,x+1,y,0,h);
 
-	draw_line(x,y+h,w,0);
-	draw_line(x+1,y+h,w,0);
+	nw_line(nw,x,y+h,w,0);
+	nw_line(nw,x+1,y+h,w,0);
 
-	draw_line(x+w,y,0,h);
-	draw_line(x+w+1,y,0,h);
+	nw_line(nw,x+w,y,0,h);
+	nw_line(nw,x+w+1,y,0,h);
 
-	draw_bgcolor(0,0,0);
+	nw_bgcolor(nw,0,0,0);
 }
 
 int main(int argc, char *argv[])
 {
-	int size[2];
-	syscall_object_size(KNO_STDWIN, size, 2);
-	draw_window(KNO_STDWIN);
-	draw_clear(0, 0, size[0], size[1]);
-	draw_flush();
+	nw = nw_create_default();
+
+	nw_clear(nw,0, 0, nw_width(nw), nw_height(nw));
+	nw_flush(nw);
 
 	struct event e;
 
 	struct window windows[NWINDOWS] = {
 		{ .x=0,         .y=0,         .console_mode=1, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
-		{ .x=size[0]/2, .y=0,         .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
-		{ .x=0,         .y=size[1]/2, .console_mode=0, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
-		{ .x=size[0]/2, .y=size[1]/2, .console_mode=1, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
+		{ .x=nw_width(nw)/2, .y=0,         .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
+		{ .x=0,         .y=nw_height(nw)/2, .console_mode=0, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
+		{ .x=nw_width(nw)/2, .y=nw_height(nw)/2, .console_mode=1, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
 	};
 
 	int i;
 	for(i=0;i<NWINDOWS;i++) {
-		windows[i].w = size[0]/2-2;
-		windows[i].h = size[1]/2-2;
+		windows[i].w = nw_width(nw)/2-2;
+		windows[i].h = nw_height(nw)/2-2;
 	}
 
 	for(i=0;i<NWINDOWS;i++) {
 		struct window *w = &windows[i];
 
-		w->fds[3] = syscall_open_window(KNO_STDWIN, w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
+		struct nwindow *child = nw_create_child(nw,w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
+
+		w->fds[3] = nw_fd(child);
 
 		if(w->console_mode) {
 			w->fds[0] = syscall_open_console(w->fds[3]);
@@ -133,7 +131,7 @@ int main(int argc, char *argv[])
 		}
 
 		draw_border(w,0);
-		draw_flush();
+		nw_flush(nw);
 	}
 
 	/* Finally, allow the user to switch between windows*/
@@ -141,10 +139,10 @@ int main(int argc, char *argv[])
 
 	/* Draw green window around active process */
 	draw_border(&windows[active],1);
-	draw_flush();
+	nw_flush(nw);
 
 	//struct event e;
-	while (read_event(&e)) {
+	while (nw_next_event(nw,&e)) {
 
 		if(e.type==EVENT_CLOSE) break;
 		if(e.type!=EVENT_KEY_DOWN) continue;
@@ -156,12 +154,12 @@ int main(int argc, char *argv[])
 
 			/* Draw white boundary around old window. */
 			draw_border(&windows[active],0);
-			draw_flush();
+			nw_flush(nw);
 			active = (active + 1) % NWINDOWS;
 
 			/* Draw green window around new window. */
 			draw_border(&windows[active],1);
-			draw_flush();
+			nw_flush(nw);
 		} else if (c=='~') {
 			/* If tilde entered, cancel the whole thing. */
 			break;
@@ -184,8 +182,8 @@ int main(int argc, char *argv[])
 	/* XXX should kill child process here */
 
 	/* Clean up the window */
-	draw_clear(0, 0, size[0], size[1]);
-	draw_flush();
+	nw_clear(nw, 0, 0, nw_width(nw), nw_height(nw));
+	nw_flush(nw);
 	return 0;
 }
 

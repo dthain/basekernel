@@ -7,30 +7,30 @@ See the file LICENSE for details.
 
 #include "library/syscalls.h"
 #include "library/string.h"
-#include "library/user-io.h"
+#include "library/nanowin.h"
 
 #define MAX_ITERS 2000
 
 int in_set( float x, float y );
 void plot_point(int iter, int j, int k);
 
+struct nwindow *nw = 0;
+
 int main(int argc, char *argv[])
 {
-	/* measure size of window */
-        int size[2];
-        syscall_object_size(KNO_STDWIN, size, 2);
+	/* Setup the window */
+	nw = nw_create_default();
 
-	int xsize = size[0];
-	int ysize = size[1];
+	int xsize = nw_width(nw);
+	int ysize = nw_height(nw);
+
+	nw_clear(nw,0,0,xsize,ysize);
 
 	float xlow = -2.0;
 	float ylow = -1.5;
 	float xfactor = 2.5/xsize;
 	float yfactor = 3.0/ysize;
 
-	/* Setup the window */
-	draw_window(KNO_STDWIN);
-	draw_clear(0, 0,xsize,ysize);
 
 	/* For each point, see if it is in the Mandelbrot set */
 	int iter,i,j;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 			float y = j*yfactor + ylow;
 			iter = in_set(x,y);
 			plot_point(iter,i,j);
-			draw_flush();
+			nw_flush(nw);
 		}
 		syscall_process_yield();
 	}
@@ -67,13 +67,13 @@ int in_set( float x0, float y0 )
 void plot_point(int iter, int j, int k)
 {
 	if(iter==MAX_ITERS) {
-		draw_fgcolor(0,0,0);
+		nw_fgcolor(nw,0,0,0);
 	} else {
 		int color[3];
 		color[0] = iter   % 256;
 		color[1] = iter*3 % 256;
 		color[2] = iter*7 % 256;
-		draw_fgcolor(color[0],color[1],color[2]);
+		nw_fgcolor(nw,color[0],color[1],color[2]);
 	}
-	draw_rect(j,k,1,1);
+	nw_rect(nw,j,k,1,1);
 }

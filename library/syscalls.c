@@ -138,7 +138,7 @@ int syscall_object_list( int fd, char *buffer, int n)
 	return syscall(SYSCALL_OBJECT_LIST, fd, (uint32_t) buffer, (uint32_t) n, 0, 0);
 }
 
-int syscall_object_write(int fd, void *data, int length, kernel_io_flags_t flags )
+int syscall_object_write(int fd, const void *data, int length, kernel_io_flags_t flags )
 {
 	return syscall(SYSCALL_OBJECT_WRITE, fd, (uint32_t) data, length, flags, 0);
 }
