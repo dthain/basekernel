@@ -39,22 +39,6 @@ struct window {
 	int fds[4];
 };
 
-void do_table()
-{
-        printf("Object Table:\n");
-        char tag[16];
-        int i, max = syscall_object_max();
-        for(i=0;i<=max;i++) {
-                int type = syscall_object_type(i);
-                if(type>=0) {
-                        tag[0] = 0;
-                        syscall_object_get_tag(i,tag,sizeof(tag));
-                        printf("%d: %s (%s)\n",i,kernel_object_string(type),tag);
-                }
-        }
-        printf("\n");
-}
-
 int read_event( struct event *e )
 {
 	return syscall_object_read(KNO_STDWIN,e,sizeof(*e),0);
@@ -109,10 +93,6 @@ int main(int argc, char *argv[])
 
 	struct event e;
 
-
-	// This structure only works if it is declared on the stack.
-	// Indicates some problem with our program loading/layout
-	//
 	struct window windows[NWINDOWS] = {
 		{ .x=0,         .y=0,         .console_mode=1, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
 		{ .x=size[0]/2, .y=0,         .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
@@ -122,8 +102,8 @@ int main(int argc, char *argv[])
 
 	int i;
 	for(i=0;i<NWINDOWS;i++) {
-		windows[i].w = size[0]/2;
-		windows[i].h = size[1]/2;
+		windows[i].w = size[0]/2-2;
+		windows[i].h = size[1]/2-2;
 	}
 
 	for(i=0;i<NWINDOWS;i++) {
