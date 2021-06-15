@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
 
 	while(1) {
 		// Draw the board
+		draw_clear(0,0,game_width,game_height);
 		draw_board(wd, thick, thick, game_width, game_height, x_steps, y_steps, snake_coords, apple, thick);
 
 		// Wait
