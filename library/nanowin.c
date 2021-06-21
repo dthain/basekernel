@@ -14,7 +14,7 @@ struct nwindow {
 	int x, y;
 	int width, height;
 	struct {
-		struct graphics_command *buffer;
+		int *buffer;
 		int length;
 		int index;
 	} graphics;
@@ -99,47 +99,70 @@ int nw_fd( struct nwindow *w )
 	return w->fd;
 }
 
-
-static void nw_draw( struct nwindow *nw, int t, int a0, int a1, int a2, int a3)
+static void nw_draw3( struct nwindow *nw, int t, int a0, int a1, int a2 )
 {
-	struct graphics_command c = { t, {a0, a1, a2, a3} };
-	nw->graphics.buffer[nw->graphics.index++] = c;
+	// XXX check for overflow
+	int *p = &nw->graphics.buffer[nw->graphics.index];
+	*p++ = t;
+	*p++ = a0;
+	*p++ = a1;
+	*p++ = a2;
+	nw->graphics.index += 4;
+}
+
+static void nw_draw4( struct nwindow *nw, int t, int a0, int a1, int a2, int a3 )
+{
+	// XXX check for overflow
+	int *p = &nw->graphics.buffer[nw->graphics.index];
+	*p++ = t;
+	*p++ = a0;
+	*p++ = a1;
+	*p++ = a2;
+	*p++ = a3;
+	nw->graphics.index += 5;
 }
 
 void nw_flush( struct nwindow *nw )
 {
-	nw_draw( nw, GRAPHICS_END, 0, 0, 0, 0 );
 	syscall_object_write(nw->fd, nw->graphics.buffer, nw->graphics.index, 0);
 	nw->graphics.index = 0;
 }
 
 void nw_fgcolor( struct nwindow *nw, int r, int g, int b)
 {
-	nw_draw(nw,GRAPHICS_FGCOLOR, r, g, b, 0);
+	nw_draw3(nw,GRAPHICS_FGCOLOR, r, g, b);
 }
 
 void nw_bgcolor( struct nwindow *nw, int r, int g, int b)
 {
-	nw_draw(nw,GRAPHICS_BGCOLOR, r, g, b, 0);
+	nw_draw3(nw,GRAPHICS_BGCOLOR, r, g, b);
 }
 
 void nw_rect( struct nwindow *nw, int x, int y, int w, int h)
 {
-	nw_draw(nw,GRAPHICS_RECT, x, y, w, h);
+	nw_draw4(nw,GRAPHICS_RECT, x, y, w, h);
 }
 
 void nw_clear( struct nwindow *nw, int x, int y, int w, int h)
 {
-	nw_draw(nw,GRAPHICS_CLEAR, x, y, w, h);
+	nw_draw4(nw,GRAPHICS_CLEAR, x, y, w, h);
 }
 
 void nw_line( struct nwindow *nw, int x, int y, int w, int h)
 {
-	nw_draw(nw,GRAPHICS_LINE, x, y, w, h);
+	nw_draw4(nw,GRAPHICS_LINE, x, y, w, h);
 }
 
-void nw_string( struct nwindow *nw, int x, int y, const char *s)
+void nw_string( struct nwindow *nw, int x, int y, const char *s )
 {
-	// XXX put the string into the buffer!
-	nw_draw(nw,GRAPHICS_TEXT, x, y, (int) s, 0);
+	int *p = &nw->graphics.buffer[nw->graphics.index];
+	p[0] = GRAPHICS_TEXT;
+	p[1] = x;
+	p[2] = y;
+	p[3] = strlen(s);
+	int i;
+	for(i=0;s[i];i++) {
+		p[4+i] = s[i];
+	}
+	nw->graphics.index += 4 + p[3];
 }

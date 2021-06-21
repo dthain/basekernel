@@ -190,7 +190,7 @@ int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_fla
 		if(flags&KERNEL_IO_POST) {
 			return window_post_events(kobject->data.window,buffer,size);
 		} else {
-			return window_write_graphics(kobject->data.window, (struct graphics_command *) buffer);
+			return window_write_graphics(kobject->data.window,buffer,size);
 		}
 		break;
 	case KOBJECT_CONSOLE:

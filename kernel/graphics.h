@@ -35,7 +35,7 @@ void graphics_rect(struct graphics *g, int x, int y, int w, int h);
 void graphics_clear(struct graphics *g, int x, int y, int w, int h);
 void graphics_line(struct graphics *g, int x, int y, int w, int h);
 void graphics_char(struct graphics *g, int x, int y, unsigned char c);
-
-int graphics_write(struct graphics *g, struct graphics_command *command);
+void graphics_string(struct graphics *g, int x, int y, const char *str, int length );
+int graphics_write(struct graphics *g, int *cmd, int length );
 
 #endif

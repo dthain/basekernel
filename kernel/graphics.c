@@ -85,54 +85,56 @@ void graphics_delete( struct graphics *g )
 	}
 }
 
-int graphics_write(struct graphics *g, struct graphics_command *command)
+#define ADVANCE(n) { cmd+=n; length-=n; }
+
+int graphics_write(struct graphics *g, int *cmd, int length )
 {
-	int window = -1;
-	char *str;
 	struct graphics_color c;
 
-	while(command && command->type) {
-		switch (command->type) {
-		case GRAPHICS_WINDOW:
-			window = command->args[0];
-			if(window < 0) {
-				return -1;
-			}
-			break;
+	while(length>0) {
+		switch (*cmd) {
 		case GRAPHICS_FGCOLOR:
-			c.r = command->args[0];
-			c.g = command->args[1];
-			c.b = command->args[2];
+			c.r = cmd[1];
+			c.g = cmd[2];
+			c.b = cmd[3];
 			c.a = 0;
 			graphics_fgcolor(g, c);
+			ADVANCE(4)
 			break;
 		case GRAPHICS_BGCOLOR:
-			c.r = command->args[0];
-			c.g = command->args[1];
-			c.b = command->args[2];
+			c.r = cmd[1];
+			c.g = cmd[2];
+			c.b = cmd[3];
 			c.a = 0;
 			graphics_bgcolor(g, c);
+			ADVANCE(4)
 			break;
 		case GRAPHICS_RECT:
-			graphics_rect(g, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_rect(g, cmd[1], cmd[2], cmd[3], cmd[4]);
+			ADVANCE(5)
 			break;
 		case GRAPHICS_CLEAR:
-			graphics_clear(g, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_clear(g, cmd[1], cmd[2], cmd[3], cmd[4]);
+			ADVANCE(5)
 			break;
 		case GRAPHICS_LINE:
-			graphics_line(g, command->args[0], command->args[1], command->args[2], command->args[3]);
+			graphics_line(g, cmd[1], cmd[2], cmd[3], cmd[4]);
+			ADVANCE(5)
 			break;
-		case GRAPHICS_TEXT:
-			str = (char *) command->args[2];
+		case GRAPHICS_TEXT: {
+			int x = cmd[1];
+			int y = cmd[2];
+			int slength = cmd[3];
 			int i;
-			for(i = 0; str[i]; i++) {
-				graphics_char(g, command->args[0] + i * 8, command->args[1], str[i]);
+			for(i = 0; i<slength; i++) {
+				graphics_char(g,x+i*FONT_WIDTH,y,cmd[4+i]);
 			}
+			ADVANCE(4+length)
 			break;
+		}
 		default:
 			break;
 		}
-		command++;
 	}
 	return 0;
 }

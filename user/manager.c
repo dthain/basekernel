@@ -119,6 +119,10 @@ int main(int argc, char *argv[])
 			w->fds[2] = w->fds[3]; // Not right place for stderr...
 		}
 
+		draw_border(w,0);
+		nw_bgcolor(child,0,0,0);
+		nw_flush(nw);
+
 		const char *args[3];
 		args[0] = w->exec;
 		args[1] = w->arg;
@@ -130,8 +134,6 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 
-		draw_border(w,0);
-		nw_flush(nw);
 	}
 
 	/* Finally, allow the user to switch between windows*/
