@@ -66,6 +66,9 @@ run /bin/manager.exe
 
 <img src=screenshot-windows.png align=center>
 
+Press TAB to change the focus between windows,
+and you can interact with each process in turn.
+
 ## Cross-Compiling Instructions
 
 If you are building on any other type of machine,
