@@ -4,188 +4,24 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-/* Snake Game */
 #include "library/string.h"
 #include "library/syscalls.h"
 #include "library/user-io.h"
 #include "library/nanowin.h"
 
-typedef unsigned int uint32_t;
+#define SNAKE_MAX 128
+#define THICK 5
 
-
-/* Keeps track of coordinates */
-struct coords {
-	uint8_t x_c;
-	uint8_t y_c;
-};
-
-void test(struct coords *snake_coords, uint16_t x_steps, uint16_t y_steps, uint16_t x_start, uint16_t y_start);
-
-/* Function declarations */
-void init_snake_coords(struct coords *snake_coords, uint16_t x_steps, uint16_t y_steps, uint16_t x_start, uint16_t y_start);
-uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords *apple, uint8_t * board);
-uint16_t randint(uint16_t min, uint16_t max);
-void initialize_window(uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b);
-void draw_board(uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick);
-int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_steps, uint16_t y_steps, uint8_t * board, char in);
-int check_snake_collision(struct coords *snake_coords);
-uint8_t check_snake_ate_apple(uint16_t x_next, uint16_t y_next, struct coords *apple);
-void update_snake(struct coords *snake_coords, uint16_t x_next, uint16_t y_next, uint8_t grow);
-void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps, uint16_t y_steps);
+struct coords { int x; int y; };
 
 struct nwindow *nw = 0;
 
-/* Main Execution */
-int main(int argc, char *argv[])
-{
-	nw = nw_create_default();
-
-	uint16_t WIDTH = nw_width(nw);
-	uint16_t HEIGHT = nw_height(nw);
-	uint16_t thick = 4;
-
-	// Snake values
-	uint16_t x = 0;
-	uint16_t y = 0;
-
-	// Board dimensions in pixels
-	uint16_t game_width = WIDTH - thick * 2;
-	uint16_t game_height = HEIGHT - thick * 2;
-
-	// Board dimensions in snake blocks
-	uint16_t x_steps = game_width / thick;
-	uint16_t y_steps = game_height / thick;
-
-	// Board keeps track of what cells a snake occupies
-	uint8_t board[y_steps][x_steps];
-	for(int i = 0; i < y_steps; i++) {
-		for(int j = 0; j < x_steps; j++) {
-			board[i][j] = 0;
-		}
-	}
-	board[0][0] = 1;
-
-	// Book keeping for snake and apple
-	struct coords snake_coords[x_steps * y_steps];
-	init_snake_coords(snake_coords, x_steps, y_steps, x, y);
-
-	struct coords apple;
-	if(set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board) < 0) {
-		printf("Setting apple location failed!\n");
-		return 1;
-	}
-	// Misc. initializations
-	int status;
-	char in;
-	char tin;
-
-	initialize_window(x, y, WIDTH, HEIGHT, thick, 255, 255, 255);
-	nw_string(nw,thick * 3, thick * 4, "Press any key to start");
-	nw_string(nw,thick * 3, thick * 8, "w: up");
-	nw_string(nw,thick * 3, thick * 12, "s: down");
-	nw_string(nw,thick * 3, thick * 16, "a: left");
-	nw_string(nw,thick * 3, thick * 20, "d: right");
-	nw_flush(nw);
-
-
-	while(1) {
-		// Draw the board
-		nw_clear(nw,0,0,game_width,game_height);
-		draw_board(thick, thick, game_width, game_height, x_steps, y_steps, snake_coords, apple, thick);
-
-		// Wait
-		syscall_process_sleep(100);
-
-		// Get users next input -- non-blocking
-		tin = nw_getchar(nw,0);
-
-		// Skip if the user goes reverse direction
-		if((tin == 'a' && in == 'd') || (tin == 'd' && in == 'a') || (tin == 'w' && in == 's') || (tin == 's' && in == 'w'))
-			in = in;
-		else if(tin > 0 && (tin == 'w' || tin == 'a' || tin == 's' || tin == 'd'))
-			in = tin;
-
-		// Try to move the snake
-		status = move_snake(snake_coords, &apple, x_steps, y_steps, (uint8_t *) board, in);
-		if(status == -1) {
-			for(int i = 0; i < y_steps; i++) {
-				for(int j = 0; j < x_steps; j++) {
-					board[i][j] = 0;
-				}
-			}
-			board[0][0] = 1;
-			init_snake_coords(snake_coords, x_steps, y_steps, x, y);
-
-			nw_flush(nw);
-			nw_fgcolor(nw,255, 255, 255);
-			nw_string(nw,thick * 3, thick * 4, "You lose!");
-			nw_string(nw,thick * 3, thick * 8, "Enter q to quit");
-			nw_string(nw,thick * 3, thick * 12, "Press any key to start");
-			nw_flush(nw);
-			tin = nw_getchar(nw,1);
-			if (tin == 'q')
-			{
-				printf("Snake exiting\n");
-				return 1;
-			}
-			if(tin != 'a' && tin != 'd') {
-				tin = 'a';
-			}
-			in = tin;
-			set_apple_location(x_steps, y_steps, &apple, (uint8_t *) board);
-		}
-	}
-
-}
-
-
-void init_snake_coords(struct coords *snake_coords, uint16_t x_steps, uint16_t y_steps, uint16_t x_start, uint16_t y_start)
-{
-	for(uint16_t i = 0; i < x_steps * y_steps; i++) {
-		snake_coords[i].x_c = 255;
-		snake_coords[i].y_c = 255;
-	}
-
-	snake_coords[0].x_c = (uint8_t) x_start;
-	snake_coords[0].y_c = (uint8_t) y_start;
-}
-
-uint8_t set_apple_location(uint16_t x_steps, uint16_t y_steps, struct coords *apple, uint8_t * board)
-{
-	// need a list of available coordinates
-	// and then we will randomly pick from them
-	struct coords possible_vals[x_steps * y_steps];
-	init_snake_coords(possible_vals, x_steps, y_steps, 255, 255);	// none are possible to start
-
-	// Keep track index values of possible_vals
-	uint16_t curr_i = 0;
-
-	// Add all potential coordinates to the random array
-	for(uint16_t i = 0; i < y_steps; i++) {
-		for(uint16_t j = 0; j < x_steps; j++) {
-			if(*((board + i * y_steps) + j) == 0) {
-				possible_vals[curr_i].x_c = (uint8_t) j;
-				possible_vals[curr_i].y_c = (uint8_t) i;
-				curr_i++;
-			}
-		}
-	}
-
-	// Get random int and use that to set the new value of apple
-	int r = randint(0, curr_i);
-
-	apple->x_c = possible_vals[r].x_c;
-	apple->y_c = possible_vals[r].y_c;
-
-	return 0;
-}
-
-uint16_t randint(uint16_t min, uint16_t max)
+int randint(int min, int max)
 {
 	// Could be a lot better but at the moment it works
 	uint32_t tm;
 	syscall_system_time(&tm);
-	uint16_t state = tm;
+	int state = tm;
 	if(state % 5 == 0) {
 		state += 50000;
 	} else if(state % 4 == 0) {
@@ -197,161 +33,177 @@ uint16_t randint(uint16_t min, uint16_t max)
 	} else {
 		state += 16000;
 	}
-	uint16_t diff = max - min;
+	int diff = max - min;
 
 	return state % diff + min;
 }
 
-void initialize_window( uint16_t x_b, uint16_t y_b, uint16_t w_b, uint16_t h_b, uint16_t thick, uint8_t r_b, uint8_t g_b, uint8_t b_b)
+void init_snake_coords(struct coords *snake, int *length, int xsteps, int ysteps )
 {
-	nw_clear(nw,0, 0, w_b, h_b);
-	nw_flush(nw);
-}
+	*length = 3;
 
-void draw_board(uint16_t x_0, uint16_t y_0, uint16_t game_width, uint16_t game_height, uint16_t x_steps, uint16_t y_steps, struct coords *snake_coords, struct coords apple, uint16_t thick)
-{
-	// Draw the snake
-	nw_fgcolor(nw,0, 255, 0);
-	for(uint16_t i = 0; i < x_steps * y_steps; i++) {
-		if(snake_coords[i].x_c == 255) {
-			break;
-		}
-		nw_rect(nw,snake_coords[i].x_c * thick + x_0, snake_coords[i].y_c * thick + y_0, thick, thick);
+	snake[0].x = xsteps/2;
+	snake[0].y = ysteps/2;
+
+	int i;
+	for(i=1;i<*length++;i++) {
+		snake[i].x = snake[i-1].x-1;
+		snake[i].y = snake[0].y;
 	}
 
-	// Draw the apple
-	nw_fgcolor(nw,255, 0, 0);
-	nw_rect(nw,apple.x_c * thick + x_0, apple.y_c * thick + y_0, thick, thick);
-
-	nw_flush(nw);
 }
 
-int move_snake(struct coords *snake_coords, struct coords *apple, uint16_t x_steps, uint16_t y_steps, uint8_t * board, char in)
+void scaled_rect( struct nwindow *nw, int x, int y, int scale )
 {
-	// Set snakes next coordinates
-	uint16_t x_next, y_next;
-	switch (in) {
-	case ('a'):
-		if(snake_coords[0].x_c == 0)
-			return -1;
-		x_next = snake_coords[0].x_c - 1;
-		y_next = snake_coords[0].y_c;
+	nw_rect(nw,x*scale,y*scale,scale,scale);
+}
+
+void update_snake(struct coords *snake, int *length, int x, int y, int grow )
+{
+	int i;
+
+	if(!grow) {
+		nw_fgcolor(nw,0,0,0);
+		scaled_rect(nw,snake[*length-1].x,snake[*length-1].y,THICK);
+	}
+
+	*length += grow;
+
+	for(i=*length-1;i>0;i--) {
+		snake[i] = snake[i-1];
+	}
+
+	snake[0].x = x;
+	snake[0].y = y;
+
+	nw_fgcolor(nw,0,255,0);
+	scaled_rect(nw,x,y,THICK);
+
+}
+
+int check_snake_collision( struct coords *snake, int length )
+{
+	int i;
+	for(i=1;i<length;i++) {
+		if(snake[i].x==snake[0].x && snake[i].y==snake[0].y) return 1;
+	}
+	return 0;
+}
+
+void init_apple( struct coords *apple, int xsteps, int ysteps )
+{
+	apple->x = randint(0,xsteps);
+	apple->y = randint(0,ysteps);
+
+	nw_fgcolor(nw,255, 0, 0);
+	scaled_rect(nw,apple->x,apple->y,THICK);
+}
+
+int move_snake(struct coords *snake, int *length, struct coords *apple, int xsteps, int ysteps, char dir)
+{
+	int x, y;
+
+	switch (dir) {
+	case 'a':
+		x = snake[0].x - 1;
+		y = snake[0].y;
 		break;
-	case ('d'):
-		if(snake_coords[0].x_c == x_steps - 1)
-			return -1;
-		x_next = snake_coords[0].x_c + 1;
-		y_next = snake_coords[0].y_c;
+	case 'd':
+		x = snake[0].x + 1;
+		y = snake[0].y;
 		break;
-	case ('w'):
-		if(snake_coords[0].y_c == 0)
-			return -1;
-		x_next = snake_coords[0].x_c;
-		y_next = snake_coords[0].y_c - 1;
+	case 'w':
+		x = snake[0].x;
+		y = snake[0].y - 1;
 		break;
-	case ('s'):
-		if(snake_coords[0].y_c == y_steps - 1)
-			return -1;
-		x_next = snake_coords[0].x_c;
-		y_next = snake_coords[0].y_c + 1;
+	case 's':
+		x = snake[0].x;
+		y = snake[0].y + 1;
 		break;
 	default:
-		return 0;
+		x = snake[0].x;
+		y = snake[0].y;
+		break;
 	}
 
-	// Check if snake needs to grow
-	if(check_snake_ate_apple(x_next, y_next, apple)) {
-		// Update snake_coords with an extra snake block
-		update_snake(snake_coords, x_next, y_next, 1);
+	if(x<=-1 || x>=xsteps || y<=-1 || y>=ysteps ) return -1;
 
-		// Update the board
-		update_board(snake_coords, board, x_steps, y_steps);
 
-		// Relocate the apple
-		if(set_apple_location(x_steps, y_steps, apple, board) < 0) {
-			printf("Setting apple location failed!\n");
-			return -1;
-		}
+	if(x==apple->x && y==apple->y) {
+		update_snake(snake, length, x, y, 5);
+		init_apple(apple,xsteps,ysteps);
 	} else {
-		// Update snake_coords
-		update_snake(snake_coords, x_next, y_next, 0);
-
-		// Update the board
-		update_board(snake_coords, board, x_steps, y_steps);
+		update_snake(snake, length, x, y, 0);
 	}
 
-	// Check if snake head collided with any other values
-	if(check_snake_collision(snake_coords)) {
+	if(check_snake_collision(snake,*length)) {
 		return -1;
 	}
 
 	return 0;
 }
 
-int check_snake_collision(struct coords *snake_coords)
+int main(int argc, char *argv[])
 {
-	uint16_t x_0 = snake_coords[0].x_c;
-	uint16_t y_0 = snake_coords[0].y_c;
+	struct coords snake[SNAKE_MAX];
+	struct coords apple;
 
-	uint16_t s_i = 1;
+	int snake_length = 3;
+	int speed = 100;
 
-	while(snake_coords[s_i].x_c != 255) {
-		if(x_0 == snake_coords[s_i].x_c && y_0 == snake_coords[s_i].y_c) {
-			return -1;
+	nw = nw_create_default();
+
+	int width = nw_width(nw);
+	int height = nw_height(nw);
+
+	// Board dimensions in snake blocks
+	int xsteps = width / THICK;
+	int ysteps = height / THICK;
+
+	nw_clear(nw,0, 0, width, height);
+	nw_string(nw,THICK * 3, THICK * 4, "Press any key to start");
+	nw_string(nw,THICK * 3, THICK * 8, "w: up");
+	nw_string(nw,THICK * 3, THICK * 12, "s: down");
+	nw_string(nw,THICK * 3, THICK * 16, "a: left");
+	nw_string(nw,THICK * 3, THICK * 20, "d: right");
+	nw_flush(nw);
+
+	char c = nw_getchar(nw,1);
+
+
+	while(1) {
+		char dir = 'd';
+		nw_clear(nw,0,0,width,height);
+		init_snake_coords(snake, &snake_length, xsteps, ysteps);
+		init_apple(&apple,xsteps, ysteps);
+
+		while(1) {
+			syscall_process_sleep(speed);
+			c = nw_getchar(nw,0);
+
+			if((c == 'a' && dir == 'd') || (c == 'd' && dir == 'a') || (c == 'w' && dir == 's') || (c == 's' && dir == 'w')) {
+				// reject conflicting input
+			} else if(c == 'w' || c == 'a' || c == 's' || c == 'd') {
+				dir = c;
+			} else if(c=='q') {
+				break;
+			}
+
+			int status = move_snake(snake, &snake_length, &apple, xsteps, ysteps, dir);
+			nw_flush(nw);
+			if(status<0) break;
 		}
-		s_i++;
+
+		nw_flush(nw);
+		nw_fgcolor(nw,255, 255, 255);
+		nw_string(nw,THICK * 3, THICK * 4, "You lose!");
+		nw_string(nw,THICK * 3, THICK * 8, "Enter q to quit");
+		nw_string(nw,THICK * 3, THICK * 12, "Press any key to start");
+		nw_flush(nw);
+
+		c = nw_getchar(nw,1);
+		if (c == 'q') return 0;
 	}
 
-	return 0;
 }
 
-uint8_t check_snake_ate_apple(uint16_t x_next, uint16_t y_next, struct coords * apple)
-{
-	if(x_next == apple->x_c && y_next == apple->y_c) {
-		return 1;
-	}
-	return 0;
-}
-
-void update_snake(struct coords *snake_coords, uint16_t x_next, uint16_t y_next, uint8_t grow)
-{
-
-	uint8_t x_tmp, y_tmp;
-	uint16_t curr_i = 0;
-
-	while(snake_coords[curr_i].x_c != 255) {
-		x_tmp = snake_coords[curr_i].x_c;
-		y_tmp = snake_coords[curr_i].y_c;
-
-		snake_coords[curr_i].x_c = (uint8_t) x_next;
-		snake_coords[curr_i].y_c = (uint8_t) y_next;
-
-		x_next = (uint16_t) x_tmp;
-		y_next = (uint16_t) y_tmp;
-
-		curr_i++;
-	}
-
-	// Chop off the last block if need be
-	if(grow) {
-		snake_coords[curr_i].x_c = x_next;
-		snake_coords[curr_i].y_c = y_next;
-	}
-}
-
-void update_board(struct coords *snake_coords, uint8_t * board, uint16_t x_steps, uint16_t y_steps)
-{
-	// Zero out board
-	for(uint16_t i = 0; i < y_steps; i++) {
-		for(uint16_t j = 0; j < x_steps; j++) {
-			(board + i * y_steps)[j] = 0;
-		}
-	}
-
-	// Add values with values of snake
-	uint16_t curr_i = 0;
-	while(snake_coords[curr_i].x_c != 255) {
-		(board + snake_coords[curr_i].y_c * y_steps)[snake_coords[curr_i].x_c] = 1;
-		curr_i++;
-	}
-}
