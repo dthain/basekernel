@@ -2,7 +2,7 @@
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/stdio.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 /**
  * Livestat is a command line utility to display a graph of operating system

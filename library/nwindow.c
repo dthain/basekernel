@@ -2,7 +2,7 @@
 #include "kernel/gfxstream.h"
 #include "kernel/types.h"
 #include "kernel/events.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 #include "library/syscalls.h"
 
 #include "library/string.h"

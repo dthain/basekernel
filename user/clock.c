@@ -8,7 +8,7 @@ See the file LICENSE for details.
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/stdio.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 /*
 	Display time in a window

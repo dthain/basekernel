@@ -13,7 +13,7 @@ events to each based on which one currently has the focus.
 #include "library/string.h"
 #include "library/stdio.h"
 #include "library/kernel_object_string.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 #define NWINDOWS 4
 

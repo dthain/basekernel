@@ -11,7 +11,7 @@ A fun graphics demo that features a line segment bouncing around the screen.
 #include "library/syscalls.h"
 #include "library/stdio.h"
 #include "library/string.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 typedef unsigned int uint32_t;
 

@@ -7,7 +7,7 @@ See the file LICENSE for details.
 #include "library/string.h"
 #include "library/syscalls.h"
 #include "library/stdio.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 #define SNAKE_MAX 128
 #define THICK 5
