@@ -95,9 +95,9 @@ int  window_read_events_nonblock( struct window *w, struct event *e, int size )
 	return event_queue_read_nonblock(w->queue,e,size);
 }
 
-int  window_write_graphics( struct window *w, struct graphics_command *command )
+int  window_write_graphics( struct window *w, int *cmd, int size )
 {
-	return graphics_write(w->graphics,command);	
+	return graphics_write(w->graphics,cmd,size);	
 }
 
 
