@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #include "graphics.h"
 #include "kernel/types.h"
+#include "kernel/error.h"
 #include "ioports.h"
 #include "font.h"
 #include "string.h"
@@ -124,15 +125,16 @@ int graphics_write(struct graphics *g, int *cmd, int length )
 		case GRAPHICS_TEXT: {
 			int x = cmd[1];
 			int y = cmd[2];
-			int slength = cmd[3];
+			int strlength = cmd[3];
 			int i;
-			for(i = 0; i<slength; i++) {
+			for(i = 0; i<strlength; i++) {
 				graphics_char(g,x+i*FONT_WIDTH,y,cmd[4+i]);
 			}
-			ADVANCE(4+length)
+			ADVANCE(4+strlength)
 			break;
 		}
 		default:
+			return KERROR_INVALID_REQUEST;
 			break;
 		}
 	}
