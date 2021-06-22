@@ -1,7 +1,7 @@
 #include "library/string.h"
 #include "library/syscalls.h"
 #include "kernel/types.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "kernel/ascii.h"
 #include "library/errno.h"
 #include "library/kernel_object_string.h"

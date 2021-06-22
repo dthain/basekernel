@@ -6,7 +6,7 @@ See the file LICENSE for details.
 
 #include "library/string.h"
 #include "library/syscalls.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "library/nanowin.h"
 
 #define SNAKE_MAX 128

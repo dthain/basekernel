@@ -7,7 +7,7 @@
 
 #include "library/string.h"
 #include "library/malloc.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 
 struct nwindow {
 	int fd;

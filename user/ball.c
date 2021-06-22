@@ -9,7 +9,7 @@ A fun graphics demo that features text bouncing around the screen.
 */
 
 #include "library/syscalls.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "library/string.h"
 
 #include "library/nanowin.h"

@@ -7,7 +7,7 @@ See the file LICENSE for details.
 
 #include "library/syscalls.h"
 #include "library/string.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "library/nanowin.h"
 
 /*
