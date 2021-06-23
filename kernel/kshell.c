@@ -24,6 +24,11 @@ See the file LICENSE for details.
 
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
+	if(current->ktable[KNO_STDROOT]) {
+		printf("root filesystem already mounted, please unmount first");
+		return -1;
+	}
+
 	struct device *dev = device_open(devname,unit);
 	if(dev) {
 		struct fs *fs = fs_lookup(fs_type);
@@ -32,9 +37,8 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 			if(v) {
 				struct fs_dirent *d = fs_volume_root(v);
 				if(d) {
-					if(current->root_dir) fs_dirent_close(current->root_dir);
-					current->root_dir = d;
-					current->current_dir = fs_dirent_addref(d);
+					current->ktable[KNO_STDROOT] = kobject_create_dir(d);
+					current->ktable[KNO_STDDIR] = kobject_create_dir(d);
 					return 0;
 				} else {
 					printf("mount: couldn't find root dir on %s unit %d!\n",device_name(dev),device_unit(dev));
@@ -187,10 +191,10 @@ static int kshell_execute(int argc, const char **argv)
 			printf("mount: requires device, unit, and fs type\n");
 		}
 	} else if(!strcmp(cmd, "umount")) {
-		if(current->root_dir) {
+		if(current->ktable[KNO_STDROOT]) {
 			printf("unmounting root directory\n");
-			fs_dirent_close(current->root_dir);
-			current->root_dir = 0;
+			sys_object_close(KNO_STDDIR);
+			sys_object_close(KNO_STDROOT);
 		} else {
 			printf("nothing currently mounted\n");
 		}

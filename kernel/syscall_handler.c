@@ -158,9 +158,8 @@ int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, in
 
 	/* Create the child process */
 	struct process *p = process_create();
-	// process_inherit(current, p);
-	process_selective_inherit(current, p, fds, fd_len);
 
+	process_selective_inherit(current, p, fds, fd_len);
 
 	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
 	struct pagetable *old_pagetable = current->pagetable;
@@ -550,9 +549,9 @@ int sys_object_size(int fd, int *dims, int n)
 int sys_object_copy( int src, int dst )
 {
 	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
-	if(!is_valid_object(dst)) return KERROR_INVALID_OBJECT;
 
-	kobject_copy(current->ktable[src],&(current->ktable[dst]));
+	sys_object_close(dst);
+	current->ktable[dst] = kobject_copy(current->ktable[src]);
 
 	return 0;
 }
@@ -624,8 +623,8 @@ int sys_chdir(const char *path)
 
 	struct fs_dirent *d = fs_resolve(path);
 	if(d) {
-		fs_dirent_close(current->current_dir);
-		current->current_dir = d;
+		sys_object_close(KNO_STDDIR);
+		current->ktable[KNO_STDDIR] = kobject_create_dir(d);
 		return 0;
 	} else {
 		// XXX get error back from namei

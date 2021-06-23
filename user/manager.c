@@ -36,7 +36,7 @@ struct window {
 	const char * arg;
 	int argc;
 	int pid;
-	int fds[4];
+	int fds[6];
 };
 
 struct nwindow *nw = 0;
@@ -107,16 +107,22 @@ int main(int argc, char *argv[])
 
 		struct nwindow *child = nw_create_child(nw,w->x+WINDOW_BORDER, w->y+WINDOW_TITLE_HEIGHT, w->w-WINDOW_BORDER*2, w->h-WINDOW_BORDER-WINDOW_TITLE_HEIGHT);
 
-		w->fds[3] = nw_fd(child);
+		int window_fd = nw_fd(child);
 
 		if(w->console_mode) {
-			w->fds[0] = syscall_open_console(w->fds[3]);
+			w->fds[0] = syscall_open_console(window_fd);
 			w->fds[1] = w->fds[0];
 			w->fds[2] = w->fds[0];
+			w->fds[3] = window_fd; // doesn't need a window fd
+			w->fds[4] = 4;
+			w->fds[5] = 5;
 		} else {
-			w->fds[0] = w->fds[3];
-			w->fds[1] = w->fds[3];
-			w->fds[2] = w->fds[3]; // Not right place for stderr...
+			w->fds[0] = -1; // doesn't need stdin/stdout
+			w->fds[1] = -1;
+			w->fds[2] = -1;
+			w->fds[3] = window_fd;
+			w->fds[4] = 4;
+			w->fds[5] = 5;
 		}
 
 		draw_border(w,0);
@@ -128,7 +134,7 @@ int main(int argc, char *argv[])
 		args[1] = w->arg;
 		args[2] = 0;
 
-		w->pid = syscall_process_wrun(w->exec, w->argc, args, w->fds, 4);
+		w->pid = syscall_process_wrun(w->exec, w->argc, args, w->fds, 6);
 		if(w->pid<0) {
 			printf("couldn't exec %d\n",w->pid);
 			return 0;

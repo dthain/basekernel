@@ -17,6 +17,7 @@ int sys_process_sleep(unsigned int ms);
 int sys_mkdir( int fd, const char *path);
 int sys_rmdir(int fd, const char *path);
 int sys_chdir( const char *path);
+int sys_object_close( int fd );
 
 int sys_open_window(int wd, int x, int y, int w, int h);
 int sys_process_object_max();
