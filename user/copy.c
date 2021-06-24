@@ -17,13 +17,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	int src = syscall_open_file(argv[1],0,0);
+	int src = syscall_open_file_relative(KNO_STDDIR,argv[1],0,0);
 	if(src<0) {
 		printf("couldn't open %s: %s\n",argv[1],strerror(src));
 		return 1;
 	}
 
-	int dst = syscall_open_file(argv[2],0,0);
+	int dst = syscall_open_file_relative(KNO_STDDIR,argv[2],0,0);
 	if(dst<0) {
 		printf("couldn't open %s: %s\n",argv[2],strerror(dst));
 		return 1;

@@ -119,7 +119,7 @@ int do_command(char *line)
 		const char *arg = strtok(0," ");
 		if(!arg) arg = "/";
 		char buffer[1024];
-		int fd = syscall_open_dir(arg,0);
+		int fd = syscall_open_dir_relative(KNO_STDDIR,arg,0);
 		if(fd>=0) {
 			int length = syscall_object_list(fd, buffer, 1024);
 			syscall_object_close(fd);
