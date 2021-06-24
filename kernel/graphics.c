@@ -278,6 +278,8 @@ static inline void graphics_line_q2(struct graphics *g, int x, int y, int w, int
 	} while(w > 0);
 }
 
+/* h<0, w>0, abs(h) < w */
+
 static inline void graphics_line_q3(struct graphics *g, int x, int y, int w, int h)
 {
 	int slope = -FACTOR * h / w;
@@ -293,8 +295,10 @@ static inline void graphics_line_q3(struct graphics *g, int x, int y, int w, int
 			y--;
 			h--;
 		}
-	} while(w > 0);
+	} while(w>0);
 }
+
+/* h<0, w>0, abs(h) > w */
 
 static inline void graphics_line_q4(struct graphics *g, int x, int y, int w, int h)
 {
@@ -304,14 +308,14 @@ static inline void graphics_line_q4(struct graphics *g, int x, int y, int w, int
 	do {
 		plot_pixel(g->bitmap, x, y, g->fgcolor);
 		y--;
-		h--;
+		h++;
 		counter += slope;
 		if(counter > FACTOR) {
 			counter = counter - FACTOR;
 			x++;
 			w--;
 		}
-	} while(h > 0);
+	} while(h<0);
 }
 
 static inline void graphics_line_hozo(struct graphics *g, int x, int y, int w, int h)
@@ -352,7 +356,7 @@ void graphics_line(struct graphics *g, int x, int y, int w, int h)
 	} else if(h<0) {
 		if(w==0) {
 			graphics_line_vert(g, x, y+h, w, -h);
-		} else if(h > -w) {
+		} else if(-h < w) {
 			graphics_line_q3(g, x, y, w, h);
 		} else {
 			graphics_line_q4(g, x, y, w, h);

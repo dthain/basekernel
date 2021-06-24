@@ -101,7 +101,9 @@ int nw_fd( struct nwindow *w )
 
 static void nw_draw3( struct nwindow *nw, int t, int a0, int a1, int a2 )
 {
-	// XXX check for overflow
+	if(nw->graphics.length-nw->graphics.index<4) {
+		nw_flush(nw);
+	}
 	int *p = &nw->graphics.buffer[nw->graphics.index];
 	*p++ = t;
 	*p++ = a0;
@@ -112,7 +114,9 @@ static void nw_draw3( struct nwindow *nw, int t, int a0, int a1, int a2 )
 
 static void nw_draw4( struct nwindow *nw, int t, int a0, int a1, int a2, int a3 )
 {
-	// XXX check for overflow
+	if(nw->graphics.length-nw->graphics.index<5) {
+		nw_flush(nw);
+	}
 	int *p = &nw->graphics.buffer[nw->graphics.index];
 	*p++ = t;
 	*p++ = a0;
@@ -155,14 +159,22 @@ void nw_line( struct nwindow *nw, int x, int y, int w, int h)
 
 void nw_string( struct nwindow *nw, int x, int y, const char *s )
 {
-	int *p = &nw->graphics.buffer[nw->graphics.index];
-	p[0] = GRAPHICS_TEXT;
-	p[1] = x;
-	p[2] = y;
-	p[3] = strlen(s);
-	int i;
-	for(i=0;s[i];i++) {
-		p[4+i] = s[i];
+	int length = strlen(s);
+
+	if(nw->graphics.length-nw->graphics.index < (length+4) ) {
+		nw_flush(nw);
 	}
-	nw->graphics.index += 4 + p[3];
+
+	int *p = &nw->graphics.buffer[nw->graphics.index];
+	*p++ = GRAPHICS_TEXT;
+	*p++ = x;
+	*p++ = y;
+	*p++ = length;
+
+	int i;
+	for(i=0;i<length;i++) {
+		*p++ = s[i];
+	}
+
+	nw->graphics.index += 4 + length;
 }
