@@ -38,7 +38,7 @@ static struct kobject * find_kobject_by_tag( const char *tag )
 
 struct fs_dirent * fs_getroot( struct process *p )
 {
-	struct kobject *k = p->ktable[KNO_STDROOT];
+	struct kobject *k = p->ktable[KNO_STDDIR];
 	if( k && k->type==KOBJECT_DIR ) {
 		return k->data.dir;
 	} else {

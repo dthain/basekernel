@@ -72,7 +72,6 @@ typedef enum {
 #define KNO_STDOUT  1
 #define KNO_STDERR  2
 #define KNO_STDWIN  3
-#define KNO_STDROOT 4
-#define KNO_STDDIR  5
+#define KNO_STDDIR  4
 
 #endif
