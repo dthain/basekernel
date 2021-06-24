@@ -104,7 +104,6 @@ static void nw_draw3( struct nwindow *nw, int t, int a0, int a1, int a2 )
 	if(nw->graphics.length-nw->graphics.index<4) {
 		nw_flush(nw);
 	}
-
 	int *p = &nw->graphics.buffer[nw->graphics.index];
 	*p++ = t;
 	*p++ = a0;
@@ -118,7 +117,6 @@ static void nw_draw4( struct nwindow *nw, int t, int a0, int a1, int a2, int a3 
 	if(nw->graphics.length-nw->graphics.index<5) {
 		nw_flush(nw);
 	}
-
 	int *p = &nw->graphics.buffer[nw->graphics.index];
 	*p++ = t;
 	*p++ = a0;
