@@ -471,7 +471,7 @@ int sys_object_dup(int fd1, int fd2)
 	if(current->ktable[fd2]) {
 		kobject_close(current->ktable[fd2]);
 	}
-	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
+	current->ktable[fd2] = kobject_copy(current->ktable[fd1]);
 	return fd2;
 }
 
