@@ -4,8 +4,6 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-/* duplicates cdrom to kevinfs disk */
-
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/errno.h"
@@ -13,7 +11,7 @@ See the file LICENSE for details.
 int main(int argc, char *argv[])
 {
 	if(argc!=3) {
-		printf("%s: <sourcepath> <destpath>\n");
+		printf("%s: <sourcepath> <destpath>\n",argv[0]);
 		return 1;
 	}
 
