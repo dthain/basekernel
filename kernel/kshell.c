@@ -315,12 +315,6 @@ static int kshell_execute(int argc, const char **argv)
 		} else {
 			printf("use: remove <parent-dir> <filename>\n");
 		}
-	} else if(!strcmp(cmd, "chdir")) {
-		if(argc == 2) {
-			sys_chdir(argv[1]);
-		} else {
-			printf("chdir: missing argument\n");
-		}
 	} else if(!strcmp(cmd, "time")) {
 		struct rtc_time time;
 		rtc_read(&time);
@@ -337,7 +331,7 @@ static int kshell_execute(int argc, const char **argv)
 	} else if(!strcmp(cmd,"bcache_flush")) {
 		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

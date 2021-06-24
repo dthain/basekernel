@@ -68,11 +68,4 @@ int syscall_system_rtc( struct rtc_time *t );
 
 int syscall_device_driver_stats(char * name, struct device_driver_stats * stats);
 
-/*
-These system calls are carryovers from Unix-like thinking
-and need to be reworked to fit the kernel object model.
-*/
-
-int syscall_chdir( const char *path );
-
 #endif

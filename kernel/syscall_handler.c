@@ -617,21 +617,6 @@ int sys_device_driver_stats(const char * name, struct device_driver_stats * stat
 	return 0;
 }
 
-int sys_chdir(const char *path)
-{
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
-
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		sys_object_close(KNO_STDDIR);
-		current->ktable[KNO_STDDIR] = kobject_create_dir(d);
-		return 0;
-	} else {
-		// XXX get error back from namei
-		return KERROR_NOT_FOUND;
-	}
-}
-
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	if((n < MAX_SYSCALL) && current) {
@@ -722,8 +707,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_system_rtc((struct rtc_time *) a);
 	case SYSCALL_DEVICE_DRIVER_STATS:
 		return sys_device_driver_stats((char *) a, (struct device_driver_stats *) b);
-	case SYSCALL_CHDIR:
-		return sys_chdir((const char *) a);
 	default:
 		return KERROR_INVALID_SYSCALL;
 	}
