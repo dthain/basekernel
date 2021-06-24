@@ -346,7 +346,7 @@ int sys_open_dir_relative( int fd, const char *path, kernel_flags_t flags )
 
 	if(result>=0) {
 		current->ktable[newfd] = newobj;
-		return fd;
+		return newfd;
 	} else {
 		return result;
 	}
