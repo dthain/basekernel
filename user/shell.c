@@ -125,13 +125,20 @@ int do_command(char *line)
 			syscall_object_close(fd);
 			print_directory(buffer, length);
 		}
-	} else if(pch && !strcmp(pch, "chdir")) {
+	} else if(pch && !strcmp(pch, "enter")) {
 		char *path = strtok(0, " ");
 		if(!path) {
-			printf("Incorrect arguments, usage: chdir <path>\n");
+			printf("Incorrect arguments, usage: enter <path>\n");
 			return 1;
 		}
-		syscall_chdir(path);
+		int fd = syscall_open_dir_relative(KNO_STDDIR,path,0);
+		if(fd>=0) {
+			syscall_object_dup(fd,KNO_STDDIR);
+			syscall_object_close(fd);
+			printf("entered %s\n",path);
+		} else {
+			printf("couldn't enter %s: %s\n",path,strerror(fd));
+		}
 	} else if(pch && !strcmp(pch,"table")) {
 		do_table();
 	} else if(pch && !strcmp(pch, "help")) {
