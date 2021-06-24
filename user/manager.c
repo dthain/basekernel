@@ -174,10 +174,10 @@ int main(int argc, char *argv[])
 		} else {
 			if(windows[active].console_mode) {
 				// Post a single character to the console.
-				syscall_object_write(windows[active].fds[0],&c,1,KERNEL_IO_POST);
+				syscall_object_write(windows[active].fds[KNO_STDIN],&c,1,KERNEL_IO_POST);
 			} else {
 				// Post a complete event to the window.
-				syscall_object_write(windows[active].fds[0],&e,sizeof(e),KERNEL_IO_POST);
+				syscall_object_write(windows[active].fds[KNO_STDWIN],&e,sizeof(e),KERNEL_IO_POST);
 			}
 		}
 	}
