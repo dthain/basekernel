@@ -24,6 +24,11 @@ See the file LICENSE for details.
 
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
+	if(current->ktable[KNO_STDDIR]) {
+		printf("root filesystem already mounted, please unmount first");
+		return -1;
+	}
+
 	struct device *dev = device_open(devname,unit);
 	if(dev) {
 		struct fs *fs = fs_lookup(fs_type);
@@ -32,9 +37,7 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 			if(v) {
 				struct fs_dirent *d = fs_volume_root(v);
 				if(d) {
-					if(current->root_dir) fs_dirent_close(current->root_dir);
-					current->root_dir = d;
-					current->current_dir = fs_dirent_addref(d);
+					current->ktable[KNO_STDDIR] = kobject_create_dir(d);
 					return 0;
 				} else {
 					printf("mount: couldn't find root dir on %s unit %d!\n",device_name(dev),device_unit(dev));
@@ -187,10 +190,9 @@ static int kshell_execute(int argc, const char **argv)
 			printf("mount: requires device, unit, and fs type\n");
 		}
 	} else if(!strcmp(cmd, "umount")) {
-		if(current->root_dir) {
+		if(current->ktable[KNO_STDDIR]) {
 			printf("unmounting root directory\n");
-			fs_dirent_close(current->root_dir);
-			current->root_dir = 0;
+			sys_object_close(KNO_STDDIR);
 		} else {
 			printf("nothing currently mounted\n");
 		}
@@ -313,12 +315,6 @@ static int kshell_execute(int argc, const char **argv)
 		} else {
 			printf("use: remove <parent-dir> <filename>\n");
 		}
-	} else if(!strcmp(cmd, "chdir")) {
-		if(argc == 2) {
-			sys_chdir(argv[1]);
-		} else {
-			printf("chdir: missing argument\n");
-		}
 	} else if(!strcmp(cmd, "time")) {
 		struct rtc_time time;
 		rtc_read(&time);
@@ -335,7 +331,7 @@ static int kshell_execute(int argc, const char **argv)
 	} else if(!strcmp(cmd,"bcache_flush")) {
 		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nchdir <path>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}

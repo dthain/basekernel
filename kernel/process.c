@@ -5,8 +5,6 @@ See the file LICENSE for details.
 */
 
 #include "process.h"
-#include "fs.h"
-#include "console.h"
 #include "kobject.h"
 #include "page.h"
 #include "string.h"
@@ -33,12 +31,6 @@ void process_init()
 
 	pagetable_load(current->pagetable);
 	pagetable_enable();
-
-	//set up initial kobject descriptors
-	current->ktable[0] = kobject_create_console(&console_root);
-	current->ktable[1] = kobject_addref(current->ktable[0]);
-	current->ktable[2] = kobject_addref(current->ktable[0]);
-	current->ktable[3] = kobject_create_window(&window_root);
 
 	current->state = PROCESS_STATE_READY;
 
@@ -111,27 +103,18 @@ static int process_allocate_pid()
 	return 0;
 }
 
-void process_selective_inherit(struct process *parent, struct process *child, int * fds, int fd_len)
+void process_selective_inherit(struct process *parent, struct process *child, int * fds, int length)
 {
-	/* Copy kernel objects */
 	int i;
 
-	for (i = 0; i < fd_len; i++)
-	{
-		if(fds[i] > -1) {
-			/*
-				kobject_copy copies the state of the parent and then calls
-				the kobject's addref function
-			*/
-			kobject_copy(parent->ktable[fds[i]], &(child->ktable[i]));
+	for (i=0;i<length;i++) {
+		if(fds[i]>-1) {
+			child->ktable[i] = kobject_copy(parent->ktable[fds[i]]);
+		} else {
+			child->ktable[i] = 0;
 		}
 	}
 
-	/* Inherit current and root directories */
-	child->current_dir = fs_dirent_addref(parent->current_dir);
-	child->root_dir = fs_dirent_addref(parent->root_dir);
-
-	/* Set the parent of the new process to the calling process */
 	child->ppid = parent->pid;
 }
 
@@ -245,8 +228,6 @@ void process_delete(struct process *p)
 			kobject_close(p->ktable[i]);
 		}
 	}
-	fs_dirent_close(p->current_dir);
-	fs_dirent_close(p->root_dir);
 	pagetable_delete(p->pagetable);
 	page_free(p->kstack);
 	page_free(p);

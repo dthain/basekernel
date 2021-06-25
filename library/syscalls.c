@@ -218,7 +218,3 @@ int syscall_device_driver_stats(char * name, void * stats)
 	return syscall(SYSCALL_DEVICE_DRIVER_STATS, (uint32_t) name, (uint32_t) stats, 0, 0, 0);
 }
 
-int syscall_chdir(const char *path)
-{
-	return syscall(SYSCALL_CHDIR, (uint32_t) path, 0, 0, 0, 0);
-}

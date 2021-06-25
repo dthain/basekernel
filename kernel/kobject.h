@@ -46,12 +46,13 @@ struct kobject *kobject_create_file_from_dir( struct kobject *kobject, const cha
 
 struct kobject *kobject_addref(struct kobject *k);
 
+struct kobject * kobject_copy( struct kobject *ksrc );
+
 int kobject_read(struct kobject *kobject, void *buffer, int size, kernel_io_flags_t flags );
 int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **newobj );
 int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_flags_t flags );
 int kobject_list( struct kobject *kobject, void *buffer, int size );
 int kobject_size(struct kobject *kobject, int *dimensions, int n);
-struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst );
 int kobject_remove( struct kobject *kobject, const char *name );
 int kobject_close(struct kobject *kobject);
 

@@ -7,7 +7,7 @@ See the file LICENSE for details.
 
 #include "library/syscalls.h"
 #include "library/string.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 #define MAX_ITERS 2000
 

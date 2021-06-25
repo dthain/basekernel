@@ -17,7 +17,7 @@
 
 #include "kernel/error.h"
 
-static struct kobject *kobject_init()
+static struct kobject *kobject_create()
 {
 	struct kobject *k = kmalloc(sizeof(*k));
 	k->refcount = 1;
@@ -29,7 +29,7 @@ static struct kobject *kobject_init()
 
 struct kobject *kobject_create_file(struct fs_dirent *f)
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_FILE;
 	k->data.file = f;
 	return k;
@@ -37,7 +37,7 @@ struct kobject *kobject_create_file(struct fs_dirent *f)
 
 struct kobject *kobject_create_dir( struct fs_dirent *d )
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_DIR;
 	k->data.dir = d;
 	return k;
@@ -45,7 +45,7 @@ struct kobject *kobject_create_dir( struct fs_dirent *d )
 
 struct kobject *kobject_create_device(struct device *d)
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_DEVICE;
 	k->data.device = d;
 	return k;
@@ -53,7 +53,7 @@ struct kobject *kobject_create_device(struct device *d)
 
 struct kobject *kobject_create_window(struct window *g)
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_WINDOW;
 	k->data.window = g;
 	return k;
@@ -61,7 +61,7 @@ struct kobject *kobject_create_window(struct window *g)
 
 struct kobject *kobject_create_console(struct console *c)
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_CONSOLE;
 	k->data.console = c;
 	return k;
@@ -69,7 +69,7 @@ struct kobject *kobject_create_console(struct console *c)
 
 struct kobject *kobject_create_pipe(struct pipe *p)
 {
-	struct kobject *k = kobject_init();
+	struct kobject *k = kobject_create();
 	k->type = KOBJECT_PIPE;
 	k->data.pipe = p;
 	return k;
@@ -79,6 +79,45 @@ struct kobject *kobject_addref(struct kobject *k)
 {
 	k->refcount++;
 	return k;
+}
+
+struct kobject * kobject_copy( struct kobject *ksrc )
+{
+	struct kobject *kdst = kobject_create();
+
+	kdst->data = ksrc->data;
+	kdst->type = ksrc->type;
+	kdst->offset = ksrc->offset;
+	kdst->refcount = 1;
+
+	if(ksrc->tag) {
+		kdst->tag = strdup(ksrc->tag);
+	} else {
+		kdst->tag = 0;
+	}
+
+	switch (ksrc->type) {
+	case KOBJECT_WINDOW:
+		window_addref(ksrc->data.window);
+		break;
+	case KOBJECT_CONSOLE:
+		console_addref(ksrc->data.console);
+		break;
+	case KOBJECT_FILE:
+		fs_dirent_addref(ksrc->data.file);
+		break;
+	case KOBJECT_DIR:
+		fs_dirent_addref(ksrc->data.dir);
+		break;
+	case KOBJECT_DEVICE:
+		device_addref(ksrc->data.device);
+		break;
+	case KOBJECT_PIPE:
+		pipe_addref(ksrc->data.pipe);
+		break;
+	}
+
+	return kdst;
 }
 
 struct kobject *kobject_create_window_from_window( struct kobject *k, int x, int y, int width, int height )
@@ -244,44 +283,6 @@ int kobject_lookup( struct kobject *kobject, const char *name, struct kobject **
 		return KERROR_NOT_IMPLEMENTED;
 	}
 	return 0;
-}
-
-struct kobject * kobject_copy( struct kobject *ksrc, struct kobject **kdst )
-{
-	/*
-		Shallow copy the state of ksrc to kdst and call addref for underlying
-		type.
-	*/
-	*kdst = kobject_init();
-	(*kdst)->data 			= ksrc->data;
-	(*kdst)->type 			= ksrc->type;
-	(*kdst)->offset 		= ksrc->offset;
-
-	if (ksrc->tag)
-		(*kdst)->tag = strdup(ksrc->tag);
-
-	switch (ksrc->type) {
-	case KOBJECT_WINDOW:
-		window_addref(ksrc->data.window);
-		break;
-	case KOBJECT_CONSOLE:
-		console_addref(ksrc->data.console);
-		break;
-	case KOBJECT_FILE:
-		fs_dirent_addref(ksrc->data.file);
-		break;
-	case KOBJECT_DIR:
-		fs_dirent_addref(ksrc->data.dir);
-		break;
-	case KOBJECT_DEVICE:
-		device_addref(ksrc->data.device);
-		break;
-	case KOBJECT_PIPE:
-		pipe_addref(ksrc->data.pipe);
-		break;
-	}
-
-	return *kdst;
 }
 
 int kobject_remove( struct kobject *kobject, const char *name )

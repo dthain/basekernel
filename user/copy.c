@@ -4,8 +4,6 @@ This software is distributed under the GNU General Public License.
 See the file LICENSE for details.
 */
 
-/* duplicates cdrom to kevinfs disk */
-
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "library/errno.h"
@@ -13,17 +11,17 @@ See the file LICENSE for details.
 int main(int argc, char *argv[])
 {
 	if(argc!=3) {
-		printf("%s: <sourcepath> <destpath>\n");
+		printf("%s: <sourcepath> <destpath>\n",argv[0]);
 		return 1;
 	}
 
-	int src = syscall_open_file(argv[1],0,0);
+	int src = syscall_open_file_relative(KNO_STDDIR,argv[1],0,0);
 	if(src<0) {
 		printf("couldn't open %s: %s\n",argv[1],strerror(src));
 		return 1;
 	}
 
-	int dst = syscall_open_file(argv[2],0,0);
+	int dst = syscall_open_file_relative(KNO_STDDIR,argv[2],0,0);
 	if(dst<0) {
 		printf("couldn't open %s: %s\n",argv[2],strerror(dst));
 		return 1;

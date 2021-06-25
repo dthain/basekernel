@@ -68,4 +68,10 @@ typedef enum {
 	KERNEL_IO_DIRECT=4,
 } kernel_io_flags_t;
 
+#define KNO_STDIN   0
+#define KNO_STDOUT  1
+#define KNO_STDERR  2
+#define KNO_STDWIN  3
+#define KNO_STDDIR  4
+
 #endif

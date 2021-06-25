@@ -9,9 +9,9 @@ A fun graphics demo that features a line segment bouncing around the screen.
 */
 
 #include "library/syscalls.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "library/string.h"
-#include "library/nanowin.h"
+#include "library/nwindow.h"
 
 typedef unsigned int uint32_t;
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		nw_line(nw,x1, y1, x2 - x1, y2 - y1);
 		nw_flush(nw);
 
-		syscall_process_sleep(5);
+		syscall_process_sleep(2);
 	}
 	nw_clear(nw,0, 0, width, height);
 	nw_fgcolor(nw,255, 255, 255);

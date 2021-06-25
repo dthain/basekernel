@@ -36,11 +36,31 @@ static struct kobject * find_kobject_by_tag( const char *tag )
 	return 0;
 }
 
+struct fs_dirent * fs_getroot( struct process *p )
+{
+	struct kobject *k = p->ktable[KNO_STDDIR];
+	if( k && k->type==KOBJECT_DIR ) {
+		return k->data.dir;
+	} else {
+		return 0;
+	}
+}
+
+struct fs_dirent * fs_getcurrent( struct process *p )
+{
+	struct kobject *k = p->ktable[KNO_STDDIR];
+	if( k && k->type==KOBJECT_DIR ) {
+		return k->data.dir;
+	} else {
+		return 0;
+	}
+}
+
 struct fs_dirent *fs_resolve(const char *path)
 {
 	// If the path begins with a slash, navigate from the root directory.
 	if(path[0] == '/') {
-		return fs_dirent_traverse(current->root_dir, &path[1]);
+		return fs_dirent_traverse(fs_getroot(current), &path[1]);
 	}
 
 	// If the path contains a colon, we are dealing with a tag.
@@ -74,7 +94,7 @@ struct fs_dirent *fs_resolve(const char *path)
 	}
 
 	// If there was no tag, then navigate from the current working directory.
-	return fs_dirent_traverse(current->current_dir, path);
+	return fs_dirent_traverse(fs_getcurrent(current), path);
 }
 
 void fs_register(struct fs *f)

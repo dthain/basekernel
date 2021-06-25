@@ -5,7 +5,7 @@ See the file LICENSE for details.
 */
 
 #include "kernel/types.h"
-#include "library/user-io.h"
+#include "library/stdio.h"
 #include "library/syscalls.h"
 #include "library/string.h"
 #include "stdarg.h"

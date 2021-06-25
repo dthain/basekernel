@@ -158,9 +158,8 @@ int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, in
 
 	/* Create the child process */
 	struct process *p = process_create();
-	// process_inherit(current, p);
-	process_selective_inherit(current, p, fds, fd_len);
 
+	process_selective_inherit(current, p, fds, fd_len);
 
 	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
 	struct pagetable *old_pagetable = current->pagetable;
@@ -347,7 +346,7 @@ int sys_open_dir_relative( int fd, const char *path, kernel_flags_t flags )
 
 	if(result>=0) {
 		current->ktable[newfd] = newobj;
-		return fd;
+		return newfd;
 	} else {
 		return result;
 	}
@@ -472,7 +471,7 @@ int sys_object_dup(int fd1, int fd2)
 	if(current->ktable[fd2]) {
 		kobject_close(current->ktable[fd2]);
 	}
-	current->ktable[fd2] = kobject_addref(current->ktable[fd1]);
+	current->ktable[fd2] = kobject_copy(current->ktable[fd1]);
 	return fd2;
 }
 
@@ -550,9 +549,9 @@ int sys_object_size(int fd, int *dims, int n)
 int sys_object_copy( int src, int dst )
 {
 	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
-	if(!is_valid_object(dst)) return KERROR_INVALID_OBJECT;
 
-	kobject_copy(current->ktable[src],&(current->ktable[dst]));
+	sys_object_close(dst);
+	current->ktable[dst] = kobject_copy(current->ktable[src]);
 
 	return 0;
 }
@@ -616,21 +615,6 @@ int sys_device_driver_stats(const char * name, struct device_driver_stats * stat
 
 	device_driver_get_stats(name, stats);
 	return 0;
-}
-
-int sys_chdir(const char *path)
-{
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
-
-	struct fs_dirent *d = fs_resolve(path);
-	if(d) {
-		fs_dirent_close(current->current_dir);
-		current->current_dir = d;
-		return 0;
-	} else {
-		// XXX get error back from namei
-		return KERROR_NOT_FOUND;
-	}
 }
 
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
@@ -723,8 +707,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_system_rtc((struct rtc_time *) a);
 	case SYSCALL_DEVICE_DRIVER_STATS:
 		return sys_device_driver_stats((char *) a, (struct device_driver_stats *) b);
-	case SYSCALL_CHDIR:
-		return sys_chdir((const char *) a);
 	default:
 		return KERROR_INVALID_SYSCALL;
 	}
