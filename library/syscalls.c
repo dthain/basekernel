@@ -83,24 +83,14 @@ extern void *syscall_process_heap(int a)
 	return (void *) syscall(SYSCALL_PROCESS_HEAP, a, 0, 0, 0, 0);
 }
 
-int syscall_open_file(const char *path, int mode, kernel_flags_t flags)
+int syscall_open_file( int fd, const char *path, int mode, kernel_flags_t flags)
 {
-	return syscall(SYSCALL_OPEN_FILE, (uint32_t) path, mode, flags, 0, 0);
+	return syscall(SYSCALL_OPEN_FILE, fd, (uint32_t) path, mode, flags, 0);
 }
 
-int syscall_open_file_relative( int fd, const char *path, int mode, kernel_flags_t flags)
+int syscall_open_dir( int fd, const char *name, kernel_flags_t flags )
 {
-	return syscall(SYSCALL_OPEN_FILE_RELATIVE, fd, (uint32_t) path, mode, flags, 0);
-}
-
-int syscall_open_dir( const char *name, kernel_flags_t flags )
-{
-	return syscall(SYSCALL_OPEN_DIR, (uint32_t) name, flags, 0, 0, 0 );
-}
-
-int syscall_open_dir_relative( int fd, const char *name, kernel_flags_t flags )
-{
-	return syscall(SYSCALL_OPEN_DIR_RELATIVE, fd, (uint32_t) name, flags, 0, 0 );
+	return syscall(SYSCALL_OPEN_DIR, fd, (uint32_t) name, flags, 0, 0 );
 }
 
 int syscall_open_window(int wd, int x, int y, int w, int h)

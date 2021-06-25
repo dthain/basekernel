@@ -119,7 +119,7 @@ int do_command(char *line)
 		const char *arg = strtok(0," ");
 		if(!arg) arg = "/";
 		char buffer[1024];
-		int fd = syscall_open_dir_relative(KNO_STDDIR,arg,0);
+		int fd = syscall_open_dir(KNO_STDDIR,arg,0);
 		if(fd>=0) {
 			int length = syscall_object_list(fd, buffer, 1024);
 			syscall_object_close(fd);
@@ -131,7 +131,7 @@ int do_command(char *line)
 			printf("Incorrect arguments, usage: enter <path>\n");
 			return 1;
 		}
-		int fd = syscall_open_dir_relative(KNO_STDDIR,path,0);
+		int fd = syscall_open_dir(KNO_STDDIR,path,0);
 		if(fd>=0) {
 			syscall_object_dup(fd,KNO_STDDIR);
 			syscall_object_close(fd);
