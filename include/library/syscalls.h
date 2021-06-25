@@ -40,13 +40,12 @@ int syscall_open_pipe();
 /* Syscalls that manipulate kernel objects for this process. */
 
 int syscall_object_type(int fd);
-int syscall_object_dup(int fd1, int fd2);
+int syscall_object_copy( int src, int dst );
 int syscall_object_read(int fd, void *data, int length, kernel_io_flags_t flags );
 int syscall_object_list( int fd, char *buffer, int buffer_len);
 int syscall_object_write(int fd, const void *data, int length, kernel_io_flags_t flags );
 int syscall_object_seek(int fd, int offset, int whence);
 int syscall_object_size(int fd, int * dims, int n);
-int syscall_object_copy( int src, int dst );
 int syscall_object_remove( int fd, const char *name );
 int syscall_object_close(int fd);
 int syscall_object_set_tag(int fd, char *tag);

@@ -408,25 +408,21 @@ int sys_object_type(int fd)
 	return fd_type;
 }
 
-// XXX the direction of dup here is backwards from the typical unix,
-// which dups the second argument into the first.
-
-int sys_object_dup(int fd1, int fd2)
+int sys_object_copy( int src, int dst )
 {
-	if(!is_valid_object(fd1)) return KERROR_INVALID_OBJECT;
-	if(fd2>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
+	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
+	if(dst>PROCESS_MAX_OBJECTS) return KERROR_INVALID_OBJECT;
 
-	if(fd2 < 0) {
-		fd2 = process_available_fd(current);
-		if(!fd2) {
-			return KERROR_NOT_FOUND;
-		}
+	if(dst < 0) {
+		dst = process_available_fd(current);
+		if(dst<0) return KERROR_NOT_FOUND;
 	}
-	if(current->ktable[fd2]) {
-		kobject_close(current->ktable[fd2]);
-	}
-	current->ktable[fd2] = kobject_copy(current->ktable[fd1]);
-	return fd2;
+
+	sys_object_close(dst);
+
+	current->ktable[dst] = kobject_copy(current->ktable[src]);
+
+	return src;
 }
 
 int sys_object_read(int fd, void *data, int length, kernel_io_flags_t flags )
@@ -498,16 +494,6 @@ int sys_object_size(int fd, int *dims, int n)
 
 	struct kobject *p = current->ktable[fd];
 	return kobject_size(p, dims, n);
-}
-
-int sys_object_copy( int src, int dst )
-{
-	if(!is_valid_object(src)) return KERROR_INVALID_OBJECT;
-
-	sys_object_close(dst);
-	current->ktable[dst] = kobject_copy(current->ktable[src]);
-
-	return 0;
 }
 
 int sys_object_max()
@@ -619,8 +605,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_open_pipe();
 	case SYSCALL_OBJECT_TYPE:
 		return sys_object_type(a);
-	case SYSCALL_OBJECT_DUP:
-		return sys_object_dup(a, b);
+	case SYSCALL_OBJECT_COPY:
+		return sys_object_copy(a,b);
 	case SYSCALL_OBJECT_READ:
 		return sys_object_read(a, (void *) b, c, d );
 	case SYSCALL_OBJECT_LIST:
@@ -643,8 +629,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_size(a, (int *) b, c);
 	case SYSCALL_OBJECT_MAX:
 		return sys_object_max(a);
-	case SYSCALL_OBJECT_COPY:
-		return sys_object_copy(a,b);
 	case SYSCALL_SYSTEM_STATS:
 		return sys_system_stats((struct system_stats *) a);
 	case SYSCALL_BCACHE_STATS:

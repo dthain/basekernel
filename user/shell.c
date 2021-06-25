@@ -147,7 +147,7 @@ int do_command(char *line)
 		}
 		int fd = syscall_open_dir(KNO_STDDIR,path,0);
 		if(fd>=0) {
-			syscall_object_dup(fd,KNO_STDDIR);
+			syscall_object_copy(fd,KNO_STDDIR);
 			syscall_object_close(fd);
 			printf("entered %s\n",path);
 		} else {

@@ -113,9 +113,9 @@ int syscall_object_type(int fd)
 	return syscall(SYSCALL_OBJECT_TYPE, fd, 0, 0, 0, 0);
 }
 
-int syscall_object_dup(int fd1, int fd2)
+int syscall_object_copy( int src, int dst )
 {
-	return syscall(SYSCALL_OBJECT_DUP, fd1, fd2, 0, 0, 0);
+	return syscall(SYSCALL_OBJECT_COPY,src,dst,0,0,0);
 }
 
 int syscall_object_read(int fd, void *data, int length, kernel_io_flags_t flags )
@@ -166,11 +166,6 @@ int syscall_object_set_blocking(int fd, int b)
 int syscall_object_size(int fd, int *dims, int n)
 {
 	return syscall(SYSCALL_OBJECT_SIZE, fd, (uint32_t) dims, n, 0, 0);
-}
-
-int syscall_object_copy( int src, int dst )
-{
-	return syscall(SYSCALL_OBJECT_COPY,src,dst,0,0,0);
 }
 
 int syscall_object_max()
