@@ -8,9 +8,9 @@ See the file LICENSE for details.
 #include "pipe.h"
 #include "kmalloc.h"
 #include "process.h"
-#include "list.h"
+#include "page.h"
 
-#define PIPE_SIZE (1024)
+#define PIPE_SIZE PAGE_SIZE
 
 struct pipe {
 	char *buffer;
@@ -24,7 +24,7 @@ struct pipe {
 struct pipe *pipe_create()
 {
 	struct pipe *p = kmalloc(sizeof(*p));
-	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
+	p->buffer = page_alloc(1);
 	p->read_pos = 0;
 	p->write_pos = 0;
 	p->flushed = 0;
@@ -54,7 +54,7 @@ void pipe_delete(struct pipe *p)
 	p->refcount--;
 	if(p->refcount==0) {
 		if(p->buffer) {
-			kfree(p->buffer);
+			page_free(p->buffer);
 		}
 		kfree(p);
 	}
