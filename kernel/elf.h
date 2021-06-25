@@ -9,6 +9,7 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 #include "process.h"
+#include "fs.h"
 
 /*
 elf_load opens the given filename, and if it contains a valid
@@ -17,6 +18,6 @@ loads the text, data, and bss into memory, and updates the
 entry point value in the current process structure.
 */
 
-int elf_load(struct process *p, const char *filename, addr_t * entry);
+int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry);
 
 #endif

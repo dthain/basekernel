@@ -8,6 +8,7 @@ See the file LICENSE for details.
 #include "kernel/syscall.h"
 #include "kernel/stats.h"
 #include "library/string.h"
+#include "library/errno.h"
 
 int main(int argc, const char *argv[])
 {
@@ -17,15 +18,24 @@ int main(int argc, const char *argv[])
 	}
 	unsigned int startTime;
 	syscall_system_time(&startTime);
-	int pid = syscall_process_fork();
-	if (pid == 0) { // child
-		syscall_process_exec(argv[1], argc-1, &argv[1]);
-		printf("exec failed\n");
+
+	int pid;
+	int fd = syscall_open_file(KNO_STDDIR,argv[1],0,0);
+	if(fd>=0) {
+		pid = syscall_process_fork();
+		if (pid == 0) { // child
+			syscall_process_exec(fd, argc-1, &argv[1]);
+			printf("exec failed\n");
+			return 1;
+		} else if (pid < 0) {
+			printf("fork failed\n");
+			return -1;
+		}
+	} else {
+		printf("couldn't find %s: %s\n",argv[1],strerror(fd));
 		return 1;
-	} else if (pid < 0) {
-		printf("fork failed\n");
-		return -1;
 	}
+
 	/* parent */
 	struct process_info info;
 	syscall_process_wait(&info, -1);

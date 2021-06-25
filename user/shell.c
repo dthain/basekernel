@@ -52,14 +52,21 @@ int do_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = syscall_process_fork();
-			if(pid != 0) {
-				printf("started process %d\n", pid);
+			int fd = syscall_open_file(KNO_STDDIR,argv[0],0,0);
+			if(fd>=0) {
+				int pid = syscall_process_fork();
+				if(pid != 0) {
+					printf("started process %d\n", pid);
+				} else {
+					syscall_process_exec(fd, 2, argv);
+				}
 			} else {
-				syscall_process_exec(pch, 2, argv);
+				printf("couldn't find %s: %s\n",argv[0],strerror(fd));
 			}
-		} else
+
+		} else {
 			printf("start: missing argument\n");
+		}
 	} else if(pch && !strcmp(pch, "run")) {
 		pch = strtok(0, " ");
 		if(pch) {
@@ -70,17 +77,24 @@ int do_command(char *line)
 			while((next = strtok(0, " "))) {
 				argv[i++] = next;
 			}
-			int pid = syscall_process_run(argv[0], i,  &argv[0]);
-			if(pid > 0) {
-				printf("started process %d\n", pid);
-				syscall_process_yield();
-				struct process_info info;
-				syscall_process_wait(&info, -1);
-				printf("process %d exited with status %d\n", info.pid, info.exitcode);
-				syscall_process_reap(info.pid);
+			int fd = syscall_open_file(KNO_STDDIR,argv[0],0,0);
+			if(fd>=0) {
+				int pid = syscall_process_run(fd, i,  &argv[0]);
+				if(pid > 0) {
+					printf("started process %d\n", pid);
+					syscall_process_yield();
+					struct process_info info;
+					syscall_process_wait(&info, -1);
+					printf("process %d exited with status %d\n", info.pid, info.exitcode);
+					syscall_process_reap(info.pid);
+				} else {
+					printf("couldn't run %s: %s\n", argv[0],strerror(pid));
+				}
+				syscall_object_close(fd);
 			} else {
-				printf("couldn't run %s: %s\n", argv[0],strerror(pid));
+				printf("couldn't find %s: %s\n", argv[0],strerror(fd));
 			}
+
 		} else {
 			printf("run: requires argument\n");
 		}

@@ -99,13 +99,14 @@ way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
-int sys_process_run(const char *path, int argc, const char **argv)
+int sys_process_run( int fd, int argc, const char **argv)
 {
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+	if(!is_valid_object_type(fd,KOBJECT_FILE)) return KERROR_INVALID_OBJECT;
 
-	/* Copy argv and path into kernel memory. */
+	struct kobject *k = current->ktable[fd];
+
+	/* Copy argv into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
-	char *copy_path = strdup(path);
 
 	/* Create the child process */
 	struct process *p = process_create();
@@ -118,7 +119,7 @@ int sys_process_run(const char *path, int argc, const char **argv)
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, copy_path, &entry);
+	int r = elf_load(p, k->data.file, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -132,7 +133,6 @@ int sys_process_run(const char *path, int argc, const char **argv)
 
 	/* Delete the argument and path copies. */
 	argv_delete(argc, copy_argv);
-	kfree(copy_path);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
@@ -148,13 +148,13 @@ int sys_process_run(const char *path, int argc, const char **argv)
 }
 
 /* Function creates a child process with the standard window replaced by wd */
-int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, int fd_len)
+int sys_process_wrun( int fd, int argc, const char **argv, int *fds, int fd_len)
 {
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+	if(!is_valid_object_type(fd,KOBJECT_FILE)) return KERROR_INVALID_OBJECT;
+	struct kobject *k = current->ktable[fd];
 
 	/* Copy argv array into kernel memory. */
 	char **copy_argv = argv_copy(argc, argv);
-	char *copy_path = strdup(path);
 
 	/* Create the child process */
 	struct process *p = process_create();
@@ -168,7 +168,7 @@ int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, in
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, copy_path, &entry);
+	int r = elf_load(p, k->data.file, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -182,7 +182,6 @@ int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, in
 
 	/* Delete the argument copy. */
 	argv_delete(argc, copy_argv);
-	kfree(copy_path);
 
 	/* If any error happened, return in the context of the parent */
 	if(r < 0) {
@@ -197,9 +196,10 @@ int sys_process_wrun(const char *path, int argc, const char **argv, int *fds, in
 	return p->pid;
 }
 
-int sys_process_exec(const char *path, int argc, const char **argv)
+int sys_process_exec( int fd, int argc, const char **argv)
 {
-	if(!is_valid_path(path)) return KERROR_INVALID_PATH;
+	if(!is_valid_object_type(fd,KOBJECT_FILE)) return KERROR_INVALID_OBJECT;
+	struct kobject *k = current->ktable[fd];
 
 	addr_t entry;
 
@@ -207,7 +207,7 @@ int sys_process_exec(const char *path, int argc, const char **argv)
 	char **copy_argv = argv_copy(argc, argv);
 
 	/* Attempt to load the program image into this process. */
-	int r = elf_load(current, path, &entry);
+	int r = elf_load(current, k->data.file, &entry);
 
 	/* On failure, return only if our address space is not corrupted. */
 	if(r < 0) {
@@ -584,13 +584,13 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 	case SYSCALL_PROCESS_EXIT:
 		return sys_process_exit(a);
 	case SYSCALL_PROCESS_RUN:
-		return sys_process_run((const char *) a, b, (const char **)c);
+		return sys_process_run(a, b, (const char **)c);
 	case SYSCALL_PROCESS_WRUN:
-		return sys_process_wrun((const char *) a, b, (const char **) c, (int *) d, e);
+		return sys_process_wrun(a, b, (const char **) c, (int *) d, e);
 	case SYSCALL_PROCESS_FORK:
 		return sys_process_fork();
 	case SYSCALL_PROCESS_EXEC:
-		return sys_process_exec((const char *) a, b, (const char **) c);
+		return sys_process_exec(a, b, (const char **) c);
 	case SYSCALL_PROCESS_SELF:
 		return sys_process_self();
 	case SYSCALL_PROCESS_PARENT:

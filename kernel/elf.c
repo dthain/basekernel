@@ -89,17 +89,13 @@ struct elf_section {
 #define ELF_SECTION_FLAGS_TLS 1024
 
 
-int elf_load(struct process *p, const char *filename, addr_t * entry)
+int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
 {
 	struct elf_header header;
 	struct elf_program program;
 	struct elf_section section;
 	int i;
 	uint32_t actual;
-
-	struct fs_dirent *d = fs_resolve(filename);
-	if(!d)
-		return KERROR_NOT_FOUND;
 
 	actual = fs_dirent_read(d, (char *) &header, sizeof(header), 0);
 	if(actual != sizeof(header))
@@ -140,22 +136,17 @@ int elf_load(struct process *p, const char *filename, addr_t * entry)
 	}
 
 	*entry = header.entry;
-	fs_dirent_close(d);
-
 	return 0;
 
       noload:
-	printf("elf: %s failed to load correctly!\n", filename);
-	fs_dirent_close(d);
+	printf("elf: failed to load correctly!\n");
 	return KERROR_NOT_FOUND;
 
       noexec:
-	printf("elf: %s is not a valid i386 ELF executable\n", filename);
-	fs_dirent_close(d);
+	printf("elf: not a valid i386 ELF executable\n");
 	return KERROR_NOT_EXECUTABLE;
 
       mustdie:
-	printf("elf: %s did not load correctly\n", filename);
-	fs_dirent_close(d);
+	printf("elf: did not load correctly\n");
 	return KERROR_EXECUTION_FAILED;
 }

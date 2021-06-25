@@ -16,10 +16,10 @@ void syscall_debug(const char *str);
 
 void syscall_process_exit(int status);
 int syscall_process_yield();
-int syscall_process_run(const char *cmd, int argc, const char **argv);
-int syscall_process_wrun(const char *cmd, int argc, const char **argv,  int * fds, int fd_len);
+int syscall_process_run(int fd, int argc, const char **argv);
+int syscall_process_wrun(int fd, int argc, const char **argv,  int * fds, int fd_len);
 int syscall_process_fork();
-int syscall_process_exec(const char *path, int argc, const char **argv);
+int syscall_process_exec(int fd, int argc, const char **argv);
 int syscall_process_self();
 int syscall_process_parent();
 int syscall_process_kill(unsigned int pid);
@@ -32,7 +32,7 @@ extern void *syscall_process_heap(int a);
 /* Syscalls that open or create new kernel objects for this process. */
 
 int syscall_open_file(int fd, const char *path, int mode, kernel_flags_t flags);
-int syscall_open_dir( int fd, const char *name, kernel_flags_t flags );
+int syscall_open_dir( int fd, const char *path, kernel_flags_t flags );
 int syscall_open_window(int fd, int x, int y, int w, int h);
 int syscall_open_console(int fd);
 int syscall_open_pipe();

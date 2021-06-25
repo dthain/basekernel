@@ -14,6 +14,7 @@ events to each based on which one currently has the focus.
 #include "library/stdio.h"
 #include "library/kernel_object_string.h"
 #include "library/nwindow.h"
+#include "library/errno.h"
 
 #define NWINDOWS 4
 
@@ -134,12 +135,17 @@ int main(int argc, char *argv[])
 		args[1] = w->arg;
 		args[2] = 0;
 
-		w->pid = syscall_process_wrun(w->exec, w->argc, args, w->fds, 6);
-		if(w->pid<0) {
-			printf("couldn't exec %d\n",w->pid);
+		int pfd = syscall_open_file(KNO_STDDIR,w->exec,0,0);
+		if(pfd>=0) {
+			w->pid = syscall_process_wrun(pfd, w->argc, args, w->fds, 6);
+			if(w->pid<0) {
+				printf("couldn't run %s: %s\n",w->exec,strerror(pfd));
+				return 0;
+			}
+		} else {
+			printf("couldn't find %s: %s\n",w->exec,strerror(pfd));
 			return 0;
 		}
-
 	}
 
 	/* Finally, allow the user to switch between windows*/

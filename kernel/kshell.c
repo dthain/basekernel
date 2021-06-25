@@ -144,36 +144,52 @@ static int kshell_execute(int argc, const char **argv)
 
 	if(!strcmp(cmd, "start")) {
 		if(argc > 1) {
-			int pid = sys_process_run(argv[1], argc - 1,  &argv[1]);
-			if(pid > 0) {
-				printf("started process %d\n", pid);
-				process_yield();
+			int fd = sys_open_file(KNO_STDDIR,argv[1],0,0);
+			if(fd>=0) {
+				int pid = sys_process_run(fd, argc - 1,  &argv[1]);
+				if(pid > 0) {
+					printf("started process %d\n", pid);
+					process_yield();
+				} else {
+					printf("couldn't start %s\n", argv[1]);
+				}
+				sys_object_close(fd);
 			} else {
-				printf("couldn't start %s\n", argv[1]);
+				printf("couldn't find %s\n",argv[1]);
 			}
 		} else {
 			printf("run: requires argument.\n");
 		}
 	} else if(!strcmp(cmd, "exec")) {
 		if(argc > 1) {
-			sys_process_exec(argv[1], argc - 1, &argv[1]);
-			process_yield();
-			printf("couldn't exec %s\n", argv[1]);
+			int fd = sys_open_file(KNO_STDDIR,argv[1],0,0);
+			if(fd>=0) {
+				sys_process_exec(fd, argc - 1, &argv[1]);
+				process_yield();
+				printf("couldn't exec %s\n", argv[1]);
+			} else {
+				printf("couldn't find %s\n",argv[1]);
+			}
 		} else {
 			printf("exec: requires argument.\n");
 		}
 	} else if(!strcmp(cmd, "run")) {
 		if(argc > 1) {
-			int pid = sys_process_run(argv[1], argc - 1, &argv[1]);
-			if(pid > 0) {
-				printf("started process %d\n", pid);
-				process_yield();
-				struct process_info info;
-				process_wait_child(pid, &info, -1);
-				printf("process %d exited with status %d\n", info.pid, info.exitcode);
-				process_reap(info.pid);
+			int fd = sys_open_file(KNO_STDDIR,argv[1],0,0);
+			if(fd>=0) {
+				int pid = sys_process_run(fd, argc - 1, &argv[1]);
+				if(pid > 0) {
+					printf("started process %d\n", pid);
+					process_yield();
+					struct process_info info;
+					process_wait_child(pid, &info, -1);
+					printf("process %d exited with status %d\n", info.pid, info.exitcode);
+					process_reap(info.pid);
+				} else {
+					printf("couldn't start %s\n", argv[1]);
+				}
 			} else {
-				printf("couldn't start %s\n", argv[1]);
+				printf("couldn't find %s\n",argv[1]);
 			}
 		} else {
 			printf("run: requires argument\n");
@@ -235,24 +251,6 @@ static int kshell_execute(int argc, const char **argv)
 			kshell_listdir(argv[1]);
 		} else {
 			kshell_listdir(".");
-		}
-
-	} else if(!strcmp(cmd, "stress")) {
-		while(1) {
-			const char *argv[] = { "test.exe", "arg1", "arg2", "arg3", "arg4", "arg5", 0 };
-			int pid = sys_process_run("/bin/test.exe", 6, argv);
-			if(pid > 0) {
-				struct process_info info;
-				process_wait_child(pid, &info, -1);
-				printf("process %d exited with status %d\n", info.pid, info.exitcode);
-				process_reap(pid);
-			} else {
-				printf("run failed\n");
-				clock_wait(1000);
-			}
-			uint32_t nfree, ntotal;
-			page_stats(&nfree,&ntotal);
-			printf("memory: %d/%d\n",nfree,ntotal);
 		}
 	} else if(!strcmp(cmd, "mkdir")) {
 		if(argc == 3) {
