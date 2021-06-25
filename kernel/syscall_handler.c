@@ -481,12 +481,6 @@ int sys_object_get_tag(int fd, char *buffer, int buffer_size)
 	return kobject_get_tag(current->ktable[fd], buffer, buffer_size);
 }
 
-int sys_object_set_blocking(int fd, int b)
-{
-	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
-	return kobject_set_blocking(current->ktable[fd], b);
-}
-
 int sys_object_size(int fd, int *dims, int n)
 {
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
@@ -623,8 +617,6 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_object_set_tag(a, (char *) b);
 	case SYSCALL_OBJECT_GET_TAG:
 		return sys_object_get_tag(a, (char *) b, c);
-	case SYSCALL_OBJECT_SET_BLOCKING:
-		return sys_object_set_blocking(a, b);
 	case SYSCALL_OBJECT_SIZE:
 		return sys_object_size(a, (int *) b, c);
 	case SYSCALL_OBJECT_MAX:

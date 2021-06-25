@@ -16,7 +16,6 @@ struct pipe {
 	char *buffer;
 	int read_pos;
 	int write_pos;
-	int blocking;
 	int flushed;
 	int refcount;
 	struct list queue;
@@ -28,7 +27,6 @@ struct pipe *pipe_create()
 	p->buffer = kmalloc(PIPE_SIZE * sizeof(char));
 	p->read_pos = 0;
 	p->write_pos = 0;
-	p->blocking = 1;
 	p->flushed = 0;
 	p->queue.head = 0;
 	p->queue.tail = 0;
@@ -62,22 +60,13 @@ void pipe_delete(struct pipe *p)
 	}
 }
 
-int pipe_set_blocking(struct pipe *p, int b)
-{
-	if(p) {
-		p->blocking = b;
-		return 1;
-	}
-	return 0;
-}
-
-int pipe_write(struct pipe *p, char *buffer, int size)
+static int pipe_write_internal(struct pipe *p, char *buffer, int size, int blocking )
 {
 	if(!p || !buffer) {
 		return -1;
 	}
 	int written = 0;
-	if(p->blocking) {
+	if(blocking) {
 		for(written = 0; written < size; written++) {
 			while((p->write_pos + 1) % PIPE_SIZE == p->read_pos) {
 				if(p->flushed) {
@@ -101,20 +90,30 @@ int pipe_write(struct pipe *p, char *buffer, int size)
 	return written;
 }
 
-int pipe_read_internal(struct pipe *p, char *buffer, int size, int block)
+int pipe_write(struct pipe *p, char *buffer, int size)
+{
+	return pipe_write_internal(p, buffer, size, 1);
+}
+
+int pipe_write_nonblock(struct pipe *p, char *buffer, int size)
+{
+	return pipe_write_internal(p, buffer, size, 0);
+}
+
+static int pipe_read_internal(struct pipe *p, char *buffer, int size, int blocking)
 {
 	if(!p || !buffer) {
 		return -1;
 	}
 	int read = 0;
-	if(p->blocking) {
+	if(blocking) {
 		for(read = 0; read < size; read++) {
 			while(p->write_pos == p->read_pos) {
 				if(p->flushed) {
 					p->flushed = 0;
 					return read;
 				}
-				if (block == 0) {
+				if (blocking == 0) {
 					return -1;
 				}
 				process_wait(&p->queue);

@@ -248,7 +248,11 @@ int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_fla
 	case KOBJECT_DEVICE:
 		return device_write(kobject->data.device, buffer, size / device_block_size(kobject->data.device), 0);
 	case KOBJECT_PIPE:
-		return pipe_write(kobject->data.pipe, buffer, size);
+		if(flags&KERNEL_IO_NONBLOCK) {
+			return pipe_write_nonblock(kobject->data.pipe, buffer, size);
+		} else {
+			return pipe_write(kobject->data.pipe, buffer, size);
+		}
 	default:
 		return 0;
 	}
@@ -332,16 +336,6 @@ int kobject_close(struct kobject *kobject)
 		}
 	}
 	return 0;
-}
-
-int kobject_set_blocking(struct kobject *kobject, int b)
-{
-	switch (kobject->type) {
-	case KOBJECT_PIPE:
-		return pipe_set_blocking(kobject->data.pipe, b);
-	default:
-		return 0;
-	}
 }
 
 int kobject_size(struct kobject *kobject, int *dims, int n)
