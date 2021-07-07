@@ -40,15 +40,14 @@ And you should see something like this:
 
 After some initial boot messages, you will see the kernel shell prompt.
 This allows you to take some simple actions before running the first
-user level program.  For example, read the boot messages to see
-which atapi unit the cdrom is mounted on.  Then, use the <tt>mount</tt> command
-to mount the cdrom filesystem on that unit:
+user level program.  To automatically boot the first available filesystem,
+whether on cdrom or harddisk, run <tt>automount</tt>:
 
 <pre>
-mount atapi 2 cdromfs
+automount
 </pre>
 
-Use the <tt>list</tt> command to examine the root directory:
+Then use the <tt>list</tt> command to examine the root directory:
 
 <pre>
 list /

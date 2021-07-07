@@ -60,7 +60,7 @@ int kernel_main()
 	current->ktable[KNO_STDWIN]  = kobject_create_window(&window_root);
 	current->ktable[KNO_STDDIR]  = 0; // No current dir until something is mounted.
 
-	printf("\nKERNEL SHELL READY:\n");
+	printf("\n");
 	kshell_launch();
 
 	while(1) {
