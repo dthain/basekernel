@@ -61,6 +61,24 @@ static int kshell_mount( const char *devname, int unit, const char *fs_type)
 	return -1;
 }
 
+static int kshell_automount()
+{
+	int i;
+
+	for(i=0;i<4;i++) {
+		printf("automount: trying atapi unit %d...\n",i);
+		if(kshell_mount("atapi",i,"cdromfs")==0) return 0;
+	}
+
+	for(i=0;i<4;i++) {
+		printf("automount: trying ata unit %d...\n",i);
+		if(kshell_mount("ata",i,"simplefs")==0) return 0;
+	}
+
+	printf("automount: no bootable devices available.\n");
+	return -1;
+}
+
 /*
 Install software from the cdrom volume unit src
 to the disk volume dst by performing a recursive copy.
@@ -194,6 +212,8 @@ static int kshell_execute(int argc, const char **argv)
 		} else {
 			printf("run: requires argument\n");
 		}
+	} else if(!strcmp(cmd, "automount")) {
+		kshell_automount();
 	} else if(!strcmp(cmd, "mount")) {
 		if(argc==4) {
 			int unit;
@@ -329,7 +349,7 @@ static int kshell_execute(int argc, const char **argv)
 	} else if(!strcmp(cmd,"bcache_flush")) {
 		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nautomount\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}
