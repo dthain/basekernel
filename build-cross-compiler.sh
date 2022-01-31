@@ -2,7 +2,7 @@
 
 GCC="gcc-8.2.0"
 BINUTILS="binutils-2.31.1"
-GDB="gdb-8.2"
+GDB="gdb-9.1"
 
 CURRDIR=`pwd`
 PREFIX=$CURRDIR/cross
@@ -52,10 +52,12 @@ make all-gcc && make all-target-libgcc && make install-gcc && make install-targe
 cd ..
 
 # build and install GDB
-cd $GDB
-./configure --prefix="$PREFIX" --target=i686-elf
+mkdir ${GDB}-build
+cd ${GDB}-build
+../${GDB}/configure --prefix="$PREFIX" --target=i686-elf
 make && make install
 cd ..
 
 cd "$CURRDIR"
 rm -rf "$WORKDIR"
+
