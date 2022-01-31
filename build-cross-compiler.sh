@@ -17,19 +17,19 @@ cd "$WORKDIR"
 
 if [ ! -d $BINUTILS ]
 then
-	curl -O https://ftp.gnu.org/gnu/binutils/$BINUTILS.tar.gz
+	curl --insecure -O https://ftp.gnu.org/gnu/binutils/$BINUTILS.tar.gz
 	tar -zxf $BINUTILS.tar.gz
 fi
 
 if [ ! -d $GCC ]
 then
-	curl -O https://ftp.gnu.org/gnu/gcc/$GCC/$GCC.tar.gz
+	curl --insecure -O https://ftp.gnu.org/gnu/gcc/$GCC/$GCC.tar.gz
 	tar -zxf $GCC.tar.gz
 fi
 
 if [ ! -d $GDB ]
 then
-	curl -O http://ftp.gnu.org/gnu/gdb/$GDB.tar.gz
+	curl --insecure -O http://ftp.gnu.org/gnu/gdb/$GDB.tar.gz
 	tar -zxf $GDB.tar.gz
 fi
 
