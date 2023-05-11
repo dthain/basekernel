@@ -76,6 +76,8 @@ Recommended reading: page 11-15 of the RTC data sheet
 
 #define LEAP_YEAR(Y) ( (Y>0) && !(Y%4) && ( (Y%100) || !(Y%400) ) )
 
+uint32_t boottime;
+
 static const uint8_t monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 static uint8_t rtc_bcd_to_binary(uint8_t bcd)

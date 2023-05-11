@@ -9,7 +9,7 @@ See the file LICENSE for details.
 
 #include "kernel/types.h"
 
-uint32_t boottime;
+extern uint32_t boottime;
 
 void rtc_init();
 void rtc_read(struct rtc_time *t);
