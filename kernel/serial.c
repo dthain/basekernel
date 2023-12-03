@@ -99,8 +99,7 @@ char serial_read(uint8_t port_no)
 		return -1;
 
 	while(serial_received(serial_ports[port_no]) == 0);
-	inb(serial_ports[port_no]);
-	return 0;
+	return inb(serial_ports[port_no]);
 }
 
 int serial_write(uint8_t port_no, char a)
