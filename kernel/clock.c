@@ -9,13 +9,14 @@ See the file LICENSE for details.
 #include "ioports.h"
 #include "process.h"
 
-#define CLICKS_PER_SECOND 10
+// Minimum PIT frequency is 18.2Hz.
+#define CLICKS_PER_SECOND 20
 
 #define TIMER0		0x40
 #define TIMER_MODE	0x43
 #define SQUARE_WAVE     0x36
 #define TIMER_FREQ	1193182
-#define TIMER_COUNT	(((unsigned)TIMER_FREQ)/CLICKS_PER_SECOND/2)
+#define TIMER_COUNT	(((unsigned)TIMER_FREQ)/CLICKS_PER_SECOND)
 
 static uint32_t clicks = 0;
 static uint32_t seconds = 0;
