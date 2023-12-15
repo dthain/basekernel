@@ -14,6 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install
+      run: sudo apt-get install -y genisoimage
+      
     - name: Build
       run: make
       
