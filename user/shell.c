@@ -2,6 +2,7 @@
 #include "library/syscalls.h"
 #include "kernel/types.h"
 #include "library/stdio.h"
+#include "library/stdlib.h"
 #include "kernel/ascii.h"
 #include "library/errno.h"
 #include "library/kernel_object_string.h"
@@ -158,7 +159,7 @@ int do_command(char *line)
 	} else if(pch && !strcmp(pch, "help")) {
 		printf("Commands:\necho <text>\nrun <path>\nmount <unit_no> <fs_type>\nlist\nstart <path>\nkill <pid>\nreap <pid>\nwait\ntable\nhelp\nexit\n");
 	} else if(pch && !strcmp(pch, "exit")) {
-		return -1;
+		exit(0);
 	} else if(pch) {
 		printf("%s: command not found\n", pch);
 	}
