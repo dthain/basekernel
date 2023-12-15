@@ -176,12 +176,12 @@ outb %al, $0x92
 	mov	%eax, %cr0		# store the status word
 					# (we are now in protected mode)
 	mov	$2*8, %ax		# selector two is flat 4GB data data
-	mov	%ax, %ds		# set stack and data segments to selector two
+	mov	%ax, %ds		# set data, extra, and stack segments to selector two
+	mov	%ax, %es
 	mov	%ax, %ss
 	mov	$5*8, %ax		# set TSS to selector five
 	ltr	%ax
 	mov	$0, %ax			# unused segments are nulled out
-	mov	%ax, %es
 	mov	%ax, %fs
 	mov	%ax, %gs
 	mov	$INTERRUPT_STACK_TOP, %sp    # set up initial C stack
@@ -404,34 +404,42 @@ intr47: pushl $0 ; pushl $47 ; jmp intr_handler
 intr48: pushl $0 ; pushl $48 ; jmp intr_syscall
 
 intr_handler:
-	pushl	%ds
-	pushl	%ebp		# push regs
+	pushl	%ds		# push segment registers
+	pushl	%es
+	pushl	%fs
+	pushl	%gs
+	pushl	%ebp		# push general regs
 	pushl	%edi
 	pushl	%esi
 	pushl	%edx
 	pushl	%ecx
 	pushl	%ebx
 	pushl	%eax
-	pushl	36(%esp)	# push interrupt code
-	pushl	36(%esp)	# push interrupt number
-	movl	$2*8, %eax	# switch to kernel data seg
+	pushl	48(%esp)	# push interrupt code from above
+	pushl	48(%esp)	# push interrupt number from above
+	movl	$2*8, %eax	# switch to kernel data seg and extra seg
 	movl	%eax, %ds
+	movl	%eax, %es
 	call	interrupt_handler
 	addl	$4, %esp	# remove interrupt number
 	addl	$4, %esp	# remove interrupt code
 	jmp	intr_return
 	
 intr_syscall:
-	pushl	%ds
-	pushl	%ebp		# push regs
+	pushl	%ds		# push segment registers
+	pushl	%es
+	pushl	%fs
+	pushl	%gs
+	pushl	%ebp		# push general regs
 	pushl	%edi
 	pushl	%esi
 	pushl	%edx
 	pushl	%ecx
 	pushl	%ebx
 	pushl	%eax		# note these *are* the syscall args
-	movl	$2*8, %eax	# switch to kernel data seg
+	movl	$2*8, %eax	# switch to kernel data seg and extra seg
 	movl	%eax, %ds
+	movl	%eax, %es
 	call	syscall_handler
 	addl	$4, %esp	# remove the old eax
 	jmp	syscall_return	
@@ -446,6 +454,9 @@ syscall_return:
 	popl	%esi
 	popl	%edi
 	popl	%ebp
+	popl	%gs
+	popl	%fs
+	popl	%es
 	popl	%ds
 	addl	$4, %esp	# remove interrupt num
 	addl	$4, %esp	# remove detail code
