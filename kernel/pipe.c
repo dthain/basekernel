@@ -24,7 +24,13 @@ struct pipe {
 struct pipe *pipe_create()
 {
 	struct pipe *p = kmalloc(sizeof(*p));
+	if(!p) return 0;
+	
 	p->buffer = page_alloc(1);
+	if(!p->buffer) {
+		kfree(p);
+		return 0;
+	}
 	p->read_pos = 0;
 	p->write_pos = 0;
 	p->flushed = 0;
