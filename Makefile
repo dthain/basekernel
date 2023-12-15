@@ -5,6 +5,7 @@ LIBRARY_HEADERS=$(wildcard library/*.h)
 USER_SOURCES=$(wildcard user/*.c)
 USER_PROGRAMS=$(USER_SOURCES:c=exe)
 KERNEL_SOURCES=$(wildcard kernel/*.[chS])
+WORDS=/usr/share/dict/words
 
 all: basekernel.iso
 
@@ -31,7 +32,7 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 	mkdir image image/boot image/bin image/data
 	cp kernel/basekernel.img image/boot
 	cp $(USER_PROGRAMS) image/bin
-	head -2000 /usr/share/dict/words > image/data/words
+	[ -f ${WORDS} ] && head -2000 ${WORDS} > image/data/words
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
