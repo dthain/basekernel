@@ -89,6 +89,25 @@ struct elf_section {
 #define ELF_SECTION_FLAGS_TLS 1024
 
 
+/* Ensure that the current process has address space up to this value. */
+
+static int elf_ensure_address_space( struct process *p, uint32_t addr )
+{
+	/* Size of user data area, ignoring start addr */
+	uint32_t limit = addr - PROCESS_ENTRY_POINT;
+
+	/* Round up to next page size. */
+	uint32_t overflow = limit % PAGE_SIZE;
+	limit += (PAGE_SIZE-overflow);
+
+	/* Extend virtual memory if needed. */
+	if(limit > p->vm_data_size) {
+		return process_data_size_set(p,limit);
+	} else {
+		return 1;
+	}
+}
+ 
 int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
 {
 	struct elf_header header;
@@ -125,11 +144,16 @@ int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
 			goto mustdie;
 
 		if(section.type == ELF_SECTION_TYPE_BSS) {
-			uint32_t limit = section.address + section.size - PROCESS_ENTRY_POINT;
-			if(limit > p->vm_data_size) {
-				process_data_size_set(p, section.address + section.size - PROCESS_ENTRY_POINT);
-				memset((void *) section.address, section.size, 0);
-			}
+			/* For BSS, just clear that address space to zero. */
+			actual = elf_ensure_address_space(p,section.address+section.size);
+			if(!actual) goto nomem;
+			memset((void *) section.address, section.size, 0);
+		} else if(section.type == ELF_SECTION_TYPE_PROGRAM && section.address!=0) {
+			/* For other loadable section types (usually data), load from file. */
+			actual = elf_ensure_address_space(p,section.address+section.size);
+			if(!actual) goto nomem;
+			actual = fs_dirent_read(d,(char*)section.address,section.size,section.offset);
+			if(actual != section.size) goto mustdie;
 		} else {
 			/* skip all other section types */
 		}
@@ -145,6 +169,10 @@ int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
       noexec:
 	printf("elf: not a valid i386 ELF executable\n");
 	return KERROR_NOT_EXECUTABLE;
+
+      nomem:
+	printf("elf: failed to allocate memory\n");
+	return KERROR_OUT_OF_MEMORY;
 
       mustdie:
 	printf("elf: did not load correctly\n");

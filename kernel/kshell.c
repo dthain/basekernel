@@ -387,6 +387,8 @@ int kshell_launch()
 	const char *argv[100];
 	int argc;
 
+	kshell_mount("atapi",2,"cdromfs");
+	
 	while(1) {
 		printf("kshell> ");
 		kshell_readline(line, sizeof(line));
