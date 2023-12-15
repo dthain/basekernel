@@ -82,7 +82,7 @@ void *page_alloc(bool zeroit)
 					if(zeroit)
 						memset(pageaddr, 0, PAGE_SIZE);
 					pages_free--;
-					printf("page: alloc %d\n",pages_free);
+					//printf("page: alloc %d\n",pages_free);
 					return pageaddr;
 				}
 			}
@@ -103,5 +103,5 @@ void page_free(void *pageaddr)
 	uint32_t cellmask = (1 << celloffset);
 	freemap[cellnumber] |= cellmask;
 	pages_free++;
-	printf("page: free %d\n",pages_free);
+	//printf("page: free %d\n",pages_free);
 }
