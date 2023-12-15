@@ -6,13 +6,24 @@ See the file LICENSE for details.
 
 #include "library/syscalls.h"
 #include "library/string.h"
+#include "library/stdio.h"
+
+struct system_stats s = {0};
 
 int main(int argc, char *argv[])
 {
-	struct system_stats s = {0};
+	printf("a");
+	flush();
+	
+	printf("b");
+	flush();
+	
 	if (syscall_system_stats(&s)) {
 		return 1;
 	}
+	printf("c");
+	flush();
+	
 
 	printf("System uptime: %u:%u:%u\n", s.time / (3600), (s.time % 3600) / 60, s.time % 60);
 	printf("Disk 0: %d blocks read, %d blocks written\n", s.blocks_read[0], s.blocks_written[0]);

@@ -14,9 +14,19 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install
+    - name: Setup
       run: sudo apt-get install -y genisoimage
       
-    - name: Build
-      run: make
-      
+    - name: Build Kernel
+      run: make build-kernel
+
+    - name: Build Standard Library
+      run: make build-library
+
+    - name: Build Userspace
+      run: make build-userspace
+
+    - name: Build CDROM Image
+      run: make build-cdrom-image
+
+     
