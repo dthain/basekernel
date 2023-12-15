@@ -32,7 +32,7 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 	mkdir image image/boot image/bin image/data
 	cp kernel/basekernel.img image/boot
 	cp $(USER_PROGRAMS) image/bin
-	[ -f ${WORDS} ] && head -2000 ${WORDS} > image/data/words
+	if [ -f ${WORDS} ]; then head -2000 ${WORDS} > image/data/words; fi
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
