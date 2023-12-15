@@ -57,13 +57,21 @@ struct x86_regs {
 };
 
 struct x86_stack {
+	/* Registers saved by process_switch */
 	struct x86_regs regs2;
+	/* Stack frame of process_switch */
 	int32_t old_ebp;
 	int32_t old_eip;
+	/* Pushed by intr_handler in kernelcore */
 	struct x86_regs regs1;
+	int32_t gs;
+	int32_t fs;
+	int32_t es;
 	int32_t ds;
+	/* Pushed by intrXX in kernelcore. */
 	int32_t intr_num;
 	int32_t intr_code;
+	/* Pushed by X86 CPU Hardware. */
 	int32_t eip;
 	int32_t cs;
 	struct x86_eflags eflags;

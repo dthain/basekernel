@@ -48,6 +48,9 @@ void process_kstack_reset(struct process *p, unsigned entry_point)
 	s->regs2.ebp = (uint32_t) (p->kstack_ptr + 28);
 	s->old_ebp = (uint32_t) (p->kstack_ptr + 32);
 	s->old_eip = (unsigned) intr_return;
+	s->fs = 0;
+	s->gs = 0;
+	s->es = X86_SEGMENT_USER_DATA;
 	s->ds = X86_SEGMENT_USER_DATA;
 	s->cs = X86_SEGMENT_USER_CODE;
 	s->eip = entry_point;
