@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
 
 	/* The workaround here is to explicitly set up the es register prior to using it.*/
 	
-	asm("movl %ds, %ax");
-	asm("movl %ax, %es");
+	asm("mov %ds, %ax");
+	asm("mov %ax, %es");
 
 	struct system_stats s = {0};
 	
