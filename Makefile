@@ -7,9 +7,9 @@ USER_PROGRAMS=$(USER_SOURCES:c=exe)
 KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 WORDS=/usr/share/dict/words
 
-.PHONY: build-kernel build-library build-userspace build-iso
+.PHONY: build-kernel build-library build-userspace build-cdrom-image
 
-all: build-iso
+all: build-cdrom-image
 
 build-kernel: kernel/basekernel.img
 
