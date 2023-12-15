@@ -7,25 +7,26 @@ USER_PROGRAMS=$(USER_SOURCES:c=exe)
 KERNEL_SOURCES=$(wildcard kernel/*.[chS])
 WORDS=/usr/share/dict/words
 
-all: basekernel.iso
+.PHONY: build-kernel build-library build-userspace build-iso
 
-run: basekernel.iso disk.img
-	qemu-system-i386 -cdrom basekernel.iso -hda disk.img
+all: build-iso
 
-debug: basekernel.iso disk.img
-	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
+build-kernel: kernel/basekernel.img
 
-disk.img:
-	qemu-img create disk.img 10M
+build-library: library/baselib.a
+
+build-userspace: $(USER_PROGRAMS)
+
+build-cdrom-image: basekernel.iso
+
+kernel/basekernel.img: $(KERNEL_SOURCES) $(LIBRARY_HEADERS)
+	cd kernel && make
 
 library/baselib.a: $(LIBRARY_SOURCES) $(LIBRARY_HEADERS)
 	cd library && make
 
 $(USER_PROGRAMS): $(USER_SOURCES) library/baselib.a $(LIBRARY_HEADERS)
 	cd user && make
-
-kernel/basekernel.img: $(KERNEL_SOURCES) $(LIBRARY_HEADERS)
-	cd kernel && make
 
 image: kernel/basekernel.img $(USER_PROGRAMS)
 	rm -rf image
@@ -36,6 +37,15 @@ image: kernel/basekernel.img $(USER_PROGRAMS)
 
 basekernel.iso: image
 	${ISOGEN} -input-charset utf-8 -iso-level 2 -J -R -o $@ -b boot/basekernel.img image
+
+disk.img:
+	qemu-img create disk.img 10M
+
+run: basekernel.iso disk.img
+	qemu-system-i386 -cdrom basekernel.iso -hda disk.img
+
+debug: basekernel.iso disk.img
+	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
 
 clean:
 	rm -rf basekernel.iso image
