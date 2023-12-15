@@ -48,7 +48,7 @@ debug: basekernel.iso disk.img
 	qemu-system-i386 -cdrom basekernel.iso -hda disk.img -s -S &
 
 clean:
-	rm -rf basekernel.iso image
+	rm -rf basekernel.iso image disk.img
 	cd kernel && make clean
 	cd library && make clean
 	cd user && make clean
