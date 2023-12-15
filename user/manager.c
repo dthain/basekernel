@@ -42,6 +42,13 @@ struct window {
 
 struct nwindow *nw = 0;
 
+struct window windows[NWINDOWS] = {
+	{ .x=0, .y=0, .console_mode=1, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
+	{ .x=0, .y=0, .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
+	{ .x=0, .y=0, .console_mode=0, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
+	{ .x=0, .y=0, .console_mode=1, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
+};
+
 void draw_border( struct window *win, int isactive )
 {
 	int x=win->x;
@@ -83,26 +90,25 @@ void draw_border( struct window *win, int isactive )
 
 int main(int argc, char *argv[])
 {
+	/* Obtain the default window from parent process. */
 	nw = nw_create_default();
-
 	nw_clear(nw,0, 0, nw_width(nw), nw_height(nw));
 	nw_flush(nw);
 
-	struct event e;
-
-	struct window windows[NWINDOWS] = {
-		{ .x=0,         .y=0,         .console_mode=1, .exec = "bin/shell.exe", .arg=0, .argc = 2 },
-		{ .x=nw_width(nw)/2, .y=0,         .console_mode=0, .exec = "bin/saver.exe", .arg=0, .argc = 2 },
-		{ .x=0,         .y=nw_height(nw)/2, .console_mode=0, .exec = "bin/snake.exe", .arg=0, .argc = 2 },
-		{ .x=nw_width(nw)/2, .y=nw_height(nw)/2, .console_mode=1, .exec = "bin/fractal.exe", .arg=0, .argc = 2 },
-	};
-
+	/* Distribute window locations across screen. */
+	
 	int i;
 	for(i=0;i<NWINDOWS;i++) {
-		windows[i].w = nw_width(nw)/2-2;
-		windows[i].h = nw_height(nw)/2-2;
+		struct window *w = &windows[i];
+		w->x = i%2 ? nw_width(nw)/2 : 0;
+		w->y = i/2 ? nw_height(nw)/2 : 0;
+		w->w = nw_width(nw)/2-2;
+		w->h = nw_height(nw)/2-2;
+		//printf("window %d %d %d %d %d %s\n",i,w->w,w->h,w->x,w->y,w->exec);
 	}
 
+	/* Open each window and connect the various pipes. */
+	
 	for(i=0;i<NWINDOWS;i++) {
 		struct window *w = &windows[i];
 
@@ -139,12 +145,18 @@ int main(int argc, char *argv[])
 		if(pfd>=0) {
 			w->pid = syscall_process_wrun(pfd, w->argc, args, w->fds, 6);
 			if(w->pid<0) {
-				printf("couldn't run %s: %s\n",w->exec,strerror(pfd));
-				return 0;
+				nw_string(child,10,10,"Unable to start process:");
+				nw_string(child,10,20,w->exec);
+				nw_string(child,10,30,strerror(pfd));
+				nw_flush(child);
+				/* keep going, let other processes run. */
 			}
 		} else {
-			printf("couldn't find %s: %s\n",w->exec,strerror(pfd));
-			return 0;
+			nw_string(child,10,10,"Unable to access program:");
+			nw_string(child,10,20,w->exec);
+			nw_string(child,10,30,strerror(pfd));
+			nw_flush(child);
+			/* keep going, let other processes run. */
 		}
 	}
 
@@ -155,7 +167,8 @@ int main(int argc, char *argv[])
 	draw_border(&windows[active],1);
 	nw_flush(nw);
 
-	//struct event e;
+	/* Now wait for events to arrive at the manager. */
+	struct event e;
 	while (nw_next_event(nw,&e)) {
 
 		if(e.type==EVENT_CLOSE) break;
