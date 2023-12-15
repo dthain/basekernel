@@ -104,8 +104,10 @@ static int elf_ensure_address_space( struct process *p, uint32_t addr )
 	if(limit > p->vm_data_size) {
 		return process_data_size_set(p,limit);
 	} else {
-		return 1;
+		return 0;
 	}
+
+	/* Return zero on success. */
 }
  
 int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
@@ -146,12 +148,12 @@ int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
 		if(section.type == ELF_SECTION_TYPE_BSS) {
 			/* For BSS, just clear that address space to zero. */
 			actual = elf_ensure_address_space(p,section.address+section.size);
-			if(!actual) goto nomem;
+			if(actual!=0) goto nomem;
 			memset((void *) section.address, section.size, 0);
 		} else if(section.type == ELF_SECTION_TYPE_PROGRAM && section.address!=0) {
 			/* For other loadable section types (usually data), load from file. */
 			actual = elf_ensure_address_space(p,section.address+section.size);
-			if(!actual) goto nomem;
+			if(actual!=0) goto nomem;
 			actual = fs_dirent_read(d,(char*)section.address,section.size,section.offset);
 			if(actual != section.size) goto mustdie;
 		} else {
