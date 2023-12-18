@@ -25,7 +25,7 @@ See the file LICENSE for details.
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
 	if(current->ktable[KNO_STDDIR]) {
-		printf("root filesystem already mounted, please unmount first");
+		printf("root filesystem already mounted, please unmount first\n");
 		return -1;
 	}
 
