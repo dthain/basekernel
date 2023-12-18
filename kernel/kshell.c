@@ -85,15 +85,15 @@ to the disk volume dst by performing a recursive copy.
 XXX This needs better error checking.
 */
 
-int kshell_install( const char *src_device_name, int src_unit, const char *dst_device_name, int dst )
+int kshell_install( const char *src_device_name, int src_unit, const char *dst_device_name, int dst_unit )
 {
 	struct fs *srcfs = fs_lookup("cdromfs");
 	struct fs *dstfs = fs_lookup("diskfs");
 
 	if(!srcfs || !dstfs) return KERROR_NOT_FOUND;
 
-	struct device *srcdev = device_open(src_device_name,src);
-	struct device *dstdev = device_open(dst_device_name,dst);
+	struct device *srcdev = device_open(src_device_name,src_unit);
+	struct device *dstdev = device_open(dst_device_name,dst_unit);
 
 	if(!srcdev || !dstdev) return KERROR_NOT_FOUND;
 
@@ -105,7 +105,7 @@ int kshell_install( const char *src_device_name, int src_unit, const char *dst_d
 	struct fs_dirent *srcroot = fs_volume_root(srcvolume);
 	struct fs_dirent *dstroot = fs_volume_root(dstvolume);
 
-	printf("copying %s unit %d to %s unit %d...\n",src_device_name,src,dst_device_name,dst);
+	printf("copying %s unit %d to %s unit %d...\n",src_device_name,src_unit,dst_device_name,dst_unit);
 
 	fs_dirent_copy(srcroot, dstroot,0);
 
