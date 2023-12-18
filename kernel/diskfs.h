@@ -38,12 +38,15 @@ struct diskfs_inode {
 #define DISKFS_ITEM_FILE 1
 #define DISKFS_ITEM_DIR 2
 
+/* Maximum name length chosen so that diskfs_item is 32 bytes. */
+#define DISKFS_NAME_MAX 26
+
 #pragma pack(1)
 struct diskfs_item {
 	uint32_t inumber;
 	uint8_t  type;
 	uint8_t  name_length;
-	char     name[26];
+	char     name[DISKFS_NAME_MAX];
 };
 #pragma pack()
 

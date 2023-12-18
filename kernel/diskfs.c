@@ -391,6 +391,8 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 
 struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const char *name, int type )
 {
+	if(strlen(name)>DISKFS_NAME_MAX) return 0; // KERROR_NAME_TOO_LONG
+	
 	struct fs_dirent *t = diskfs_dirent_lookup(d,name);
 	if(t) {
 		diskfs_dirent_close(t);
