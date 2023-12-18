@@ -387,8 +387,6 @@ int kshell_launch()
 	const char *argv[100];
 	int argc;
 
-	kshell_automount();
-	
 	while(1) {
 		printf("kshell> ");
 		kshell_readline(line, sizeof(line));
