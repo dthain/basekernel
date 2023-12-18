@@ -309,6 +309,8 @@ void process_preempt()
 
 void process_yield()
 {
+	/* no-op if process module not yet initialized. */
+	if(!current) return;
 	process_switch(PROCESS_STATE_READY);
 }
 

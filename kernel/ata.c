@@ -130,7 +130,7 @@ static int ata_wait(int id, int mask, int state)
 			ata_reset(id);
 			return 0;
 		}
-		clock_wait(0);
+		process_yield();
 	}
 }
 
