@@ -25,7 +25,7 @@ See the file LICENSE for details.
 static int kshell_mount( const char *devname, int unit, const char *fs_type)
 {
 	if(current->ktable[KNO_STDDIR]) {
-		printf("root filesystem already mounted, please unmount first");
+		printf("root filesystem already mounted, please unmount first\n");
 		return -1;
 	}
 
@@ -85,15 +85,15 @@ to the disk volume dst by performing a recursive copy.
 XXX This needs better error checking.
 */
 
-int kshell_install( int src, int dst )
+int kshell_install( const char *src_device_name, int src_unit, const char *dst_device_name, int dst_unit )
 {
 	struct fs *srcfs = fs_lookup("cdromfs");
 	struct fs *dstfs = fs_lookup("diskfs");
 
 	if(!srcfs || !dstfs) return KERROR_NOT_FOUND;
 
-	struct device *srcdev = device_open("atapi",src);
-	struct device *dstdev = device_open("ata",dst);
+	struct device *srcdev = device_open(src_device_name,src_unit);
+	struct device *dstdev = device_open(dst_device_name,dst_unit);
 
 	if(!srcdev || !dstdev) return KERROR_NOT_FOUND;
 
@@ -105,7 +105,7 @@ int kshell_install( int src, int dst )
 	struct fs_dirent *srcroot = fs_volume_root(srcvolume);
 	struct fs_dirent *dstroot = fs_volume_root(dstvolume);
 
-	printf("copying atapi unit %d to ata unit %d...\n",src,dst);
+	printf("copying %s unit %d to %s unit %d...\n",src_device_name,src_unit,dst_device_name,dst_unit);
 
 	fs_dirent_copy(srcroot, dstroot,0);
 
@@ -309,13 +309,13 @@ static int kshell_execute(int argc, const char **argv)
 			}
 		}
 	} else if(!strcmp(cmd,"install")) {
-		if(argc==3) {
+		if(argc==5) {
 			int src, dst;
-			str2int(argv[1], &src);
-			str2int(argv[2], &dst);
-			kshell_install(src,dst);
+			str2int(argv[2], &src);
+			str2int(argv[4], &dst);
+			kshell_install(argv[1],src,argv[3],dst);
 		} else {
-			printf("install: expected unit #s for cdrom and disk\n");
+			printf("install: expected src-device-name src-unit dest-device-name dest-unit\n");
 		}
 
 	} else if(!strcmp(cmd, "remove")) {
@@ -349,7 +349,7 @@ static int kshell_execute(int argc, const char **argv)
 	} else if(!strcmp(cmd,"bcache_flush")) {
 		bcache_flush_all();
 	} else if(!strcmp(cmd, "help")) {
-		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nautomount\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall <srcunit> <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
+		printf("Kernel Shell Commands:\nrun <path> <args>\nstart <path> <args>\nkill <pid>\nreap <pid>\nwait\nlist\nautomount\nmount <device> <unit> <fstype>\numount\nformat <device> <unit><fstype>\ninstall atapi <srcunit> ata <dstunit>\nmkdir <path>\nremove <path>time\nbcache_stats\nbcache_flush\nreboot\nhelp\n\n");
 	} else {
 		printf("%s: command not found\n", argv[0]);
 	}
@@ -387,8 +387,6 @@ int kshell_launch()
 	const char *argv[100];
 	int argc;
 
-	kshell_automount();
-	
 	while(1) {
 		printf("kshell> ");
 		kshell_readline(line, sizeof(line));

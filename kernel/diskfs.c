@@ -273,6 +273,13 @@ int diskfs_dirent_close( struct fs_dirent *d )
 	return 0;
 }
 
+/* Returns true if two strings a and b (with lengths) have the same contents. Note that diskfs_item.name is not null-terminated but has diskfs_item.name_length characters. When comparing to a null-terminated string, we must check the length first and then the bytes of the string. */
+
+static int diskfs_name_equals( const char *a, int alength, const char *b, int blength )
+{
+	return alength==blength && !strncmp(a,b,alength);
+}
+
 struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 {
 	struct diskfs_block *b = page_alloc(0);
@@ -281,11 +288,13 @@ struct fs_dirent * diskfs_dirent_lookup( struct fs_dirent *d, const char *name )
 	int nblocks = d->size / DISKFS_BLOCK_SIZE;
 	if(d->size%DISKFS_BLOCK_SIZE) nblocks++;
 
+	int name_length = strlen(name);
+	
 	for(i=0;i<nblocks;i++) {
 		diskfs_inode_read(d,b,i);
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
-			if(r->type!=DISKFS_ITEM_BLANK && !strncmp(name,r->name,r->name_length)) {
+			if(r->type!=DISKFS_ITEM_BLANK && diskfs_name_equals(name,name_length,r->name,r->name_length)) {
 				int inumber = r->inumber;
 				page_free(b);
 				return diskfs_dirent_create(d->volume,inumber,r->type);
@@ -382,6 +391,8 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 
 struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const char *name, int type )
 {
+	if(strlen(name)>DISKFS_NAME_MAX) return 0; // KERROR_NAME_TOO_LONG
+	
 	struct fs_dirent *t = diskfs_dirent_lookup(d,name);
 	if(t) {
 		diskfs_dirent_close(t);
@@ -389,7 +400,9 @@ struct fs_dirent * diskfs_dirent_create_file_or_dir( struct fs_dirent *d, const 
 	}
 
 	int inumber = diskfs_inumber_alloc(d->volume);
-	if(inumber==0) return 0; // KERROR_OUT_OF_SPACE
+	if(inumber==0) {
+		return 0; // KERROR_OUT_OF_SPACE
+	}
 
 	struct diskfs_inode inode;
 	memset(&inode,0,sizeof(inode));
@@ -454,7 +467,7 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
 
-			if(r->type!=DISKFS_ITEM_BLANK && r->name_length==name_length && !strncmp(name,r->name,name_length)) {
+			if(r->type!=DISKFS_ITEM_BLANK && r->name_length==name_length && diskfs_name_equals(name,name_length,r->name,r->name_length)) {
 
 				if(r->type==DISKFS_ITEM_DIR) {
 					struct diskfs_inode inode;
