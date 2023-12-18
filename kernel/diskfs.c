@@ -467,7 +467,7 @@ int diskfs_dirent_remove( struct fs_dirent *d, const char *name )
 		for(j=0;j<DISKFS_ITEMS_PER_BLOCK;j++) {
 			struct diskfs_item *r = &b->items[j];
 
-			if(r->type!=DISKFS_ITEM_BLANK && r->name_length==name_length && diskfs_name_equals(name,name_length,r->name,name_length)) {
+			if(r->type!=DISKFS_ITEM_BLANK && r->name_length==name_length && diskfs_name_equals(name,name_length,r->name,r->name_length)) {
 
 				if(r->type==DISKFS_ITEM_DIR) {
 					struct diskfs_inode inode;
