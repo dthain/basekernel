@@ -366,7 +366,16 @@ static int diskfs_dirent_add( struct fs_dirent *d, const char *name, int type, i
 				r->inumber = inumber;
 				r->name_length = strlen(name);
 				memcpy(r->name,name,r->name_length);
+
+				/* Save the modified data block. */
 				diskfs_inode_write(d,b,i);
+
+				/* If this increased the logical size, update that too. */
+				uint32_t newsize = (i*DISKFS_BLOCK_SIZE) + (j+1)*sizeof(struct diskfs_item);
+				if(newsize>d->size) {
+					diskfs_dirent_resize(d,newsize);
+					diskfs_inode_save(d->volume,d->inumber,&d->disk);
+				}
 				page_free(b);
 				return 0;
 			}
