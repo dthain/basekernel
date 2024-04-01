@@ -34,6 +34,7 @@ void list_push_tail(struct list *list, struct list_node *node)
 	list->size++;
 }
 
+// use this or implement own
 void list_push_priority(struct list *list, struct list_node *node, int pri)
 {
 	struct list_node *n;

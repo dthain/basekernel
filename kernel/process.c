@@ -188,6 +188,7 @@ void process_stack_reset(struct process *p, unsigned size)
 	memset((void *) -size, size, 0);
 }
 
+// add priority 
 struct process *process_create()
 {
 	struct process *p;
@@ -237,6 +238,7 @@ void process_delete(struct process *p)
 	process_table[p->pid] = 0;
 }
 
+// change to list_push_priority or implement own
 void process_launch(struct process *p)
 {
 	list_push_tail(&ready_list, &p->node);
@@ -309,7 +311,7 @@ void process_preempt()
 
 void process_yield()
 {
-	/* no-op if process module not yet initialized. */
+	/* no-op if process module not yet initialized. */	
 	if(!current) return;
 	process_switch(PROCESS_STATE_READY);
 }

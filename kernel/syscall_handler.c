@@ -99,6 +99,8 @@ way than fork/exec by creating the child without duplicating
 the memory state, then loading
 */
 
+// add argument for priority here
+
 int sys_process_run( int fd, int argc, const char **argv)
 {
 	if(!is_valid_object_type(fd,KOBJECT_FILE)) return KERROR_INVALID_OBJECT;
@@ -460,10 +462,13 @@ int sys_object_remove( int fd, const char *name )
 
 int sys_object_close(int fd)
 {
+	printf("WHAT THE FUCK\n");
 	if(!is_valid_object(fd)) return KERROR_INVALID_OBJECT;
 
 	struct kobject *p = current->ktable[fd];
+	printf("here before kobject_close\n");
 	kobject_close(p);
+	printf("here after kobject_close\n");
 	current->ktable[fd] = 0;
 	return 0;
 }

@@ -46,7 +46,9 @@ static void unknown_exception(int i, int code)
 		esp  = ((struct x86_stack *)(current->kstack_top - sizeof(struct x86_stack)))->esp; // stack pointer of the process that raised the exception
 		// Check if the requested memory is in the stack or data
 		int data_access = vaddr < current->vm_data_size;
-
+		printf("current: %d\n", current->pid);
+		printf("vaddr: %x\n", vaddr);
+		printf("current->vm: %x\n", current->vm_data_size);
 		// Subtract 128 from esp because of the red-zone 
 		// According to https:gcc.gnu.org, the red zone is a 128-byte area beyond 
 		// the stack pointer that will not be modified by signal or interrupt handlers 
