@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
     int pid = syscall_process_fork();
     if (pid == 0)
     {
-        runForSeconds(3);
+        runForSeconds(5);
         return 0;
     }
     else

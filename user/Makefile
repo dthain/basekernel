@@ -1,7 +1,7 @@
 
 include ../Makefile.config
 
-USER_PROGRAMS=ball.exe clock.exe copy.exe livestat.exe manager.exe fractal.exe procstat.exe saver.exe shell.exe snake.exe sysstat.exe process1.exe schedulertest.exe
+USER_PROGRAMS=ball.exe clock.exe copy.exe livestat.exe manager.exe fractal.exe procstat.exe saver.exe shell.exe snake.exe sysstat.exe process1.exe process2.exe schedulertest.exe
 
 all: $(USER_PROGRAMS)
 
