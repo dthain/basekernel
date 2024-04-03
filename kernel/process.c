@@ -244,6 +244,12 @@ void process_launch(struct process *p)
 	list_push_tail(&ready_list, &p->node);
 }
 
+void pprocess_launch(struct process *p, int priority)
+{
+	list_push_priority(&ready_list, &p->node, priority);
+}
+
+// use this in processX.c maybe
 static void process_switch(int newstate)
 {
 	interrupt_block();
@@ -301,7 +307,7 @@ static void process_switch(int newstate)
 }
 
 int allow_preempt = 0;
-
+// maybe use this in processX.c
 void process_preempt()
 {
 	if(allow_preempt && current && ready_list.head) {

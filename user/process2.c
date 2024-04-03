@@ -11,6 +11,7 @@ void runForSeconds(int seconds)
     do
     {
         syscall_system_time(&timeElapsed);
+        //can add logic here to check for other processes with higher priority`
         timeElapsed -= startTime;
     } while (timeElapsed < seconds);
     printf("waited %d seconds\n", timeElapsed);
@@ -19,6 +20,7 @@ void runForSeconds(int seconds)
 int main(int argc, char const *argv[])
 {
     struct process_info info;
+    printf("process2\n");
     int pid = syscall_process_fork();
     if (pid == 0)
     {

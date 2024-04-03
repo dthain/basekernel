@@ -10,12 +10,14 @@ See the file LICENSE for details.
 #include "kernel/types.h"
 #include "kernel/error.h"
 
-typedef enum {
+typedef enum
+{
 	SYSCALL_DEBUG,
 	SYSCALL_PROCESS_YIELD,
 	SYSCALL_PROCESS_EXIT,
 	SYSCALL_PROCESS_RUN,
 	SYSCALL_PROCESS_WRUN,
+	SYSCALL_PROCESS_PRUN,
 	SYSCALL_PROCESS_FORK,
 	SYSCALL_PROCESS_EXEC,
 	SYSCALL_PROCESS_SELF,
@@ -50,7 +52,7 @@ typedef enum {
 	SYSCALL_SYSTEM_TIME,
 	SYSCALL_SYSTEM_RTC,
 	SYSCALL_DEVICE_DRIVER_STATS,
-	MAX_SYSCALL		// must be the last element in the enum
+	MAX_SYSCALL // must be the last element in the enum
 } syscall_t;
 
 uint32_t syscall(syscall_t s, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e);

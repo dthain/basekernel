@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "*.rmd": "markdown",
-        "process.h": "c"
-    }
-}

@@ -19,6 +19,7 @@ void runForSeconds(int seconds)
 int main(int argc, char const *argv[])
 {
     struct process_info info;
+    printf("process1\n");
     int pid = syscall_process_fork();
     if (pid == 0)
     {
