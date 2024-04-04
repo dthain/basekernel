@@ -28,10 +28,11 @@ struct process *process_table[PROCESS_MAX_PID] = { 0 };
 void process_init()
 {
 	current = process_create();
-
+	
 	pagetable_load(current->pagetable);
 	pagetable_enable();
 
+	p->priority = DEFAULT_PRIORITY; 
 	current->state = PROCESS_STATE_READY;
 
 	current->waiting_for_child_pid = 0;
@@ -193,40 +194,49 @@ void process_stack_reset(struct process *p, unsigned size)
 }
 
 // add priority 
-struct process *process_create()
-{
-	struct process *p;
+struct process *process_create(int priority) {
+    struct process *p = page_alloc(1);
+    if (!p) return NULL; // Ensure allocation was successful
 
-	p = page_alloc(1);
+    p->pid = process_allocate_pid();
+    process_table[p->pid] = p;
 
-	p->pid = process_allocate_pid();
-	process_table[p->pid] = p;
+    p->pagetable = pagetable_create();
+    if (!p->pagetable) {
+        // Handle error: unable to create page table
+        page_free(p);
+        return NULL;
+    }
 
-	p->pagetable = pagetable_create();
-	pagetable_init(p->pagetable);
+    pagetable_init(p->pagetable);
+    p->vm_data_size = p->vm_stack_size = 0;
+    process_data_size_set(p, 2 * PAGE_SIZE);
+    process_stack_size_set(p, 2 * PAGE_SIZE);
 
-	p->vm_data_size = 0;
-	p->vm_stack_size = 0;
+    p->kstack = page_alloc(1);
+    if (!p->kstack) {
+        // Handle error: unable to allocate kernel stack
+        pagetable_delete(p->pagetable);
+        page_free(p);
+        return NULL;
+    }
 
-	process_data_size_set(p, 2 * PAGE_SIZE);
-	process_stack_size_set(p, 2 * PAGE_SIZE);
+    p->kstack_top = p->kstack + PAGE_SIZE - 8;
+    p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
+    process_kstack_reset(p, PROCESS_ENTRY_POINT);
 
-	p->kstack = page_alloc(1);
-	p->kstack_top = p->kstack + PAGE_SIZE - 8;
-	p->kstack_ptr = p->kstack_top - sizeof(struct x86_stack);
+    // Initialize kernel objects table
+    for (int i = 0; i < PROCESS_MAX_OBJECTS; i++) {
+        p->ktable[i] = 0;
+    }
 
-	process_kstack_reset(p, PROCESS_ENTRY_POINT);
+    p->state = PROCESS_STATE_READY;
+    p->priority = priority; // Set the process priority
+    p->next = NULL; // Ready for insertion into a list
 
-	// XXX table should be allocated
-	int i;
-	for(i = 0; i < PROCESS_MAX_OBJECTS; i++) {
-		p->ktable[i] = 0;
-	}
-
-	p->state = PROCESS_STATE_READY;
-
-	return p;
+    return p;
 }
+
 
 void process_delete(struct process *p)
 {
@@ -573,6 +583,7 @@ int process_stats(int pid, struct process_stats *s)
 }
 
 // Added by Mahir 
+
 void add_to_ready_queue(struct process* p) {
     // This is pseudocode. You'll have to implement a sorted insert based on your list structure.
     sorted_insert(&ready_list, p, compare_process_priority);
@@ -604,3 +615,37 @@ void sorted_insert(struct process_node** head, struct process* new_proc) {
 int compare_process_priority(const struct process* a, const struct process* b) {
     return a->priority - b->priority;
 }
+
+void process_launch(struct process *p) {
+    // Your implementation should insert 'p' into 'ready_list' based on its priority.
+    // This could involve traversing the list to find the correct insertion point
+    // and then inserting the process node there.
+    // As an example, you might need a function that compares priorities and inserts accordingly.
+}
+
+// Added by Mahir 
+void list_insert_priority(struct process *p) {
+    struct process_node *new_node = malloc(sizeof(struct process_node));
+    new_node->proc = p;
+    new_node->next = NULL;
+
+    if (ready_list.head == NULL || ready_list.head->proc->priority > p->priority) {
+        new_node->next = ready_list.head;
+        ready_list.head = new_node;
+    } else {
+        struct process_node *current = ready_list.head;
+        while (current->next != NULL && current->next->proc->priority <= p->priority) {
+            current = current->next;
+        }
+        new_node->next = current->next;
+        current->next = new_node;
+    }
+}
+
+void schedule_next() {
+    struct process *next_process = list_pop_head(&ready_list); // Assumes this function exists and returns the process at the head of the list
+    // Switch to next_process...
+}
+
+
+
