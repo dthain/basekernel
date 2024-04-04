@@ -29,6 +29,7 @@ See the file LICENSE for details.
 
 struct process {
 	struct list_node node;
+	int priority; 
 	int state;
 	int exitcode;
 	int exitreason;

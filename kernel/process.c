@@ -37,6 +37,10 @@ void process_init()
 	current->waiting_for_child_pid = 0;
 }
 
+
+
+
+
 void process_kstack_reset(struct process *p, unsigned entry_point)
 {
 	struct x86_stack *s;
@@ -566,4 +570,37 @@ int process_stats(int pid, struct process_stats *s)
 	}
 	*s = process_table[pid]->stats;
 	return 0;
+}
+
+// Added by Mahir 
+void add_to_ready_queue(struct process* p) {
+    // This is pseudocode. You'll have to implement a sorted insert based on your list structure.
+    sorted_insert(&ready_list, p, compare_process_priority);
+}
+
+// Added by Mahir --> May very depending on the list Structure --> could not find the list structure 
+void sorted_insert(struct process_node** head, struct process* new_proc) {
+    struct process_node* new_node = (struct process_node*)malloc(sizeof(struct process_node));
+    new_node->proc = new_proc;
+    new_node->next = NULL;
+
+    // Handle the case where the list is empty or the new node should be at the head
+    if (*head == NULL || (*head)->proc->priority > new_proc->priority) {
+        new_node->next = *head;
+        *head = new_node;
+    } else {
+        // Find the insertion point
+        struct process_node* current = *head;
+        while (current->next != NULL && current->next->proc->priority <= new_proc->priority) {
+            current = current->next;
+        }
+        // Insert the new node
+        new_node->next = current->next;
+        current->next = new_node;
+    }
+}
+// Example comparator function, assuming lower numbers are higher priority.
+
+int compare_process_priority(const struct process* a, const struct process* b) {
+    return a->priority - b->priority;
 }
