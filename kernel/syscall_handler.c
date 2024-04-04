@@ -358,13 +358,13 @@ int sys_process_stats(struct process_stats *s, int pid)
 	return process_stats(pid, s);
 }
 
-int sys_process_heap(int delta)
+int sys_process_heap(int delta) // dynamic memory management 
 {
 	process_data_size_set(current, current->vm_data_size + delta);
 	return PROCESS_ENTRY_POINT + current->vm_data_size;
 }
 
-int sys_object_list(int fd, char *buffer, int length)
+int sys_object_list(int fd, char *buffer, int length) // Specific error messages 
 {
 	if (!is_valid_object(fd))
 		return KERROR_INVALID_OBJECT;
