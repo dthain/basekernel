@@ -219,7 +219,7 @@ int sys_process_prun(int fd, int argc, const char **argv, int priority)
 	char **copy_argv = argv_copy(argc, argv);
 
 	/* Create the child process */
-	struct process *p = process_create();
+	struct process *p = pprocess_create(priority);
 	process_inherit(current, p);
 
 	/* SWITCH TO ADDRESS SPACE OF CHILD PROCESS */
@@ -254,7 +254,7 @@ int sys_process_prun(int fd, int argc, const char **argv, int priority)
 		}
 		return r;
 	}
-
+	// printf("p priority: %d\n", p->priority);
 	/* Otherwise, launch the new child process. */
 	pprocess_launch(p, priority);
 	return p->pid;

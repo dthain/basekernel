@@ -1,10 +1,12 @@
 #include "library/syscalls.h"
 #include "library/stdio.h"
 #include "library/errno.h"
+// #include "list.h"
 
-int run(const char *exec, int priority)
+int create(const char *exec, int priority)
 {
     int pfd = syscall_open_file(KNO_STDDIR, exec, 0, 0);
+    
     if (pfd >= 0)
     {
         printf("running %s\n", exec);
@@ -20,6 +22,7 @@ int run(const char *exec, int priority)
             printf("couldn't run %s: %s\n", exec, strerror(pid));
         }
         syscall_object_close(pfd);
+        
     }
     else
     {
@@ -34,7 +37,9 @@ int main(int argc, char const *argv[])
     int priorities[] = {3, 1};
     for (int i = 0; i < 2; i++)
     {
-        run(procs[i], priorities[i]);
+        create(procs[i], priorities[i]);
     }
+    // When this works we r done q1 just need to trivially make other procs
+    // run_all();    
     return 0;
 }

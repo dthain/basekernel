@@ -5,16 +5,42 @@ See the file LICENSE for details.
 */
 
 #include "list.h"
+#include "process.h"
+
+void print_list(struct list *list)
+{
+	struct list_node *n;
+	for (n = list->head; n; n = n->next)
+	{
+		printf("priority: %d   ", n->priority);
+	}
+	printf("\n");
+}
 
 void list_push_head(struct list *list, struct list_node *node)
 {
 	node->next = list->head;
 	node->prev = 0;
 	node->priority = 0;
-	if(list->head)
+	if (list->head)
 		list->head->prev = node;
 	list->head = node;
-	if(!list->tail)
+	if (!list->tail)
+		list->tail = node;
+	node->list = list;
+	list->size++;
+}
+
+void list_push_head_priority(struct list *list, struct list_node *node, int pri)
+{
+	node->next = list->head;
+	node->prev = 0;
+	node->priority = pri;
+	;
+	if (list->head)
+		list->head->prev = node;
+	list->head = node;
+	if (!list->tail)
 		list->tail = node;
 	node->list = list;
 	list->size++;
@@ -25,52 +51,67 @@ void list_push_tail(struct list *list, struct list_node *node)
 	node->prev = list->tail;
 	node->next = 0;
 	node->priority = 0;
-	if(list->tail)
+	if (list->tail)
 		list->tail->next = node;
 	list->tail = node;
-	if(!list->head)
+	if (!list->head)
 		list->head = node;
 	node->list = list;
 	list->size++;
 }
 
-// use this or implement own
+
 void list_push_priority(struct list *list, struct list_node *node, int pri)
 {
 	struct list_node *n;
 	int i = 0;
-	if(!list->head) {
-		list_push_head(list, node);
+	if (!list->head)
+	{
+		list_push_head_priority(list, node, pri);
+		// debug remove later
+		print_list(list);
 		return;
 	}
-	for(n = list->head; n; n = n->next) {
-		if(pri > n->priority || i > 5000) {
+
+	for (n = list->head; n; n = n->next)
+	{
+		if (pri < n->priority || i > 5000)
+		{
 			node->next = n;
 			node->prev = n->prev;
 			node->priority = pri;
-			if(n->prev) {
+			if (n->prev)
+			{
 				n->prev->next = node;
-			} else {
+			}
+			else
+			{
 				list->head = node;
 			}
 			n->prev = node;
 			node->list = list;
 			list->size++;
+			// debug remove later
+			print_list(list);		
+			run_all();
 			return;
 		}
 		i++;
 	}
+	// debug remove later
+	print_list(list);
 	list_push_tail(list, node);
 }
 
 struct list_node *list_pop_head(struct list *list)
 {
 	struct list_node *result = list->head;
-	if(list->head) {
+	if (list->head)
+	{
 		list->head = list->head->next;
-		if(list->head)
+		if (list->head)
 			list->head->prev = 0;
-		if(!list->head)
+		if (!list->head)
 			list->tail = 0;
 		result->next = result->prev = 0;
 		result->list = 0;
@@ -82,11 +123,12 @@ struct list_node *list_pop_head(struct list *list)
 struct list_node *list_pop_tail(struct list *list)
 {
 	struct list_node *result = list->tail;
-	if(list->tail) {
+	if (list->tail)
+	{
 		list->tail = list->tail->prev;
-		if(list->tail)
+		if (list->tail)
 			list->tail->next = 0;
-		if(!list->tail)
+		if (!list->tail)
 			list->head = 0;
 		result->next = result->prev = 0;
 		result->list = 0;
@@ -97,13 +139,15 @@ struct list_node *list_pop_tail(struct list *list)
 
 void list_remove(struct list_node *node)
 {
-	if(!node->list)
+	if (!node->list)
 		return;
-	if(node->list->head == node) {
+	if (node->list->head == node)
+	{
 		list_pop_head(node->list);
 		return;
 	}
-	if(node->list->tail == node) {
+	if (node->list->tail == node)
+	{
 		list_pop_tail(node->list);
 		return;
 	}
@@ -114,7 +158,7 @@ void list_remove(struct list_node *node)
 	node->list->size--;
 }
 
-int list_size( struct list *list )
+int list_size(struct list *list)
 {
 	return list->size;
 }

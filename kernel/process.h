@@ -27,9 +27,10 @@ See the file LICENSE for details.
 #define PROCESS_EXIT_NORMAL   0
 #define PROCESS_EXIT_KILLED   1
 
+#define DEFAULT_PRIORITY  0
 struct process {
 	struct list_node node;
-	int priority; 
+	// int priority;
 	int state;
 	int exitcode;
 	int exitreason;
@@ -82,6 +83,8 @@ int process_wait_child(uint32_t pid, struct process_info *info, int timeout);
 int process_reap(uint32_t pid);
 
 int process_stats(int pid, struct process_stats *stat);
+
+void run_all();
 
 extern struct process *current;
 

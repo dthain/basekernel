@@ -9,3 +9,4 @@ kernel/kernel
 kernel/bootblock
 cross
 .vscode
+*.config

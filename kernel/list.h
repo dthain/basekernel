@@ -25,7 +25,9 @@ struct list_node {
 
 #define LIST_INIT {0,0}
 
+void print_list(struct list *list);
 void list_push_head(struct list *list, struct list_node *node);
+void list_push_head_priority(struct list *list, struct list_node *node, int pri);
 void list_push_tail(struct list *list, struct list_node *node);
 void list_push_priority(struct list *list, struct list_node *node, int pri);
 struct list_node *list_pop_head(struct list *list);
