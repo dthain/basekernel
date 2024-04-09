@@ -671,6 +671,12 @@ int sys_device_driver_stats(const char *name, struct device_driver_stats *stats)
 	return 0;
 }
 
+int sys_run_all()
+{	
+	run_all_waiting();
+	return 0;
+}
+
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	if ((n < MAX_SYSCALL) && current)
@@ -757,6 +763,8 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_system_rtc((struct rtc_time *)a);
 	case SYSCALL_DEVICE_DRIVER_STATS:
 		return sys_device_driver_stats((char *)a, (struct device_driver_stats *)b);
+	case SYSCALL_RUN_ALL:
+		return sys_run_all();
 	default:
 		return KERROR_INVALID_SYSCALL;
 	}

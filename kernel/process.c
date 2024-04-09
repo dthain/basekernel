@@ -368,14 +368,16 @@ static void process_switch(int newstate)
 	interrupt_unblock();
 }
 
-void run_all()
+void run_all_waiting()
 {
 	struct process *p;
 	while ((p = (struct process *)list_pop_head(&blocked_list)))
 	{
-		list_push_tail(&ready_list, &p->node);
+		// print priority
+		// printf("priority: %d\n", &p->node->priority);
+		list_push_tail(&ready_list, &p->node);		
 	}
-	print_list(&ready_list);
+	// print_list(&ready_list);
 }
 
 int allow_preempt = 0;

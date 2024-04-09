@@ -22,6 +22,7 @@ int main(int argc, char const *argv[])
     if (pid == 0)
     {
         runForSeconds(3);
+        printf("process1 done\n");
         return 0;
     }
     else
@@ -29,6 +30,6 @@ int main(int argc, char const *argv[])
         printf("pid: %d\n", pid);
         syscall_process_wait(&info, -1);
     }
-    printf("process1 done\n\n");
+
     return 0;
 }

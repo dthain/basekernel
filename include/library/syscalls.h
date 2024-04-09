@@ -65,4 +65,6 @@ int syscall_system_rtc( struct rtc_time *t );
 
 int syscall_device_driver_stats(char * name, struct device_driver_stats * stats);
 
+int syscall_run_all();
+
 #endif

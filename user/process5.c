@@ -22,13 +22,13 @@ int main(int argc, char const *argv[])
     if (pid == 0)
     {
         runForSeconds(4);
+        printf("process5 done\n");
         return 0;
     }
     else
     {
         printf("pid: %d\n", pid);
         syscall_process_wait(&info, -1);
-    }
-    printf("process5 done\n\n");
+    }    
     return 0;
 }

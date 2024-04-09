@@ -10,4 +10,4 @@ kernel/bootblock
 cross
 .vscode
 *.config
-images
+image

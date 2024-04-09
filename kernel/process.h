@@ -50,6 +50,7 @@ struct process {
 void process_init();
 
 struct process *process_create();
+struct process *pprocess_create(int priority);
 void process_delete(struct process *p);
 void process_launch(struct process *p);
 void pprocess_launch(struct process *p, int priority);
@@ -84,7 +85,7 @@ int process_reap(uint32_t pid);
 
 int process_stats(int pid, struct process_stats *stat);
 
-void run_all();
+void run_all_waiting();
 
 extern struct process *current;
 

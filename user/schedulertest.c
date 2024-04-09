@@ -6,7 +6,7 @@
 int create_process(const char *exec, int priority)
 {
     int pfd = syscall_open_file(KNO_STDDIR, exec, 0, 0);
-    
+
     if (pfd >= 0)
     {
         // const char *args[] = {exec, NULL};
@@ -21,7 +21,6 @@ int create_process(const char *exec, int priority)
             printf("couldn't run %s: %s\n", exec, strerror(pid));
         }
         syscall_object_close(pfd);
-        
     }
     else
     {
@@ -32,13 +31,17 @@ int create_process(const char *exec, int priority)
 
 int main(int argc, char const *argv[])
 {
+    // change add processes here
     const char *procs[] = {"bin/process1.exe", "bin/process2.exe", "bin/process3.exe", "bin/process4.exe", "bin/process5.exe"};
+
+    // change add/change priorities here
     int priorities[] = {9, 7, 2, 1, 5};
-    for (int i = 0; i < 2; i++)
+
+    // for (int i = 0; procs[i] != '\0'; i++)
+    for (int i = 0; priorities[i] != '\0'; i++)
     {
         create_process(procs[i], priorities[i]);
     }
-    // When this works we r done q1 just need to trivially make other procs
-    // syscall_run_all();    
+    syscall_run_all();
     return 0;
 }
