@@ -302,11 +302,10 @@ void process_launch(struct process *p)
 }
 
 void pprocess_launch(struct process *p, int priority)
-{
+{	
 	list_push_priority(&blocked_list, &p->node, priority);
 }
 
-// use this in processX.c maybe
 static void process_switch(int newstate)
 {
 	interrupt_block();
@@ -373,15 +372,12 @@ void run_all_waiting()
 	struct process *p;
 	while ((p = (struct process *)list_pop_head(&blocked_list)))
 	{
-		// print priority
-		// printf("priority: %d\n", &p->node->priority);
-		list_push_tail(&ready_list, &p->node);		
+		list_push_tail(&ready_list, &p->node);
 	}
 	// print_list(&ready_list);
 }
 
 int allow_preempt = 0;
-// maybe use this in processX.c
 void process_preempt()
 {
 	if (allow_preempt && current && ready_list.head)
