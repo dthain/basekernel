@@ -1,4 +1,3 @@
-#include "process.h"
 #include "library/syscalls.h"
 #include "library/stdio.h"
 
@@ -13,7 +12,6 @@ void runForSeconds(int seconds)
         syscall_system_time(&timeElapsed);
         timeElapsed -= startTime;
     } while (timeElapsed < seconds);
-    printf("waited %d seconds\n", timeElapsed);
 }
 
 int main(int argc, char const *argv[])
@@ -31,5 +29,6 @@ int main(int argc, char const *argv[])
         printf("pid: %d\n", pid);
         syscall_process_wait(&info, -1);
     }
+    printf("process1 done\n\n");
     return 0;
 }

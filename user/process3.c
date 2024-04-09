@@ -17,11 +17,11 @@ void runForSeconds(int seconds)
 int main(int argc, char const *argv[])
 {
     struct process_info info;
-    printf("process2\n");
+    printf("process3\n");
     int pid = syscall_process_fork();
     if (pid == 0)
     {
-        runForSeconds(5);
+        runForSeconds(2);
         return 0;
     }
     else
@@ -29,6 +29,6 @@ int main(int argc, char const *argv[])
         printf("pid: %d\n", pid);
         syscall_process_wait(&info, -1);
     }
-    printf("process2 done\n\n");
+    printf("process3 done\n\n");
     return 0;
 }
