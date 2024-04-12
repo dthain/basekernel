@@ -67,4 +67,9 @@ int syscall_device_driver_stats(char * name, struct device_driver_stats * stats)
 
 int syscall_run_all();
 
+//Declare by chris
+int syscall_make_named_pipe(char * fname);
+int syscall_open_named_pipe(char * fname);
+//
+
 #endif

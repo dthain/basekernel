@@ -207,3 +207,13 @@ int syscall_run_all()
 {
 	return syscall(SYSCALL_RUN_ALL, 0, 0, 0, 0, 0);
 }
+
+// Declare by chris
+int syscall_make_named_pipe(char * fname){
+	return syscall(SYSCALL_MAKE_NAMED_PIPE, fname, 0, 0, 0, 0);
+}
+
+int syscall_open_named_pipe(char * fname){
+	return syscall(SYSCALL_OPEN_NAMED_PIPE, fname, 0, 0, 0, 0);
+}
+//
