@@ -514,6 +514,7 @@ extern struct fs disk_fs;
 
 struct fs_volume * diskfs_volume_open( struct device *device )
 {
+	diskfs_volume_format(device);
 	struct diskfs_block *b = page_alloc(0);
 
 	printf("diskfs: opening device %s unit %d\n",device_name(device),device_unit(device));

@@ -72,7 +72,7 @@ static int kshell_automount()
 
 	for(i=0;i<4;i++) {
 		printf("automount: trying ata unit %d...\n",i);
-		if(kshell_mount("ata",i,"simplefs")==0) return 0;
+		if(kshell_mount("ata",i,"diskfs")==0) return 0;
 	}
 
 	printf("automount: no bootable devices available.\n");
