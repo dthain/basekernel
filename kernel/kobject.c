@@ -14,6 +14,7 @@
 #include "window.h"
 #include "console.h"
 #include "pipe.h"
+#include "named_pipe.h"
 
 #include "kernel/error.h"
 
@@ -75,6 +76,14 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 	return k;
 }
 
+struct kobject *kobject_create_named_pipe(struct named_pipe *p)
+{
+	struct kobject *k = kobject_create();
+	k->type = KOBJECT_PIPE;
+	k->data.pipe = p;
+	return k;
+}
+
 struct kobject *kobject_addref(struct kobject *k)
 {
 	k->refcount++;
@@ -114,6 +123,9 @@ struct kobject * kobject_copy( struct kobject *ksrc )
 		break;
 	case KOBJECT_PIPE:
 		pipe_addref(ksrc->data.pipe);
+		break;
+	case KOBJECT_NAMED_PIPE:
+		named_pipe_addref(ksrc->data.named_pipe);
 		break;
 	}
 
@@ -197,6 +209,13 @@ int kobject_read(struct kobject *kobject, void *buffer, int size, kernel_io_flag
 			actual = pipe_read(kobject->data.pipe, buffer, size);
 		}
 		break;
+	case KOBJECT_NAMED_PIPE:
+		if(flags&KERNEL_IO_NONBLOCK) {
+			actual = named_pipe_read_nonblock(kobject->data.named_pipe, buffer, size);
+		} else {
+			actual = named_pipe_read(kobject->data.named_pipe, buffer, size);
+		}
+		break;
 	case KOBJECT_WINDOW:
 		if(flags&KERNEL_IO_NONBLOCK) {
 			actual = window_read_events_nonblock(kobject->data.window, buffer, size);
@@ -253,6 +272,13 @@ int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_fla
 		} else {
 			return pipe_write(kobject->data.pipe, buffer, size);
 		}
+	case KOBJECT_NAMED_PIPE:
+		if(flags&KERNEL_IO_NONBLOCK) {
+			return named_pipe_write_nonblock(kobject->data.named_pipe, buffer, size);
+		} else {
+			return named_pipe_write(kobject->data.named_pipe, buffer, size);
+		}
+		break;
 	default:
 		return 0;
 	}
@@ -323,6 +349,9 @@ int kobject_close(struct kobject *kobject)
 		case KOBJECT_PIPE:
 			pipe_delete(kobject->data.pipe);
 			break;
+		case KOBJECT_NAMED_PIPE:
+			named_pipe_delete(kobject->data.named_pipe);
+			break;
 		default:
 			break;
 		}
@@ -333,6 +362,9 @@ int kobject_close(struct kobject *kobject)
 	} else if(kobject->refcount>1 ) {
 		if(kobject->type==KOBJECT_PIPE) {
 			pipe_flush(kobject->data.pipe);
+		}
+		if(kobject->type==KOBJECT_NAMED_PIPE) {
+			named_pipe_flush(kobject->data.named_pipe);
 		}
 	}
 	return 0;
@@ -381,6 +413,13 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 	case KOBJECT_PIPE:
 		if(n==1) {
 			dims[0] = pipe_size(kobject->data.pipe);
+			return 0;
+		} else {
+			return KERROR_INVALID_REQUEST;
+		}
+	case KOBJECT_NAMED_PIPE:
+		if(n==1) {
+			dims[0] = named_pipe_size(kobject->data.named_pipe);
 			return 0;
 		} else {
 			return KERROR_INVALID_REQUEST;

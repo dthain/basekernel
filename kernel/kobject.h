@@ -14,6 +14,7 @@
 #include "window.h"
 #include "console.h"
 #include "pipe.h"
+#include "named_pipe.h"
 #include "event.h"
 
 struct kobject {
@@ -24,6 +25,7 @@ struct kobject {
 		struct window *window;
 		struct console *console;
 		struct pipe *pipe;
+		struct named_pipe *named_pipe;
 	} data;
 	kobject_type_t type;
 	int refcount;
@@ -37,6 +39,7 @@ struct kobject *kobject_create_device(struct device *d);
 struct kobject *kobject_create_window(struct window *g);
 struct kobject *kobject_create_console(struct console *c);
 struct kobject *kobject_create_pipe(struct pipe *p);
+struct kobject *kobject_create_named_pipe(struct named_pipe *p);
 struct kobject *kobject_create_event();
 
 struct kobject *kobject_create_window_from_window( struct kobject *k, int x, int y, int w, int h );

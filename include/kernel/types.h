@@ -45,12 +45,14 @@ struct process_info {
 	int exitreason;
 };
 
-typedef enum {
+typedef enum
+{
 	KOBJECT_FILE,
 	KOBJECT_DIR,
 	KOBJECT_DEVICE,
 	KOBJECT_WINDOW,
 	KOBJECT_PIPE,
+	KOBJECT_NAMED_PIPE,
 	KOBJECT_CONSOLE
 } kobject_type_t;
 

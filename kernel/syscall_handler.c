@@ -686,6 +686,18 @@ int sys_make_named_pipe(char * fname)
 
 int sys_open_named_pipe(char * fname){
 	printf("\n%s\n", fname);
+	int fd = process_available_fd(current);
+	if (fd < 0)
+	{
+		return KERROR_NOT_FOUND;
+	}
+	struct pipe *p = named_pipe_create(fname);
+	if (!p)
+	{
+		return KERROR_NOT_FOUND;
+	}
+	current->ktable[fd] = kobject_create_pipe(p);
+	return fd;
 	return 0;
 }
 //
