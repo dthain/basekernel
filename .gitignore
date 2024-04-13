@@ -11,3 +11,4 @@ cross
 .vscode
 *.config
 image
+.DS_Store
