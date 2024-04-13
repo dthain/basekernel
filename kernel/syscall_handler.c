@@ -106,7 +106,6 @@ int sys_process_run(int fd, int argc, const char **argv)
 {
 	if (!is_valid_object_type(fd, KOBJECT_FILE))
 		return KERROR_INVALID_OBJECT;
-
 	struct kobject *k = current->ktable[fd];
 
 	/* Copy argv into kernel memory. */
