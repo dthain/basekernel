@@ -677,6 +677,19 @@ int sys_run_all()
 	return 0;
 }
 
+// Declare by chris
+int sys_make_named_pipe(char * fname)
+{
+	printf("\n%s\n", fname);
+	return 0;
+}
+
+int sys_open_named_pipe(char * fname){
+	printf("\n%s\n", fname);
+	return 0;
+}
+//
+
 int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
 {
 	if ((n < MAX_SYSCALL) && current)
@@ -765,6 +778,12 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_device_driver_stats((char *)a, (struct device_driver_stats *)b);
 	case SYSCALL_RUN_ALL:
 		return sys_run_all();
+	// Declare by chris
+	case SYSCALL_MAKE_NAMED_PIPE:
+		return sys_make_named_pipe((char *) a);
+	case SYSCALL_OPEN_NAMED_PIPE:
+        	return sys_open_named_pipe((char *) a);
+	// 
 	default:
 		return KERROR_INVALID_SYSCALL;
 	}
