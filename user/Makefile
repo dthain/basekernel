@@ -1,6 +1,6 @@
 include ../Makefile.config
 
-USER_PROGRAMS=ball.exe clock.exe copy.exe livestat.exe manager.exe fractal.exe procstat.exe saver.exe shell.exe snake.exe sysstat.exe process1.exe process2.exe process3.exe process4.exe process5.exe schedulertest.exe pipechris.exe namechris.exe
+USER_PROGRAMS=ball.exe clock.exe copy.exe livestat.exe manager.exe fractal.exe procstat.exe saver.exe shell.exe snake.exe sysstat.exe process1.exe process2.exe process3.exe process4.exe process5.exe schedulertest.exe sender.exe reciever.exe
 
 all: $(USER_PROGRAMS)
 
@@ -13,3 +13,4 @@ all: $(USER_PROGRAMS)
 
 clean:
 	rm -rf *.exe *.o
+ 
