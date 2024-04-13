@@ -803,6 +803,7 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_run_all();
 	// Declare by chris
 	case SYSCALL_MAKE_NAMED_PIPE:
+	    // Your code to interact with the filesystem to create a named pipe
 		return sys_make_named_pipe((char *) a);
 	case SYSCALL_OPEN_NAMED_PIPE:
         	return sys_open_named_pipe((char *) a);

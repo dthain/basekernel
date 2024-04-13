@@ -9,6 +9,9 @@ See the file LICENSE for details.
 #include "kmalloc.h"
 #include "process.h"
 #include "page.h"
+#include "named_pipe.h"
+
+
 
 #define NAMED_PIPE_SIZE PAGE_SIZE
 
@@ -179,3 +182,36 @@ int named_pipe_size(struct named_pipe *p)
 {
     return NAMED_PIPE_SIZE;
 }
+
+// implimented by Mahir 
+
+// int make_named_pipe(const char *name) {
+//     named_pipe *pipe = kmalloc(sizeof(named_pipe));
+//     if (!pipe)
+//         return -ENOMEM;
+
+//     strncpy(pipe->name, name, sizeof(pipe->name));
+//     pipe->read_pos = 0;
+//     pipe->write_pos = 0;
+//     pipe->open_handles = 1;
+//     mutex_init(&pipe->lock);
+
+//     fs_dirent_mkfile(name, FS_CHARDEVICE, pipe);
+//     return 0;
+// }
+
+
+
+// opening named pipes 
+
+
+// int open_named_pipe(const char *name) {
+//     struct file *file = fs_open(name, FS_READ | FS_WRITE);
+//     if (!file)
+//         return -ENOENT;
+
+//     return file->fd;
+// }
+
+
+

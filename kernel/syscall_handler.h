@@ -6,6 +6,7 @@ See the file LICENSE for details.
 
 #ifndef SYSCALL_HANDLER_H
 #define SYSCALL_HANDLER_H
+#include "named_pipe.h"
 
 /* Only kernel/syscall.handlers invoked by other parts of kernel code should be declared here. */
 
@@ -24,4 +25,18 @@ int sys_process_object_max();
 int sys_open_named_pipe(char * fname);
 int sys_make_named_pipe(char * fname);
 //
+
+// declare by Mahir 
+
+
+// Function to create a new Named PIPE
+// This will setup the named PIPE and create a file system entry for it
+
+// int make_named_pipe(const char *name);
+
+// Function to open an existing Named PIPE
+// This will find the PIPE by name in the file system and return a handle to it
+
+// int open_named_pipe(const char *name);
+
 #endif
