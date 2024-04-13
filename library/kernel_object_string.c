@@ -23,6 +23,8 @@ const char *kernel_object_string( kobject_type_t type )
 			return "console";
 		case KOBJECT_PIPE:
 			return "pipe";
+		case KOBJECT_NAMED_PIPE:
+			return "named pipe";
 		default:
 			return "unknown";
 	}

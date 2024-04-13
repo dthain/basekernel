@@ -680,9 +680,22 @@ int sys_run_all()
 // Declare by chris
 int sys_make_named_pipe(char * fname)
 {
-	printf("\n%s\n", fname);
-	return 0;
+	printf("\n%s\n", fname);	
+	int fd = process_available_fd(current);
+	if (fd < 0)
+	{
+		return KERROR_NOT_FOUND;
+	}
+	struct named_pipe *np = named_pipe_create(fname);
+	if (!np)
+	{
+		return KERROR_NOT_FOUND;
+	}
+	current->ktable[fd] = kobject_create_named_pipe(np);
+	// fs_dirent_mkfile(, fname);
+	return fd;
 }
+
 
 int sys_open_named_pipe(char * fname){
 	printf("\n%s\n", fname);
@@ -691,14 +704,13 @@ int sys_open_named_pipe(char * fname){
 	{
 		return KERROR_NOT_FOUND;
 	}
-	struct pipe *p = named_pipe_create(fname);
+	struct named_pipe *p = named_pipe_create(fname);
 	if (!p)
 	{
 		return KERROR_NOT_FOUND;
 	}
 	current->ktable[fd] = kobject_create_pipe(p);
 	return fd;
-	return 0;
 }
 //
 
