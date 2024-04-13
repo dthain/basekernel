@@ -16,19 +16,21 @@ void runForSeconds(int seconds)
 
 int main(int argc, char const *argv[])
 {
-    struct process_info info;
-    int pid = syscall_process_fork();
-    if (pid == 0)
-    {
-        runForSeconds(3);
-        printf("process1 done\n");
-        return 0;
-    }
-    else
-    {
-        printf("process 1   pid: %d\n", pid);
-        syscall_process_wait(&info, -1);
-    }
+    // struct process_info info;
+    // int pid = syscall_process_fork();
+    // if (pid == 0)
+    // {
+    //     runForSeconds(3);
+    //     printf("process1 done\n");
+    //     return 0;
+    // }
+    // else
+    // {
+    //     printf("process 1   pid: %d\n", pid);
+    //     syscall_process_wait(&info, -1);
+    // }
+    runForSeconds(3);
+    printf("process1 with pid: %d done\n", syscall_process_self());
 
     return 0;
 }

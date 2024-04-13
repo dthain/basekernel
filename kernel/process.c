@@ -369,9 +369,11 @@ static void process_switch(int newstate)
 
 void run_all_waiting()
 {
+	printf("Running all waiting processes...\n");
 	struct process *p;
 	while ((p = (struct process *)list_pop_head(&blocked_list)))
 	{
+		printf("pid: %d, priority: %d\n", p->pid, p->node.priority);
 		list_push_tail(&ready_list, &p->node);
 	}
 	// print_list(&ready_list);
