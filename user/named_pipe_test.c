@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-	// int fd = syscall_make_named_pipe(fname);
+	int fd = syscall_make_named_pipe("/bin/testing_openfile");
 
 	printf("%d: Running named pipe test!\n", syscall_process_self());
 	int w = syscall_open_pipe();

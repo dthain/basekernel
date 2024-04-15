@@ -10,8 +10,63 @@ See the file LICENSE for details.
 #include "process.h"
 #include "page.h"
 #include "named_pipe.h"
+//
+#define MAX_PATH_LEN 100
+#include <stddef.h>
+//
+
+void seperate_parentdir_filename(const char *path, char *parentdir, char *fileName) {
+    const char *lastSlash = path;
+    const char *current = strchr(path, '/');
+
+    int pathsize = MAX_PATH_LEN;
+
+    while (current != NULL) {
+        lastSlash = current;
+        current = strchr(current + 1, '/');
+    }
+
+    // If no slash was found, or the fullPath is the root directory
+    if (lastSlash == path) {
+        // Handle special case, such as setting parentPathBuffer to "/"
+        strncpy(parentdir, "/", pathsize - 1);
+        parentdir[pathsize - 1] = '\0';
+        fileName[0] = '\0'; // No file name in this case
+    } else {
+        int parentLength = lastSlash - path;
+        if (parentLength >= pathsize) parentLength = pathsize - 1;
+
+        strncpy(parentdir, path, parentLength);
+        parentdir[parentLength] = '\0';
+
+        strncpy(fileName, lastSlash + 1, pathsize - 1);
+        fileName[pathsize - 1] = '\0';
+    }
+}
 
 
+struct fs_dirent * createfile( const char *path ){
+
+    char parentPath[MAX_PATH_LEN] = {0};
+    char fileName[MAX_PATH_LEN] = {0};
+    seperate_parentdir_filename(path, parentPath, fileName);
+
+    // Get dirent for parent dir
+    struct fs_dirent *parentDir = fs_resolve(parentPath);
+    if (!parentDir) {
+        // printf("Get parent dir fail");
+        return NULL; 
+    }
+
+    // Create file 
+    struct fs_dirent *file = fs_dirent_mkfile(parentDir, fileName);
+    fs_dirent_close(parentDir);  // no need, so close
+    if (!file) {
+        // printf("Create File Fail");
+        return NULL; // pipe dirent creation failed
+    }
+    return file;
+}
 
 #define NAMED_PIPE_SIZE PAGE_SIZE
 
@@ -28,6 +83,8 @@ struct named_pipe
 
 struct named_pipe *named_pipe_create(char *fname)
 {
+    struct fs_dirent * file =  createfile(fname);
+    //
     struct named_pipe *p = kmalloc(sizeof(*p));
     if (!p)
         return 0;
