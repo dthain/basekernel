@@ -14,8 +14,6 @@
 #include "window.h"
 #include "console.h"
 #include "pipe.h"
-#include "named_pipe.h"
-
 #include "kernel/error.h"
 
 static struct kobject *kobject_create()
@@ -76,11 +74,10 @@ struct kobject *kobject_create_pipe(struct pipe *p)
 	return k;
 }
 
-struct kobject *kobject_create_named_pipe(struct named_pipe *np)
-{
+struct kobject *kobject_create_named_pipe(struct named_pipe *np) {
 	struct kobject *k = kobject_create();
 	k->type = KOBJECT_NAMED_PIPE;
-	k->data.named_pipe = np;
+	k->data.named_pipe = np->base_pipe;
 	return k;
 }
 
@@ -123,9 +120,6 @@ struct kobject * kobject_copy( struct kobject *ksrc )
 		break;
 	case KOBJECT_PIPE:
 		pipe_addref(ksrc->data.pipe);
-		break;
-	case KOBJECT_NAMED_PIPE:
-		named_pipe_addref(ksrc->data.named_pipe);
 		break;
 	}
 
@@ -211,9 +205,9 @@ int kobject_read(struct kobject *kobject, void *buffer, int size, kernel_io_flag
 		break;
 	case KOBJECT_NAMED_PIPE:
 		if(flags&KERNEL_IO_NONBLOCK) {
-			actual = named_pipe_read_nonblock(kobject->data.named_pipe, buffer, size);
+			actual = pipe_read_nonblock(kobject->data.named_pipe, buffer, size);
 		} else {
-			actual = named_pipe_read(kobject->data.named_pipe, buffer, size);
+			actual = pipe_read(kobject->data.named_pipe, buffer, size);
 		}
 		break;
 	case KOBJECT_WINDOW:
@@ -243,6 +237,7 @@ int kobject_read(struct kobject *kobject, void *buffer, int size, kernel_io_flag
 
 int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_flags_t flags )
 {
+	printf("Entering kobject_write\n");
 	switch (kobject->type) {
 	case KOBJECT_WINDOW:
 		if(flags&KERNEL_IO_POST) {
@@ -273,12 +268,12 @@ int kobject_write(struct kobject *kobject, void *buffer, int size, kernel_io_fla
 			return pipe_write(kobject->data.pipe, buffer, size);
 		}
 	case KOBJECT_NAMED_PIPE:
+		printf("Entering kobject_write: case KOBJECT_NAMED_PIPE\n");
 		if(flags&KERNEL_IO_NONBLOCK) {
-			return named_pipe_write_nonblock(kobject->data.named_pipe, buffer, size);
+			return pipe_write_nonblock(kobject->data.named_pipe, buffer, size);
 		} else {
-			return named_pipe_write(kobject->data.named_pipe, buffer, size);
+			return pipe_write(kobject->data.named_pipe, buffer, size);
 		}
-		break;
 	default:
 		return 0;
 	}
@@ -350,7 +345,7 @@ int kobject_close(struct kobject *kobject)
 			pipe_delete(kobject->data.pipe);
 			break;
 		case KOBJECT_NAMED_PIPE:
-			named_pipe_delete(kobject->data.named_pipe);
+			pipe_delete(kobject->data.named_pipe);
 			break;
 		default:
 			break;
@@ -363,16 +358,44 @@ int kobject_close(struct kobject *kobject)
 		if(kobject->type==KOBJECT_PIPE) {
 			pipe_flush(kobject->data.pipe);
 		}
-		if(kobject->type==KOBJECT_NAMED_PIPE) {
-			named_pipe_flush(kobject->data.named_pipe);
+		if (kobject->type==KOBJECT_NAMED_PIPE) {
+			pipe_flush(kobject->data.named_pipe);
 		}
 	}
 	return 0;
 }
 
+
+
+int kobject_get_type(struct kobject *kobject)
+{
+	return kobject->type;
+}
+
+int kobject_set_tag(struct kobject *kobject, char *new_tag)
+{
+	if(kobject->tag != 0) {
+		kfree(kobject->tag);
+	}
+	kobject->tag = kmalloc(strlen(new_tag) * sizeof(char));
+	strcpy(kobject->tag, new_tag);
+	return 1;
+}
+
+int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
+{
+	if(kobject->tag != 0) {
+		strcpy(buffer, kobject->tag);
+		return 1;
+	}
+	return 0;
+}
+
+
 int kobject_size(struct kobject *kobject, int *dims, int n)
 {
 	switch (kobject->type) {
+
 	case KOBJECT_WINDOW:
 		if(n==2) {
 			dims[0] = window_width(kobject->data.window);
@@ -418,36 +441,17 @@ int kobject_size(struct kobject *kobject, int *dims, int n)
 			return KERROR_INVALID_REQUEST;
 		}
 	case KOBJECT_NAMED_PIPE:
-		if(n==1) {
-			dims[0] = named_pipe_size(kobject->data.named_pipe);
-			return 0;
+		if (n==1) {
+			if (kobject->data.named_pipe && kobject->data.named_pipe->base_pipe) {
+				dims[0] = pipe_size(kobject->data.named_pipe->base_pipe);
+				return 0;
+			} else {
+				return KERROR_INVALID_REQUEST;
+			}
 		} else {
 			return KERROR_INVALID_REQUEST;
 		}
+		
 	}
 	return KERROR_INVALID_REQUEST;
-}
-
-int kobject_get_type(struct kobject *kobject)
-{
-	return kobject->type;
-}
-
-int kobject_set_tag(struct kobject *kobject, char *new_tag)
-{
-	if(kobject->tag != 0) {
-		kfree(kobject->tag);
-	}
-	kobject->tag = kmalloc(strlen(new_tag) * sizeof(char));
-	strcpy(kobject->tag, new_tag);
-	return 1;
-}
-
-int kobject_get_tag(struct kobject *kobject, char *buffer, int buffer_size)
-{
-	if(kobject->tag != 0) {
-		strcpy(buffer, kobject->tag);
-		return 1;
-	}
-	return 0;
 }

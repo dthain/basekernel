@@ -538,12 +538,17 @@ int sys_object_read(int fd, void *data, int length, kernel_io_flags_t flags)
 
 int sys_object_write(int fd, void *data, int length, kernel_io_flags_t flags)
 {
+	//printf("Enter sys_object_write\n");
 	if (!is_valid_object(fd))
+		//printf("Enter sys_object_write: KERROR_INVALID_OBJECT\n");
 		return KERROR_INVALID_OBJECT;
 	if (!is_valid_pointer(data, length))
+		//printf("Enter sys_object_write: KERROR_INVALID_ADDRESS\n");
 		return KERROR_INVALID_ADDRESS;
 
+	//printf("kobject *p = current->ktable[fd];\n");
 	struct kobject *p = current->ktable[fd];
+	//printf("Start kobject_write\n");
 	return kobject_write(p, data, length, flags);
 }
 
@@ -676,39 +681,40 @@ int sys_run_all()
 	return 0;
 }
 
-// Declare by chris
-int sys_make_named_pipe(char * fname)
-{
-	printf("\n%s\n", fname);	
-	int fd = process_available_fd(current);
-	if (fd < 0)
-	{
-		return KERROR_NOT_FOUND;
-	}
-	struct named_pipe *np = named_pipe_create(fname);
-	if (!np)
-	{
-		return KERROR_NOT_FOUND;
-	}
-	current->ktable[fd] = kobject_create_named_pipe(np);
-	// fs_dirent_mkfile(, fname);
-	return fd;
+int sys_make_named_pipe(const char *fname) {
+	if (!fname || !is_valid_string(fname)) {
+        return KERROR_INVALID_ADDRESS; 
+    }
+
+	int result = named_pipe_create(fname);
+	if (result != 0) {
+        return result;
+    }
+
+	return 0;
 }
 
+int sys_open_named_pipe(const char *fname) {
+	if (!fname || !is_valid_path(fname)) {
+		return KERROR_INVALID_PATH;
+	}
+	// printf("sys_open_named_pipe: path is %s\n", fname);
 
-int sys_open_named_pipe(char * fname){
-	printf("\n%s\n", fname);
 	int fd = process_available_fd(current);
-	if (fd < 0)
-	{
-		return KERROR_NOT_FOUND;
-	}
-	struct named_pipe *p = named_pipe_create(fname);
-	if (!p)
-	{
-		return KERROR_NOT_FOUND;
-	}
-	current->ktable[fd] = kobject_create_pipe(p);
+    if (fd < 0) {
+		// printf("sys_open_named_pipe: process_available_fd KERROR_NOT_FOUND \n");
+        return KERROR_NOT_FOUND;
+    }
+
+	// open the named pipe
+	struct named_pipe *np;
+	int result = named_pipe_open(fname, &np);
+	if (result < 0) {
+		// printf("sys_open_named_pipe: named_pipe_open KERROR_NOT_FOUND \n");
+        return KERROR_NOT_FOUND; 
+    }
+
+	current->ktable[fd] = kobject_create_named_pipe(np);
 	return fd;
 }
 //
@@ -803,10 +809,9 @@ int32_t syscall_handler(syscall_t n, uint32_t a, uint32_t b, uint32_t c, uint32_
 		return sys_run_all();
 	// Declare by chris
 	case SYSCALL_MAKE_NAMED_PIPE:
-	    // Your code to interact with the filesystem to create a named pipe
 		return sys_make_named_pipe((char *) a);
 	case SYSCALL_OPEN_NAMED_PIPE:
-        	return sys_open_named_pipe((char *) a);
+        return sys_open_named_pipe((char *) a);
 	// 
 	default:
 		return KERROR_INVALID_SYSCALL;

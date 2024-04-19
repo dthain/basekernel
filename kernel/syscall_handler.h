@@ -21,10 +21,7 @@ int sys_object_close( int fd );
 
 int sys_open_window(int wd, int x, int y, int w, int h);
 int sys_process_object_max();
-// Declare by chris
-int sys_open_named_pipe(char * fname);
-int sys_make_named_pipe(char * fname);
-//
+
 
 // declare by Mahir 
 
