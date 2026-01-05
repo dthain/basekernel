@@ -12,10 +12,10 @@ bootblock: bootblock.elf
 	${OBJCOPY} -O binary $< $@
 
 kernel.elf: ${KERNEL_OBJECTS}
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 ${KERNEL_OBJECTS} -o $@
+	${KERNEL_LD} ${KERNEL_LDFLAGS} -Ttext 0x10000 ${KERNEL_OBJECTS} -o $@
 
 bootblock.elf: bootblock.o
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0 $< -o $@
+	${KERNEL_LD} ${KERNEL_LDFLAGS} -Ttext 0 $< -o $@
 
 %.o: %.c
 	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@

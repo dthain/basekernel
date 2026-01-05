@@ -1,0 +1,21 @@
+/* Linker script for userspace programs in basekernel */
+
+OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_ARCH(i386)
+
+STARTUP(../library/user-start.o)
+
+ENTRY(_start)
+
+MEMORY {
+RAM (rwx) : ORIGIN = 0x8000000, LENGTH = 2M
+}
+
+SECTIONS {
+.text   : ALIGN(4096) { *(.text) } > RAM
+.rodata : ALIGN(4096) { *(.rodata) } > RAM
+.data   : ALIGN(4096) { *(.data) } > RAM
+.bss    : ALIGN(4096) { *(.bss)  } > RAM
+.note   : { *(.note) } > RAM
+/DISCARD/ : { *(*) }
+}
