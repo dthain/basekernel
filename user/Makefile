@@ -9,7 +9,7 @@ all: $(USER_PROGRAMS)
 	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
 
 %.exe: %.o ../library/user-start.o ../library/baselib.a
-	${LD} -T basekernel.user.ldscript $< ../library/baselib.a -o $@ -Map .
+	${LD} -T basekernel.user.ldscript $< ../library/baselib.a -o $@
 
 clean:
 	rm -rf *.exe *.o
