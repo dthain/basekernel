@@ -25,7 +25,7 @@ SECTIONS {
 
 /* The bss section describes uninitialized data. */
 /* This takes no space in the executable, but is allocated at runtime. */
-.bss    : { *(.bss) }
+.bss    : ALIGN(CONSTANT(MAXPAGESIZE)) { *(.bss) }
 
 /* Any other miscellanous sections produced by the compiler follow here. */
 }
@@ -49,6 +49,8 @@ Next, we want sections with different permissions to be
 4KB page-aligned, so that the kernel can made code (RX),
 rodata (R), and data (RW) by apply the proper page protections.
 So, the start of the rodata and data sections are aligned
-to the start of the next page.
+to the start of the next page.  Each must be separately
+aligned, so that if one is eliminated, those following
+are not combined with the text segment.
 */
 
