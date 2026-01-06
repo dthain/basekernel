@@ -1,21 +1,54 @@
 /* Linker script for userspace programs in basekernel */
 
-OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
 
+/* The first module in every program is the startup code of the standard library. */
 STARTUP(../library/user-start.o)
 
+/* The entry point for execution is the symbol _start found in user-start.o */
 ENTRY(_start)
 
-MEMORY {
-RAM (rwx) : ORIGIN = 0x80000000, LENGTH = 2M
+SECTIONS {
+
+/* User programs begin at 0x80000000, the top 2MB of memory. */
+. = 0x80000000;
+
+/* The text section contains executable code (rx) */
+.text   : { *(.text) }
+
+/* The rodata section contains constants, strings, etc. */
+.rodata : ALIGN(CONSTANT(MAXPAGESIZE)) { *(.rodata) }
+
+/* The data section contains initialized values. */
+.data   : ALIGN(CONSTANT(MAXPAGESIZE)) { *(.data) }
+
+/* The bss section describes uninitialized data. */
+/* This takes no space in the executable, but is allocated at runtime. */
+.bss    : { *(.bss) }
+
+/* Any other miscellanous sections produced by the compiler follow here. */
 }
 
-SECTIONS {
-.text   : ALIGN(4096) { *(.text) } > RAM
-.rodata : ALIGN(4096) { *(.rodata) } > RAM
-.data   : ALIGN(4096) { *(.data) } > RAM
-.bss    : ALIGN(4096) { *(.bss)  } > RAM
-.note   : { *(.note) } > RAM
-/DISCARD/ : { *(*) }
-}
+/*
+Note there are some subtle issues about alignment here.
+
+The GNU linker on Linux defines COMMONPAGESIZE to be typical 4KB pages
+and MAXPAGESIZE to be less-common 2MB superpages.  These are controlled
+by -z common-page-size and -z max-page-size on the command line, and
+can be used (but not set) in this file.
+
+The linker attempts to page-align items in the executable
+file on disk, so as to facilitate demand-paging at runtime.
+It uses MAXPAGESIZE to do this by default, and so we if don't take
+certain steps, the text section will be pushed to 2MB into the file,
+and all of a sudden, we have huge executable files.
+So, we set -z max-page-size=4096 on the command line.
+
+Next, we want sections with different permissions to be
+4KB page-aligned, so that the kernel can made code (RX),
+rodata (R), and data (RW) by apply the proper page protections.
+So, the start of the rodata and data sections are aligned
+to the start of the next page.
+*/
+
