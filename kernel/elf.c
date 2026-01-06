@@ -52,7 +52,21 @@ struct elf_program {
 	uint32_t align;
 };
 
+#define ELF_PROGRAM_TYPE_NULL 0
 #define ELF_PROGRAM_TYPE_LOADABLE 1
+#define ELF_PROGRAM_TYPE_DYNAMIC 2
+#define ELF_PROGRAM_TYPE_INTERPRETER 3
+#define ELF_PROGRAM_TYPE_NOTE 4
+#define ELF_PROGRAM_TYPE_SHARED_LIBRARY 5
+#define ELF_PROGRAM_TYPE_PROGRAM_HEADER 6
+#define ELF_PROGRAM_TYPE_THREAD_LOCAL 7
+#define ELF_PROGRAM_TYPE_GNU_EH_FRAME 0x6474e550
+#define ELF_PROGRAM_TYPE_GNU_STACK 0x6474e551
+#define ELF_PROGRAM_TYPE_GNU_RELRO 0x6474e552
+
+#define ELF_PROGRAM_FLAGS_EXEC  1
+#define ELF_PROGRAM_FLAGS_WRITE 2
+#define ELF_PROGRAM_FLAGS_READ  4
 
 struct elf_section {
 	uint32_t name;
@@ -88,7 +102,6 @@ struct elf_section {
 #define ELF_SECTION_FLAGS_GROUP 512
 #define ELF_SECTION_FLAGS_TLS 1024
 
-
 /* Ensure that the current process has address space up to this value. */
 
 static int elf_ensure_address_space( struct process *p, uint32_t addr )
@@ -109,74 +122,81 @@ static int elf_ensure_address_space( struct process *p, uint32_t addr )
 
 	/* Return zero on success. */
 }
- 
+
+/* Load an ELF executable into user space. */
+
 int elf_load(struct process *p, struct fs_dirent *d, addr_t * entry)
 {
 	struct elf_header header;
 	struct elf_program program;
-	struct elf_section section;
 	int i;
 	uint32_t actual;
 
+	/* Load the overall ELF header from the beginning of the file. */
 	actual = fs_dirent_read(d, (char *) &header, sizeof(header), 0);
-	if(actual != sizeof(header))
-		goto noload;
-
-	if(strncmp(header.ident, "\177ELF", 4) || header.machine != ELF_HEADER_MACHINE_I386 || header.version != ELF_HEADER_VERSION)
-		goto noexec;
-
-	actual = fs_dirent_read(d, (char *) &program, sizeof(program), header.program_offset);
-	if(actual != sizeof(program))
-		goto noload;
-
-	//printf("elf: text %x bytes from offset %x at address %x length %x\n",program.file_size,program.offset,program.vaddr,program.memory_size);
-
-	if(program.type != ELF_PROGRAM_TYPE_LOADABLE || program.vaddr < PROCESS_ENTRY_POINT || program.memory_size > 0x8000000 || program.memory_size != program.file_size)
-		goto noexec;
-
-	process_data_size_set(p, program.memory_size);
-
-	actual = fs_dirent_read(d, (char *) program.vaddr, program.memory_size, program.offset);
-	if(actual != program.memory_size)
-		goto mustdie;
-
-	for(i = 0; i < header.shnum; i++) {
-		actual = fs_dirent_read(d, (char *) &section, sizeof(section), header.section_offset + i * header.shentsize);
-		if(actual != sizeof(section))
-			goto mustdie;
-
-		if(section.type == ELF_SECTION_TYPE_BSS) {
-			/* For BSS, just clear that address space to zero. */
-			actual = elf_ensure_address_space(p,section.address+section.size);
-			if(actual!=0) goto nomem;
-			memset((void *) section.address, section.size, 0);
-		} else if(section.type == ELF_SECTION_TYPE_PROGRAM && section.address!=0) {
-			/* For other loadable section types (usually data), load from file. */
-			actual = elf_ensure_address_space(p,section.address+section.size);
-			if(actual!=0) goto nomem;
-			actual = fs_dirent_read(d,(char*)section.address,section.size,section.offset);
-			if(actual != section.size) goto mustdie;
-		} else {
-			/* skip all other section types */
-		}
+	if(actual != sizeof(header)) {
+		printf("elf: unable to load elf header.\n");
+		return KERROR_NOT_EXECUTABLE;
 	}
 
+	/* Bail out if the header doesnt not have the expected values. */
+	if(strncmp(header.ident, "\177ELF", 4) || header.machine != ELF_HEADER_MACHINE_I386 || header.version != ELF_HEADER_VERSION) {
+		printf("elf: not a valid i386 executable file.\n");
+		return KERROR_NOT_EXECUTABLE;
+	}
+
+	/* An elf file contains a sequence of "program headers" that correspond to loadable segments. */
+	for(i = 0; i < header.phnum; i++) {
+
+		/* Load in the segment header itself. */
+		actual = fs_dirent_read(d, (char *) &program, sizeof(program), header.program_offset + i * header.phentsize);
+		if(actual != sizeof(program)) {
+			printf("elf: unable to load segment header %d.\n",i);
+			return KERROR_NOT_EXECUTABLE;
+		}
+
+		/* Safe to skip segments that are not loadable or zero size: */
+		if(program.type != ELF_PROGRAM_TYPE_LOADABLE || program.memory_size==0 ) {
+			continue;
+		}
+
+		/* Each segment must be within the expected userspace range. */
+		if(program.vaddr < PROCESS_ENTRY_POINT || program.memory_size > 0x8000000) {
+			printf("elf: segment %d is invalid: vaddr %x size %x lies outside of user address space.\n",i,program.vaddr,program.memory_size);
+			return KERROR_NOT_EXECUTABLE;
+		}
+
+		/* Check for unexpected segment configuration. */
+		if(program.file_size > program.memory_size) {
+			printf("elf: segment %d has unexpected file size %x smaller than memory size %x.\n",program.file_size,program.memory_size);
+			return KERROR_NOT_EXECUTABLE;
+		}
+
+
+		/* Expand the user address space if needed for this segment. */
+		if(elf_ensure_address_space(p,program.vaddr + program.memory_size)!=0) {
+			printf("elf: unable to allocate memory for segment %d vaddr %x size %x\n",i,program.vaddr,program.memory_size);
+			return KERROR_OUT_OF_MEMORY;
+		}
+
+		/* If some (or all) of this segment is on disk, load it in. */
+		if(program.file_size>0) {
+			actual = fs_dirent_read(d, (char *) program.vaddr, program.file_size, program.offset);
+			if(actual != program.file_size) {
+				printf("elf: unable to load segment %d from disk.\n");
+				return KERROR_NOT_EXECUTABLE;
+			}
+		}
+
+		/* If the remainder (or all) of this segment is BSS, initialize it. */
+		if(program.memory_size>program.file_size) {
+			memset( (char*) (program.vaddr+program.file_size), program.memory_size-program.file_size, 0 );
+		}
+		
+		/* XXX Set page table bits here. */
+	}
+
+	/* Capture the program entry point for the caller to use. */
 	*entry = header.entry;
 	return 0;
-
-      noload:
-	printf("elf: failed to load correctly!\n");
-	return KERROR_NOT_FOUND;
-
-      noexec:
-	printf("elf: not a valid i386 ELF executable\n");
-	return KERROR_NOT_EXECUTABLE;
-
-      nomem:
-	printf("elf: failed to allocate memory\n");
-	return KERROR_OUT_OF_MEMORY;
-
-      mustdie:
-	printf("elf: did not load correctly\n");
-	return KERROR_EXECUTION_FAILED;
 }
