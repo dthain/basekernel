@@ -15,11 +15,13 @@ See the file LICENSE for details.
 #include "x86.h"
 #include "fs.h"
 
-#define PROCESS_STATE_CRADLE  0
-#define PROCESS_STATE_READY   1
-#define PROCESS_STATE_RUNNING 2
-#define PROCESS_STATE_BLOCKED 3
-#define PROCESS_STATE_GRAVE   4
+typedef enum {
+	PROCESS_STATE_CRADLE,
+	PROCESS_STATE_READY,
+	PROCESS_STATE_RUNNING,
+	PROCESS_STATE_BLOCKED,
+	PROCESS_STATE_GRAVE,
+} process_state_t;
 
 #define PROCESS_MAX_OBJECTS 32
 #define PROCESS_MAX_PID 1024
@@ -29,7 +31,7 @@ See the file LICENSE for details.
 
 struct process {
 	struct list_node node;
-	int state;
+	process_state_t state;
 	int exitcode;
 	int exitreason;
 	struct pagetable *pagetable;
