@@ -9,7 +9,7 @@ all: $(USER_PROGRAMS)
 	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
 
 %.exe: %.o ../library/user-start.o ../library/baselib.a
-	${LD} ${KERNEL_LDFLAGS} -Ttext 0x80000000 ../library/user-start.o $< ../library/baselib.a -o $@
+	${LD} -z max-page-size=4096 -T basekernel.user.ldscript $< ../library/baselib.a -o $@ -Map $@.map
 
 clean:
 	rm -rf *.exe *.o

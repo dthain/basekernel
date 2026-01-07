@@ -27,3 +27,8 @@ syscall:
 	addl	$4,%esp
 	leave
 	ret
+
+# This is a GNU peculiarity which indicates that
+# the stack does not need to be executable in this module.
+.section .note.GNU-stack,"",@progbits
+
