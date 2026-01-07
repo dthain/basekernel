@@ -21,7 +21,7 @@ See the file LICENSE for details.
 #include "pagetable.h"
 #include "clock.h"
 #include "rtc.h"
-#include "elf.h"
+#include "loader.h"
 #include "kmalloc.h"
 #include "page.h"
 #include "ata.h"
@@ -119,7 +119,7 @@ int sys_process_run( int fd, int argc, const char **argv)
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, k->data.file, &entry);
+	int r = loader_load_process(p, k->data.file, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -168,7 +168,7 @@ int sys_process_wrun( int fd, int argc, const char **argv, int *fds, int fd_len)
 
 	/* Attempt to load the program image. */
 	addr_t entry;
-	int r = elf_load(p, k->data.file, &entry);
+	int r = loader_load_process(p, k->data.file, &entry);
 	if(r >= 0) {
 		/* If load succeeded, reset stack and pass arguments */
 		process_stack_reset(p, PAGE_SIZE);
@@ -207,7 +207,7 @@ int sys_process_exec( int fd, int argc, const char **argv)
 	char **copy_argv = argv_copy(argc, argv);
 
 	/* Attempt to load the program image into this process. */
-	int r = elf_load(current, k->data.file, &entry);
+	int r = loader_load_process(current, k->data.file, &entry);
 
 	/* On failure, return only if our address space is not corrupted. */
 	if(r < 0) {
