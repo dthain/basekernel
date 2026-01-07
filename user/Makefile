@@ -6,10 +6,10 @@ USER_PROGRAMS=ball.exe clock.exe copy.exe livestat.exe manager.exe fractal.exe p
 all: $(USER_PROGRAMS)
 
 %.o: %.c
-	${CC} ${KERNEL_CCFLAGS} -I ../include $< -o $@
+	${CC} ${USER_CCFLAGS} -I ../include $< -o $@
 
 %.exe: %.o ../library/user-start.o ../library/baselib.a
-	${LD} -z max-page-size=4096 -T basekernel.user.ldscript $< ../library/baselib.a -o $@ -Map $@.map
+	${LD} ${USER_LDFLAGS} $< ../library/baselib.a -o $@
 
 clean:
 	rm -rf *.exe *.o
