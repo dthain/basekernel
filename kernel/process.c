@@ -242,7 +242,7 @@ void process_launch(struct process *p)
 	list_push_tail(&ready_list, &p->node);
 }
 
-static void process_switch(int newstate)
+static void process_switch( process_state_t newstate )
 {
 	interrupt_block();
 
