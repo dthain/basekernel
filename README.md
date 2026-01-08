@@ -25,7 +25,8 @@ To learn more, see the [Basekernel Wiki](https://github.com/dthain/basekernel/wi
 ## Quick Start Instructions
 
 If you are building on a Linux-X86 machine
-and have the QEMU virtual machine installed:
+and have the QEMU virtual machine installed,
+then it could be as easy as this to build and run:
 
 ```
 git clone https://github.com/dthain/basekernel
@@ -34,7 +35,7 @@ make
 qemu-system-i386 -cdrom basekernel.iso
 ```
 
-And you should see something like this:
+You should see something like this:
 
 <img src=screenshot.png align=center>
 
@@ -68,11 +69,19 @@ run /bin/manager.exe
 Press TAB to change the focus between windows,
 and you can interact with each process in turn.
 
-## Cross-Compiling Instructions
+## Not So Quick Start Instructions
 
-If you are building on any other type of machine,
-you will probably need to build a cross-compiler
-using `build-cross-compiler.sh` and then edit
-`Makefile.config` to use the cross compiler binaries,
-then execute `make` to create `basekernel.iso`
+If you are building on any other type of machine (not Linux or not-X86)
+then you will need to build a cross-compiler toolchain first:
 
+1 - Run `./build-cross-compiler.sh` which will download and build the necessary compiler, linker,
+debugger, etc to create and run 32-bit X86 code.  **Be patient: this could take an hour or longer to complete.**
+
+2 - Double-check that the cross-compiler was built correctly:
+```
+i686-elf-gcc --version
+```
+
+3 - Modify `Makefile.config` and set `CROSS_COMPILE=true`
+
+4 - Build with `make` and then proceed as normal.
